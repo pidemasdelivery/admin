@@ -3825,6 +3825,21 @@ try{
     if(!s)s=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:llave()});
     return guardar(s);
   }
+  // En la app instalada (APK) el permiso lo da Android; si no responde en 10 s, se explica cómo activarlo.
+  function pedir(){
+    return Promise.race([
+      Promise.resolve().then(()=>Notification.requestPermission()).catch(()=>Notification.permission),
+      new Promise(r=>setTimeout(()=>r(Notification.permission),10000))
+    ]);
+  }
+  function ayuda(msg){
+    let a=document.getElementById('pdPushAyuda');
+    if(!a){a=document.createElement('div');a.id='pdPushAyuda';a.setAttribute('role','alert');
+      a.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(96px + env(safe-area-inset-bottom));z-index:2147483000;background:#2b1a12;color:#fff;border-radius:16px;padding:14px 16px;font:500 14px/1.4 Inter,system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.25)';
+      document.body.appendChild(a)}
+    a.innerHTML=(msg||'Para recibir avisos, activa las notificaciones: mantén presionado el icono de la app → <b>Información de la app</b> → <b>Notificaciones</b> → Permitir. Luego vuelve a abrir la app.')+'<button type="button" style="display:block;margin-top:10px;margin-left:auto;background:#C4410C;color:#fff;border:0;border-radius:999px;padding:8px 16px;font:700 14px Inter,system-ui,sans-serif">Entendido</button>';
+    a.hidden=false;a.querySelector('button').onclick=()=>{a.hidden=true};
+  }
   let card=null;
   function tarjeta(){
     if(card&&!card.hidden)return;
@@ -3838,9 +3853,9 @@ try{
     card.querySelector('.no').onclick=()=>{try{localStorage.setItem(NO,String(Date.now()))}catch(_){}card.hidden=true};
     card.querySelector('.si').onclick=async()=>{
       card.hidden=true;
-      let p='default';try{p=await Notification.requestPermission()}catch(_){}
-      if(p==='granted')suscribir().catch(e=>console.warn('Avisos push:',e));
-      else try{localStorage.setItem(NO,String(Date.now()))}catch(_){}
+      const p=await pedir();
+      if(p==='granted')suscribir().then(ok=>{if(!ok)ayuda('No se pudo registrar este celular. Cierra sesión y vuelve a entrar.')}).catch(e=>console.warn('Avisos push:',e));
+      else{try{localStorage.setItem(NO,String(Date.now()))}catch(_){}ayuda()}
     };
   }
   let revisando=false;
@@ -3855,9 +3870,10 @@ try{
   function iniciar(){
     const c=cli();if(!c){setTimeout(iniciar,800);return}
     setTimeout(revisar,2500);
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(revisar,800)});
     // si el permiso se concede desde otro botón del panel, se guarda el celular al instante
     try{navigator.permissions.query({name:'notifications'}).then(st=>{st.onchange=()=>{if(st.state==='granted')revisar()}})}catch(_){}
-    document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(b&&/avisos|notificaci/i.test(b.textContent||''))setTimeout(revisar,1500)},true);
+    document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(b&&/avisos|notificaci|alerta|permiso|activar/i.test((b.textContent||'')+' '+(b.id||'')))[1500,5000,12000].forEach(t=>setTimeout(revisar,t))},true);
     try{c.auth.onAuthStateChange(ev=>{
       if(ev==='SIGNED_IN')setTimeout(revisar,1500);
       if(ev==='SIGNED_OUT'){if(card)card.hidden=true;navigator.serviceWorker.getRegistration().then(r=>r&&r.pushManager.getSubscription()).then(s=>s&&s.unsubscribe()).catch(()=>{})}

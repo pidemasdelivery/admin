@@ -10,11 +10,8 @@ self.addEventListener('push',e=>{
   try{d=e.data?e.data.json():{}}catch(_){d={title:'Pidemás',body:e.data?e.data.text():''}}
   e.waitUntil((async()=>{
     const list=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-    // Si el panel está abierto y a la vista, él ya avisa con su propio sonido: no se duplica.
-    if(list.some(c=>c.visibilityState==='visible'&&c.focused)){
-      list.forEach(c=>c.postMessage({type:'pd-push',data:d}));
-      return;
-    }
+    // Siempre se muestra el aviso (también con el panel abierto) y se avisa al panel.
+    list.forEach(c=>c.postMessage({type:'pd-push',data:d}));
     await self.registration.showNotification(d.title||'Pidemás',{
       body:d.body||'',
       tag:d.tag||'pidemas',
