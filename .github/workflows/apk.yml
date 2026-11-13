@@ -1,0 +1,220 @@
+# Construye el APK del panel (admin, motorizado o negocio) que abre su pagina publicada en GitHub Pages.
+# Sirve igual para los tres repositorios: detecta solo cual es.
+name: Construir APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Datos del panel
+        run: |
+          OWNER=$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
+          REPO="${GITHUB_REPOSITORY#*/}"
+          ID=$(echo "$REPO" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9')
+          HOST="$OWNER.github.io"
+          case "$ID" in
+            admin)      NOMBRE="Pidemás Admin" ;;
+            motorizado) NOMBRE="Pidemás Moto" ;;
+            negocio*)   NOMBRE="Pidemás Negocio" ;;
+            *)          NOMBRE="Pidemás $REPO" ;;
+          esac
+          echo "HOST=$HOST" >> "$GITHUB_ENV"
+          echo "URL=https://$HOST/$REPO/" >> "$GITHUB_ENV"
+          echo "RUTA=/$REPO/" >> "$GITHUB_ENV"
+          echo "ID=$ID" >> "$GITHUB_ENV"
+          echo "PKG=pe.pidemas.$ID" >> "$GITHUB_ENV"
+          echo "NOMBRE=$NOMBRE" >> "$GITHUB_ENV"
+          echo "VCODE=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+          echo "La app $NOMBRE (pe.pidemas.$ID) abrira: https://$HOST/$REPO/"
+
+      - name: Clave de firma (se crea una sola vez)
+        run: |
+          if [ ! -f firma/pidemas.keystore ]; then
+            mkdir -p firma
+            keytool -genkeypair -keystore firma/pidemas.keystore -alias pidemas -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass pidemas2026 -keypass pidemas2026 -dname "CN=Pidemas Delivery, O=Pidemas, L=Piura, C=PE"
+            git config user.name "github-actions"
+            git config user.email "github-actions@users.noreply.github.com"
+            git add firma/pidemas.keystore
+            git commit -m "Clave de firma de la app [skip ci]"
+            git pull --rebase
+            git push
+          fi
+
+      - name: Armar el proyecto Android
+        run: |
+          A=_android
+          mkdir -p $A/app/src/main/res/values $A/app/src/main/res/drawable-nodpi $A/app/src/main/res/mipmap-nodpi \
+                   $A/app/src/main/res/mipmap-anydpi-v26 $A/app/src/main/res/drawable-v26
+          cat > $A/settings.gradle <<'EOF'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositories { google(); mavenCentral() } }
+          rootProject.name = "PidemasPanel"
+          include ':app'
+          EOF
+          cat > $A/build.gradle <<'EOF'
+          plugins { id 'com.android.application' version '8.5.2' apply false }
+          EOF
+          cat > $A/gradle.properties <<'EOF'
+          android.useAndroidX=true
+          org.gradle.jvmargs=-Xmx2g
+          EOF
+          cat > $A/app/build.gradle <<'EOF'
+          plugins { id 'com.android.application' }
+          android {
+            namespace System.getenv('PKG')
+            compileSdk 34
+            defaultConfig {
+              applicationId System.getenv('PKG')
+              minSdk 21
+              targetSdk 34
+              versionCode((System.getenv('VCODE') ?: '1').toInteger())
+              versionName "1.0.${System.getenv('VCODE') ?: '1'}"
+              manifestPlaceholders = [hostName: System.getenv('HOST'), defaultUrl: System.getenv('URL'), ruta: System.getenv('RUTA')]
+            }
+            signingConfigs {
+              release {
+                storeFile rootProject.file('../firma/pidemas.keystore')
+                storePassword 'pidemas2026'
+                keyAlias 'pidemas'
+                keyPassword 'pidemas2026'
+              }
+            }
+            buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
+            compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+            lint { checkReleaseBuilds false; abortOnError false }
+          }
+          dependencies { implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0' }
+          EOF
+          cat > $A/app/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+              <queries>
+                  <intent>
+                      <action android:name="android.support.customtabs.action.CustomTabsService"/>
+                  </intent>
+              </queries>
+              <application
+                  android:label="@string/app_name"
+                  android:icon="@mipmap/ic_launcher"
+                  android:roundIcon="@mipmap/ic_launcher"
+                  android:allowBackup="true"
+                  android:supportsRtl="true"
+                  android:theme="@android:style/Theme.Translucent.NoTitleBar">
+                  <meta-data android:name="asset_statements" android:resource="@string/asset_statements"/>
+                  <activity
+                      android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
+                      android:exported="true"
+                      android:alwaysRetainTaskState="true"
+                      android:label="@string/app_name">
+                      <meta-data android:name="android.support.customtabs.trusted.DEFAULT_URL" android:value="${defaultUrl}"/>
+                      <meta-data android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR" android:resource="@color/fondo"/>
+                      <meta-data android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR" android:resource="@color/fondo"/>
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW"/>
+                          <category android:name="android.intent.category.DEFAULT"/>
+                          <category android:name="android.intent.category.BROWSABLE"/>
+                          <data android:scheme="https" android:host="${hostName}" android:pathPrefix="${ruta}"/>
+                      </intent-filter>
+                  </activity>
+                  <service
+                      android:name="com.google.androidbrowserhelper.trusted.DelegationService"
+                      android:exported="true"
+                      android:enabled="true">
+                      <intent-filter>
+                          <action android:name="android.support.customtabs.trusted.TRUSTED_WEB_ACTIVITY_SERVICE"/>
+                          <category android:name="android.intent.category.DEFAULT"/>
+                      </intent-filter>
+                  </service>
+              </application>
+          </manifest>
+          EOF
+          cat > $A/app/src/main/res/values/colors.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="fondo">#FFF9F5</color>
+              <color name="naranja">#C4410C</color>
+          </resources>
+          EOF
+          printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' '<resources>' \
+            "    <string name=\"app_name\">$NOMBRE</string>" \
+            "    <string name=\"asset_statements\">[{\\\"relation\\\": [\\\"delegate_permission/common.handle_all_urls\\\"], \\\"target\\\": {\\\"namespace\\\": \\\"web\\\", \\\"site\\\": \\\"https://$HOST\\\"}}]</string>" \
+            '</resources>' > $A/app/src/main/res/values/strings.xml
+          ICON=icon-maskable-512.png; [ -f "$ICON" ] || ICON=icon-512.png
+          cp "$ICON" $A/app/src/main/res/drawable-nodpi/icono.png
+          cp "$ICON" $A/app/src/main/res/mipmap-nodpi/ic_launcher.png
+          cat > $A/app/src/main/res/drawable-v26/icono_centro.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <inset xmlns:android="http://schemas.android.com/apk/res/android"
+              android:drawable="@drawable/icono"
+              android:inset="16.67%"/>
+          EOF
+          cat > $A/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@color/naranja"/>
+              <foreground android:drawable="@drawable/icono_centro"/>
+          </adaptive-icon>
+          EOF
+
+      - name: Construir APK
+        run: |
+          cd _android
+          gradle --no-daemon assembleRelease
+          mkdir -p ../salida
+          cp app/build/outputs/apk/release/app-release.apk ../salida/pidemas-$ID.apk
+          FP=$(keytool -list -v -keystore ../firma/pidemas.keystore -alias pidemas -storepass pidemas2026 | grep 'SHA256:' | head -1 | sed 's/.*SHA256: *//')
+          echo "$PKG $FP" > ../salida/huella.txt
+          echo "Huella de la firma: $FP"
+          echo "### $NOMBRE listo" >> "$GITHUB_STEP_SUMMARY"
+          echo "Huella: \`$PKG $FP\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar la huella (la tienda la lee para quitar la barra de direccion)
+        run: |
+          cp salida/huella.txt firma/huella.txt
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add firma/huella.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Huella de la app [skip ci]"
+            git pull --rebase
+            git push
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pidemas-${{ env.ID }}-apk
+          path: salida/
+
+      - name: Publicar APK para descarga directa
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-v${{ github.run_number }}
+          name: ${{ env.NOMBRE }} ${{ github.run_number }}
+          make_latest: true
+          files: salida/pidemas-${{ env.ID }}.apk
