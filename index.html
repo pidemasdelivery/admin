@@ -6,7 +6,7 @@
 
 <meta name="pd-version" content="20261103073944">
 <meta charset="utf-8"/>
-<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
 <meta content="no-cache" http-equiv="Pragma"/>
 <meta content="0" http-equiv="Expires"/>
@@ -27,7 +27,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-500-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-700-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-800-normal.woff2">
-<link rel="stylesheet" href="estilos.css?v=202611150200">
+<link rel="stylesheet" href="estilos.css?v=202611131700">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'"/>
 
@@ -43,6 +43,90 @@ html body #appView#appView#appView#appView#appView#appView section#tab-pedidos#t
 html body #appView#appView#appView#appView#appView#appView section#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos > h2.adminPageTitle,html body #appView#appView#appView#appView#appView#appView section#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos > div:first-child h2{display:none!important;min-height:0!important;height:0!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:transparent!important}
 html body #appView#appView#appView#appView#appView#appView > .card:first-child:has(> h1){display:none!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:transparent!important}
 </style>
+<style id="pd-dialogos-css">
+/* ===== pd-dialogos · avisos, confirmaciones y preguntas dentro de la app (sin ventanas del navegador) ===== */
+#pdDlg{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:flex-end;justify-content:center;padding:0 12px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(31,26,23,.45);animation:pdDlgFondo .18s ease-out;font-family:var(--font,"PdInter",Inter,system-ui,sans-serif)}
+#pdDlg[hidden]{display:none!important}
+@keyframes pdDlgFondo{from{opacity:0}to{opacity:1}}
+@keyframes pdDlgSube{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+#pdDlg .pdDlgCard{width:100%;max-width:440px;box-sizing:border-box;background:#fff;border:1px solid var(--fr-line,#EFE3DA);border-radius:var(--r-xl,24px);box-shadow:var(--sh-lg,0 12px 32px rgba(31,26,23,.16));padding:20px 16px 16px;animation:pdDlgSube .22s cubic-bezier(.2,.8,.2,1);max-height:calc(100dvh - 80px);overflow-y:auto}
+#pdDlg .pdDlgIco{width:44px;height:44px;border-radius:var(--r-md,14px);display:flex;align-items:center;justify-content:center;background:var(--fr-peach,#FBE6DD);color:var(--fr-orange,#C4410C);margin-bottom:12px}
+#pdDlg .pdDlgIco svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#pdDlg .pdDlgIco.peligro{background:#FDECEA;color:var(--fr-red,#B42318)}
+#pdDlg .pdDlgT{margin:0 0 6px;font:800 var(--fs-xl,18px)/1.25 var(--font,Inter,sans-serif);letter-spacing:-.3px;color:var(--fr-ink,#1F1A17)}
+#pdDlg .pdDlgP{margin:0;font:500 var(--fs-md,14px)/1.45 var(--font,Inter,sans-serif);color:var(--fr-muted,#6F625A);white-space:pre-line;overflow-wrap:anywhere}
+#pdDlg .pdDlgCampo{display:flex;flex-direction:column;gap:6px;margin-top:14px}
+#pdDlg .pdDlgCampo label{font:700 var(--fs-base,13px)/1.3 var(--font,Inter,sans-serif);color:var(--fr-muted,#6F625A)}
+#pdDlg .pdDlgCampo input{box-sizing:border-box;width:100%;height:48px;padding:0 14px;border-radius:var(--r-md,14px);border:1px solid var(--fr-line,#EFE3DA);background:var(--fr-surface,#FFF9F5);font:500 16px/1.3 var(--font,Inter,sans-serif);color:var(--fr-ink,#1F1A17);outline:none}
+#pdDlg .pdDlgCampo input:focus{border-color:var(--fr-ink,#1F1A17);box-shadow:var(--ring,0 0 0 3px rgba(196,65,12,.12))}
+#pdDlg .pdDlgBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}
+#pdDlg .pdDlgBtns.uno{grid-template-columns:1fr}
+#pdDlg .pdDlgBtns button{height:48px;border-radius:var(--r-md,14px);font:800 var(--fs-card,15px)/1 var(--font,Inter,sans-serif);cursor:pointer;-webkit-tap-highlight-color:transparent}
+#pdDlg .pdDlgNo{background:#fff;border:1px solid var(--fr-line,#EFE3DA);color:var(--fr-ink,#1F1A17)}
+#pdDlg .pdDlgSi{background:var(--fr-orange,#C4410C);border:1px solid var(--fr-orange,#C4410C);color:#fff;box-shadow:var(--sh-brand,0 6px 16px rgba(196,65,12,.25))}
+#pdDlg .pdDlgSi.peligro{background:var(--fr-red,#B42318);border-color:var(--fr-red,#B42318);box-shadow:0 6px 16px rgba(180,35,24,.22)}
+#pdAvisoPila{position:fixed;left:12px;right:12px;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:2147483647;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+#pdAvisoPila .pdAviso{pointer-events:auto;box-sizing:border-box;width:100%;max-width:440px;display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:#fff;border:1px solid var(--fr-line,#EFE3DA);border-left:5px solid var(--fr-orange,#C4410C);border-radius:var(--r-md,14px);box-shadow:var(--sh-lg,0 12px 32px rgba(31,26,23,.16));font:600 var(--fs-md,14px)/1.4 var(--font,Inter,sans-serif);color:var(--fr-ink,#1F1A17);white-space:pre-line;overflow-wrap:anywhere;animation:pdDlgSube .22s cubic-bezier(.2,.8,.2,1)}
+#pdAvisoPila .pdAviso.error{border-left-color:var(--fr-red,#B42318)}
+#pdAvisoPila .pdAviso.ok{border-left-color:var(--fr-green,#1F6B45)}
+#pdAvisoPila .pdAviso span{flex:1;min-width:0}
+#pdAvisoPila .pdAviso button{flex:0 0 auto;width:28px;height:28px;border-radius:8px;border:1px solid var(--fr-line,#EFE3DA);background:#fff;color:var(--fr-muted,#6F625A);font:600 16px/1 var(--font,Inter,sans-serif)}
+html.pdDlgOn,html.pdDlgOn body{overflow:hidden!important}
+</style>
+<script id="pd-dialogos-js">
+/* Reemplaza alert, confirm y prompt por tarjetas de la app.
+   pdAviso(texto)             → tarjeta pequeña abajo que se va sola
+   await pdConfirmar(texto)   → true / false
+   await pdPedir(texto, valor)→ texto escrito, o null si cancela */
+(function(){
+  if(window.pdConfirmar)return;
+  const ICO={pregunta:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 0 1 5 1c0 1.8-2.5 2.2-2.5 3.6"/><path d="M12 17h.01"/></svg>',
+    peligro:'<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>',
+    lapiz:'<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>'};
+  const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const PELIGRO=/eliminar|borrar|anular|quitar|cancelar el pedido|cerrar sesión|desactivar|suspender|vaciar|reiniciar|rechazar/i;
+  let cola=Promise.resolve();
+  /* separa "Título\nResto" para que se lea mejor */
+  function partes(t){t=String(t??'').trim();const i=t.indexOf('\n');let a=i>0?t.slice(0,i):t,b=i>0?t.slice(i+1).trim():'';
+    if(!b&&a.length>90){const k=a.search(/[.?!]\s/);if(k>20&&k<a.length-2){b=a.slice(k+2);a=a.slice(0,k+1)}}return [a,b]}
+  function abrir(tipo,texto,valor){
+    return new Promise(res=>{
+      let d=document.getElementById('pdDlg');
+      if(!d){d=document.createElement('div');d.id='pdDlg';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');document.body.appendChild(d)}
+      let [t,p]=partes(texto);if(tipo==='prompt'&&!p)t=t.replace(/:\s*$/,'');const peligro=tipo==='confirm'&&PELIGRO.test(t+' '+p);
+      const etiqueta=tipo==='prompt'?(p.match(/[^.\n]*:\s*$/)?.[0]||''):'';const cuerpo=etiqueta?p.slice(0,p.length-etiqueta.length).trim():p;
+      d.innerHTML=`<div class="pdDlgCard"><div class="pdDlgIco${peligro?' peligro':''}">${tipo==='prompt'?ICO.lapiz:peligro?ICO.peligro:ICO.pregunta}</div>
+        <h3 class="pdDlgT">${E(t)}</h3>${cuerpo?`<p class="pdDlgP">${E(cuerpo)}</p>`:''}
+        ${tipo==='prompt'?`<div class="pdDlgCampo">${etiqueta?`<label for="pdDlgIn">${E(etiqueta.replace(/:\s*$/,''))}</label>`:''}<input id="pdDlgIn" autocomplete="off" value="${E(valor??'')}"></div>`:''}
+        <div class="pdDlgBtns"><button type="button" class="pdDlgNo">Cancelar</button><button type="button" class="pdDlgSi${peligro?' peligro':''}">${tipo==='prompt'?'Guardar':peligro?'Sí, continuar':'Aceptar'}</button></div></div>`;
+      d.hidden=false;document.documentElement.classList.add('pdDlgOn');
+      const inp=d.querySelector('#pdDlgIn');
+      const fin=v=>{d.hidden=true;d.innerHTML='';document.documentElement.classList.remove('pdDlgOn');document.removeEventListener('keydown',tecla,true);res(v)};
+      const si=()=>fin(tipo==='prompt'?(inp?inp.value:''):true),no=()=>fin(tipo==='prompt'?null:false);
+      function tecla(e){if(e.key==='Escape'){e.preventDefault();no()}else if(e.key==='Enter'&&(tipo!=='prompt'||document.activeElement===inp)){e.preventDefault();si()}}
+      document.addEventListener('keydown',tecla,true);
+      d.querySelector('.pdDlgSi').onclick=si;d.querySelector('.pdDlgNo').onclick=no;
+      setTimeout(()=>{if(inp){inp.focus();inp.select()}else d.querySelector('.pdDlgSi').focus()},60);
+    });
+  }
+  /* una pregunta a la vez */
+  function enCola(tipo,t,v){const p=cola.then(()=>abrir(tipo,t,v));cola=p.catch(()=>{});return p}
+  window.pdConfirmar=t=>enCola('confirm',t);
+  window.pdPedir=(t,v)=>enCola('prompt',t,v);
+  window.pdAviso=function(texto){
+    const t=String(texto??'').trim();if(!t)return;
+    let pila=document.getElementById('pdAvisoPila');
+    if(!pila){pila=document.createElement('div');pila.id='pdAvisoPila';pila.setAttribute('aria-live','polite');document.body.appendChild(pila)}
+    const c=document.createElement('div');c.className='pdAviso'+(/no se pudo|error|falló|inválid|obligatori|primero|debes|falta/i.test(t)?' error':/listo|guardad|registrad|actualizad|eliminad|correctamente|✓/i.test(t)?' ok':'');
+    c.setAttribute('role','status');c.innerHTML='<span>'+E(t)+'</span><button type="button" aria-label="Cerrar aviso">×</button>';
+    const quitar=()=>{c.remove()};c.querySelector('button').onclick=quitar;
+    pila.appendChild(c);while(pila.children.length>3)pila.firstChild.remove();
+    setTimeout(quitar,Math.min(9000,3500+t.length*40));
+  };
+  /* por si queda alguno suelto: los avisos simples también salen como tarjeta */
+  try{window.alert=function(t){window.pdAviso(t)}}catch(_){}
+})();
+</script>
 </head>
 <body>
 
@@ -572,7 +656,7 @@ Motorizado activo
 <div class="pdslHead"><span><span class="pdslKick">Asistencia</span><strong id="pdslCalTitle">Quincena actual</strong></span></div>
 <div class="pdslLegend"><span><i class="ok"></i>Trabajado</span><span><i class="rest"></i>Descanso pagado</span><span><i class="bad"></i>Falta</span><span><i class="todo"></i>Pendiente</span></div>
 <div class="pdslCal" id="pdslCal"></div>
-<p class="pdslNote">Toca un día laborable para registrar una falta. Toca una falta para quitarla.</p>
+<p class="pdslNote">Toca un día para registrar o quitar una falta, o para dar un adelanto de sueldo ese día.</p>
 <button type="button" class="pdslMini pdslOffBtn" id="pdslOffToggle">Días sin pago (vacaciones, permiso…)</button>
 <div id="pdslOffForm" class="pdslOffForm" hidden>
 <div class="pdslTwo"><div class="pdslField"><label for="pdslOffFrom">Desde</label><input type="date" id="pdslOffFrom"></div><div class="pdslField"><label for="pdslOffTo">Hasta</label><input type="date" id="pdslOffTo"></div></div>
@@ -589,7 +673,9 @@ Motorizado activo
 <div class="pdslTwo"><div class="pdslField"><label for="pdslDescAmount">Monto del descuento (S/)</label><input type="number" id="pdslDescAmount" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="pdslField"><label for="pdslDescType">Sistema</label><select id="pdslDescType"><option value="AFP">AFP</option><option value="ONP">ONP</option></select></div></div>
 <button type="button" class="pdslBtn" id="pdslDescSave">Guardar descuento</button>
 </div>
-<div class="pdslField"><label for="pdslPayPeriod">Quincena que pagas</label><select id="pdslPayPeriod"></select></div>
+<div class="pdslField"><label>Tipo de pago</label><div class="pdslDays pdslType" id="pdslPayMode"><button type="button" class="on" data-mode="pago">Pago de quincena</button><button type="button" data-mode="adelanto">Adelanto</button></div></div>
+<p class="pdslNote" id="pdslAdvNote" hidden>El adelanto se descuenta de la quincena que elijas: cuando esa quincena se cierre, solo quedará por pagar la diferencia.</p>
+<div class="pdslField"><label for="pdslPayPeriod" id="pdslPayPeriodLbl">Quincena que pagas</label><select id="pdslPayPeriod"></select></div>
 <div class="pdslTwo"><div class="pdslField"><label for="pdslPayAmount">Monto (S/)</label><input type="number" id="pdslPayAmount" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="pdslField"><label for="pdslPayNote">Detalle</label><input id="pdslPayNote" maxlength="200" placeholder="Ej. Yape, efectivo"></div></div>
 <button type="button" class="pdslBtn" id="pdslPaySave">Registrar pago</button>
 <div id="pdslPayList"></div>
@@ -638,10 +724,166 @@ Motorizado activo
 <button type="button" data-admin-nav="menu"><span class="navIcon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="navLabel">Menú</span></button>
 </nav>
 <script src="supabase.js?v=202611082249"></script>
-<script src="funciones.js?v=202611140040"></script>
-<script src="pedidos.js?v=202611140040"></script>
-<script src="admin.js?v=202611150200"></script>
+<script src="funciones.js?v=202611131700"></script>
+<script src="pedidos.js?v=202611131700"></script>
+<script src="admin.js?v=202611131700"></script>
 <script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
+<style id="pd-app-panel-css">
+/* ===== pd-app-panel · se siente como app: sin zoom, sin recargar al jalar, login fijo y centrado ===== */
+html:root,html:root body{overscroll-behavior:none!important;overscroll-behavior-y:none!important;overflow-x:hidden!important;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html:root body{touch-action:pan-x pan-y;-webkit-tap-highlight-color:transparent}
+html:root input,html:root select,html:root textarea{font-size:max(16px,1em)}
+/* Login: ocupa exactamente la pantalla, no se mueve y queda centrado */
+html.pdLoginFijo,html.pdLoginFijo body{height:100%!important;overflow:hidden!important}
+html.pdLoginFijo body #loginView#loginView#loginView{position:fixed!important;inset:0!important;z-index:50!important;width:100%!important;max-width:none!important;height:100dvh!important;min-height:0!important;margin:0!important;
+  padding:max(24px,env(safe-area-inset-top,0px)) 20px max(24px,env(safe-area-inset-bottom,0px))!important;box-sizing:border-box!important;
+  display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:stretch!important;
+  overflow-y:auto!important;overscroll-behavior:contain!important;background:var(--fr-surface,#FFF9F5)!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+html.pdLoginFijo body #loginView#loginView#loginView > *{width:100%;max-width:420px;margin-left:auto!important;margin-right:auto!important}
+/* Ventanas que se cierran deslizando hacia abajo */
+/* sin estirar el contenido al jalar (efecto de Android que dejaba la cabecera arriba y un hueco blanco) */
+html:root body *{overscroll-behavior-y:none!important}
+.pdArrastrando{transition:none!important;user-select:none!important}
+.pdArrastrando *{overscroll-behavior:none!important}
+.pdSoltando{transition:translate .28s cubic-bezier(.2,.8,.3,1)!important}
+#pdFondoHoja{position:fixed;inset:0;background:rgba(31,26,23,.45);opacity:0;transition:opacity .2s ease-out;pointer-events:auto;touch-action:none}
+#pdFondoHoja.on{opacity:1}
+#pdFondoHoja[hidden]{display:none!important}
+</style>
+<script id="pd-app-panel-js">document.documentElement.dataset.pdSinArrastre="1";
+(function(){
+  if(window.__pdAppPanel)return;window.__pdAppPanel=true;
+  /* 1 · Sin zoom (pellizcar, doble toque, Ctrl + rueda o teclas) */
+  var vp=document.querySelector('meta[name="viewport"]');
+  if(!vp){vp=document.createElement('meta');vp.name='viewport';document.head.appendChild(vp)}
+  vp.setAttribute('content','width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover');
+  ['gesturestart','gesturechange','gestureend'].forEach(function(ev){document.addEventListener(ev,function(e){e.preventDefault()},{passive:false})});
+  document.addEventListener('touchmove',function(e){if(e.touches&&e.touches.length>1&&e.cancelable)e.preventDefault()},{passive:false,capture:true});
+  var ult=0;
+  document.addEventListener('touchend',function(e){var n=Date.now();if(n-ult<350&&e.cancelable&&!(e.target.closest&&e.target.closest('input,textarea,select,a,button,label,[role=button]')))e.preventDefault();ult=n},{passive:false});
+  document.addEventListener('wheel',function(e){if(e.ctrlKey)e.preventDefault()},{passive:false});
+  /* 2 · Sin recargar (F5, Ctrl+R); el jalón hacia abajo lo bloquea overscroll-behavior */
+  document.addEventListener('keydown',function(e){var k=(e.key||'').toLowerCase();
+    if((e.ctrlKey||e.metaKey)&&(k==='+'||k==='-'||k==='='||k==='0'||k==='r'))e.preventDefault();
+    if(k==='f5')e.preventDefault()});
+
+  /* 3 · Login fijo a la pantalla */
+  function loginVisible(){var l=document.getElementById('loginView');if(!l)return false;if(l.classList.contains('hidden')||l.hidden)return false;var cs=getComputedStyle(l);return cs.display!=='none'&&cs.visibility!=='hidden'}
+  var antes=null;
+  function revisarLogin(){var v=loginVisible();if(v===antes)return;antes=v;document.documentElement.classList.toggle('pdLoginFijo',v);if(v)window.scrollTo(0,0)}
+  function iniciarLogin(){revisarLogin();var l=document.getElementById('loginView');
+    if(l)new MutationObserver(revisarLogin).observe(l,{attributes:true,attributeFilter:['class','hidden','style']});
+    new MutationObserver(revisarLogin).observe(document.body,{attributes:true,attributeFilter:['class']});
+    setInterval(revisarLogin,1000)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciarLogin);else iniciarLogin();
+
+  /* 4 · Ventanas (hojas) que se cierran deslizando hacia abajo, como en la tienda */
+
+  /* 5 · Fondo oscuro detrás de todas las ventanas (igual que la primera ventana del motorizado) */
+  (function(){
+    var fondo=null;
+    function crear(){fondo=document.createElement('div');fondo.id='pdFondoHoja';fondo.setAttribute('aria-hidden','true');document.body.appendChild(fondo);
+      fondo.addEventListener('click',function(e){e.stopPropagation()});return fondo}
+    function alfa(c){var m=/rgba?\(([^)]+)\)/.exec(c);if(!m)return 0;var p=m[1].split(',');return p.length>3?parseFloat(p[3]):1}
+    var CAND='section.pdmSheet,section.panelSection,.notifDialog,[class*="Sheet"],[class*="sheet"],dialog[open],[role="dialog"]';
+    function hojaAbierta(){
+      var best=null,bz=-1;
+      document.querySelectorAll(CAND).forEach(function(e){
+        if(e.id==='pdFondoHoja'||!e.getClientRects().length)return;
+        var cs=getComputedStyle(e);if(cs.position!=='fixed'||cs.visibility==='hidden'||cs.display==='none'||parseFloat(cs.opacity)<0.5)return;
+        var r=e.getBoundingClientRect();if(!(r.bottom>=innerHeight-2&&r.top>24&&r.height>120))return;
+        var z=parseInt(cs.zIndex,10)||0;if(z>bz){bz=z;best=e}
+      });
+      return best?{h:best,z:bz}:null}
+    function yaTieneFondo(z){
+      var els=document.elementsFromPoint(Math.round(innerWidth/2),12);
+      for(var i=0;i<els.length;i++){var e=els[i];if(e.id==='pdFondoHoja')continue;var cs=getComputedStyle(e);if(cs.position!=='fixed')continue;
+        var r=e.getBoundingClientRect();if(r.top<=1&&r.height>=innerHeight-2&&r.width>=innerWidth-2&&alfa(cs.backgroundColor)>=0.2&&(parseInt(cs.zIndex,10)||0)<z)return true}
+      return false}
+    function zReal(h){for(var e=h;e&&e!==document.body;e=e.parentElement){var z=parseInt(getComputedStyle(e).zIndex,10);if(z)return z}return 0}
+    function revisar(){
+      var a=hojaAbierta();
+      if(!a){if(fondo&&!fondo.hidden){fondo.classList.remove('on');fondo.hidden=true}return}
+      /* si la hoja vive dentro de una capa fija transparente, el fondo va justo debajo de esa capa */
+      var z=a.z||zReal(a.h);
+      if(fondo&&!fondo.hidden&&fondo.__hoja===a.h)return;
+      if(fondo&&!fondo.hidden){fondo.hidden=true}
+      if(yaTieneFondo(z))return;
+      var f=fondo||crear();f.style.zIndex=String(z-1)
+      f.__hoja=a.h;f.hidden=false;void f.offsetWidth;f.classList.add('on')}
+    setInterval(revisar,250);
+  })();
+  if(document.documentElement.dataset.pdSinArrastre==='1')return;
+  var quieto=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var CERRAR='[aria-label^="Cerrar"],[aria-label^="cerrar"],[data-close],.close,.pdpm-x,.pdmX,.notifClose,.pnaX,.pdoX';
+  function visible(b){return b&&b.offsetParent!==null&&b.getClientRects().length>0}
+  function botonCerrar(h){
+    var zonas=[h];var p=h.parentElement;for(var i=0;i<2&&p&&p!==document.body;i++){zonas.push(p);p=p.parentElement}
+    for(var z=0;z<zonas.length;z++){
+      var bs=zonas[z].querySelectorAll(CERRAR+',button');
+      for(var j=0;j<bs.length;j++){var b=bs[j];if(!visible(b))continue;
+        if(b.matches(CERRAR)||/^[×✕✖x]$/i.test((b.textContent||'').trim()))return b}
+    }
+    return null}
+  /* Una hoja es un bloque fijo pegado al borde inferior que no ocupa toda la pantalla */
+  /* se busca la hoja más externa: así se mueve entera (cabecera y cuerpo), no solo el cuerpo con scroll */
+  function hojaDe(t){
+    var mejor=null;
+    for(var e=t;e&&e!==document.body;e=e.parentElement){
+      if(e.id==='nav'||(e.tagName==='HEADER'&&e.classList.contains('top'))||e.id==='loginView')return null;
+      var cs=getComputedStyle(e),pa=e.parentElement,enCapa=pa&&pa!==document.body&&getComputedStyle(pa).position==='fixed';
+      if(cs.position==='fixed'||cs.position==='absolute'||enCapa){
+        var r=e.getBoundingClientRect();
+        if(r.bottom>=innerHeight-2&&r.top>24&&r.height>120&&r.width>=Math.min(innerWidth,320)-2){
+          if(cs.position==='absolute'&&!enCapa){var pp=e.offsetParent;if(!pp||getComputedStyle(pp).position!=='fixed')continue}
+          mejor=e}
+      }
+    }
+    return mejor}
+  function desplazado(t,h){for(var e=t;e&&e!==h.parentElement;e=e.parentElement){if(e.scrollTop>0)return true;if(e===h)break}return false}
+  function vibrar(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
+  var g=null;
+  function inicio(x,y,t){
+    if(quieto||!t||!t.closest)return;
+    if(t.closest('input,textarea,select,[contenteditable],.leaflet-container'))return;
+    var h=hojaDe(t);if(!h)return;
+    /* filas que se deslizan de lado (chips, pestañas): ahí no se arrastra la hoja */
+    for(var e=t;e&&e!==h;e=e.parentElement){var ox=getComputedStyle(e).overflowX;if((ox==='auto'||ox==='scroll')&&e.scrollWidth>e.clientWidth+2)return}
+    if(desplazado(t,h))return;
+    g={h:h,x0:x,y0:y,dy:0,t0:Date.now(),activo:false};
+  }
+  function mover(x,y,ev){
+    if(!g)return;var dx=x-g.x0,dy=y-g.y0;
+    if(!g.activo){
+      /* desde el primer movimiento hacia abajo se toma el gesto, para que el navegador no estire el contenido */
+      if(dy>0&&dy>=Math.abs(dx)&&ev&&ev.cancelable)ev.preventDefault();
+      if(Math.abs(dy)<10&&Math.abs(dx)<10)return;
+      if(dy<=0||Math.abs(dx)>Math.abs(dy)||!botonCerrar(g.h)){g=null;return}
+      g.activo=true;g.h.classList.add('pdArrastrando')}
+    g.dy=Math.max(0,dy);var ahora=Date.now();g.v=(g.dy-(g.dyAnt||0))/Math.max(1,ahora-(g.tAnt||g.t0));g.dyAnt=g.dy;g.tAnt=ahora;
+    g.h.style.setProperty('translate','0 '+(g.dy<120?g.dy:120+(g.dy-120)*0.85)+'px','important');
+    if(ev&&ev.cancelable)ev.preventDefault();
+  }
+  function fin(){
+    if(!g)return;var s=g;g=null;if(!s.activo)return;
+    var v=(Date.now()-(s.tAnt||0))<90?(s.v||0):0;var h=s.h;h.classList.remove('pdArrastrando');h.classList.add('pdSoltando');
+    if(s.dy>110||(v>0.55&&s.dy>40)){
+      h.style.setProperty('translate','0 '+(h.offsetHeight+40)+'px','important');vibrar(8);
+      setTimeout(function(){var b=botonCerrar(h);if(b)b.click();setTimeout(function(){h.style.removeProperty('translate');h.classList.remove('pdSoltando')},60)},230);
+    }else{h.style.setProperty('translate','0 0px','important');setTimeout(function(){h.style.removeProperty('translate');h.classList.remove('pdSoltando')},300)}
+    var anular=function(e){if(!e.isTrusted)return;e.stopPropagation();e.preventDefault();window.removeEventListener('click',anular,true)};
+    window.addEventListener('click',anular,true);setTimeout(function(){window.removeEventListener('click',anular,true)},350);
+  }
+  /* en fase de captura: algunas ventanas detienen los toques y así igual se detecta el arrastre */
+  document.addEventListener('touchstart',function(e){if(e.touches.length===1)inicio(e.touches[0].clientX,e.touches[0].clientY,e.target)},{passive:true,capture:true});
+  document.addEventListener('touchmove',function(e){if(g&&e.touches.length===1)mover(e.touches[0].clientX,e.touches[0].clientY,e)},{passive:false,capture:true});
+  document.addEventListener('touchend',fin,true);document.addEventListener('touchcancel',fin,true);
+  document.addEventListener('mousedown',function(e){if(e.button===0)inicio(e.clientX,e.clientY,e.target)},true);
+  document.addEventListener('mousemove',function(e){if(g)mover(e.clientX,e.clientY,e)},true);
+  document.addEventListener('mouseup',fin,true);
+  window.pdHojaDe=hojaDe;window.pdBotonCerrar=botonCerrar;
+})();
+</script>
 </body>
 
 </html>

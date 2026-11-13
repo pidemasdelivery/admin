@@ -144,7 +144,7 @@ row.innerHTML=`<span><strong>${esc(r.nombre)}</strong><small>${estado(on0)}</sma
 const input=row.querySelector("input"), small=row.querySelector("small");
 input.addEventListener("change",async()=>{
 const quiere=input.checked;
-if(!quiere && !confirm(`¿Ocultar "${r.nombre||"este negocio"}" de la tienda? El negocio no podrá volver a activarla: le saldrá un aviso para que se ponga en contacto contigo.`)){ input.checked=true; return; }
+if(!quiere && !(await pdConfirmar(`¿Ocultar "${r.nombre||"este negocio"}" de la tienda? El negocio no podrá volver a activarla: le saldrá un aviso para que se ponga en contacto contigo.`))){ input.checked=true; return; }
 input.disabled=true; setMsg("");
 try{
 const res=await db.from("negocios").update({visible_admin:quiere}).eq("id",r.id).select("id,visible_admin").maybeSingle();
@@ -162,7 +162,7 @@ list.appendChild(row);
 }
 async function deleteRestaurant(r){
 const nombre = String(r?.nombre || "este negocio");
-if(!confirm(`¿Eliminar el negocio "${nombre}"? Se eliminará su cuenta de acceso y su catálogo de productos. Se conservarán los pedidos, cobros e historiales. Esta acción no se puede deshacer.`)) return;
+if(!(await pdConfirmar(`¿Eliminar el negocio "${nombre}"? Se eliminará su cuenta de acceso y su catálogo de productos. Se conservarán los pedidos, cobros e historiales. Esta acción no se puede deshacer.`))) return;
 clearMsg($("restaurantMsg"));
 try{
 const {data,error}=await db.functions.invoke("eliminar-negocio-con-catalogo",{
@@ -552,7 +552,7 @@ msg($("clienteMsg"),e.message||"No se pudo guardar el cliente.");
 async function borrarClienteAdmin(id){
 const c=allClientes.find(x=>String(x.id)===String(id));
 if(!c)return;
-if(!confirm(`¿Borrar el cliente "${clienteNombre(c)||""}"? Los pedidos históricos deben conservarse.`))return;
+if(!(await pdConfirmar(`¿Borrar el cliente "${clienteNombre(c)||""}"? Los pedidos históricos deben conservarse.`)))return;
 try{
 if(Object.prototype.hasOwnProperty.call(c,"activo")){
 const r=await db.from("clientes").update({activo:false}).eq("id",id).select("id").maybeSingle();
@@ -745,7 +745,7 @@ return {subtotal:Number.isFinite(subtotal)?subtotal:total,delivery,km:null};
 function shareOrderWithRestaurantWhatsApp(orderId){
 try {
 const order=(Array.isArray(allOrders)?allOrders:[]).find(o=>String(o.id)===String(orderId));
-if(!order){alert("No se encontró el pedido. Pulsa Actualizar y vuelve a intentarlo.");return;}
+if(!order){pdAviso("No se encontró el pedido. Pulsa Actualizar y vuelve a intentarlo.");return;}
 const details=Array.isArray(order.detalle_pedidos)?order.detalle_pedidos:[];
 const restaurantMap=window.adminRestaurantsById instanceof Map ? window.adminRestaurantsById : adminRestaurantsById;
 const ids=[order.negocio_id,order.restaurante_id,order.business_id,
@@ -760,7 +760,7 @@ details.find(d=>d.restaurante_nombre||d.nombre_negocio)?.restaurante_nombre||"")
 if(name) restaurant=[...(restaurantMap?.values?.()||[])].find(r=>String(r.nombre||r.nombre_negocio||r.nombre_restaurante||"").trim().toLowerCase()===name)||null;
 }
 if(!restaurant){
-alert("No se pudo identificar el restaurante de este pedido. Actualiza los pedidos y verifica que el pedido tenga asociado el negocio.");return;
+pdAviso("No se pudo identificar el restaurante de este pedido. Actualiza los pedidos y verifica que el pedido tenga asociado el negocio.");return;
 }
 const rawPhone=restaurantPhoneValue(restaurant);
 let phone=String(rawPhone||"").replace(/[^\d]/g,"");
@@ -768,7 +768,7 @@ if(phone.startsWith("00"))phone=phone.slice(2);
 if(phone.startsWith("0")&&phone.length===10)phone=phone.slice(1);
 if(phone.length===9)phone="51"+phone;
 if(phone.length<11 || phone.length>15){
-alert(`El restaurante "${restaurant.nombre||restaurant.nombre_negocio||""}" no tiene un número de WhatsApp válido guardado en su ficha. Revisa el teléfono en la información del restaurante.`);return;
+pdAviso(`El restaurante "${restaurant.nombre||restaurant.nombre_negocio||""}" no tiene un número de WhatsApp válido guardado en su ficha. Revisa el teléfono en la información del restaurante.`);return;
 }
 const orderCode=String(order.id).slice(0,8).toUpperCase();
 const items=details.length?details.map(d=>{
@@ -821,7 +821,7 @@ a.click();
 setTimeout(()=>a.remove(),1500);
 } catch(e) {
 console.error("Error al preparar pedido para WhatsApp:",e);
-alert("No se pudo preparar el mensaje de WhatsApp: "+(e?.message||String(e)));
+pdAviso("No se pudo preparar el mensaje de WhatsApp: "+(e?.message||String(e)));
 }
 }
 function renderOrders(){
@@ -1406,7 +1406,7 @@ const pedidos=[...selectedOrders].map(id=>allOrders.find(o=>String(o.id)===Strin
 if(!pedidos.length)return;
 const n=pedidos.length;
 const texto=n===1?`el pedido #${String(pedidos[0].id).slice(0,8).toUpperCase()}`:`los ${n} pedidos seleccionados`;
-if(!confirm(`¿Eliminar definitivamente ${texto}?\n\nLos motorizados dejarán de verlos y recibirán una notificación.`))return;
+if(!(await pdConfirmar(`¿Eliminar definitivamente ${texto}?\n\nLos motorizados dejarán de verlos y recibirán una notificación.`)))return;
 clearMsg($("ordersMsg"));
 const btn=$("orderBulkDelete");if(btn)btn.disabled=true;
 let ok=0;const fallidos=[];
@@ -1447,21 +1447,21 @@ if(error)console.warn("No se pudo notificar al motorizado:",error);
 async function editOrder(orderId){
 const pedido=allOrders.find(o=>String(o.id)===String(orderId));
 if(!pedido){msg($("ordersMsg"),"No se encontró el pedido.");return}
-const nombre=prompt("Nombre:",String(pedido.nombre_cliente||""));
+const nombre=(await pdPedir("Nombre:",String(pedido.nombre_cliente||"")));
 if(nombre===null)return;
-const telefono=prompt("Teléfono del cliente:",String(pedido.telefono_cliente||""));
+const telefono=(await pdPedir("Teléfono del cliente:",String(pedido.telefono_cliente||"")));
 if(telefono===null)return;
-const direccion=prompt("Dirección de entrega:",String(pedido.direccion_entrega||""));
+const direccion=(await pdPedir("Dirección de entrega:",String(pedido.direccion_entrega||"")));
 if(direccion===null)return;
-const referencia=prompt("Referencia:",String(pedido.referencia_entrega||""));
+const referencia=(await pdPedir("Referencia:",String(pedido.referencia_entrega||"")));
 if(referencia===null)return;
-const totalRaw=prompt("Total del pedido (S/):",Number(pedido.total||0).toFixed(2));
+const totalRaw=(await pdPedir("Total del pedido (S/):",Number(pedido.total||0).toFixed(2)));
 if(totalRaw===null)return;
 const total=Number(String(totalRaw).replace(',','.'));
 if(!Number.isFinite(total)||total<0){msg($("ordersMsg"),"El total ingresado no es válido.");return}
-const metodo=prompt("Método de pago (efectivo, yape):",String(pedido.metodo_pago||""));
+const metodo=(await pdPedir("Método de pago (efectivo, yape):",String(pedido.metodo_pago||"")));
 if(metodo===null)return;
-const observaciones=prompt("Observaciones:",String(pedido.observaciones||""));
+const observaciones=(await pdPedir("Observaciones:",String(pedido.observaciones||"")));
 if(observaciones===null)return;
 const old={...pedido};
 const patch={
@@ -1485,7 +1485,7 @@ async function deleteOrder(orderId){
 const pedido=allOrders.find(o=>String(o.id)===String(orderId));
 if(!pedido){msg($("ordersMsg"),"No se encontró el pedido.");return}
 const code=String(orderId).slice(0,8).toUpperCase();
-if(!confirm(`¿Eliminar definitivamente el pedido #${code}?\n\nEl motorizado dejará de verlo y recibirá una notificación.`))return;
+if(!(await pdConfirmar(`¿Eliminar definitivamente el pedido #${code}?\n\nEl motorizado dejará de verlo y recibirá una notificación.`)))return;
 clearMsg($("ordersMsg"));
 await notifyMotoOrderChange(pedido,"Pedido eliminado por administración",`El pedido #${code} fue eliminado por administración.`,"pedido_eliminado");
 try{
@@ -1547,7 +1547,7 @@ await loadOrders();
 }catch(e){
 console.error("Confirmación Yape:",e);
 msg($("ordersMsg"),"No se pudo confirmar el pago Yape: "+(e?.message||e));
-alert("No se pudo confirmar el pago Yape:\n\n"+(e?.message||e));
+pdAviso("No se pudo confirmar el pago Yape:\n\n"+(e?.message||e));
 buttons.forEach(b=>{b.disabled=false;delete b.dataset.confirmando;});
 }
 }
@@ -1659,7 +1659,7 @@ if(String(pedido.estado||"").toLowerCase()==="cancelado"){
 msg($("ordersMsg"),"Este pedido ya está cancelado. No se volverá a devolver stock para evitar duplicarlo.");
 return;
 }
-const motivo=prompt("Motivo del rechazo (opcional):","Pago no confirmado");
+const motivo=(await pdPedir("Motivo del rechazo (opcional):","Pago no confirmado"));
 if(motivo===null)return;
 try{
 msg($("ordersMsg"),"Devolviendo productos al stock…");
@@ -1935,10 +1935,10 @@ list.querySelectorAll(".deleteDestino").forEach(btn=>{
 btn.onclick=()=>deleteAdminDestino(btn.dataset.id);
 });
 }
-function editAdminDestino(id){
+async function editAdminDestino(id){
 const destino=adminDestinos.find(d=>String(d.id)===String(id));
 if(!destino)return;
-const nuevoDestino=prompt("Nuevo destino:", destino.destino_final||"");
+const nuevoDestino=(await pdPedir("Nuevo destino:", destino.destino_final||""));
 if(nuevoDestino===null)return;
 const nombre=nuevoDestino.trim();
 if(!nombre){
@@ -1957,10 +1957,10 @@ msgBox($("agMsg"),"Destino actualizado correctamente.");
 await loadAdminAgencias();
 })();
 }
-function deleteAdminDestino(id){
+async function deleteAdminDestino(id){
 const destino=adminDestinos.find(d=>String(d.id)===String(id));
 if(!destino)return;
-if(!confirm(`¿Deseas eliminar el destino "${destino.destino_final}"?`))return;
+if(!(await pdConfirmar(`¿Deseas eliminar el destino "${destino.destino_final}"?`)))return;
 (async()=>{
 const {data,error}=await db.from("agencia_destinos")
 .update({activo:false})
@@ -1968,11 +1968,11 @@ const {data,error}=await db.from("agencia_destinos")
 .select("id,activo")
 .maybeSingle();
 if(error){
-alert("No se pudo eliminar el destino.\n\n"+error.message);
+pdAviso("No se pudo eliminar el destino.\n\n"+error.message);
 return;
 }
 if(!data){
-alert("El destino no fue modificado. Revisa los permisos de Supabase (RLS) para agencia_destinos.");
+pdAviso("El destino no fue modificado. Revisa los permisos de Supabase (RLS) para agencia_destinos.");
 return;
 }
 adminDestinos=adminDestinos.filter(d=>String(d.id)!==String(id));
@@ -1981,10 +1981,10 @@ updateEncDestinos();
 msgBox($("agMsg"),"Destino eliminado correctamente.",true);
 })();
 }
-function editAdminAgencia(id){
+async function editAdminAgencia(id){
 const agencia=adminAgencias.find(a=>String(a.id)===String(id));
 if(!agencia)return;
-const nuevoNombre=prompt("Nuevo nombre de la agencia:", agencia.nombre||"");
+const nuevoNombre=(await pdPedir("Nuevo nombre de la agencia:", agencia.nombre||""));
 if(nuevoNombre===null)return;
 const nombre=nuevoNombre.trim();
 if(!nombre){
@@ -2003,14 +2003,14 @@ msgBox($("agMsg"),"Agencia actualizada correctamente.");
 await loadAdminAgencias();
 })();
 }
-function deleteAdminAgencia(id){
+async function deleteAdminAgencia(id){
 const agencia=adminAgencias.find(a=>String(a.id)===String(id));
 if(!agencia)return;
 const destinos=adminDestinos.filter(d=>String(d.agencia_id)===String(id));
 const aviso=destinos.length
 ? `La agencia "${agencia.nombre}" tiene ${destinos.length} destino(s) registrado(s). ¿Deseas eliminarla de las agencias activas? Sus datos históricos se conservarán.`
 : `¿Deseas eliminar la agencia "${agencia.nombre}"?`;
-if(!confirm(aviso))return;
+if(!(await pdConfirmar(aviso)))return;
 (async()=>{
 const {data,error}=await db.from("agencias")
 .update({activo:false})
@@ -2018,11 +2018,11 @@ const {data,error}=await db.from("agencias")
 .select("id,activo")
 .maybeSingle();
 if(error){
-alert("No se pudo eliminar la agencia.\n\n"+error.message);
+pdAviso("No se pudo eliminar la agencia.\n\n"+error.message);
 return;
 }
 if(!data){
-alert("La agencia no fue modificada. Revisa los permisos de Supabase (RLS) para agencias.");
+pdAviso("La agencia no fue modificada. Revisa los permisos de Supabase (RLS) para agencias.");
 return;
 }
 adminAgencias=adminAgencias.filter(a=>String(a.id)!==String(id));
@@ -2310,7 +2310,7 @@ await loadDeliveryPromos();
 }catch(e){msg($("promoMsg"),"No se pudo cambiar el estado: "+promoErrorText(e));}
 }
 async function eliminarCodigoDelivery(id){
-if(!confirm("¿Eliminar este código de delivery?"))return;
+if(!(await pdConfirmar("¿Eliminar este código de delivery?")))return;
 try{
 const res=await promoWithTimeout(db.from("codigos_delivery").delete().eq("id",id),10000);
 if(res.error)throw res.error;
@@ -2657,23 +2657,23 @@ const edit=document.createElement("button");
 edit.type="button";edit.className="btn alt";edit.textContent="Editar correo";
 edit.addEventListener("click",async()=>{
 const uid=await resolverUidNegocio(c);
-if(!uid){alert("No se identificó el usuario de esta cuenta. Actualiza la lista y vuelve a intentarlo.\n\n(Campos recibidos: "+Object.keys(c||{}).join(", ")+")");return;}
+if(!uid){pdAviso("No se identificó el usuario de esta cuenta. Actualiza la lista y vuelve a intentarlo.\n\n(Campos recibidos: "+Object.keys(c||{}).join(", ")+")");return;}
 const oldEmail=String(c.email||"");
-const newEmail=prompt("Nuevo correo de acceso para "+(c.negocio_nombre||c.nombre_negocio||c.nombre||"este negocio")+":",oldEmail);
+const newEmail=(await pdPedir("Nuevo correo de acceso para "+(c.negocio_nombre||c.nombre_negocio||c.nombre||"este negocio")+":",oldEmail));
 if(newEmail===null)return;
 const emailValue=newEmail.trim().toLowerCase();
-if(!emailValue||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)){alert("Escribe un correo válido.");return;}
-if(emailValue===oldEmail.toLowerCase()){alert("El correo no ha cambiado.");return;}
+if(!emailValue||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)){pdAviso("Escribe un correo válido.");return;}
+if(emailValue===oldEmail.toLowerCase()){pdAviso("El correo no ha cambiado.");return;}
 edit.disabled=true;edit.textContent="Guardando…";
 try{
 const {data,error}=await db.functions.invoke("editar-acceso-negocio",{body:{user_id:uid,email:emailValue}});
 if(error)throw error;
 if(data?.error)throw new Error(data.error);
-alert("Correo actualizado correctamente.");
+pdAviso("Correo actualizado correctamente.");
 await cargarAccesosNegocio();
 }catch(e){
 console.error("Editar correo de acceso de negocio:",e);
-alert("No se pudo actualizar el correo. Debes crear y desplegar en Supabase la Edge Function segura «editar-acceso-negocio» para guardar el cambio en Authentication.");
+pdAviso("No se pudo actualizar el correo. Debes crear y desplegar en Supabase la Edge Function segura «editar-acceso-negocio» para guardar el cambio en Authentication.");
 edit.disabled=false;edit.textContent="Editar correo";
 }
 });
@@ -2768,23 +2768,23 @@ const edit=document.createElement("button");
 edit.type="button";edit.className="btn alt";edit.textContent="Editar correo";
 edit.addEventListener("click",async()=>{
 const uid=accUid(c);
-if(!uid){alert("No se identificó el usuario de esta cuenta. Actualiza la lista y vuelve a intentarlo.\n\n(Campos recibidos: "+Object.keys(c||{}).join(", ")+")");return;}
+if(!uid){pdAviso("No se identificó el usuario de esta cuenta. Actualiza la lista y vuelve a intentarlo.\n\n(Campos recibidos: "+Object.keys(c||{}).join(", ")+")");return;}
 const oldEmail=String(c.email||"");
-const newEmail=prompt("Nuevo correo de acceso para "+(c.motorizado_nombre||c.nombre_motorizado||c.nombre_completo||c.nombre||"este motorizado")+":",oldEmail);
+const newEmail=(await pdPedir("Nuevo correo de acceso para "+(c.motorizado_nombre||c.nombre_motorizado||c.nombre_completo||c.nombre||"este motorizado")+":",oldEmail));
 if(newEmail===null)return;
 const emailValue=newEmail.trim().toLowerCase();
-if(!emailValue||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)){alert("Escribe un correo válido.");return;}
-if(emailValue===oldEmail.toLowerCase()){alert("El correo no ha cambiado.");return;}
+if(!emailValue||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)){pdAviso("Escribe un correo válido.");return;}
+if(emailValue===oldEmail.toLowerCase()){pdAviso("El correo no ha cambiado.");return;}
 edit.disabled=true;edit.textContent="Guardando…";
 try{
 const {data,error}=await db.functions.invoke("editar-acceso-motorizado",{body:{user_id:uid,email:emailValue}});
 if(error)throw error;
 if(data?.error)throw new Error(data.error);
-alert("Correo actualizado correctamente.");
+pdAviso("Correo actualizado correctamente.");
 await cargarAccesosMotorizado();
 }catch(e){
 console.error("Editar correo de acceso de motorizado:",e);
-alert("No se pudo actualizar el correo. Debes crear y desplegar en Supabase la Edge Function segura «editar-acceso-motorizado» para guardar el cambio en Authentication.");
+pdAviso("No se pudo actualizar el correo. Debes crear y desplegar en Supabase la Edge Function segura «editar-acceso-motorizado» para guardar el cambio en Authentication.");
 edit.disabled=false;edit.textContent="Editar correo";
 }
 });
@@ -3047,10 +3047,10 @@ const button = event.target?.closest?.("[data-client-service][data-client-id]");
 if (!button) return;
 event.preventDefault();
 const client = (Array.isArray(allClientes) ? allClientes : []).find(c => String(c.id) === String(button.dataset.clientId));
-if (!client) { alert("No se encontró este cliente. Pulsa Actualizar e inténtalo de nuevo."); return; }
+if (!client) { pdAviso("No se encontró este cliente. Pulsa Actualizar e inténtalo de nuevo."); return; }
 const type = button.dataset.clientService;
 const opener = window.__pidemasOpenServiceModal;
-if (typeof opener !== "function") { alert("No se pudo abrir el formulario del servicio. Recarga la página e inténtalo de nuevo."); return; }
+if (typeof opener !== "function") { pdAviso("No se pudo abrir el formulario del servicio. Recarga la página e inténtalo de nuevo."); return; }
 button.disabled = true;
 try {
 await opener(type);
@@ -3085,7 +3085,7 @@ $("admCompraBuscarCliente")?.focus({preventScroll:true});
 }
 } catch (error) {
 console.error("No se pudo abrir el servicio para el cliente:", error);
-alert("No se pudo abrir el formulario. Inténtalo nuevamente.");
+pdAviso("No se pudo abrir el formulario. Inténtalo nuevamente.");
 } finally {
 button.disabled = false;
 }

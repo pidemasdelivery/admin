@@ -210,20 +210,21 @@ if(!res.ok){
 $('pdslHero').innerHTML=`<span class="pdslKick">${E(P.label)}</span><span class="pdslHeroName">${name}</span><div class="pdslAlert">El sueldo no se cuenta hasta completar: ${E(cfg.missing.join(', '))}.</div>`;
 }else if(res.hourly){
 $('pdslHero').innerHTML=`<span class="pdslKick">${E(P.label)} · por horas</span><span class="pdslHeroName">${name}</span>
-        <span class="pdslHeroAmt">${money(Math.max(0,P.balance))}</span><span class="pdslHeroSub">Pendiente de esta quincena${P.balance<-0.004?' · pagado de más: '+money(-P.balance):''}</span>
+        <span class="pdslHeroAmt">${money(Math.max(0,P.balance))}</span><span class="pdslHeroSub">Pendiente de esta quincena${P.balance<-0.004?' · adelantado: '+money(-P.balance):''}</span>
         <div class="pdslStats"><div><span>Jornadas</span><strong>${P.worked}</strong></div><div><span>Horas</span><strong>${P.hours}</strong></div><div><span>Gasolina</span><strong>${money(P.gasTotal)}</strong></div><div><span>Pagado</span><strong>${money(P.paid)}</strong></div></div>
         ${breakdown(P,res)}${P.needsDesc&&!P.descSet?'<div class="pdslAlert">Falta el descuento AFP/ONP de fin de mes. Regístralo en Pagos antes de pagar.</div>':''}
         <span class="pdslHeroSub">Solo suma las jornadas que registras abajo.</span>
         ${res.previousDue>0.004?`<div class="pdslAlert">Quincenas anteriores sin pagar: ${money(res.previousDue)}</div>`:''}`;
 }else{
 $('pdslHero').innerHTML=`<span class="pdslKick">${E(P.label)}</span><span class="pdslHeroName">${name}</span>
-        <span class="pdslHeroAmt">${money(Math.max(0,P.balance))}</span><span class="pdslHeroSub">Pendiente de esta quincena${P.balance<-0.004?' · pagado de más: '+money(-P.balance):''}</span>
+        <span class="pdslHeroAmt">${money(Math.max(0,P.balance))}</span><span class="pdslHeroSub">Pendiente de esta quincena${P.balance<-0.004?' · adelantado: '+money(-P.balance):''}</span>
         <div class="pdslStats"><div><span>Trabajados</span><strong>${P.worked+P.adj}</strong></div><div><span>Descansos</span><strong>${P.rest}</strong></div><div><span>Gasolina</span><strong>${P.gasDays}</strong></div><div><span>Faltas</span><strong>${P.faltas}</strong></div></div>
         ${breakdown(P,res)}${P.needsDesc&&!P.descSet?'<div class="pdslAlert">Falta el descuento AFP/ONP de fin de mes. Regístralo en Pagos antes de pagar.</div>':''}
         <span class="pdslHeroSub">Cada jornada se suma automáticamente ${E(res.endAt)} (hora de salida). Mes de 30 días${P.start>=S.FIXED_FROM?' · sueldo fijo S/ 480.38 por quincena'+(P.gasAdj>0?' (incluye ajuste de gasolina '+money(P.gasAdj)+')':''):''}.</span>
         ${res.previousDue>0.004?`<div class="pdslAlert">Quincenas anteriores sin pagar: ${money(res.previousDue)}</div>`:''}`;
 }
-$('pdslCfgSummary').innerHTML=cfg.hourly?`Tipo: <b>Por horas</b> · Ingreso: <b>${cfg.hire?E(S.parse(cfg.hire).toLocaleDateString('es-PE')):'—'}</b>`:res.ok||cfg.hire||cfg.times||cfg.days.length?`Ingreso: <b>${cfg.hire?E(S.parse(cfg.hire).toLocaleDateString('es-PE')):'—'}</b> · Horario: <b>${cfg.times?E(S.fmtTime(cfg.times.start)+' – '+S.fmtTime(cfg.times.end)):'—'}</b> · Días: <b>${cfg.days.length?E(DAYS.filter(d=>cfg.days.includes(d)).map(d=>SHORT[d]).join(', ')):'—'}</b>`:'Sin configurar.';
+{const box=$('pdslCfgSummary');box.classList.add('pdslInfo');const fecha=cfg.hire?E(S.parse(cfg.hire).toLocaleDateString('es-PE')):'Pendiente';
+box.innerHTML=cfg.hourly?`<span>Tipo</span><b>Por horas</b><span>Ingreso</span><b>${fecha}</b>`:(res.ok||cfg.hire||cfg.times||cfg.days.length)?`<span>Ingreso</span><b>${fecha}</b><span>Horario</span><b>${cfg.times?E(S.fmtTime(cfg.times.start)+' – '+S.fmtTime(cfg.times.end)):'Pendiente'}</b><span>Días</span><b>${cfg.days.length?E(DAYS.filter(d=>cfg.days.includes(d)).map(d=>SHORT[d]).join(', ')):'Pendiente'}</b>`:'<span>Estado</span><b>Sin configurar</b>';}
 if(cfgOpen===null)cfgOpen=!res.ok;
 $('pdslCfgForm').hidden=!cfgOpen;$('pdslCfgToggle').textContent=cfgOpen?'Cerrar':'Editar';
 fillCfg(cfg);
@@ -234,17 +235,48 @@ const n=d.adjDay||S.parse(d.date).getDate();
 const sub={ajuste:'Ajuste 30 días',ajusteFuturo:'Se suma al cerrar',dia31:'Incluido en el 30',trabajado:'Trabajado'+(d.gas?' + gas':''),descanso:d.holiday?'Feriado pagado':'Descanso pagado',falta:'Falta',hoy:'Hoy · '+res.endAt,futuro:d.work?'Laborable':(d.rest?'Descanso':'—'),libre:'Libre',antes:'Antes del ingreso'}[d.status]||'';
 return `<button type="button" class="pdslDay ${d.status}" data-date="${d.date}"${d.adjDay?' data-adj="1"':''}><small>${E(d.adjDay?'Feb':SHORT[d.dow])}</small><b>${n}</b><small>${E(sub)}</small></button>`;
 }).join(''):'<span class="pdslMuted" style="grid-column:1/-1">Completa la configuración para ver la asistencia.</span>';
-const opts=res.ok?res.periods.filter(p=>p.isCurrent||p.balance>0.004||p.paid>0):[];
-const sel=$('pdslPayPeriod');const prev=sel.value;
-sel.innerHTML=opts.map(p=>`<option value="${E(p.key)}">${E(p.label)} · ${p.needsDesc&&!p.descSet?'falta descuento AFP/ONP':p.balance>0.004?'debe '+money(p.balance):'al día'}</option>`).join('')||'<option value="">—</option>';
-if([...sel.options].some(o=>o.value===prev))sel.value=prev;else{const due=opts.filter(p=>p.balance>0.004).sort((a,b)=>a.start.localeCompare(b.start))[0];if(due)sel.value=due.key}
-suggestAmount();descUI();
+if(res.ok){const adv=new Map();rows.forEach(r=>{if(String(r.tipo||'').toLowerCase()==='pago'&&/^adelanto/i.test(String(r.descripcion||''))){const k=String(r.fecha).slice(0,10);adv.set(k,(adv.get(k)||0)+(Number(r.monto)||0))}});
+$('pdslCal').querySelectorAll('.pdslDay').forEach(b=>{const v=adv.get(b.dataset.date);if(v>0&&!b.dataset.adj)b.insertAdjacentHTML('beforeend',`<i class="pdslAdvTag">Adelanto<br><span style="white-space:nowrap">${money(v)}</span></i>`)})}
+fillPayPeriods();
 const pays=rows.filter(r=>String(r.tipo||'').toLowerCase()==='pago').sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).slice(0,8);
 $('pdslPayList').innerHTML=pays.length?'<div class="pdslKick" style="margin-top:4px">Últimos pagos</div>'+pays.map(r=>`<div class="pdslRow"><span><strong>${money(r.monto)}</strong><small>${E(fmtD(r.fecha))}${r.descripcion?' · '+E(r.descripcion):''}${r.periodo?' · '+E(S.periodOf(String(r.periodo).slice(0,10)).label):''}</small></span><button type="button" class="pdslMini" data-del-pay="${E(r.id)}">Anular</button></div>`).join(''):'';
 const hist=res.ok?res.periods.filter(p=>!p.isCurrent):[];
 $('pdslHistory').innerHTML=hist.length?hist.map(p=>`<div class="pdslRow"><span><strong>${E(p.label.charAt(0).toUpperCase()+p.label.slice(1))}</strong><small>${res.hourly?p.worked+' jornadas · '+p.hours+' h':p.worked+p.adj+' trabajados · '+p.rest+' descansos · '+p.faltas+' faltas'} · ganado ${money(p.earned)}${p.descSet?' · AFP/ONP − '+money(p.desc):''} · pagado ${money(p.paid)}</small></span>${p.balance>0.004?`<button type="button" class="pdslMini" data-pay-period="${E(p.key)}">Pagar ${money(p.balance)}</button>`:'<span class="pdslPill">Pagado</span>'}</div>`).join(''):'<span class="pdslMuted">Aún no hay quincenas anteriores.</span>';
 }
+/* Adelanto de sueldo: se puede pagar por adelantado la quincena actual o la siguiente */
+let payMode='pago';
+function advPeriods(){
+const cur=S.periodOf(S.todayIso());
+const d=S.parse(cur.end);d.setDate(d.getDate()+1);
+const nxt=S.periodOf(S.iso?S.iso(d):d.toISOString().slice(0,10));
+const paidOf=key=>rows.filter(r=>String(r.tipo||'').toLowerCase()==='pago'&&String(r.periodo||'')===key).reduce((a,r)=>a+(Number(r.monto)||0),0);
+return [cur,nxt].map((p,i)=>{const full=res&&res.ok?res.periods.find(x=>x.key===p.key):null;return {key:p.key,label:p.label,start:p.start,paid:full?full.paid:paidOf(p.key),earned:full?full.earned:null,balance:full?full.balance:0,actual:i===0}});
+}
+function fillPayPeriods(){
+const sel=$('pdslPayPeriod');if(!sel)return;const prev=sel.value;
+const adv=payMode==='adelanto';
+$('pdslAdvNote').hidden=!adv;
+$('pdslPayPeriodLbl').textContent=adv?'Quincena que adelantas':'Quincena que pagas';
+if(adv){
+const opts=current?advPeriods():[];
+const corto=l=>String(l).replace(/ de (\d{4})$/,'').replace(/ de (ene|feb|mar|abr|may|jun|jul|ago|set|sep|oct|nov|dic)[a-zñ]*/i,' de $1.');
+sel.innerHTML=opts.map(p=>`<option value="${E(p.key)}">${E(corto(p.label))} · ${p.actual?'en curso':'siguiente'}${p.paid>0.004?' · '+money(p.paid):''}</option>`).join('')||'<option value="">—</option>';
+if([...sel.options].some(o=>o.value===prev))sel.value=prev;
+const n=$('pdslPayNote');if(n&&!n.value.trim())n.placeholder='Ej. Adelanto por Yape';
+$('pdslPayAmount').value='';delete $('pdslPayAmount').dataset.touched;
+const btn=$('pdslPaySave');if(btn&&!btn.dataset.busy){btn.disabled=false;btn.textContent='Registrar adelanto'}
+const box=$('pdslDescBox');if(box)box.hidden=true;
+return;
+}
+const n=$('pdslPayNote');if(n)n.placeholder='Ej. Yape, efectivo';
+const opts=res&&res.ok?res.periods.filter(p=>p.isCurrent||p.balance>0.004||p.paid>0):[];
+const corto2=l=>String(l).replace(/ de (\d{4})$/,'').replace(/ de (ene|feb|mar|abr|may|jun|jul|ago|set|sep|oct|nov|dic)[a-zñ]*/i,' de $1.');
+sel.innerHTML=opts.map(p=>`<option value="${E(p.key)}">${E(corto2(p.label))} · ${p.needsDesc&&!p.descSet?'falta descuento AFP/ONP':p.balance>0.004?'debe '+money(p.balance):'al día'}</option>`).join('')||'<option value="">—</option>';
+if([...sel.options].some(o=>o.value===prev))sel.value=prev;else{const due=opts.filter(p=>p.balance>0.004).sort((a,b)=>a.start.localeCompare(b.start))[0];if(due)sel.value=due.key}
+suggestAmount();descUI();
+}
 function suggestAmount(){
+if(payMode==='adelanto')return;
 if(!res||!res.ok){$('pdslPayAmount').value='';descUI();return}const p=res.periods.find(x=>x.key===$('pdslPayPeriod').value);
 const blocked=!!(p&&p.needsDesc&&!p.descSet);
 if(p&&!$('pdslPayAmount').dataset.touched)$('pdslPayAmount').value=blocked?'':(p.balance>0.004?p.balance.toFixed(2):'');
@@ -253,6 +285,7 @@ descUI();
 let descFor='';
 function descUI(){
 const box=$('pdslDescBox');if(!box)return;
+if(payMode==='adelanto'){box.hidden=true;return}
 const p=res&&res.ok&&current?res.periods.find(x=>x.key===$('pdslPayPeriod').value):null;
 const show=!!(p&&(p.needsDesc||p.descSet));
 box.hidden=!show;
@@ -286,6 +319,7 @@ descFor='';await loadRows();say('Descuento '+tipo+' guardado: '+money(monto)+'.'
 finally{btn.disabled=false;btn.textContent=prevTxt==='Guardando…'?'Guardar descuento':prevTxt;descFor='';descUI();if(failed){const n=$('pdslDescNote');if(n)n.innerHTML='<b style="color:#b3261e">'+E(failed)+'</b>'}}
 });
 $('pdslPayPeriod').addEventListener('change',()=>{delete $('pdslPayAmount').dataset.touched;suggestAmount()});
+$('pdslPayMode').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;payMode=b.dataset.mode;$('pdslPayMode').querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('on',x===b));fillPayPeriods()});
 $('pdslPayAmount').addEventListener('input',()=>{$('pdslPayAmount').dataset.touched='1'});
 function fillCfg(cfg){
 if($('pdslCfgForm').dataset.for===String(current.id))return;
@@ -330,14 +364,14 @@ if(!$('pdslShDate').value)$('pdslShDate').value=S.todayIso();shTotal();
 const list=rows.filter(r=>String(r.tipo||'').toLowerCase()==='jornada').sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).slice(0,15);
 $('pdslShList').innerHTML=list.length?'<div class="pdslKick" style="margin-top:4px">Jornadas registradas</div>'+list.map(r=>{const s=S.shift(r);return `<div class="pdslRow"><span><strong>${E(fmtD(r.fecha))} · ${s.horas} h · ${money(s.sueldo+s.gas)}</strong><small>Sueldo ${money(s.sueldo)} · gasolina ${money(s.gas)}</small></span><button type="button" class="pdslMini" data-del-shift="${E(r.id)}">Anular</button></div>`}).join(''):'<span class="pdslMuted">Aún no hay jornadas registradas.</span>';
 }
-$('pdslShList').addEventListener('click',async e=>{const b=e.target.closest('[data-del-shift]');if(!b)return;if(!confirm('¿Anular esta jornada? Dejará de sumarse al sueldo.'))return;const {error}=await db().from('control_sueldos').delete().eq('id',b.dataset.delShift);if(error){say('No se pudo anular: '+error.message);return}say('Jornada anulada.');loadRows()});
+$('pdslShList').addEventListener('click',async e=>{const b=e.target.closest('[data-del-shift]');if(!b)return;if(!(await pdConfirmar('¿Anular esta jornada? Dejará de sumarse al sueldo.')))return;const {error}=await db().from('control_sueldos').delete().eq('id',b.dataset.delShift);if(error){say('No se pudo anular: '+error.message);return}say('Jornada anulada.');loadRows()});
 $('pdslShSave').addEventListener('click',async()=>{
 if(!current)return;
 const fecha=$('pdslShDate').value,horas=Number($('pdslShHours').value),pay=Number($('pdslShPay').value||0),gas=Number($('pdslShGas').value||0);
 if(!fecha){say('Elige la fecha de la jornada.');return}
 if(!(horas>0)){say('Escribe las horas trabajadas.');return}
 if(fecha>S.todayIso()){say('No puedes registrar una jornada de una fecha futura.');return}
-if(rows.some(r=>String(r.tipo||'').toLowerCase()==='jornada'&&String(r.fecha).slice(0,10)===fecha)&&!confirm('Ya hay una jornada el '+fmtD(fecha)+'. ¿Registrar otra?'))return;
+if(rows.some(r=>String(r.tipo||'').toLowerCase()==='jornada'&&String(r.fecha).slice(0,10)===fecha)&&!(await pdConfirmar('Ya hay una jornada el '+fmtD(fecha)+'. ¿Registrar otra?')))return;
 const btn=$('pdslShSave');btn.disabled=true;btn.textContent='Guardando…';
 const base={motorizado_id:current.id,fecha,tipo:'jornada',monto:Math.round(pay*100)/100,descripcion:horas+' h · gasolina S/ '+gas.toFixed(2),periodo:S.periodOf(fecha).key};
 try{
@@ -369,34 +403,86 @@ catch(e){say('No se pudo registrar: '+(e.message||e))}finally{btn.disabled=false
 $('pdslOffDel').addEventListener('click',async()=>{
 if(!current)return;const L=new Set(offDays());const del=rows.filter(r=>String(r.tipo||'').toLowerCase()==='falta'&&L.has(String(r.fecha).slice(0,10)));
 if(!del.length){say('No hay días sin pago en esas fechas.');return}
-if(!confirm('¿Quitar '+del.length+' día'+(del.length===1?'':'s')+' sin pago? Volverán a pagarse.'))return;
+if(!(await pdConfirmar('¿Quitar '+del.length+' día'+(del.length===1?'':'s')+' sin pago? Volverán a pagarse.')))return;
 for(const r of del){const {error}=await db().from('control_sueldos').delete().eq('id',r.id);if(error){say('No se pudo quitar: '+error.message);break}}
 await loadRows();say('Días sin pago quitados.');try{window.pdhReload&&window.pdhReload()}catch(e){}
 });
+/* Al tocar un día del calendario: registrar o quitar una falta, o dar un adelanto de sueldo ese día */
+function diaHoja(d){
+let h=document.getElementById('pdslDiaSheet');
+if(!h){h=document.createElement('div');h.id='pdslDiaSheet';h.className='pdslDiaWrap';document.body.appendChild(h);
+  h.addEventListener('click',ev=>{if(ev.target===h)cerrarDia()})}
+const base=money(S.baseFor(current)+(d.work&&d.dow!=='domingo'?S.GAS:0));
+const advs=rows.filter(r=>String(r.tipo||'').toLowerCase()==='pago'&&String(r.fecha).slice(0,10)===d.date&&/^adelanto/i.test(String(r.descripcion||'')));
+const puedeFalta=!!((d.work||d.rest)&&d.status!=='antes'&&d.status!=='libre'&&d.status!=='falta');
+const titulo=S.parse(d.date).toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long'});
+h.innerHTML=`<div class="pdslDiaSheet" role="dialog" aria-modal="true" aria-label="Día ${E(titulo)}">
+ <div class="pdslDiaHead"><span><span class="pdslKick">${E(current.nombre_completo||'Motorizado')}</span><strong>${E(titulo.charAt(0).toUpperCase()+titulo.slice(1))}</strong></span><button type="button" class="pdslDiaX" aria-label="Cerrar">×</button></div>
+ <div class="pdslDiaBody">
+  ${d.status==='falta'?`<section class="pdslCard"><span class="pdslKick">Asistencia</span><strong class="pdslDiaT">Este día está marcado como falta</strong><p class="pdslNote">${E(d.falta&&d.falta.descripcion||'Falta')}</p><button type="button" class="pdslMini pdslOffBtn" data-dia="quitar">Quitar falta</button></section>`:''}
+  ${puedeFalta?`<section class="pdslCard"><span class="pdslKick">Asistencia</span><strong class="pdslDiaT">Registrar falta</strong><p class="pdslNote">Ese día no se pagará (${E(base)}).</p><div class="pdslField"><label for="pdslDiaMotivo">Motivo (opcional)</label><input id="pdslDiaMotivo" maxlength="200" placeholder="Ej. No se presentó"></div><button type="button" class="pdslMini pdslOffBtn" data-dia="falta">Registrar falta</button></section>`:''}
+  <section class="pdslCard"><span class="pdslKick">Sueldo</span><strong class="pdslDiaT">Adelanto de sueldo este día</strong><p class="pdslNote">Se descuenta de la ${E(S.periodOf(d.date).label)}.</p>
+   ${advs.map(r=>`<div class="pdslRow"><span><strong>${money(r.monto)}</strong><small>${E(r.descripcion||'Adelanto de sueldo')}</small></span><button type="button" class="pdslMini" data-dia-del="${E(r.id)}">Anular</button></div>`).join('')}
+   <div class="pdslTwo"><div class="pdslField"><label for="pdslDiaMonto">Monto (S/)</label><input type="number" id="pdslDiaMonto" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="pdslField"><label for="pdslDiaDet">Detalle</label><input id="pdslDiaDet" maxlength="200" placeholder="Ej. Yape"></div></div>
+   <button type="button" class="pdslBtn" data-dia="adelanto">Registrar adelanto</button></section>
+  <div class="pdslMsg" id="pdslDiaMsg" role="status"></div>
+ </div></div>`;
+h.hidden=false;document.documentElement.classList.add('pdslDiaOn');
+const msg=t=>{const m=document.getElementById('pdslDiaMsg');if(m)m.textContent=t};
+h.querySelector('.pdslDiaX').onclick=cerrarDia;
+h.querySelector('.pdslDiaSheet').onclick=async ev=>{
+ const b=ev.target.closest('[data-dia],[data-dia-del]');if(!b||b.disabled)return;
+ const fin=async t=>{cerrarDia();say(t);await loadRows()};
+ try{
+  if(b.dataset.diaDel){if(!(await pdConfirmar('¿Anular este adelanto?')))return;b.disabled=true;
+   const {error}=await db().from('control_sueldos').delete().eq('id',b.dataset.diaDel);if(error)throw error;return fin('Adelanto anulado.')}
+  const a=b.dataset.dia;
+  if(a==='quitar'){b.disabled=true;const {error}=await db().from('control_sueldos').delete().eq('id',d.falta.id);
+   if(error)throw new Error(error.message+'. Revisa el permiso DELETE de control_sueldos.');return fin('Falta eliminada.')}
+  if(a==='falta'){b.disabled=true;const mot=(document.getElementById('pdslDiaMotivo').value||'').trim();
+   const {error}=await db().from('control_sueldos').insert({motorizado_id:current.id,fecha:d.date,tipo:'falta',monto:0,descripcion:mot||'Falta',periodo:S.periodOf(d.date).key});
+   if(error)throw error;return fin('Falta registrada.')}
+  if(a==='adelanto'){const monto=Number(document.getElementById('pdslDiaMonto').value);
+   if(!Number.isFinite(monto)||monto<=0){msg('Escribe un monto válido.');document.getElementById('pdslDiaMonto').focus();return}
+   b.disabled=true;b.textContent='Guardando…';const det=(document.getElementById('pdslDiaDet').value||'').trim();
+   const {error}=await db().from('control_sueldos').insert({motorizado_id:current.id,fecha:d.date,tipo:'pago',monto,descripcion:'Adelanto de sueldo'+(det?' · '+det:''),periodo:S.periodOf(d.date).key});
+   if(error)throw error;return fin('Adelanto registrado: '+money(monto)+'.')}
+ }catch(err){b.disabled=false;if(b.dataset.dia==='adelanto')b.textContent='Registrar adelanto';msg('No se pudo guardar: '+(err.message||err))}
+};
+}
+function cerrarDia(){const h=document.getElementById('pdslDiaSheet');if(h){h.hidden=true;h.innerHTML=''}document.documentElement.classList.remove('pdslDiaOn')}
 $('pdslCal').addEventListener('click',async e=>{
 const b=e.target.closest('.pdslDay');if(!b||!res||!res.ok)return;
 if(b.dataset.adj)return;const d=res.current.days.find(x=>x.date===b.dataset.date&&!x.adjDay);if(!d||d.status==='dia31')return;
-if(d.status==='falta'){
-if(!confirm('¿Quitar la falta del '+fmtD(d.date)+'? El día volverá a sumarse.'))return;
-const {error}=await db().from('control_sueldos').delete().eq('id',d.falta.id);
-if(error){say('No se pudo quitar la falta: '+error.message+'. Revisa el permiso DELETE de control_sueldos.');return}
-say('Falta eliminada.');return loadRows();
-}
-if(!(d.work||d.rest)||d.status==='antes'||d.status==='libre')return;
-const motivo=prompt('Registrar falta del '+fmtD(d.date)+'.\nEse día no se pagará ('+money(S.baseFor(current)+(d.work&&d.dow!=='domingo'?S.GAS:0))+').\n\nMotivo (opcional):','');
-if(motivo===null)return;
-const {error}=await db().from('control_sueldos').insert({motorizado_id:current.id,fecha:d.date,tipo:'falta',monto:0,descripcion:motivo.trim()||'Falta',periodo:S.periodOf(d.date).key});
-if(error){say('No se pudo registrar la falta: '+error.message);return}
-say('Falta registrada.');loadRows();
+diaHoja(d);
 });
 $('pdslPaySave').addEventListener('click',async()=>{
-if(!current||!res||!res.ok){say('Completa primero la configuración del motorizado.');return}
+const adv=payMode==='adelanto';
+if(!current){say('Elige un motorizado.');return}
+if(adv){
+const key=$('pdslPayPeriod').value,monto=Number($('pdslPayAmount').value);
+if(!key){say('Elige la quincena que adelantas.');return}
+if(!Number.isFinite(monto)||monto<=0){say('Escribe un monto válido.');return}
+const p=advPeriods().find(x=>x.key===key);
+if(!(await pdConfirmar('¿Registrar un adelanto de '+money(monto)+' a '+(current.nombre_completo||'este motorizado')+' para la '+(p?p.label:'quincena elegida')+'?')))return;
+const btn=$('pdslPaySave');btn.dataset.busy='1';btn.disabled=true;btn.textContent='Guardando…';
+try{
+const det=$('pdslPayNote').value.trim();
+const {error}=await db().from('control_sueldos').insert({motorizado_id:current.id,fecha:S.todayIso(),tipo:'pago',monto,descripcion:'Adelanto de sueldo'+(det?' · '+det:''),periodo:key});
+if(error)throw error;
+$('pdslPayNote').value='';$('pdslPayAmount').value='';
+await loadRows();say('Adelanto registrado: '+money(monto)+'.');
+}catch(e){say('No se pudo registrar el adelanto: '+(e.message||e))}
+finally{delete btn.dataset.busy;btn.disabled=false;btn.textContent='Registrar adelanto'}
+return;
+}
+if(!res||!res.ok){say('Completa primero la configuración del motorizado.');return}
 const key=$('pdslPayPeriod').value,monto=Number($('pdslPayAmount').value);
 if(!key){say('Elige la quincena que pagas.');return}
 if(!Number.isFinite(monto)||monto<=0){say('Escribe un monto válido.');return}
 const p=res.periods.find(x=>x.key===key);
 if(p&&p.needsDesc&&!p.descSet){say('Primero registra el descuento AFP/ONP de fin de mes (pon 0 si no tiene).');$('pdslDescAmount').focus();return}
-if(p&&monto>p.balance+0.004&&!confirm('El monto es mayor a lo pendiente de esa quincena ('+money(Math.max(0,p.balance))+'). ¿Registrar de todas formas?'))return;
+if(p&&monto>p.balance+0.004&&!(await pdConfirmar('El monto es mayor a lo pendiente de esa quincena ('+money(Math.max(0,p.balance))+'). ¿Registrar de todas formas?')))return;
 const btn=$('pdslPaySave');btn.dataset.busy='1';btn.disabled=true;btn.textContent='Guardando…';
 try{
 const {error}=await db().from('control_sueldos').insert({motorizado_id:current.id,fecha:S.todayIso(),tipo:'pago',monto,descripcion:$('pdslPayNote').value.trim()||'Pago de sueldo',periodo:key});
@@ -411,7 +497,7 @@ const pp=e.target.closest('[data-pay-period]');
 if(pp){$('pdslPayPeriod').value=pp.dataset.payPeriod;delete $('pdslPayAmount').dataset.touched;suggestAmount();$('pdslPayAmount').scrollIntoView({behavior:'smooth',block:'center'});return}
 const dp=e.target.closest('[data-del-pay]');
 if(dp){
-if(!confirm('¿Anular este pago? Se volverá a mostrar como pendiente.'))return;
+if(!(await pdConfirmar('¿Anular este pago? Se volverá a mostrar como pendiente.')))return;
 const {error}=await db().from('control_sueldos').delete().eq('id',dp.dataset.delPay);
 if(error){say('No se pudo anular: '+error.message+'. Revisa el permiso DELETE de control_sueldos.');return}
 say('Pago anulado.');loadRows();
@@ -439,7 +525,7 @@ window.guardarCodigoDelivery(document.getElementById('descuentosAdminBox'), b);
 }else if(typeof window.crearCodigoDeliveryDesdeBoton === 'function'){
 window.crearCodigoDeliveryDesdeBoton(b,e);
 }else{
-alert('Error: la función de crear códigos no está cargada.');
+pdAviso('Error: la función de crear códigos no está cargada.');
 }
 }catch(err){
 console.error('Crear código delivery final fix',err);
@@ -587,7 +673,7 @@ $id('suspenderMotorizadoList')?.addEventListener('click',async e=>{
 const btn=e.target.closest('[data-suspension-moto]');if(!btn)return;
 const next=btn.dataset.nextActive==='true';
 const name=btn.closest('.row')?.querySelector('strong')?.textContent||'este motorizado';
-if(!confirm(`¿Deseas ${next?'reactivar':'suspender'} la cuenta de ${name}?`))return;
+if(!(await pdConfirmar(`¿Deseas ${next?'reactivar':'suspender'} la cuenta de ${name}?`)))return;
 btn.disabled=true;btn.textContent='Guardando…';
 try{
 const {error}=await window.db.from('motorizados').update({activo:next}).eq('id',btn.dataset.suspensionMoto);
@@ -1321,7 +1407,7 @@ const v=C.r2($('pdcjRecAmount').value);const note=$('pdcjRecNote').value.trim();
 if(!(v>0)||v>bal+0.004){say('Revisa el monto.');return}
 if(/^\d+([.,]\d+)?$/.test(note)){say('En Observación escribiste solo un número ('+note+'). Eso es una nota, no el monto. Si es lo que te entrega, corrígelo arriba en "Monto que te entrega".');$('pdcjRecNote').focus();return}
 const total=Math.abs(v-bal)<0.005;
-if(!confirm((total?'¿Recibir la caja completa de ':'¿Registrar entrega parcial de ')+(current.nombre_completo||'este motorizado')+' por '+money(v)+'?'))return;
+if(!(await pdConfirmar((total?'¿Recibir la caja completa de ':'¿Registrar entrega parcial de ')+(current.nombre_completo||'este motorizado')+' por '+money(v)+'?')))return;
 const btn=$('pdcjRecBtn');btn.disabled=true;say('Guardando…');
 const descripcion=(total?'LIQUIDACIÓN DE CAJA':'ENTREGA PARCIAL DE CAJA')+(note?' · '+note:'');
 const {data,error}=await db().from('movimientos_caja').insert({motorizado_id:current.id,tipo:'retiro',monto:v,descripcion}).select('id');
@@ -1345,8 +1431,8 @@ root.addEventListener('click',async e=>{
 if(e.target.closest('[data-more]')){limit+=40;renderDetail();return}
 if(e.target.closest('[data-more-closed]')){closedLimit+=10;renderDetail();return}
 const d=e.target.closest('[data-del]');if(!d||!current)return;
-const motivo=prompt('¿Por qué borras este movimiento? (ej. monto mal escrito)');if(motivo===null)return;
-if(!motivo.trim()){alert('Escribe un motivo para borrar el movimiento.');return}
+const motivo=(await pdPedir('¿Por qué borras este movimiento? (ej. monto mal escrito)'));if(motivo===null)return;
+if(!motivo.trim()){pdAviso('Escribe un motivo para borrar el movimiento.');return}
 const {data,error}=await db().from('movimientos_caja').delete().eq('id',d.dataset.del).eq('motorizado_id',current.id).select('id');
 if(error||!data||!data.length){say('No se pudo borrar: '+(error?.message||'revisa el permiso DELETE de movimientos_caja.'));return}
 console.info('[Caja] Movimiento borrado',d.dataset.del,'motivo:',motivo.trim());
@@ -1461,7 +1547,7 @@ $('dcList').addEventListener('click',async e=>{
 const b=e.target.closest('[data-a]');if(!b)return;const id=b.closest('[data-id]').dataset.id;const p=rows.find(x=>String(x.id)===String(id));if(!p)return;const a=b.dataset.a;
 if(a==='copy'){try{await navigator.clipboard.writeText(p.codigo);$('dcListMsg').textContent='Código '+p.codigo+' copiado.'}catch(err){}return}
 if(a==='edit')return openForm(p);
-if(a==='del'){if(!confirm('¿Eliminar el código '+p.codigo+'? Los clientes ya no podrán usarlo.'))return;const {error}=await window.db.from('codigos_delivery').delete().eq('id',p.id);if(error){$('dcListMsg').textContent='No se pudo eliminar: '+error.message;return}return load()}
+if(a==='del'){if(!(await pdConfirmar('¿Eliminar el código '+p.codigo+'? Los clientes ya no podrán usarlo.')))return;const {error}=await window.db.from('codigos_delivery').delete().eq('id',p.id);if(error){$('dcListMsg').textContent='No se pudo eliminar: '+error.message;return}return load()}
 if(a==='sw'){b.disabled=true;const {error}=await window.db.from('codigos_delivery').update({activo:p.activo!==true}).eq('id',p.id);b.disabled=false;if(error){$('dcListMsg').textContent='No se pudo cambiar: '+error.message;return}p.activo=p.activo!==true;paint()}
 });
 const sheet=$('dcSheet');
@@ -1642,9 +1728,9 @@ return `<div class="g-row" data-id="${E(s.id)}"><span class="g-av ${s.on?'on':s.
 }
 const GPS_AVISO={titulo:'Activa tu GPS',mensaje:'Administración te pide activar el GPS de tu teléfono y mantener este panel abierto para poder ubicarte.'};
 async function avisarGps(list){let ok=0,fail=0;for(const s of list){const base={usuario_id:s.m.usuario_id,titulo:GPS_AVISO.titulo,mensaje:GPS_AVISO.mensaje,leida:false};let r=await db.from('notificaciones').insert(Object.assign({tipo:'aviso_gps'},base));if(r.error)r=await db.from('notificaciones').insert(base);if(r.error){fail++;console.warn('No se pudo avisar',r.error)}else ok++}return {ok,fail}}
-$('gxList').addEventListener('click',async e=>{const b=e.target.closest('[data-a="avisar"]');if(!b)return;const s=state.find(x=>x.id===b.closest('[data-id]').dataset.id);if(!s)return;b.disabled=true;b.textContent='Enviando…';const r=await avisarGps([s]);b.textContent=r.ok?'Aviso enviado':'No se pudo';if(!r.ok){b.disabled=false;alert('No se pudo enviar el aviso. Revisa el permiso de la tabla notificaciones en Supabase.')}});
+$('gxList').addEventListener('click',async e=>{const b=e.target.closest('[data-a="avisar"]');if(!b)return;const s=state.find(x=>x.id===b.closest('[data-id]').dataset.id);if(!s)return;b.disabled=true;b.textContent='Enviando…';const r=await avisarGps([s]);b.textContent=r.ok?'Aviso enviado':'No se pudo';if(!r.ok){b.disabled=false;pdAviso('No se pudo enviar el aviso. Revisa el permiso de la tabla notificaciones en Supabase.')}});
 const bt=document.createElement('button');bt.type='button';bt.id='gxAvisarTodos';bt.className='g-mini dark';bt.style.cssText='width:100%;margin:8px 0 0';bt.textContent='Avisar a todos los que no tienen GPS';$('gxChips').after(bt);
-bt.onclick=async()=>{const L=state.filter(s=>!s.on&&s.m.usuario_id);if(!L.length){alert('Todos tienen señal ahora.');return}if(!confirm('Se enviará el aviso "Activa tu GPS" a '+L.length+' motorizado(s). ¿Continuar?'))return;bt.disabled=true;bt.textContent='Enviando…';const r=await avisarGps(L);bt.disabled=false;bt.textContent='Avisar a todos los que no tienen GPS';alert(r.ok+' aviso(s) enviado(s)'+(r.fail?' · '+r.fail+' con error':''))};
+bt.onclick=async()=>{const L=state.filter(s=>!s.on&&s.m.usuario_id);if(!L.length){pdAviso('Todos tienen señal ahora.');return}if(!(await pdConfirmar('Se enviará el aviso "Activa tu GPS" a '+L.length+' motorizado(s). ¿Continuar?')))return;bt.disabled=true;bt.textContent='Enviando…';const r=await avisarGps(L);bt.disabled=false;bt.textContent='Avisar a todos los que no tienen GPS';pdAviso(r.ok+' aviso(s) enviado(s)'+(r.fail?' · '+r.fail+' con error':''))};
 $('gxList').addEventListener('click',e=>{const b=e.target.closest('[data-a="ver"]');if(!b)return;const s=state.find(x=>x.id===b.closest('[data-id]').dataset.id);if(!s||!s.pt)return;map.setView([s.pt.lat,s.pt.lng],17);markers.get(s.id)?.openPopup();$('gxMapWrap').scrollIntoView({behavior:'smooth',block:'center'})});
 $('gxChips').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(!b)return;filter=b.dataset.f;$('gxChips').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));paint()});
 $('gxRef').onclick=load;$('gxFit').onclick=()=>fitAll();
@@ -1861,7 +1947,7 @@ const a=b.dataset.a,msg=$('pdtfMsg');
 if(a==='cerrar')return cerrar();
 if(a==='tg'){leer();const g=b.dataset.k;C.recargos[g]=C.recargos[g]||{};C.recargos[g].activo=!C.recargos[g].activo;b.classList.toggle('tf-on',C.recargos[g].activo);const s=b.closest('.tf-sw').nextElementSibling;if(s&&s.classList.contains('tf-sub'))s.hidden=!C.recargos[g].activo;return}
 if(a==='zadd'){leer();C.zonas=C.zonas||[];C.zonas.push({nombre:'',precio:C.base,radio_km:1.5,lat:null,lng:null,activo:true});pintar();return}
-if(a==='zdel'){leer();if(!confirm('¿Eliminar esta zona?'))return;C.zonas.splice(Number(b.dataset.i),1);pintar();return}
+if(a==='zdel'){leer();if(!(await pdConfirmar('¿Eliminar esta zona?')))return;C.zonas.splice(Number(b.dataset.i),1);pintar();return}
 if(a==='zact'){leer();const z=C.zonas[Number(b.dataset.i)];z.activo=z.activo===false;b.classList.toggle('tf-on',z.activo!==false);return}
 if(a==='zgps'){leer();if(!navigator.geolocation){if(msg)msg.textContent='Este equipo no permite obtener la ubicación.';return}b.textContent='Buscando…';navigator.geolocation.getCurrentPosition(p=>{const z=C.zonas[Number(b.dataset.i)];z.lat=Number(p.coords.latitude.toFixed(6));z.lng=Number(p.coords.longitude.toFixed(6));pintar()},()=>{b.textContent='Usar mi ubicación';if(msg){msg.className='tf-bad';msg.textContent='No se pudo obtener la ubicación.'}},{enableHighAccuracy:true,timeout:15000});return}
 if(a==='sim'){leer();const viejo=pdTarifa.config;const km=num($('pdtfSimKm').value,0),sub=0,dest=pdTarifa.coords($('pdtfSimDest').value);
@@ -1954,7 +2040,7 @@ m.innerHTML='<div class="hd"><button type="button" class="ic" data-a="x" aria-la
 m.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
 if(a==='x')cerrar(null);
 if(a==='ok'&&big){const c=big.getCenter();cerrar({lat:Number(fx(c.lat)),lng:Number(fx(c.lng)),linea:ultima&&ultima.linea||'',sub:ultima&&ultima.sub||''})}
-if(a==='gps'){if(!navigator.geolocation)return;b.style.opacity=.5;navigator.geolocation.getCurrentPosition(p=>{b.style.opacity=1;big&&big.setView([p.coords.latitude,p.coords.longitude],18)},()=>{b.style.opacity=1;alert('No se pudo obtener tu ubicación. Revisa el permiso de ubicación del navegador.')},{enableHighAccuracy:true,timeout:20000,maximumAge:0})}
+if(a==='gps'){if(!navigator.geolocation)return;b.style.opacity=.5;navigator.geolocation.getCurrentPosition(p=>{b.style.opacity=1;big&&big.setView([p.coords.latitude,p.coords.longitude],18)},()=>{b.style.opacity=1;pdAviso('No se pudo obtener tu ubicación. Revisa el permiso de ubicación del navegador.')},{enableHighAccuracy:true,timeout:20000,maximumAge:0})}
 if(a==='res'){const r=JSON.parse(b.dataset.r);$('pdmpRs').hidden=true;$('pdmpQ').blur();big&&big.setView([r.lat,r.lng],18)}
 });
 let tq=null;const q=m.querySelector('#pdmpQ'),rs=m.querySelector('#pdmpRs');
@@ -2214,7 +2300,7 @@ try{
     const u=CFG[clave(nombre)];
     const r=await window.pdMapaElegir({titulo:'Ubicación de '+nombre,tip:'Mueve el mapa hasta la puerta de la agencia',centro:u?{lat:u.lat,lng:u.lng}:null});
     if(!r)return;
-    try{await guardar(nombre,id,r)}catch(e){alert('No se pudo guardar la ubicación de la agencia: '+(e.message||e))}
+    try{await guardar(nombre,id,r)}catch(e){pdAviso('No se pudo guardar la ubicación de la agencia: '+(e.message||e))}
   };
   const agNombre=id=>{try{const a=(adminAgencias||[]).find(x=>String(x.id)===String(id));return a?a.nombre:''}catch(e){return ''}};
   const ubic=(nombre,id)=>CFG[clave(nombre)]||(id?Object.values(CFG).find(x=>x&&String(x.id)===String(id)):null)||null;
@@ -3249,9 +3335,9 @@ window.pdAvisarMotoWa=function(id){
  try{o=(typeof allOrders!=='undefined'?allOrders:[]).find(function(x){return String(x.id)===String(id)})}catch(e){}
  if(!o)return;
  try{m=(typeof allMotos!=='undefined'?allMotos:[]).find(function(x){return String(x.id)===String(o.motorizado_id)})}catch(e){}
- if(!m){alert('Este pedido todavía no tiene motorizado asignado.');return}
+ if(!m){pdAviso('Este pedido todavía no tiene motorizado asignado.');return}
  var t=String(m.telefono||'').replace(/\D/g,'');if(t.length===9)t='51'+t;
- if(t.length<11){alert('El motorizado '+(m.nombre_completo||'')+' no tiene un número de WhatsApp registrado.');return}
+ if(t.length<11){pdAviso('El motorizado '+(m.nombre_completo||'')+' no tiene un número de WhatsApp registrado.');return}
  var cod=String(o.id).slice(0,8).toUpperCase();
  var txt=['*PIDEMÁS DELIVERY*','¡Hola, '+String(m.nombre_completo||'motorizado').trim()+'!','Tienes un pedido asignado por Administración.','Pedido: #'+cod,'Por favor, ingresa al panel, revisa los detalles y confirma la asignación.','Entra aquí: https://pidemasdeliverypiura.infinityfreeapp.com/motorizado/','Gracias por trabajar con Pidemás.'].join('\n');
  var url='https://wa.me/'+t+'?text='+encodeURIComponent(txt);
@@ -3561,7 +3647,7 @@ try{
         const {error}=await db.from('categorias_negocio').update({activo:c.activo===false}).eq('id',c.id).eq('negocio_id',cur.id);if(error)throw error;
         msg(c.activo===false?'Categoría visible en la tienda.':'Categoría oculta en la tienda.');
       }else if(a==='cat-del'&&c){
-        if(!confirm('¿Eliminar la categoría «'+(c.nombre||'')+'»? Sus productos quedarán sin categoría.'))return;
+        if(!(await pdConfirmar('¿Eliminar la categoría «'+(c.nombre||'')+'»? Sus productos quedarán sin categoría.')))return;
         const u=await db.from('productos_negocio').update({categoria_id:null}).eq('categoria_id',c.id).eq('negocio_id',cur.id);if(u.error)throw u.error;
         const {error}=await db.from('categorias_negocio').delete().eq('id',c.id).eq('negocio_id',cur.id);if(error)throw error;
         msg('Categoría eliminada.');
@@ -3636,7 +3722,7 @@ try{
         const {error}=await db.from('productos_negocio').update({disponible:!vis}).eq('id',x.id).eq('negocio_id',cur.id);if(error)throw error;
         msg(vis?'Producto oculto en la tienda.':'Producto visible en la tienda.');
       }else if(a==='p-del'&&x){
-        if(!confirm('¿Eliminar «'+(x.nombre||'')+'» de la carta?'))return;
+        if(!(await pdConfirmar('¿Eliminar «'+(x.nombre||'')+'» de la carta?')))return;
         const {error}=await db.from('productos_negocio').delete().eq('id',x.id).eq('negocio_id',cur.id);if(error)throw error;
         await quitarImgStorage(x.imagen_url);msg('Producto eliminado.');
       }else return;
@@ -3750,7 +3836,7 @@ try{
     if(a==='est'){await cambiar(id,{estado:b.dataset.e},'Solicitud marcada como '+EST[b.dataset.e].toLowerCase());return}
     if(a==='crear'){crearNegocio(r);return}
     if(a==='del'){
-      if(!confirm('¿Eliminar esta solicitud? No se puede deshacer.'))return;
+      if(!(await pdConfirmar('¿Eliminar esta solicitud? No se puede deshacer.')))return;
       const {error}=await db.from('solicitudes_afiliacion').delete().eq('id',id);
       if(error){console.error(error);msg('No se pudo eliminar.');return}
       filas=filas.filter(x=>x.id!==id);abiertas.delete(id);pintar();msg('Solicitud eliminada');
@@ -3826,12 +3912,13 @@ try{
     return guardar(s);
   }
   // En la app instalada (APK) el permiso lo da Android; si no responde en 10 s, se explica cómo activarlo.
+  const RP=Notification.requestPermission.bind(Notification);
   function pedir(){
-    return Promise.race([
-      Promise.resolve().then(()=>Notification.requestPermission()).catch(()=>Notification.permission),
-      new Promise(r=>setTimeout(()=>r(Notification.permission),10000))
-    ]);
+    let pr;try{pr=Promise.resolve(RP())}catch(_){pr=Promise.resolve(Notification.permission)}
+    return Promise.race([pr.catch(()=>Notification.permission),new Promise(r=>setTimeout(()=>r(Notification.permission),10000))]);
   }
+  // Los botones propios del panel también pasan por aquí: tiempo límite, ayuda y registro del celular.
+  try{Notification.requestPermission=function(){return pedir().then(p=>{if(p==='granted')setTimeout(revisar,300);else ayuda();return p})}}catch(_){}
   function ayuda(msg){
     let a=document.getElementById('pdPushAyuda');
     if(!a){a=document.createElement('div');a.id='pdPushAyuda';a.setAttribute('role','alert');
@@ -3880,4 +3967,21 @@ try{
     })}catch(_){}
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciar);else iniciar();
+  // Tarjeta dentro del panel cuando llega un aviso con la app abierta
+  function tarjetaAviso(d){
+    if(!d||!d.title)return;
+    let box=document.getElementById('pdAvisoStack');
+    if(!box){box=document.createElement('div');box.id='pdAvisoStack';box.style.cssText='position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:2147483001;display:flex;flex-direction:column;gap:8px;max-width:456px;margin:0 auto;pointer-events:none';document.body.appendChild(box)}
+    const c=document.createElement('button');c.type='button';
+    c.style.cssText='pointer-events:auto;display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;background:#fff;border:1px solid #EFE3DA;border-left:5px solid #C4410C;border-radius:16px;box-shadow:0 12px 32px rgba(31,26,23,.18);font-family:Inter,system-ui,sans-serif;color:#1F1A17;animation:pdPushCae .3s cubic-bezier(.2,.8,.2,1)';
+    const esc=v=>String(v||'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
+    c.innerHTML='<span style="flex:0 0 40px;height:40px;border-radius:12px;background:#FBE6DD;color:#C4410C;display:flex;align-items:center;justify-content:center;font-size:20px">🔔</span><span style="flex:1;min-width:0"><b style="display:block;font-size:15px;font-weight:800">'+esc(d.title)+'</b><small style="display:block;font-size:13px;color:#6B5E57;margin-top:2px">'+esc(d.body)+'</small></span>';
+    const fuera=()=>{c.remove()};
+    c.onclick=()=>{fuera();if(d.pedidoId){try{window.openAdminTab&&window.openAdminTab('pedidos')}catch(_){}setTimeout(()=>{const k=document.querySelector('.adminOrderCard[data-order-id="'+CSS.escape(String(d.pedidoId))+'"]');if(k){k.classList.add('is-expanded');k.scrollIntoView({behavior:'smooth',block:'start'})}},500)}};
+    box.prepend(c);while(box.children.length>3)box.lastChild.remove();
+    setTimeout(fuera,9000);
+    try{window.loadOrders&&window.loadOrders()}catch(_){}
+  }
+  window.pdTarjetaAviso=tarjetaAviso;
+  try{navigator.serviceWorker.addEventListener('message',e=>{const m=e.data||{};if(m.type==='pd-push')tarjetaAviso(m.data)})}catch(_){}
 })();

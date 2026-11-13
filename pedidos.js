@@ -91,7 +91,7 @@ try{
 document.addEventListener("click",function(e){
 const b=e.target.closest(".adminRecojoLocationBtn"); if(!b)return;
 const el=document.getElementById(b.dataset.target); const raw=(el?.value||"").trim();
-if(!raw){alert("Primero ingresa o selecciona la ubicación.");return;}
+if(!raw){pdAviso("Primero ingresa o selecciona la ubicación.");return;}
 const url=/^https?:\/\//i.test(raw)?raw:"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(raw);
 window.open(url,"_blank","noopener");
 });
@@ -430,9 +430,9 @@ st.innerHTML=abiertas.slice(0,3).map(o=>`<div class="pfInc"><span><b>Problema en
 }
 document.addEventListener('click',async e=>{
 const dk=e.target.closest&&e.target.closest('[data-delok]');
-if(dk){const o=list().find(x=>String(x.id)===dk.dataset.delok);if(!o)return;if(!confirm('¿El negocio ya te pagó el delivery de S/ '+(Number(o.costo_delivery)||0).toFixed(2)+'?'))return;dk.disabled=true;const now=new Date().toISOString();const {error}=await db.from('pedidos').update({delivery_negocio_cobrado_en:now}).eq('id',o.id);if(error){alert('No se pudo guardar: '+error.message);dk.disabled=false;return}o.delivery_negocio_cobrado_en=now;decorate();return}
+if(dk){const o=list().find(x=>String(x.id)===dk.dataset.delok);if(!o)return;if(!(await pdConfirmar('¿El negocio ya te pagó el delivery de S/ '+(Number(o.costo_delivery)||0).toFixed(2)+'?')))return;dk.disabled=true;const now=new Date().toISOString();const {error}=await db.from('pedidos').update({delivery_negocio_cobrado_en:now}).eq('id',o.id);if(error){pdAviso('No se pudo guardar: '+error.message);dk.disabled=false;return}o.delivery_negocio_cobrado_en=now;decorate();return}
 const ok=e.target.closest&&e.target.closest('#pfIncStack [data-ok]');
-if(ok){ok.disabled=true;const {error}=await db.from('pedidos').update({incidencia_resuelta:true}).eq('id',ok.dataset.ok);if(error){alert('No se pudo marcar: '+error.message);ok.disabled=false;return}const o=list().find(x=>String(x.id)===ok.dataset.ok);if(o)o.incidencia_resuelta=true;incidencias();decorate();return}
+if(ok){ok.disabled=true;const {error}=await db.from('pedidos').update({incidencia_resuelta:true}).eq('id',ok.dataset.ok);if(error){pdAviso('No se pudo marcar: '+error.message);ok.disabled=false;return}const o=list().find(x=>String(x.id)===ok.dataset.ok);if(o)o.incidencia_resuelta=true;incidencias();decorate();return}
 const see=e.target.closest&&e.target.closest('#pfIncStack [data-see]');
 if(see){try{window.openAdminTab&&window.openAdminTab('pedidos')}catch(_){}setTimeout(()=>{const c=document.querySelector(`.adminOrderCard[data-order-id="${CSS.escape(see.dataset.see)}"]`);if(c){c.classList.add('is-expanded');c.scrollIntoView({behavior:'smooth',block:'start'})}},500)}
 });
@@ -537,11 +537,11 @@ const p=e.target.closest&&e.target.closest('[data-pe-paid]');
 if(p){
 const o=find(p.dataset.pePaid);if(!o)return;
 const cu=cuenta(o);
-if(!confirm(`¿Confirmas que el cliente ya pagó ${money(cu.total)}?${cu.svPend?'\n· Servicio '+money(cu.svPend):''}${cu.agPend?'\n· Envío pagado en agencia '+money(cu.agPend):''}`))return;
+if(!(await pdConfirmar(`¿Confirmas que el cliente ya pagó ${money(cu.total)}?${cu.svPend?'\n· Servicio '+money(cu.svPend):''}${cu.agPend?'\n· Envío pagado en agencia '+money(cu.agPend):''}`)))return;
 p.disabled=true;
 const upd={};if(cu.svPend)upd.pago_confirmado=true;if(cu.agPend)upd.observaciones=(o.observaciones?o.observaciones+' | ':'')+'AGENCIA_REEMBOLSADA';
 const {error}=await db.from('pedidos').update(upd).eq('id',o.id);
-if(error){alert('No se pudo confirmar el pago: '+error.message);p.disabled=false;return}
+if(error){pdAviso('No se pudo confirmar el pago: '+error.message);p.disabled=false;return}
 Object.assign(o,upd);decorate();
 }
 });
@@ -889,7 +889,7 @@ function eventos(){
   orders().forEach(o=>{
     const n=o.motorizado_id?motoName(o.motorizado_id):'',tp=TIPO[tipoN(o)],c=cli(o);
     const sub=tp+' '+ref(o.id)+(c?' · '+c:'');
-    const t0=T(o.creado_en);if(t0>lim)ev.push({k:'ped',t:t0,ic:'<i class="ti ti-receipt" aria-hidden="true"></i>',tit:({tienda:'Nuevo pedido de tienda',compra:'Nueva compra',recojo:'Nuevo recojo y entrega',encomienda:'Nueva encomienda'})[tipoN(o)]||('Nuevo pedido · '+tp),sub:(c?c+' · ':'')+money(o.total)+' · '+ref(o.id),id:o.id});
+    const t0=T(o.creado_en||o.created_at);if(t0>lim)ev.push({k:'ped',t:t0,ic:'<i class="ti ti-receipt" aria-hidden="true"></i>',tit:({tienda:'Nuevo pedido de tienda',compra:'Nueva compra',recojo:'Nuevo recojo y entrega',encomienda:'Nueva encomienda'})[tipoN(o)]||('Nuevo pedido · '+tp),sub:(c?c+' · ':'')+money(o.total)+' · '+ref(o.id),id:o.id});
     if(o.motorizado_id)Object.keys(VERBO).forEach(col=>{const t=T(o[col]);if(t>lim)ev.push({k:'ped',t,ic:col==='entregado_en'?'<i class="ti ti-receipt" aria-hidden="true"></i>':'<i class="ti ti-map-pin" aria-hidden="true"></i>',tit:VERBO[col](n,o),sub,id:o.id})});
     if(String(o.estado||'').toLowerCase()==='cancelado'){const t=T(o.cancelado_en||o.actualizado_en);if(t>lim)ev.push({k:'ped',t,ic:'<i class="ti ti-ban" aria-hidden="true"></i>',tit:'Pedido cancelado',sub,id:o.id})}
     if(o.incidencia){const t=T(o.incidencia_en)||T(o.actualizado_en);if(t>lim||o.incidencia_resuelta===false)ev.push({k:'ocu',t:t||Date.now(),ic:'<i class="ti ti-gauge" aria-hidden="true"></i>',tit:'Reporte de '+(n||'Motorizado')+(o.incidencia_resuelta===true?' · resuelto':''),sub:String(o.incidencia)+' · '+sub,id:o.id,abierta:o.incidencia_resuelta!==true})}
@@ -930,7 +930,7 @@ function mount(){
     p.addEventListener('click',clickPanel);document.body.appendChild(p);
   }
   const sh=$('pdhSheet');const card=sh&&sh.querySelector('.h-sheetCard');
-  if(card&&!$('pdaLogout')){const l=document.createElement('button');l.type='button';l.id='pdaLogout';l.className='pdaLogout';l.textContent='Cerrar sesión';l.addEventListener('click',()=>{if(confirm('¿Cerrar sesión del panel administrador?'))$('logout')?.click()});card.appendChild(l)}
+  if(card&&!$('pdaLogout')){const l=document.createElement('button');l.type='button';l.id='pdaLogout';l.className='pdaLogout';l.textContent='Cerrar sesión';l.addEventListener('click',async ()=>{if((await pdConfirmar('¿Cerrar sesión del panel administrador?')))$('logout')?.click()});card.appendChild(l)}
 }
 let pdaListo=false;async function pdaDatos(){const espera=ms=>new Promise(r=>setTimeout(r,ms));try{if(!motos().length&&typeof loadMotos==='function')await Promise.race([loadMotos(),espera(4000)])}catch(e){}try{if(!orders().length&&typeof loadOrders==='function')await Promise.race([loadOrders(),espera(5000)])}catch(e){}for(let i=0;i<20&&(!motos().length||!orders().length);i++)await espera(150)}function abrir(){mount();$('pdaPanel').hidden=false;document.body.classList.add('pdaOpen');pintar();Promise.all([cargarCaja(),pdaDatos()]).then(()=>{pdaListo=true;pintar();marcarVisto()})}
 function marcarVisto(){const ev=eventos();const top=ev.length?ev[0].t:Date.now();lastSeen=Math.max(top,Date.now());LS.set('pdaAvisosVisto',String(lastSeen));badge()}
