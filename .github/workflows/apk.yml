@@ -142,10 +142,14 @@ jobs:
                           <data android:scheme="https" android:host="${hostName}" android:pathPrefix="${ruta}"/>
                       </intent-filter>
                   </activity>
+                  <activity
+                      android:name="com.google.androidbrowserhelper.trusted.NotificationPermissionRequestActivity"
+                      android:exported="false"/>
                   <service
                       android:name="com.google.androidbrowserhelper.trusted.DelegationService"
                       android:exported="true"
                       android:enabled="true">
+                      <meta-data android:name="android.support.customtabs.trusted.SMALL_ICON" android:resource="@drawable/ic_aviso"/>
                       <intent-filter>
                           <action android:name="android.support.customtabs.trusted.TRUSTED_WEB_ACTIVITY_SERVICE"/>
                           <category android:name="android.intent.category.DEFAULT"/>
@@ -165,6 +169,15 @@ jobs:
             "    <string name=\"app_name\">$NOMBRE</string>" \
             "    <string name=\"asset_statements\">[{\\\"relation\\\": [\\\"delegate_permission/common.handle_all_urls\\\"], \\\"target\\\": {\\\"namespace\\\": \\\"web\\\", \\\"site\\\": \\\"https://$HOST\\\"}}]</string>" \
             '</resources>' > $A/app/src/main/res/values/strings.xml
+          mkdir -p $A/app/src/main/res/drawable
+          cat > $A/app/src/main/res/drawable/ic_aviso.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+              <path android:fillColor="#FFFFFFFF"
+                  android:pathData="M12,22c1.1,0 2,-0.9 2,-2h-4c0,1.1 0.9,2 2,2zM18,16v-5c0,-3.07 -1.64,-5.64 -4.5,-6.32V4c0,-0.83 -0.67,-1.5 -1.5,-1.5s-1.5,0.67 -1.5,1.5v0.68C7.63,5.36 6,7.92 6,11v5l-2,2v1h16v-1l-2,-2z"/>
+          </vector>
+          EOF
           ICON=icon-maskable-512.png; [ -f "$ICON" ] || ICON=icon-512.png
           cp "$ICON" $A/app/src/main/res/drawable-nodpi/icono.png
           cp "$ICON" $A/app/src/main/res/mipmap-nodpi/ic_launcher.png
