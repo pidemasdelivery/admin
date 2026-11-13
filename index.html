@@ -27,7 +27,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-500-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-700-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-800-normal.woff2">
-<link rel="stylesheet" href="estilos.css?v=202611131700">
+<link rel="stylesheet" href="estilos.css?v=202611131720">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'"/>
 
@@ -673,8 +673,7 @@ Motorizado activo
 <div class="pdslTwo"><div class="pdslField"><label for="pdslDescAmount">Monto del descuento (S/)</label><input type="number" id="pdslDescAmount" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="pdslField"><label for="pdslDescType">Sistema</label><select id="pdslDescType"><option value="AFP">AFP</option><option value="ONP">ONP</option></select></div></div>
 <button type="button" class="pdslBtn" id="pdslDescSave">Guardar descuento</button>
 </div>
-<div class="pdslField"><label>Tipo de pago</label><div class="pdslDays pdslType" id="pdslPayMode"><button type="button" class="on" data-mode="pago">Pago de quincena</button><button type="button" data-mode="adelanto">Adelanto</button></div></div>
-<p class="pdslNote" id="pdslAdvNote" hidden>El adelanto se descuenta de la quincena que elijas: cuando esa quincena se cierre, solo quedará por pagar la diferencia.</p>
+<div class="pdslField"><label>Tipo de pago</label><div class="pdslDays pdslType pdslSolo" id="pdslPayMode"><button type="button" class="on" data-mode="pago">Pago de quincena</button></div></div>
 <div class="pdslField"><label for="pdslPayPeriod" id="pdslPayPeriodLbl">Quincena que pagas</label><select id="pdslPayPeriod"></select></div>
 <div class="pdslTwo"><div class="pdslField"><label for="pdslPayAmount">Monto (S/)</label><input type="number" id="pdslPayAmount" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="pdslField"><label for="pdslPayNote">Detalle</label><input id="pdslPayNote" maxlength="200" placeholder="Ej. Yape, efectivo"></div></div>
 <button type="button" class="pdslBtn" id="pdslPaySave">Registrar pago</button>
@@ -726,7 +725,7 @@ Motorizado activo
 <script src="supabase.js?v=202611082249"></script>
 <script src="funciones.js?v=202611131700"></script>
 <script src="pedidos.js?v=202611131700"></script>
-<script src="admin.js?v=202611131700"></script>
+<script src="admin.js?v=202611131720"></script>
 <script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 <style id="pd-app-panel-css">
 /* ===== pd-app-panel · se siente como app: sin zoom, sin recargar al jalar, login fijo y centrado ===== */

@@ -255,8 +255,7 @@ return [cur,nxt].map((p,i)=>{const full=res&&res.ok?res.periods.find(x=>x.key===
 function fillPayPeriods(){
 const sel=$('pdslPayPeriod');if(!sel)return;const prev=sel.value;
 const adv=payMode==='adelanto';
-$('pdslAdvNote').hidden=!adv;
-$('pdslPayPeriodLbl').textContent=adv?'Quincena que adelantas':'Quincena que pagas';
+{const n=$('pdslAdvNote');if(n)n.hidden=!adv;const l=$('pdslPayPeriodLbl');if(l)l.textContent=adv?'Quincena que adelantas':'Quincena que pagas';}
 if(adv){
 const opts=current?advPeriods():[];
 const corto=l=>String(l).replace(/ de (\d{4})$/,'').replace(/ de (ene|feb|mar|abr|may|jun|jul|ago|set|sep|oct|nov|dic)[a-zñ]*/i,' de $1.');
@@ -319,7 +318,7 @@ descFor='';await loadRows();say('Descuento '+tipo+' guardado: '+money(monto)+'.'
 finally{btn.disabled=false;btn.textContent=prevTxt==='Guardando…'?'Guardar descuento':prevTxt;descFor='';descUI();if(failed){const n=$('pdslDescNote');if(n)n.innerHTML='<b style="color:#b3261e">'+E(failed)+'</b>'}}
 });
 $('pdslPayPeriod').addEventListener('change',()=>{delete $('pdslPayAmount').dataset.touched;suggestAmount()});
-$('pdslPayMode').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;payMode=b.dataset.mode;$('pdslPayMode').querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('on',x===b));fillPayPeriods()});
+$('pdslPayMode')?.addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;payMode=b.dataset.mode;$('pdslPayMode').querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('on',x===b));fillPayPeriods()});
 $('pdslPayAmount').addEventListener('input',()=>{$('pdslPayAmount').dataset.touched='1'});
 function fillCfg(cfg){
 if($('pdslCfgForm').dataset.for===String(current.id))return;
