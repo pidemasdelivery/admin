@@ -45,7 +45,8 @@ self.addEventListener('fetch',e=>{
   if(u.origin!==self.location.origin)return;
   e.respondWith((async()=>{
     try{
-      const res=await fetch(r);
+      /* la página siempre se pide sin caché para ver al momento lo que subes a GitHub */
+      const res=await fetch(r,(r.mode==='navigate'||/\.(html|js|css)(\?|$)/.test(u.pathname+u.search))?{cache:'no-cache'}:undefined);
       if(res&&res.ok){const copia=res.clone();caches.open(PD_CACHE).then(c=>c.put(r,copia)).catch(()=>{})}
       return res;
     }catch(err){
