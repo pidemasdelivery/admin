@@ -51,7 +51,7 @@ window.pdQuitarCarga=salir;
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-500-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-700-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-800-normal.woff2">
-<link rel="stylesheet" href="estilos.css?v=202611140010">
+<link rel="stylesheet" href="estilos.css?v=202611140230">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'"/>
 
@@ -789,6 +789,8 @@ Motorizado activo
 <style id="pd-app-panel-css">
 /* ===== pd-app-panel · se siente como app: sin zoom, sin recargar al jalar, login fijo y centrado ===== */
 html:root,html:root body{overscroll-behavior:none!important;overscroll-behavior-y:none!important;overflow-x:hidden!important;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+/* el body no corta el scroll de la página (el jalón para recargar lo sigue bloqueando html) */
+html:root body{overscroll-behavior:auto!important;overscroll-behavior-y:auto!important}
 html:root body{touch-action:pan-x pan-y;-webkit-tap-highlight-color:transparent}
 html:root input,html:root select,html:root textarea{font-size:max(16px,1em)}
 /* Login: ocupa exactamente la pantalla, no se mueve y queda centrado */
@@ -1006,13 +1008,53 @@ html.pdLoginFijo body #loginView#loginView#loginView > *{width:100%;max-width:42
     if(out&&save&&out.previousElementSibling!==(msg||save)){(msg||save).after(out)}
     pintar();
   }
+  const FOTO={url:'',cargada:false,subiendo:false};
+  const avisar=t=>{window.pdAviso?pdAviso(t):alert(t)};
+  async function uidActual(){const r=await window.db.auth.getUser();const u=r&&r.data&&r.data.user;if(!u)throw new Error('Tu sesión no está lista. Vuelve a ingresar.');return u.id}
+  async function cargarFoto(){
+    FOTO.cargada=true;
+    try{if(!window.db)return;const uid=await uidActual();const r=await window.db.from('perfiles').select('foto_url').eq('id',uid).maybeSingle();FOTO.url=(r&&r.data&&r.data.foto_url)||'';pintar()}catch(e){FOTO.cargada=false}
+  }
+  async function subirFoto(e){
+    const inp=e.target,f=inp.files&&inp.files[0];if(!f)return;
+    if(!/^image\/(jpeg|png|webp)$/i.test(f.type)||f.size>5*1024*1024){inp.value='';avisar('La foto debe ser JPG, PNG o WEBP y pesar máximo 5 MB.');return}
+    const antes=FOTO.url;FOTO.url=URL.createObjectURL(f);FOTO.subiendo=true;pintar();
+    try{
+      const uid=await uidActual();
+      const ext=({'image/jpeg':'jpg','image/png':'png','image/webp':'webp'})[f.type]||'jpg';
+      const path=`${uid}/perfil-${Date.now()}.${ext}`,bucket=window.db.storage.from('fotos-motorizados');
+      const up=await bucket.upload(path,f,{cacheControl:'3600',upsert:false,contentType:f.type});
+      if(up.error)throw new Error('No se pudo subir la foto: '+(up.error.message||up.error));
+      const url=bucket.getPublicUrl(path)?.data?.publicUrl;if(!url)throw new Error('No se pudo obtener la dirección de la foto.');
+      const r=await window.db.from('perfiles').update({foto_url:url}).eq('id',uid).select('id,foto_url').maybeSingle();
+      if(r.error)throw new Error('No se pudo guardar la foto: '+r.error.message);
+      if(!r.data)throw new Error('Supabase no actualizó tu perfil. Revisa los permisos de perfiles.');
+      FOTO.url=url;FOTO.subiendo=false;pintar();
+      window.pdExito?pdExito('Foto de perfil actualizada.'):avisar('Foto de perfil actualizada.');
+    }catch(err){FOTO.url=antes;FOTO.subiendo=false;pintar();avisar(String((err&&err.message)||'No se pudo subir la foto.'))}
+    finally{inp.value=''}
+  }
+  async function quitarFoto(){
+    if(!FOTO.url)return;
+    if(window.pdConfirmar&&!(await pdConfirmar('¿Quitar tu foto de perfil?')))return;
+    FOTO.subiendo=true;pintar();
+    try{const uid=await uidActual();const r=await window.db.from('perfiles').update({foto_url:null}).eq('id',uid).select('id').maybeSingle();
+      if(r.error)throw new Error('No se pudo quitar la foto: '+r.error.message);if(!r.data)throw new Error('Supabase no actualizó tu perfil. Revisa los permisos de perfiles.');
+      FOTO.url='';FOTO.subiendo=false;pintar();window.pdExito?pdExito('Foto de perfil quitada.'):avisar('Foto de perfil quitada.')}
+    catch(err){FOTO.subiendo=false;pintar();avisar(String((err&&err.message)||'No se pudo quitar la foto.'))}
+  }
+  document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#pdhFotoDel'))quitarFoto()});
   function pintar(){
     const top=$('pdhTop');if(!top)return;
     const nombre=($('pdhName')&&$('pdhName').value.trim())||'Administrador';
     const mail=(($('pdhMail')&&$('pdhMail').textContent)||'').replace(/^Cuenta:\s*/,'');
     const ini=nombre.split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase()||'A';
-    const html=`<div class="pdhTopRow"><span class="pdhAv">${E(ini)}</span><span class="pdhWho"><strong>${E(nombre)}</strong><small>Administrador · Pidemás Delivery</small>${mail?`<small>${E(mail)}</small>`:''}</span></div>`;
+    const foto=FOTO.url,sub=FOTO.subiendo;
+    const html=`<div class="pdhTopRow"><span class="pdhAv${sub?' pdhSub':''}">${foto?`<img src="${E(foto)}" alt="Foto de perfil">`:E(ini)}</span><span class="pdhWho"><strong>${E(nombre)}</strong><small>Administrador · Pidemás Delivery</small>${mail?`<small>${E(mail)}</small>`:''}</span></div>
+      <div class="pdhFotoActs"><label class="pdhFotoBtn" for="pdhFotoFile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>${foto?'Cambiar foto':'Subir foto'}</span></label>${foto?'<button type="button" class="pdhFotoDel" id="pdhFotoDel">Quitar foto</button>':''}</div>`;
     if(top.__h!==html){top.innerHTML=html;top.__h=html}
+    if(!$('pdhFotoFile')){const f=document.createElement('input');f.type='file';f.id='pdhFotoFile';f.accept='image/jpeg,image/png,image/webp';f.hidden=true;f.setAttribute('data-pd-cloud','1');document.body.appendChild(f);f.addEventListener('change',subirFoto)}
+    if(!FOTO.cargada)cargarFoto();
     const tel=$('pdhTel');
     if(tel){const av='Notification' in window&&Notification.permission==='granted';
       const h=`<h4>Este teléfono</h4><div class="pdhInfo"><span>Avisos de pedidos</span><b class="${av?'ok':'no'}">${av?'● Conectados':'● Sin activar'}</b><span>Versión del panel</span><b>${VERSION}</b></div>`;
@@ -1021,6 +1063,292 @@ html.pdLoginFijo body #loginView#loginView#loginView > *{width:100%;max-width:42
   new MutationObserver(()=>{clearTimeout(armar.t);armar.t=setTimeout(armar,60)}).observe(document.documentElement,{childList:true,subtree:true});
   document.addEventListener('input',e=>{if(e.target&&e.target.id==='pdhName')pintar()});
   setInterval(armar,1500);armar();
+})();
+</script>
+<script id="pd-logo-tarjeta-js">
+/* Logo del negocio en cada tarjeta de pedido: grande e inclinado al fondo + insignia con el nombre */
+(function(){
+  if(window.__pdLogoNeg)return;window.__pdLogoNeg=true;
+  const CARDS='#orderList .adminOrderCard[data-order-id], #orders article.order[data-order-id], #businessOrdersList article.x-order[data-order]';
+  const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const cli=()=>{try{return db}catch(e){return window.db}};
+  const NEG=new Map(),PED=new Map(),PIDIENDO=new Set();let negListo=false,negPend=null;
+  const logoDe=n=>n&&(n.logo_url||n.logo||n.imagen_logo_url||n.imagen_logo)||'';
+  async function cargarNeg(){
+    if(negListo||negPend)return negPend;const c=cli();if(!c)return;
+    negPend=(async()=>{try{const {data,error}=await c.from('negocios').select('*');if(!error&&data){data.forEach(n=>NEG.set(String(n.id),{nombre:n.nombre||'',logo:logoDe(n)}));negListo=true}}catch(e){}negPend=null})();
+    return negPend;
+  }
+  async function cargarPed(ids){
+    const c=cli();if(!c||!ids.length)return;ids.forEach(i=>PIDIENDO.add(i));
+    try{const {data,error}=await c.from('pedidos').select('*').in('id',ids);
+      if(!error&&data)data.forEach(p=>PED.set(String(p.id),String(p.negocio_id||p.restaurante_id||'')));
+      ids.forEach(i=>{if(!PED.has(i))PED.set(i,'')});
+    }catch(e){}finally{ids.forEach(i=>PIDIENDO.delete(i))}
+  }
+  const idDe=c=>String(c.dataset.orderId||c.dataset.order||'');
+  function decorar(card,n){
+    const key=(n.logo||'')+'|'+n.nombre;
+    let bg=card.querySelector(':scope > .pdNegBg');
+    if(n.logo){
+      if(!bg){bg=document.createElement('i');bg.className='pdNegBg';bg.setAttribute('aria-hidden','true');card.prepend(bg)}
+      if(bg.dataset.k!==key){bg.dataset.k=key;bg.style.backgroundImage='url("'+n.logo.replace(/"/g,'%22')+'")'}
+      card.classList.add('pdNegOn');
+    }else if(bg){bg.remove();card.classList.remove('pdNegOn')}
+    if(!n.nombre)return;
+    const html='<em'+(n.logo?' style="background-image:url(&quot;'+E(n.logo)+'&quot;)"':'')+'>'+(n.logo?'':E(n.nombre.trim()[0]||'').toUpperCase())+'</em><span>'+E(n.nombre)+'</span>';
+    /* insignia junto a la pastilla de estado */
+    const todas=[...card.querySelectorAll('.pdbSub > .pdbPay, .tkChips, .pdMList > .pdMListCode')];
+    const vis=todas.find(a=>a.getClientRects().length>0);
+    if(!vis)return;
+    const anclas=[vis];let ya=false;
+    card.querySelectorAll('.pdNegB:not(.pdUNeg)').forEach(b=>{const prev=b.previousElementSibling,par=b.parentElement;const mio=(par===vis||prev===vis)&&!ya;if(mio)ya=true;else b.remove()});
+    anclas.forEach(a=>{
+      const enChips=a.classList.contains('tkChips');
+      let b=enChips?a.querySelector(':scope > .pdNegB'):(a.nextElementSibling&&a.nextElementSibling.classList.contains('pdNegB')?a.nextElementSibling:null);
+      if(!b){b=document.createElement('span');b.className='pdNegB';if(enChips)a.prepend(b);else a.after(b)}
+      if(b.dataset.k!==key){b.dataset.k=key;b.innerHTML=html}
+    });
+  }
+  let corriendo=false;
+  async function pasar(){
+    if(corriendo)return;corriendo=true;
+    try{
+      const cards=[...document.querySelectorAll(CARDS)];if(!cards.length)return;
+      await cargarNeg();
+      const falta=[...new Set(cards.map(idDe).filter(i=>i&&!PED.has(i)&&!PIDIENDO.has(i)))];
+      for(let i=0;i<falta.length;i+=40)await cargarPed(falta.slice(i,i+40));
+      cards.forEach(c=>{const nid=PED.get(idDe(c));const n=nid&&NEG.get(nid);if(n)decorar(c,n)});
+    }finally{corriendo=false}
+  }
+  let t=null;const pronto=()=>{clearTimeout(t);t=setTimeout(pasar,120)};
+  window.__pdLogoDbg=()=>({corriendo,negListo,ped:[...PED],neg:[...NEG.keys()]});
+  /* al volver a dibujarse la lista se decora en el mismo instante (sin parpadeo) con lo ya conocido */
+  function rapido(){document.querySelectorAll(CARDS).forEach(c=>{const nid=PED.get(idDe(c));const n=nid&&NEG.get(nid);if(n)try{decorar(c,n)}catch(e){}})}
+  let enRapido=false;
+  new MutationObserver(m=>{if(enRapido)return;for(const r of m){if(r.target&&r.target.closest&&r.target.closest('.pdNegB,.pdNegBg'))continue;enRapido=true;try{rapido()}finally{enRapido=false}pronto();return}}).observe(document.documentElement,{childList:true,subtree:true});
+  setInterval(pasar,1500);setTimeout(pasar,800);
+})();
+</script>
+<script id="pd-tarjeta-u-js">
+/* Tarjeta de pedido igual en admin, motorizado y negocio:
+   n.º · hace cuánto · monto / estado + negocio / fase / cliente / detalle / Ver más / Seguimiento (+ acción) */
+(function(){
+  if(window.__pdTarjetaU)return;window.__pdTarjetaU=true;
+  const ROL=document.getElementById('orderList')?'admin':document.getElementById('businessOrdersList')?'negocio':'moto';
+  const CARDS='#orderList .adminOrderCard[data-order-id], #orders article.order[data-order-id], #businessOrdersList article.x-order[data-order]';
+  const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const cli=()=>{try{return db}catch(e){return window.db}};
+  const money=n=>'S/ '+(Number(n)||0).toFixed(2);
+  const PED=new Map(),ITEMS=new Map(),NEG=new Map();let negOk=false,ultimo=0,corriendo=false;
+  const idDe=c=>String(c.dataset.orderId||c.dataset.order||'');
+  const logoDe=n=>n&&(n.logo_url||n.logo||n.imagen_logo_url||n.imagen_logo)||'';
+  async function cargar(ids,todo){
+    const c=cli();if(!c)return;
+    if(!negOk){try{const r=await c.from('negocios').select('*');if(!r.error&&r.data){r.data.forEach(n=>NEG.set(String(n.id),{nombre:n.nombre||'',logo:logoDe(n)}));negOk=true}}catch(e){}}
+    const pedir=todo?ids:ids.filter(i=>!PED.has(i));
+    for(let i=0;i<pedir.length;i+=40){const l=pedir.slice(i,i+40);
+      try{const r=await c.from('pedidos').select('*').in('id',l);if(!r.error&&r.data)r.data.forEach(p=>PED.set(String(p.id),p))}catch(e){}
+      const sin=l.filter(x=>!ITEMS.has(x));
+      if(sin.length){try{const r=await c.from('detalle_pedidos').select('*').in('pedido_id',sin);if(!r.error&&r.data){sin.forEach(x=>ITEMS.set(x,[]));r.data.forEach(d=>{const k=String(d.pedido_id);(ITEMS.get(k)||ITEMS.set(k,[]).get(k)).push(d)})}}catch(e){}}
+    }
+  }
+  /* ----- fases del seguimiento ----- */
+  const PASOS=['Recibido','Preparando','Recogiendo','En camino','Entregado'];
+  function fase(o){
+    const s=String(o.estado||'').toLowerCase();
+    if(s==='cancelado'||s==='rechazado')return {n:0,txt:s==='cancelado'?'Cancelado':'Rechazado',k:'no'};
+    if(s==='entregado')return {n:5,txt:'Entregado',k:'ok'};
+    if(['en_camino','camino_entrega','en_entrega','confirmando_pago'].includes(s))return {n:4,txt:s==='confirmando_pago'?'Confirmando el pago':'En camino al cliente',k:'move'};
+    if(s==='camino_recojo'||o.listo_para_recojo===true)return {n:3,txt:s==='camino_recojo'?'Yendo a recoger':'Listo para recojo',k:'move'};
+    if(['confirmado','aceptado','pedido_aceptado','asignado'].includes(s))return {n:2,txt:s==='asignado'?'Motorizado asignado':'Preparando el pedido',k:'prep'};
+    return {n:1,txt:o.negocio_id?'Por aceptar':'Recibido',k:'new'};
+  }
+  function hace(d){const t=new Date(d).getTime();if(!t)return '';const m=Math.max(0,Math.round((Date.now()-t)/60000));if(m<1)return 'Ahora';if(m<60)return 'Hace '+m+' min';const h=Math.floor(m/60);if(h<24)return 'Hace '+h+' h';const dd=Math.floor(h/24);return 'Hace '+dd+' d'}
+  function codigo(o,id){return '#'+String(o.codigo||id.replace(/-/g,'').slice(0,8)).toUpperCase()}
+  function nombreCli(o){const n=String(o.nombre_cliente||o.cliente_nombre||o.nombre_remitente||'Cliente').trim();if(ROL!=='negocio')return n;const p=n.split(/\s+/);return p.length>1?p[0]+' '+p[1][0]+'.':n}
+  function datoCli(o){
+    if(ROL==='admin')return o.telefono_cliente||o.cliente_telefono||'';
+    if(ROL==='moto'){const d=String(o.direccion_entrega||o.distrito||'').split(',')[0];return d.slice(0,28)}
+    return /recojo|recoger|tienda/i.test(String(o.tipo_entrega||''))?'Recojo en tienda':'Delivery';
+  }
+  function detalle(o,id){
+    const it=ITEMS.get(id)||[];
+    if(it.length)return it.map(d=>'<b>'+E(Number(d.cantidad)||1)+'×</b> '+E(d.nombre_producto||d.producto_nombre||d.nombre||'Producto')).join(' · ');
+    const t=o.descripcion||o.detalle||o.descripcion_paquete||o.notas||'';
+    return t?E(t):'<span class="pdUMut">Sin detalle de productos</span>';
+  }
+  function sigue(o,f){
+    if(f.n===0||f.n===5)return '';
+    if(ROL==='moto'){const m=String(o.metodo_pago||'').toLowerCase();if(m==='efectivo'&&o.pago_confirmado!==true)return 'Cobrar '+money(o.total)}
+    if(ROL==='admin'&&f.n===1&&o.negocio_id)return 'Sigue: que el negocio acepte';
+    if(ROL==='admin'&&f.n<=2&&!o.motorizado_id)return 'Sigue: asignar motorizado';
+    if(ROL==='negocio'&&f.n===1)return 'Sigue: aceptar pedido';
+    return 'Sigue: '+PASOS[f.n].toLowerCase();
+  }
+  window.pdUDatos={ped:id=>PED.get(String(id)),neg:id=>NEG.get(String(id)),fase,PASOS,money,hace,codigo,cargar:ids=>cargar(ids.map(String),true)};
+  /* ----- dónde va y qué se esconde ----- */
+  function host(card){
+    if(ROL==='admin')return card.querySelector(':scope > button.pdList > .pdbBody');
+    if(ROL==='moto')return card.querySelector(':scope > .pdMList');
+    return card.querySelector(':scope > .pdbBody');
+  }
+  function accion(card){
+    if(ROL==='admin'){const a=card.querySelector('.pdbBody [data-acc="aprobar"]');return a?{t:(a.textContent||'').trim()||'Aceptar pedido',el:a}:null}
+    if(ROL==='negocio'){const a=card.querySelector(':scope > .pdbBody .pdbBtns .pdbMain');return a?{t:(a.textContent||'').trim(),el:a}:null}
+    return null;
+  }
+  function abierto(card){
+    if(ROL==='admin'){const t=card.querySelector('.pdbBody [data-acc="tog"]');return t&&t.getAttribute('aria-expanded')==='true'}
+    if(ROL==='moto'){const d=card.querySelector('.orderDetails');return !!d&&!d.classList.contains('hidden')}
+    return false;
+  }
+  function pintar(card){
+    const id=idDe(card),o=PED.get(id);if(!o)return;
+    const h=host(card);if(!h)return;
+    const f=fase(o),n=NEG.get(String(o.negocio_id||o.restaurante_id||''));
+    const ac=accion(card),ab=abierto(card);
+    const bars=PASOS.map((_,i)=>'<s class="'+(f.n===0?'no':i<f.n?'on':'')+'"></s>').join('');
+    const sg=sigue(o,f);
+    const top='<div class="pdUR1"><b>'+E(codigo(o,id))+'</b><span>'+E(hace(o.creado_en||o.created_at))+'</span><i>'+E(money(o.total))+'</i></div>'
+      +'<div class="pdUR2"><span class="pdUPill '+f.k+'"><i></i>'+E(f.txt)+'</span>'
+      +(n&&n.nombre?'<span class="pdNegB pdUNeg"><em'+(n.logo?' style="background-image:url(&quot;'+E(n.logo)+'&quot;)"':'')+'>'+(n.logo?'':E((n.nombre.trim()[0]||'').toUpperCase()))+'</em><span>'+E(n.nombre)+'</span></span>':'')+'</div>'
+      +'<div class="pdUBars">'+bars+'</div>'
+      +'<div class="pdUFase"><span>'+(f.n?'Paso '+f.n+' de 5 · '+E(PASOS[f.n-1]):E(f.txt))+'</span><span>'+E(sg)+'</span></div>'
+      +'<div class="pdUCli"><strong>'+E(nombreCli(o))+'</strong>'+(datoCli(o)?'<small>· '+E(datoCli(o))+'</small>':'')+'</div>'
+      +'<div class="pdUDet">'+detalle(o,id)+'</div>'
+      +'<button type="button" class="pdUMas" data-u="mas">'+(ab?'Ver menos ▴':'Ver más ▾')+'</button>';
+    const act='<button type="button" class="pdUBtn" data-u="seg">Seguimiento</button>'+(ac&&ac.t?'<button type="button" class="pdUBtn pri" data-u="acc">'+E(ac.t)+'</button>':'');
+    let u=h.querySelector(':scope > .pdU');if(!u){u=document.createElement('div');u.className='pdU';h.prepend(u)}
+    if(u.__h!==top){u.innerHTML=top;u.__h=top}
+    let a=h.querySelector(':scope > .pdUAct');if(!a){a=document.createElement('div');a.className='pdUAct';h.append(a)}else if(a!==h.lastElementChild)h.append(a);
+    if(a.__h!==act){a.innerHTML=act;a.__h=act}
+    if(!h.classList.contains('pdUHost'))h.classList.add('pdUHost');
+    if(!card.classList.contains('pdUCard'))card.classList.add('pdUCard');
+  }
+  /* ----- botones ----- */
+  document.addEventListener('click',e=>{
+    const b=e.target.closest&&e.target.closest('.pdU [data-u], .pdUAct [data-u]');if(!b)return;
+    const card=b.closest(CARDS.split(',').map(s=>s.trim().replace(/^#\S+\s+/,'')).join(','));if(!card)return;
+    const id=idDe(card),k=b.dataset.u;
+    if(k==='mas'){
+      if(ROL==='moto')return; /* el toque llega a la tarjeta y abre el detalle */
+      e.preventDefault();e.stopPropagation();
+      if(ROL==='admin'){const t=card.querySelector('.pdbBody [data-acc="tog"]');t&&t.click();setTimeout(()=>pintar(card),60)}
+      else{const d=card.querySelector(':scope > .pdbBody .pdbDet');if(d)d.click();else if(window.pdbOpen)window.pdbOpen(id)}
+      return}
+    e.preventDefault();e.stopPropagation();
+    if(k==='seg'){if(window.pdSeguimiento&&window.pdSeguimiento.abrir)window.pdSeguimiento.abrir(id);return}
+    if(k==='acc'){const ac=accion(card);ac&&ac.el&&ac.el.click()}
+  },true);
+  /* ----- ciclo ----- */
+  function rapido(){document.querySelectorAll(CARDS).forEach(c=>{try{pintar(c)}catch(e){}})}
+  async function pasar(){
+    if(corriendo)return;corriendo=true;
+    try{const ids=[...document.querySelectorAll(CARDS)].map(idDe).filter(Boolean);if(!ids.length)return;
+      const todo=Date.now()-ultimo>8000;if(todo)ultimo=Date.now();
+      await cargar([...new Set(ids)],todo);rapido();
+    }finally{corriendo=false}
+  }
+  let t=null,en=false;
+  new MutationObserver(m=>{if(en)return;for(const r of m){const x=r.target;if(x&&x.closest&&x.closest('.pdU,.pdUAct,.pdNegB'))continue;en=true;try{rapido()}finally{en=false}clearTimeout(t);t=setTimeout(pasar,150);return}}).observe(document.documentElement,{childList:true,subtree:true});
+  setInterval(pasar,2000);setTimeout(pasar,700);
+})();
+</script>
+<script id="pd-admin-detalle-js">
+/* Detalle del pedido en admin: cabecera con fases + hoja para asignar motorizado (abierta al entrar, se baja para revisar) */
+(function(){
+  if(window.__pdAdminDet)return;window.__pdAdminDet=true;
+  const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const ini=n=>String(n||'?').trim().split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
+  const pedidos=()=>{try{return allOrders}catch(e){return []}};
+  function cabecera(card){
+    const D=window.pdUDatos;if(!D)return;
+    const id=String(card.dataset.orderId||'');const o=D.ped(id)||pedidos().find(x=>String(x.id)===id);if(!o)return;
+    const hd=card.querySelector('.pdRouteBand .pdAHd');if(!hd)return;
+    const f=D.fase(o),n=D.neg(o.negocio_id||o.restaurante_id);
+    const steps=D.PASOS.map((p,i)=>'<span class="'+(f.n===0?'':i<f.n?'on':'')+'">'+E(p)+'</span>').join('');
+    const bars=D.PASOS.map((p,i)=>'<s class="'+(f.n===0?'no':i<f.n?'on':'')+'"></s>').join('');
+    const h='<div class="pdDHr1"><b>'+E(D.codigo(o,id))+'</b><span>'+E(D.hace(o.creado_en||o.created_at))+'</span></div>'
+      +'<div class="pdDHamt">'+E(D.money(o.total))+'</div>'
+      +'<div class="pdDHr2"><span class="pdUPill '+f.k+'"><i></i>'+E(f.txt)+'</span>'+(n&&n.nombre?'<span class="pdNegB pdUNeg"><em'+(n.logo?' style="background-image:url(&quot;'+E(n.logo)+'&quot;)"':'')+'>'+(n.logo?'':E(n.nombre[0]||''))+'</em><span>'+E(n.nombre)+'</span></span>':'')+'</div>'
+      +'<div class="pdUBars">'+bars+'</div><div class="pdDHsteps">'+steps+'</div>';
+    let x=hd.querySelector(':scope > .pdDH');if(!x){x=document.createElement('div');x.className='pdDH';hd.prepend(x)}
+    if(x.__h!==h){x.innerHTML=h;x.__h=h}
+    if(!hd.classList.contains('pdDHOn'))hd.classList.add('pdDHOn');
+  }
+  /* ----- hoja para asignar ----- */
+  function opciones(sel){return [...sel.options].filter(op=>op.value).map(op=>{const t=(op.textContent||'').trim();const p=t.split(/\s+·\s+|\s+-\s+/);return {v:op.value,n:p[0]||t,e:p.slice(1).join(' · ')}})}
+  function hoja(card){
+    const pie=card.querySelector(':scope .pdPie');if(!pie)return;
+    const id=String(card.dataset.orderId||'');
+    const ap=pie.querySelector('.approveOrderBtn'),rj=pie.querySelector('.rejectOrderBtn'),un=pie.querySelector('.unassignBtn'),sel=pie.querySelector('select.motoSelect');
+    const puedeAsignar=!!sel&&sel.options.length>1&&(!sel.disabled||!!(pie.querySelector('.approveOrderBtn')&&!pie.querySelector('.approveOrderBtn').disabled));
+    const o=pedidos().find(x=>String(x.id)===id)||{};
+    const asignado=!!(sel&&sel.value)||!!o.motorizado_id;
+    let prim=null,sec=null;
+    if(ap&&!ap.disabled)prim={t:puedeAsignar?'Aceptar y asignar':'Aceptar pedido',k:'ap'};
+    else if(puedeAsignar)prim={t:asignado?'Cambiar motorizado':'Asignar motorizado',k:'as'};
+    if(rj&&!rj.disabled)sec={t:'Rechazar',k:'rj'};
+    else if(un&&!un.disabled&&asignado&&getComputedStyle(un).display!=='none')sec={t:'Quitar',k:'un'};
+    let ds=pie.querySelector(':scope > .pdDS');
+    if(!prim&&!sec){if(ds){ds.remove();pie.classList.remove('pdDSOn');card.classList.remove('pdDSAbierta')}return}
+    if(!pie.classList.contains('pdDSOn'))pie.classList.add('pdDSOn');
+    const ops=puedeAsignar?opciones(sel):[];
+    if(card.dataset.dsSel===undefined||!ops.some(x=>x.v===card.dataset.dsSel)){
+      const pre=(sel&&sel.value)||(ops.find(x=>/disponible/i.test(x.e))||ops[0]||{}).v||'';card.dataset.dsSel=pre}
+    if(card.dataset.dsOpen===undefined)card.dataset.dsOpen=ops.length?'1':'0';
+    const abierta=card.dataset.dsOpen==='1'&&ops.length>0;
+    const elegido=ops.find(x=>x.v===card.dataset.dsSel);
+    const lista=ops.map(x=>'<button type="button" class="pdDSm'+(x.v===card.dataset.dsSel?' on':'')+'" data-m="'+E(x.v)+'"><span class="pdDSav">'+E(ini(x.n))+'</span><span class="pdDSn"><b>'+E(x.n)+'</b>'+(x.e?'<small>'+E(x.e)+'</small>':'')+'</span>'+(x.e?'<span class="pdDSst'+(/disponible/i.test(x.e)?'':' o')+'">'+E(/disponible/i.test(x.e)?'Disponible':x.e.split(' ')[0])+'</span>':'')+'<span class="pdDSr"></span></button>').join('');
+    const h=(ops.length?'<div class="pdDSg" data-ds="tog"><span class="pdDSgrip"></span><span class="pdDShint">'+(abierta?'↓ Desliza hacia abajo para revisar el pedido':'↑ Levanta para elegir otro motorizado')+'</span></div>':'')
+      +(abierta?'<div class="pdDSt">Elige el motorizado</div><div class="pdDSl">'+lista+'</div>'
+        :(elegido?'<div class="pdDSpeek" data-ds="tog"><span class="pdDSav">'+E(ini(elegido.n))+'</span><span class="pdDSn"><b>'+E(elegido.n)+'</b><small>Seleccionado'+(elegido.e?' · '+E(elegido.e):'')+'</small></span><span class="pdDSup">⌃</span></div>':''))
+      +'<div class="pdDSb">'+(prim?'<button type="button" class="pdDSbtn p" data-ds="'+prim.k+'">'+E(prim.t)+'</button>':'')+(sec?'<button type="button" class="pdDSbtn r" data-ds="'+sec.k+'">'+E(sec.t)+'</button>':'')+'</div>';
+    if(!ds){ds=document.createElement('div');ds.className='pdDS';pie.appendChild(ds)}
+    if(ds.__h!==h){ds.innerHTML=h;ds.__h=h}
+    if(card.classList.contains('pdDSAbierta')!==abierta)card.classList.toggle('pdDSAbierta',abierta);
+    let dim=card.querySelector(':scope > .pdDSdim');
+    if(!dim){dim=document.createElement('div');dim.className='pdDSdim';dim.addEventListener('click',()=>{card.dataset.dsOpen='0';hoja(card)});card.appendChild(dim)}
+  }
+  async function esperar(id,ok,ms){const t=Date.now();while(Date.now()-t<ms){const o=pedidos().find(x=>String(x.id)===String(id));if(o&&ok(o))return true;await new Promise(r=>setTimeout(r,300))}return false}
+  async function accion(card,k,btn){
+    const pie=card.querySelector('.pdPie');const id=String(card.dataset.orderId||'');const m=card.dataset.dsSel||'';
+    const ap=pie&&pie.querySelector('.approveOrderBtn'),rj=pie&&pie.querySelector('.rejectOrderBtn'),un=pie&&pie.querySelector('.unassignBtn');
+    if(k==='tog'){card.dataset.dsOpen=card.dataset.dsOpen==='1'?'0':'1';hoja(card);return}
+    if(k==='rj'){rj&&rj.click();return}
+    if(k==='un'){un&&un.click();return}
+    if(btn){btn.disabled=true;btn.textContent='Procesando…'}
+    try{
+      if(k==='ap'){
+        ap&&ap.click();
+        if(m&&typeof assignOrder==='function'){
+          const listo=await esperar(id,o=>['confirmado','aceptado','asignado'].includes(String(o.estado||'').toLowerCase()),9000);
+          if(listo)await assignOrder(id,m);
+        }
+      }else if(k==='as'){
+        if(!m){window.pdAviso&&pdAviso('Elige un motorizado.');return}
+        if(typeof assignOrder==='function')await assignOrder(id,m);
+      }
+    }finally{setTimeout(()=>{const c=document.querySelector('.adminOrderCard[data-order-id="'+CSS.escape(id)+'"]');if(c){delete c.dataset.dsOpen;hoja(c)}},400)}
+  }
+  document.addEventListener('click',e=>{
+    const t=e.target.closest&&e.target.closest('.pdDS [data-ds], .pdDS [data-m]');if(!t)return;
+    const card=t.closest('.adminOrderCard');if(!card)return;
+    e.preventDefault();e.stopPropagation();
+    if(t.dataset.m!==undefined){card.dataset.dsSel=t.dataset.m;hoja(card);return}
+    accion(card,t.dataset.ds,t.classList.contains('pdDSbtn')?t:null);
+  },true);
+  /* deslizar la hoja: abajo la baja, arriba la sube */
+  let g=null;
+  document.addEventListener('touchstart',e=>{const s=e.target.closest&&e.target.closest('.adminOrderCard.is-expanded .pdDS');if(!s||e.touches.length!==1)return;const l=e.target.closest('.pdDSl');if(l&&l.scrollTop>0)return;g={y:e.touches[0].clientY,card:s.closest('.adminOrderCard'),d:0}},{passive:true,capture:true});
+  document.addEventListener('touchmove',e=>{if(!g)return;g.d=e.touches[0].clientY-g.y},{passive:true,capture:true});
+  document.addEventListener('touchend',()=>{if(!g)return;const c=g.card,d=g.d;g=null;if(d>50&&c.dataset.dsOpen==='1'){c.dataset.dsOpen='0';hoja(c)}else if(d<-40&&c.dataset.dsOpen!=='1'){c.dataset.dsOpen='1';hoja(c)}},true);
+  function pasar(){document.querySelectorAll('#orderList .adminOrderCard.is-expanded').forEach(c=>{try{cabecera(c);hoja(c)}catch(e){console.warn('Detalle admin:',e)}});
+    document.querySelectorAll('#orderList .adminOrderCard:not(.is-expanded)').forEach(c=>{if(c.dataset.dsOpen!==undefined){delete c.dataset.dsOpen;delete c.dataset.dsSel}if(c.classList.contains('pdDSAbierta'))c.classList.remove('pdDSAbierta')})}
+  let t=null,en=false;
+  new MutationObserver(m=>{if(en)return;for(const r of m){const x=r.target;if(x&&x.closest&&x.closest('.pdDS,.pdDH'))continue;en=true;try{pasar()}finally{en=false}clearTimeout(t);t=setTimeout(pasar,200);return}}).observe(document.documentElement,{childList:true,subtree:true});
+  setInterval(pasar,700);
 })();
 </script>
 </body>
