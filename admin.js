@@ -3716,7 +3716,7 @@ try{
       +'<div class="cnxDsPanel" id="cnxDsPanel"'+(dsOpen?'':' hidden')+'><div class="cnxDsHead"><b>Descartables</b><button type="button" class="cnxDsX" data-a="ds-close" aria-label="Cerrar">×</button></div>'
       +TOG('cnxDsOn',on,'Cobrar descartables','Actívalo para sumar el precio de los descartables a los pedidos.')
       +'<div class="cnxDsBox" id="cnxDsBox"'+(on?'':' hidden')+'><div class="cnxDsBoxH"><b>Precio por unidad</b><small>Vacío = no lo ofreces · 0 = gratis</small></div>'
-      +DSK.map(([k,n,ic,sub,ph])=>'<label class="cnxDsRow" for="cnxDs_'+k+'"><i>'+ic+'</i><span><b>'+n+'</b><small>'+sub+'</small></span><em>S/</em><input id="cnxDs_'+k+'" inputmode="decimal" maxlength="6" placeholder="'+ph+'" value="'+E(dsTxt(c[k]))+'" autocomplete="off"></label>').join('')
+      +DSK.map(([k,n,ic,sub,ph])=>'<label class="cnxDsRow" for="cnxDs_'+k+'"><span><b>'+n+'</b><small>'+sub+'</small></span><em>S/</em><input id="cnxDs_'+k+'" inputmode="decimal" maxlength="6" placeholder="'+ph+'" value="'+E(dsTxt(c[k]))+'" autocomplete="off"></label>').join('')
       +'<button type="button" class="btn" data-a="ds-save">Guardar precios</button></div></div>';
   }
   async function dsToggle(inp){
