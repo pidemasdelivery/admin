@@ -642,6 +642,16 @@ console.warn("Pedidos: fallo ordenado por creado_en, reintentando sin ordenar:",
 ordersRes=await db.from("pedidos").select("*");
 }
 if(ordersRes.error) throw ordersRes.error;
+/* si llega vacío, puede ser la sesión vencida (Supabase devuelve 0 filas sin error): se renueva y se reintenta una vez */
+if(Array.isArray(ordersRes.data)&&!ordersRes.data.length){
+try{
+const ses=await db.auth.getSession();
+if(!ses?.data?.session){console.warn("Pedidos vacíos y sin sesión activa.");}
+const rf=await db.auth.refreshSession();
+if(!rf?.error){const again=await db.from("pedidos").select("*").order("creado_en",{ascending:false});if(!again.error&&Array.isArray(again.data))ordersRes=again;}
+else console.warn("No se pudo renovar la sesión:",rf.error);
+}catch(e){console.warn("Reintento de pedidos:",e)}
+}
 const orders=Array.isArray(ordersRes.data)?ordersRes.data:[];
 const ids=orders.map(o=>o.id).filter(Boolean);
 const restRes=await pNeg;

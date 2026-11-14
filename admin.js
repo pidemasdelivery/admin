@@ -3461,6 +3461,12 @@ try{
   function msg(t,bad){const m=$('cnxMsg');if(!m)return;clearTimeout(msg.t);m.textContent=t||'';m.className='cnxMsg'+(t?' on':'')+(bad?' bad':'');if(t&&!bad)msg.t=setTimeout(()=>{m.className='cnxMsg'},3500);if(t&&bad)try{m.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}}
   const F=(label,id,val,extra)=>'<div class="cnxF"><label for="'+id+'">'+label+'</label><input id="'+id+'" value="'+E(val??'')+'" '+(extra||'')+'></div>';
   const SW=(id,on,txt)=>'<label class="cnxCk"><input type="checkbox" id="'+id+'"'+(on?' checked':'')+'><span>'+txt+'</span></label>';
+  const TOG=(id,on,t,s)=>'<label class="cnxTog"><span class="cnxTogTx"><b>'+t+'</b>'+(s?'<small>'+s+'</small>':'')+'</span><input type="checkbox" id="'+id+'"'+(on?' checked':'')+'><i class="cnxSw" aria-hidden="true"></i></label>';
+  const SEC=(paso,t)=>'<div class="cnxSec"><span>'+paso+'</span><b>'+t+'</b></div>';
+  const ini=n=>String(n||'?').trim().split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
+  function hero(){const r=cur,lg=pick(r,LOGO),u=lg?r[lg]:'';const vis=r.activo!==false;
+    return '<div class="cnxHero"><div class="cnxHeroAv">'+(u?'<img src="'+E(u)+'" alt="">':E(ini(r.nombre)))+'</div><div class="cnxHeroTx"><small>NEGOCIO</small><b>'+E(r.nombre||'Sin nombre')+'</b><span class="'+(vis?'ok':'off')+'">'+(vis?'Visible en la tienda':'Oculto en la tienda')+'</span></div></div>'}
+  function imgRow(kind,label,desc,url,wide){return '<div class="cnxLogoRow" data-k="'+kind+'"><div class="cnxLogoTh'+(wide?' wide':'')+'">'+(url?'<img src="'+E(url)+'" alt="">':'<span>Sin '+label.toLowerCase()+'</span>')+'</div><div class="cnxLogoTx"><b>'+label+'</b><small>'+desc+'</small><div class="cnxLogoBt"><label class="cnxBtnSoft" for="cnx'+kind+'F">'+(url?'Cambiar':'Subir')+' '+label.toLowerCase()+'</label>'+(url?'<button type="button" class="cnxBtnGhost" data-a="img-del" data-k="'+kind+'">Quitar</button>':'')+'</div><input type="file" id="cnx'+kind+'F" accept="image/png,image/jpeg,image/webp" hidden></div></div>'}
 
   /* ---------- carga ---------- */
   async function load(){
@@ -3498,6 +3504,7 @@ try{
       if(tab==='datos')pDatos(p);
       else if(tab==='ubicacion')pUbic(p);
       else if(tab==='horarios')pHor(p);
+      else if(tab==='acceso')await pAcc(p);
       else if(tab==='categorias'){p.innerHTML='<div class="cnxMuted">Cargando categorías…</div>';await cargarCats();pCats(p)}
       else if(tab==='carta'){p.innerHTML='<div class="cnxMuted">Cargando carta…</div>';await cargarCats();await cargarProds();edit?pProd(p):pCarta(p)}
     }catch(e){console.error('Configurar negocios:',e);p.innerHTML='<div class="cnxErr">'+E(e&&e.message||e)+'</div>'}
@@ -3517,7 +3524,7 @@ try{
     const r=cur,tel=pick(r,TEL),logo=pick(r,LOGO),port=pick(r,PORT);
     const cat=pick(r,['categoria_negocio','categoria_comercial','tipo_negocio','categoria']);
     const catVal=cat?String(r[cat]||''):'';const opts=(catVal&&!CATS.includes(catVal)?[catVal]:[]).concat(CATS);
-    p.innerHTML='<div class="cnxCard">'
+    p.innerHTML=hero()+((logo||port)?'<div class="cnxCard">'+SEC('PASO 1','Imagen del negocio')+(logo?imgRow('Logo','Logo','Se muestra en la tienda junto al nombre. Mejor cuadrado y con buen contraste.',r[logo]):'')+(port?imgRow('Port','Portada','Imagen ancha de cabecera del negocio en la tienda.',r[port],true):'')+'</div>':'')+'<div class="cnxCard">'+SEC((logo||port)?'PASO 2':'PASO 1','Datos del negocio')
       +F('Nombre del negocio','cnxNombre',r.nombre)
       +(tel?F('Número de WhatsApp / teléfono','cnxTel',r[tel],'type="tel" inputmode="tel"'):'')
       +(has(r,'descripcion')?'<div class="cnxF"><label for="cnxDesc">Descripción</label><textarea id="cnxDesc" rows="3">'+E(r.descripcion||'')+'</textarea></div>':'')
@@ -3525,12 +3532,8 @@ try{
       +(has(r,'ruc')?F('RUC','cnxRuc',r.ruc,'inputmode="numeric"'):'')
       +(has(r,'tiempo_estimado')?F('Tiempo estimado de entrega','cnxTiempo',r.tiempo_estimado,'placeholder="Ej. 25–40 min"'):'')
       +(has(r,'orden')?F('Orden en la tienda','cnxOrden',r.orden??0,'type="number" step="1"'):'')
-      +(has(r,'activo')?SW('cnxActivo',r.activo!==false,'Negocio activo (se muestra en la tienda)'):'')
       +'</div>'
-      +((logo||port)?'<div class="cnxCard"><div class="cnxH">Imágenes</div><div class="cnxImgs">'
-        +(logo?'<div class="cnxImg"><span>Logo</span><div class="cnxThumb">'+(r[logo]?'<img src="'+E(r[logo])+'" alt="">':'Sin logo')+'</div><input type="file" id="cnxLogoF" accept="image/png,image/jpeg,image/webp"></div>':'')
-        +(port?'<div class="cnxImg"><span>Portada</span><div class="cnxThumb wide">'+(r[port]?'<img src="'+E(r[port])+'" alt="">':'Sin portada')+'</div><input type="file" id="cnxPortF" accept="image/png,image/jpeg,image/webp"></div>':'')
-        +'</div></div>':'')
+      +(has(r,'activo')?'<div class="cnxCard">'+SEC('TIENDA','En la tienda')+TOG('cnxActivo',r.activo!==false,'Negocio visible en la tienda','Si lo apagas, los clientes no verán tu negocio.')+'</div>':'')
       +'<button type="button" class="btn" data-a="datos-save">Guardar cambios</button>';
     p._cols={tel,cat,logo,port};
   }
@@ -3608,12 +3611,16 @@ try{
   function leerHorario(txt){
     const out={};String(txt||'').split('|').forEach(x=>{const m=x.trim().match(/^([a-z]+)=([^-]*)-(.*)$/i);if(m)out[m[1].toLowerCase()]={abre:h24(m[2]),cierra:h24(m[3])}});return out;
   }
+  function abiertoAhora(H){const d=new Date();const k=['domingo','lunes','martes','miercoles','jueves','viernes','sabado'][d.getDay()];const x=H[k];if(!x)return null;const m=d.getHours()*60+d.getMinutes();const t=v=>{const q=String(v).split(':');return (+q[0])*60+(+q[1]||0)};const a=t(x.abre),c=t(x.cierra);return c>a?(m>=a&&m<c):(m>=a||m<c)}
   function pHor(p){
     if(!has(cur,'horario')){p.innerHTML='<div class="cnxErr">La tabla negocios no tiene la columna horario.</div>';return}
-    const H=leerHorario(cur.horario);
-    p.innerHTML='<div class="cnxCard"><div class="cnxH">Horario de atención</div><p class="cnxMuted">Marca los días que atiende y la hora de apertura y cierre. En la tienda el horario se recorta al horario general de Pidemás.</p>'
-      +DIAS.map(([k,n])=>{const d=H[k];return '<div class="cnxDia" data-d="'+k+'"><label class="cnxCk"><input type="checkbox" class="ha-on"'+(d?' checked':'')+'><span>'+n+'</span></label><div class="cnxHoras"><input type="time" class="ha" value="'+E(d?d.abre:'09:00')+'"><i>a</i><input type="time" class="hc" value="'+E(d?d.cierra:'21:30')+'"></div></div>'}).join('')
-      +'</div><button type="button" class="btn" data-a="hor-save">Guardar horario</button>';
+    const H=leerHorario(cur.horario);const hoy=['domingo','lunes','martes','miercoles','jueves','viernes','sabado'][new Date().getDay()];
+    const n=Object.keys(H).length,ab=abiertoAhora(H);
+    p.innerHTML=hero()+'<div class="cnxCard cnxEst"><span class="cnxEstIc">◷</span><div><b>'+(n?(ab?'Abierto ahora':'Cerrado ahora'):'Cerrado')+'</b><small>'+(n?n+' día'+(n===1?'':'s')+' de atención a la semana.':'No tiene días de atención. Activa al menos uno.')+'</small></div></div>'
+      +'<div class="cnxCard">'+SEC('HORARIO','Días y horas de atención')+'<p class="cnxMuted">Los clientes solo pueden pedir dentro de este horario. En la tienda se recorta al horario general de Pidemás.</p>'
+      +DIAS.map(([k,nm])=>{const d=H[k];return '<div class="cnxDia" data-d="'+k+'"><label class="cnxDiaTop"><span class="cnxDiaTx"><b>'+nm+(k===hoy?' <em>Hoy</em>':'')+'</b><small class="cnxDiaSt">'+(d?E(d.abre)+' – '+E(d.cierra):'Cerrado')+'</small></span><input type="checkbox" class="ha-on"'+(d?' checked':'')+'><i class="cnxSw" aria-hidden="true"></i></label><div class="cnxHoras"><input type="time" class="ha" value="'+E(d?d.abre:'09:00')+'"><i>a</i><input type="time" class="hc" value="'+E(d?d.cierra:'21:30')+'"></div></div>'}).join('')
+      +'<button type="button" class="btn alt cnxCopy" data-a="hor-copy">Copiar el horario del primer día activo a los demás</button></div><button type="button" class="btn" data-a="hor-save">Guardar horario</button>';
+    p.querySelectorAll('.cnxDia').forEach(r=>{const upd=()=>{const on=r.querySelector('.ha-on').checked;r.classList.toggle('on',on);r.querySelector('.cnxDiaSt').textContent=on?(r.querySelector('.ha').value+' – '+r.querySelector('.hc').value):'Cerrado'};r.addEventListener('change',upd);r.addEventListener('input',upd);upd()});
   }
   async function saveHor(){
     const parts=[];
@@ -3658,6 +3665,31 @@ try{
     }catch(e){msg('No se pudo completar: '+(e.message||e),true)}
   }
 
+  /* ---------- Acceso (contraseña) ---------- */
+  async function pAcc(p){
+    p.innerHTML=hero()+'<div class="cnxCard"><div class="cnxMuted">Cargando cuentas…</div></div>';
+    const {data,error}=await db.rpc('admin_cuentas_negocio',{p_negocio:cur.id});
+    if(error){p.innerHTML=hero()+'<div class="cnxErr">No se pudieron cargar las cuentas: '+E(error.message)+'<br><br>Si dice que la función no existe, ejecuta en Supabase el archivo <b>admin-claves-negocio.sql</b>.</div>';return}
+    const cs=data||[];
+    p.innerHTML=hero()+'<div class="cnxCard">'+SEC('ACCESO','Cuenta del negocio')+(cs.length?cs.map(c=>'<div class="cnxAcc" data-u="'+E(c.usuario_id)+'"><div class="cnxAccTop"><span class="cnxAccAv">'+E(ini(c.email))+'</span><span><b>'+E(c.email||'Sin correo')+'</b><small>'+(c.ultimo_ingreso?'Último ingreso: '+E(new Date(c.ultimo_ingreso).toLocaleString('es-PE',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})):'Aún no ha ingresado')+'</small></span></div>'
+      +'<div class="cnxF"><label>Nueva contraseña</label><div class="cnxPw"><input type="password" class="pw1" autocomplete="new-password" placeholder="Mínimo 6 caracteres"><button type="button" class="cnxEye" data-a="pw-eye" aria-label="Ver">Ver</button></div></div>'
+      +'<div class="cnxF"><label>Repite la contraseña</label><input type="password" class="pw2" autocomplete="new-password"></div>'
+      +'<button type="button" class="btn" data-a="pw-save">Cambiar contraseña</button></div>').join('')
+      :'<p class="cnxMuted">Este negocio no tiene una cuenta vinculada. Créala desde «Crear negocio» o vincula su usuario en Supabase.</p>')+'</div>'
+      +'<p class="cnxMuted" style="margin:4px 2px">El negocio deberá ingresar con la nueva contraseña. Compártela por un medio seguro.</p>';
+  }
+  async function savePw(row){
+    const a=row.querySelector('.pw1').value,b=row.querySelector('.pw2').value;
+    if(a.length<6){msg('La contraseña debe tener al menos 6 caracteres.',true);return}
+    if(a!==b){msg('Las contraseñas no coinciden.',true);return}
+    const btn=row.querySelector('[data-a="pw-save"]');btn.disabled=true;btn.textContent='Cambiando…';
+    try{const {error}=await db.rpc('admin_cambiar_clave_negocio',{p_usuario:row.dataset.u,p_clave:a});if(error)throw error;
+      row.querySelector('.pw1').value='';row.querySelector('.pw2').value='';
+      if(window.pdExito)pdExito('Contraseña cambiada.');else msg('Contraseña cambiada.');
+    }catch(e){msg('No se pudo cambiar la contraseña: '+(e.message||e),true)}
+    finally{btn.disabled=false;btn.textContent='Cambiar contraseña'}
+  }
+
   /* ---------- Carta ---------- */
   const stockKey=()=>pick(prods[0]||{},['stock','stock_actual','cantidad_stock','existencias','cantidad_disponible'])||'stock';
   function pCarta(p){
@@ -3667,7 +3699,8 @@ try{
     if(sin.length)grupos.push({c:{nombre:'Sin categoría'},items:sin});
     const card=x=>{const st=Number(x[sk]);const vis=x.disponible!==false;const sd=splitDesc(x.descripcion).description;
       return '<div class="cnxProd'+(vis?'':' off')+'" data-id="'+E(x.id)+'"><div class="cnxPImg">'+(x.imagen_url?'<img src="'+E(x.imagen_url)+'" alt="" loading="lazy">':'<span>Sin foto</span>')+'</div><div class="cnxPTx"><b>'+E(x.nombre||'')+'</b><small>'+E(sd).slice(0,70)+'</small><div class="cnxPMeta"><strong>'+money(x.precio)+'</strong><span>Stock: '+(isFinite(st)?st:'—')+'</span><span class="cnxTag'+(vis?'':' off')+'">'+(vis?'Visible':'Oculto')+'</span></div><div class="cnxActs"><button type="button" class="btn alt" data-a="p-edit">Editar</button><button type="button" class="btn alt" data-a="p-vis">'+(vis?'Ocultar':'Mostrar')+'</button><button type="button" class="btn alt cnxDel" data-a="p-del">Eliminar</button></div></div></div>'};
-    p.innerHTML='<button type="button" class="btn" data-a="p-new">+ Agregar producto</button><p class="cnxMuted" style="margin:10px 2px 0">'+prods.length+' producto'+(prods.length===1?'':'s')+' en la carta.</p>'
+    const sinSt=prods.filter(x=>{const v=Number(x[sk]);return isFinite(v)&&v<=0}).length;
+    p.innerHTML='<div class="cnxStats"><div><small>Productos</small><b>'+prods.length+'</b></div><div><small>Categorías</small><b>'+cats.length+'</b></div><div><small>Sin stock</small><b>'+sinSt+'</b></div></div><button type="button" class="btn" data-a="p-new">+ Agregar producto</button>'
       +(grupos.filter(g=>g.items.length).map(g=>'<div class="cnxCard"><div class="cnxH">'+E(g.c.nombre||'')+' · '+g.items.length+'</div>'+g.items.map(card).join('')+'</div>').join('')||'<div class="cnxCard cnxMuted">Este negocio aún no tiene productos.</div>');
   }
   function pProd(p){
@@ -3734,6 +3767,14 @@ try{
 
   /* ---------- eventos ---------- */
   $('cnxNegocio').addEventListener('change',e=>{tab='datos';elegir(e.target.value)});
+  $('cnxPane').addEventListener('change',async e=>{
+    const t=e.target;if(!t||!/^cnx(Logo|Port)F$/.test(t.id)||!t.files||!t.files[0])return;
+    const k=t.id==='cnxLogoF'?'logo':'portada',col=k==='logo'?pick(cur,LOGO):pick(cur,PORT);if(!col)return;
+    const f=t.files[0];if(!/^image\/(jpeg|png|webp)$/i.test(f.type)||f.size>5*1024*1024){msg('La imagen debe ser JPG, PNG o WEBP y pesar máximo 5 MB.',true);t.value='';return}
+    const th=t.closest('.cnxLogoRow').querySelector('.cnxLogoTh');th.innerHTML='<img src="'+URL.createObjectURL(f)+'" alt="">';th.classList.add('sub');
+    try{const url=await subirImgNegocio(f,k);await guardarNegocio({[col]:url},(k==='logo'?'Logo':'Portada')+' actualizado.');if(window.pdExito)pdExito((k==='logo'?'Logo':'Portada')+' actualizado.');pintar()}
+    catch(err){msg('No se pudo subir la imagen: '+(err.message||err),true);pintar()}
+  });
   $('cnxTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-t]');if(!b||!cur)return;tab=b.dataset.t;edit=null;msg('');pintar()});
   $('cnxPane').addEventListener('click',e=>{
     const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=(b.closest('[data-id]')||{dataset:{}}).dataset.id;
@@ -3741,6 +3782,10 @@ try{
     if(a==='ubic-save')return saveUbic();
     if(a==='gmaps-open'){const la=$('cnxLat').value.trim(),ln=$('cnxLng').value.trim(),u=($('cnxGm')&&$('cnxGm').value.trim())||(la&&ln?'https://www.google.com/maps?q='+encodeURIComponent(la+','+ln):'');if(u)window.open(u,'_blank','noopener');else msg('Aún no hay ubicación para abrir.',true);return}
     if(a==='hor-save')return saveHor();
+    if(a==='hor-copy'){const rows=[...document.querySelectorAll('#cnxPane .cnxDia')];const f=rows.find(r=>r.querySelector('.ha-on').checked);if(!f){msg('Activa primero un día.',true);return}const A=f.querySelector('.ha').value,C=f.querySelector('.hc').value;rows.forEach(r=>{r.querySelector('.ha-on').checked=true;r.querySelector('.ha').value=A;r.querySelector('.hc').value=C;r.dispatchEvent(new Event('change'))});msg('Horario copiado. Toca «Guardar horario».');return}
+    if(a==='pw-eye'){const i=b.parentElement.querySelector('input');i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'Ver':'Ocultar';return}
+    if(a==='pw-save')return savePw(b.closest('.cnxAcc'));
+    if(a==='img-del'){const k=b.dataset.k,col=k==='Logo'?pick(cur,LOGO):pick(cur,PORT);if(!col)return;(async()=>{if(window.pdConfirmar&&!(await pdConfirmar('¿Quitar '+(k==='Logo'?'el logo':'la portada')+' del negocio?')))return;try{await guardarNegocio({[col]:null},(k==='Logo'?'Logo':'Portada')+' quitado.');pintar()}catch(e){msg('No se pudo quitar: '+(e.message||e),true)}})();return}
     if(a.startsWith('cat-'))return catAction(a,id);
     if(a==='p-new'){edit={prod:null};return pintar()}
     if(a==='p-back'){edit=null;return pintar()}
