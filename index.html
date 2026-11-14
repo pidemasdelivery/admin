@@ -2,7 +2,31 @@
 <!DOCTYPE html>
 
 <html lang="es">
-<head>
+<head><style id="pd-cargando">
+html.pdCarga,html.pdCarga body{background:#FFF9F5!important}
+html.pdCarga body>*{visibility:hidden!important}
+html.pdCarga body::before{content:"";position:fixed;inset:0;z-index:2147483646;background:#FFF9F5;visibility:visible!important}
+html.pdCarga body::after{content:"";position:fixed;top:50%;left:50%;width:38px;height:38px;margin:-19px 0 0 -19px;z-index:2147483647;border-radius:50%;border:4px solid rgba(0,0,0,.10);border-top-color:#C4410C;animation:pdCargaGira .8s linear infinite;visibility:visible!important;box-sizing:border-box}
+@keyframes pdCargaGira{to{transform:rotate(360deg)}}
+html.pdCarga.pdCargaSale body>*{visibility:visible!important}
+html.pdCarga.pdCargaSale body::before,html.pdCarga.pdCargaSale body::after{opacity:0;transition:opacity .28s ease}
+</style><script>(function(){var h=document.documentElement;try{
+h.classList.add("pdCarga");var fin=false,t0=Date.now(),q=0,fuentes=false;
+try{document.fonts.ready.then(function(){fuentes=true})}catch(e){fuentes=true}
+/* ¿Hay sesión guardada? Entonces se espera el panel; si no, el login */
+var ses=false;try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i)||"";if(/^sb-.*-auth-token$/.test(k)&&localStorage.getItem(k)){ses=true;break}}}catch(e){}
+function ve(id){var e=document.getElementById(id);if(!e)return false;if(e.hidden||e.classList.contains("hidden"))return false;var c=getComputedStyle(e);return c.display!=="none"&&e.getClientRects().length>0}
+function salir(){if(fin)return;fin=true;h.classList.add("pdCargaSale");setTimeout(function(){h.classList.remove("pdCarga","pdCargaSale")},300)}
+window.pdQuitarCarga=salir;
+(function sondeo(){
+  if(fin)return;
+  var base=document.readyState==="complete"&&fuentes;
+  var listo=base&&(ve("appView")||(!ses&&ve("loginView"))||(ses&&ve("loginView")&&Date.now()-t0>4000)||!!document.getElementById("pdPermGate"));
+  if(listo&&!q)q=Date.now();if(!listo)q=0;
+  if((q&&Date.now()-q>350)||Date.now()-t0>10000){salir();return}
+  setTimeout(sondeo,80)
+})();
+}catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-version" content="20261103073944">
 <meta charset="utf-8"/>
@@ -27,7 +51,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-500-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-700-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-800-normal.woff2">
-<link rel="stylesheet" href="estilos.css?v=202611132000">
+<link rel="stylesheet" href="estilos.css?v=202611140010">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'"/>
 
@@ -760,7 +784,7 @@ Motorizado activo
 <script src="supabase.js?v=202611082249"></script>
 <script src="funciones.js?v=202611131700"></script>
 <script src="pedidos.js?v=202611131700"></script>
-<script src="admin.js?v=202611132000"></script>
+<script src="admin.js?v=202611140010"></script>
 <script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 <style id="pd-app-panel-css">
 /* ===== pd-app-panel · se siente como app: sin zoom, sin recargar al jalar, login fijo y centrado ===== */
@@ -776,7 +800,7 @@ html.pdLoginFijo body #loginView#loginView#loginView{position:fixed!important;in
 html.pdLoginFijo body #loginView#loginView#loginView > *{width:100%;max-width:420px;margin-left:auto!important;margin-right:auto!important}
 /* Ventanas que se cierran deslizando hacia abajo */
 /* sin estirar el contenido al jalar (efecto de Android que dejaba la cabecera arriba y un hueco blanco) */
-html:root body *{overscroll-behavior-y:none!important}
+/* (solo en zonas con scroll real, lo pone el script al tocar: así el scroll pasa bien entre tarjetas) */
 .pdArrastrando{transition:none!important;user-select:none!important}
 .pdArrastrando *{overscroll-behavior:none!important}
 .pdSoltando{transition:translate .28s cubic-bezier(.2,.8,.3,1)!important}
@@ -916,6 +940,7 @@ html:root body *{overscroll-behavior-y:none!important}
   }
   /* en fase de captura: algunas ventanas detienen los toques y así igual se detecta el arrastre */
   document.addEventListener('touchstart',function(e){if(e.touches.length===1)inicio(e.touches[0].clientX,e.touches[0].clientY,e.target)},{passive:true,capture:true});
+  document.addEventListener('touchstart',function(e){for(var el=e.target;el&&el.nodeType===1&&el!==document.body;el=el.parentElement){var oy=getComputedStyle(el).overflowY;if((oy==='auto'||oy==='scroll')&&el.style.getPropertyValue('overscroll-behavior-y')!=='none')el.style.setProperty('overscroll-behavior-y','none','important')}},{passive:true,capture:true});
   document.addEventListener('touchmove',function(e){if(g&&e.touches.length===1)mover(e.touches[0].clientX,e.touches[0].clientY,e)},{passive:false,capture:true});
   document.addEventListener('touchend',fin,true);document.addEventListener('touchcancel',fin,true);
   document.addEventListener('mousedown',function(e){if(e.button===0)inicio(e.clientX,e.clientY,e.target)},true);
