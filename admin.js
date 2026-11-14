@@ -3456,7 +3456,7 @@ try{
   const money=n=>'S/ '+(Number(n)||0).toFixed(2);
   const ext=f=>{const t=String(f&&f.type||'').toLowerCase();return t.includes('png')?'png':t.includes('webp')?'webp':'jpg'};
 
-  let negs=[],cur=null,cats=[],prods=[],tab='datos',edit=null,map=null;
+  let negs=[],cur=null,cats=[],prods=[],tab='perfil',edit=null,map=null;
 
   function msg(t,bad){
     if(t&&!bad&&window.pdExito&&!/^(Guardando|Cargando|Cambiando)/i.test(t)&&/guardad|agregad|eliminad|actualizad|cambiad|quitad|visible|oculta|oculto/i.test(t)){const m0=$('cnxMsg');if(m0){m0.textContent='';m0.className='cnxMsg'}window.pdExito(/guardad|actualizad|cambiad/i.test(t)?'Cambios guardados':t);return}
@@ -3504,7 +3504,9 @@ try{
     const p=$('cnxPane');
     if(map){try{map.remove()}catch(e){}map=null}
     try{
-      if(tab==='datos')pDatos(p);
+      if(tab==='perfil')pPerfil(p);
+      else if(tab==='productos'){if(!p.querySelector('.nxProd')&&!edit)p.innerHTML='<div class="cnxMuted">Cargando productos…</div>';await cargarCats();await cargarProds();edit?pProd(p):pProductos(p)}
+      else if(tab==='datos')pDatos(p);
       else if(tab==='ubicacion')pUbic(p);
       else if(tab==='horarios')pHor(p);
       else if(tab==='acceso')await pAcc(p);
@@ -3712,7 +3714,7 @@ try{
   function dsHTML(){
     if(!esComida(cur))return '';
     const on=cur.descartables_activo===true,c=dsCfg();
-    return '<button type="button" class="btn alt cnxDsBtn" data-a="ds-open"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span>Configurar descartables</span></button>'
+    return '<button type="button" class="nxBtn light cnxDsBtn" data-a="ds-open"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span>Configurar descartables</span></button>'
       +'<div class="cnxDsPanel" id="cnxDsPanel"'+(dsOpen?'':' hidden')+'><div class="cnxDsHead"><b>Descartables</b><button type="button" class="cnxDsX" data-a="ds-close" aria-label="Cerrar">×</button></div>'
       +TOG('cnxDsOn',on,'Cobrar descartables','Actívalo para sumar el precio de los descartables a los pedidos.')
       +'<div class="cnxDsBox" id="cnxDsBox"'+(on?'':' hidden')+'><div class="cnxDsBoxH"><b>Precio por unidad</b><small>Vacío = no lo ofreces · 0 = gratis</small></div>'
@@ -3744,7 +3746,7 @@ try{
     const hay=['taper_p','taper_g','vaso_p','vaso_g'].some(k=>dsP(c[k])!==null);
     const fila=(t,nom)=>{const op=(k,lab)=>{const pr=k?dsP(c[t+'_'+k]):0,off=k&&pr===null;return '<button type="button" data-a="dsp" data-dt="'+t+'" data-dk="'+k+'"'+(off?' disabled':'')+' aria-pressed="'+(edit.ds[t]===k)+'">'+lab+(k?(off?' · sin precio':' · '+money(pr)):'')+'</button>'};
       return '<div class="cnxDsPRow"><b>'+nom+'</b><div class="cnxDsSeg">'+op('','No lleva')+op('p','Pequeño')+op('g','Grande')+'</div></div>'};
-    return '<div class="cnxCard">'+SEC('DESCARTABLES','Descartables de este producto')+'<p class="cnxMuted">'+(hay?'Lo que elijas se agrega solo cuando el cliente pide este producto, y su precio se suma al del producto.':'Primero escribe los precios de taper y vaso en Carta → Configurar descartables.')+'</p>'+fila('taper','Taper')+fila('vaso','Vaso')+'</div>';
+    return '<div class="nxSub">'+SEC('DESCARTABLES','Descartables de este producto')+'<p class="cnxMuted">'+(hay?'Lo que elijas se agrega solo cuando el cliente pide este producto, y su precio se suma al del producto.':'Primero escribe los precios de taper y vaso en Carta → Configurar descartables.')+'</p>'+fila('taper','Taper')+fila('vaso','Vaso')+'</div>';
   }
   async function dsProdSave(id,ds){
     if(!ds||!id)return '';
@@ -3772,7 +3774,7 @@ try{
   }
   function pProd(p){
     const x=edit.prod||{},sp=splitDesc(x.descripcion),sk=stockKey();
-    p.innerHTML='<button type="button" class="btn alt cnxBack" data-a="p-back">← Volver a la carta</button><div class="cnxCard"><div class="cnxH">'+(x.id?'Editar producto':'Nuevo producto')+'</div>'
+    p.innerHTML='<div class="nxPanel nxProdForm"><div class="nxPanelHead"><strong>'+(x.id?'Editar producto':'Nuevo producto')+'</strong><button type="button" class="nxX" data-a="p-back" aria-label="Cerrar">×</button></div>'
       +'<div class="cnxF"><label for="cnxPCat">Categoría</label><select id="cnxPCat"><option value="">Sin categoría</option>'+cats.map(c=>'<option value="'+E(c.id)+'"'+(String(x.categoria_id||'')===String(c.id)?' selected':'')+'>'+E(c.nombre||'')+'</option>').join('')+'</select></div>'
       +F('Nombre del producto','cnxPNom',x.nombre)
       +'<div class="cnxF"><label for="cnxPDesc">Descripción detallada</label><textarea id="cnxPDesc" rows="4" maxlength="2000">'+E(sp.description)+'</textarea></div>'
@@ -3781,7 +3783,7 @@ try{
       +F('URL de imagen','cnxPImg',x.imagen_url||'','type="url"')
       +'<div class="cnxF"><label for="cnxPFile">Subir imagen</label><input type="file" id="cnxPFile" accept="image/png,image/jpeg,image/webp"></div>'
       +SW('cnxPAct',x.id?x.disponible!==false:true,'Visible en la tienda (necesita stock mayor a 0)')
-      +'</div>'+dsProdHTML(x)+'<button type="button" class="btn" data-a="p-save">Guardar producto</button>';
+      +dsProdHTML(x)+'<button type="button" class="nxBtn" data-a="p-save">Guardar producto</button>'+(x.id?'<button type="button" class="nxBtn light red" data-a="p-del" data-id="'+E(x.id)+'">Eliminar producto</button>':'')+'</div>';
   }
   const featRow=(n,v)=>'<div class="cnxFeat"><input class="fn" placeholder="Característica (ej. Talla)" value="'+E(n||'')+'"><input class="fv" placeholder="Valor (ej. M)" value="'+E(v||'')+'"><button type="button" class="cnxX" data-a="feat-del" aria-label="Quitar">×</button></div>';
   async function subirImgProd(id,file){
@@ -3811,7 +3813,7 @@ try{
         try{const url=await subirImgProd(id,file);const u=await db.from('productos_negocio').update({imagen_url:url}).eq('id',id).eq('negocio_id',cur.id);if(u.error)throw u.error}
         catch(e){aviso+=' (la imagen no se pudo subir: '+(e.message||e)+')'}
       }
-      edit=null;await pintar();msg('Producto guardado.'+aviso,!!aviso);
+      edit=null;tab=tab==='carta'?'carta':'productos';await pintar();msg('Producto guardado.'+aviso,!!aviso);
     }catch(e){msg('No se pudo guardar el producto: '+(e.message||e),true)}
   }
   async function prodAction(a,id){
@@ -3826,14 +3828,124 @@ try{
       }else if(a==='p-del'&&x){
         if(!(await pdConfirmar('¿Eliminar «'+(x.nombre||'')+'» de la carta?')))return;
         const {error}=await db.from('productos_negocio').delete().eq('id',x.id).eq('negocio_id',cur.id);if(error)throw error;
-        await quitarImgStorage(x.imagen_url);msg('Producto eliminado.');
+        await quitarImgStorage(x.imagen_url);edit=null;msg('Producto eliminado.');
       }else return;
       await pintar();
     }catch(e){msg('No se pudo completar: '+(e.message||e),true)}
   }
 
+
+  /* =====================================================================
+     Configurar negocios con el mismo diseño e información que el panel Negocio
+     (Mi perfil · Productos · Acceso). La visibilidad del negocio no va aquí.
+     ===================================================================== */
+  const TOPC=['10–20 min','20–30 min','30–40 min'];
+  const DIAS_C={lunes:'Lun',martes:'Mar',miercoles:'Mié',jueves:'Jue',viernes:'Vie',sabado:'Sáb',domingo:'Dom'};
+  const fmtH=v=>{const m=String(v||'').match(/^(\d{1,2}):(\d{2})/);if(!m)return v||'';let h=+m[1];const ap=h>=12?'pm':'am';h=h%12||12;return h+':'+m[2]+' '+ap};
+  let nxQ='',nxCatOpen=false;const nxOpen=new Set(),nxMore=new Set();
+  const tiendaUrl=r=>{try{const u=new URL('https://pidemasdelivery.github.io/');u.searchParams.set('negocio',String(r.id));return u.toString()}catch(e){return ''}};
+  function tiempoSel(r){const ns=(String(r.tiempo_estimado||'').match(/\d+/g)||[]).map(Number);if(!ns.length)return '';const hi=ns[ns.length-1];let best=TOPC[0],d=1e9;TOPC.forEach(t=>{const n=+t.match(/\d+/g)[1];if(Math.abs(n-hi)<d){d=Math.abs(n-hi);best=t}});return best}
+
+  function pPerfil(p){
+    const r=cur,tel=pick(r,TEL),logo=pick(r,LOGO),port=pick(r,PORT);
+    const cat=pick(r,['categoria_negocio','categoria_comercial','tipo_negocio','categoria']);
+    const catVal=cat?String(r[cat]||''):'';const opts=(catVal&&!CATS.includes(catVal)?[catVal]:[]).concat(CATS);
+    const dir=pick(r,['direccion','direccion_restaurante','ubicacion','direccion_comercial']),lat=pick(r,['latitud','latitude','lat']),lng=pick(r,['longitud','longitude','lng','lon']),gm=pick(r,['google_maps_url','google_maps','maps_url']);
+    const lu=logo?r[logo]:'';const ts=tiempoSel(r);
+    const H=leerHorario(r.horario),n=Object.keys(H).length,ab=abiertoAhora(H),hoy=['domingo','lunes','martes','miercoles','jueves','viernes','sabado'][new Date().getDay()];
+    const url=tiendaUrl(r);
+    p.innerHTML='<div class="nxPerf">'
+      +'<section class="nxCard nxHero"><span class="nxLogo">'+(lu?'<img src="'+E(lu)+'" alt="">':E(ini(r.nombre)))+'</span><span class="nxHeroTx"><span class="nxKick">Mi perfil</span><strong>'+E(r.nombre||'Sin nombre')+'</strong>'+(catVal?'<small>'+E(catVal)+'</small>':'')+'</span></section>'
+      +((logo||port)?'<section class="nxCard"><div class="nxH"><strong>Imagen del negocio</strong></div>'+(logo?imgRow('Logo','Logo','Se muestra en la tienda junto al nombre. Mejor cuadrado.',r[logo]):'')+(port?imgRow('Port','Portada','Imagen ancha de cabecera del negocio en la tienda.',r[port],true):'')+'</section>':'')
+      +'<section class="nxCard"><div class="nxH"><strong>Datos del negocio</strong></div><div class="nxSec">'
+        +F('Nombre del negocio','cnxNombre',r.nombre)
+        +(cat?'<div class="cnxF"><label for="cnxCat">Categoría del negocio</label><select id="cnxCat"><option value="">Selecciona una categoría</option>'+opts.map(c=>'<option'+(c===catVal?' selected':'')+'>'+E(c)+'</option>').join('')+'</select></div>':'')
+        +(has(r,'descripcion')?'<div class="cnxF"><label for="cnxDesc">Descripción</label><textarea id="cnxDesc" rows="3">'+E(r.descripcion||'')+'</textarea></div>':'')
+        +'<div class="nxGrid2">'+(tel?F('WhatsApp','cnxTel',r[tel],'type="tel" inputmode="tel"'):'')+(has(r,'ruc')?F('RUC','cnxRuc',r.ruc,'inputmode="numeric"'):'')+'</div>'
+      +'</div></section>'
+      +'<section class="nxCard" id="nxUbCard"><div class="nxH"><strong>Ubicación</strong></div><div class="nxSec" id="cnxUbHost">'
+        +(dir?F('Dirección del local','cnxDir',r[dir]):'')
+        +((lat&&lng&&window.pdMapa)?'<input type="hidden" id="cnxLat" value="'+E(r[lat]??'')+'"><input type="hidden" id="cnxLng" value="'+E(r[lng]??'')+'">'+(gm?'<input type="hidden" id="cnxGm" value="'+E(r[gm]??'')+'">':'')
+          :(gm?F('Enlace de Google Maps','cnxGm',r[gm],'type="url"'):'')+((lat&&lng)?'<div class="nxGrid2">'+F('Latitud','cnxLat',r[lat],'inputmode="decimal"')+F('Longitud','cnxLng',r[lng],'inputmode="decimal"')+'</div>':''))
+      +'</div></section>'
+      +(has(r,'tiempo_estimado')?'<section class="nxCard"><div class="nxH"><strong>En la tienda</strong></div><div class="cnxF"><label>Tiempo de entrega</label><div class="nxPills" id="nxTiempo" role="radiogroup">'+TOPC.map(t=>'<button type="button" role="radio" data-a="nx-t" data-v="'+t+'" class="'+(t===ts?'on':'')+'" aria-checked="'+(t===ts)+'">'+t.replace(' min','')+'<small>min</small></button>').join('')+'</div></div></section>':'')
+      +(has(r,'horario')?'<section class="nxCard"><div class="nxH"><strong>Horario de atención</strong><span class="nxPill '+(n&&ab?'ok':'off')+'">'+(n&&ab?'● Abierto':'Cerrado')+'</span></div>'
+        +'<div class="nxMuted">'+(n?n+' día'+(n===1?'':'s')+' de atención a la semana.':'No tiene días de atención.')+'</div><div id="nxHor">'
+        +DIAS.map(([k,nm])=>{const d=H[k];return '<div class="nxHr'+(d?' on':'')+(k===hoy?' today':'')+'" data-d="'+k+'"><button type="button" class="nxDay" data-a="nx-day" aria-pressed="'+(!!d)+'" aria-label="'+nm+'">'+DIAS_C[k]+'</button><input type="time" class="ha" value="'+E(d?d.abre:'09:00')+'" aria-label="Abre el '+nm+'"><span class="nxSep">a</span><input type="time" class="hc" value="'+E(d?d.cierra:'22:00')+'" aria-label="Cierra el '+nm+'"><span class="nxOff">Cerrado</span></div>'}).join('')
+        +'</div><div class="nxGrid2"><button type="button" class="nxBtn light sm" data-a="nx-hcopy">Igual todos los días</button><button type="button" class="nxBtn light sm" data-a="nx-hall">Abrir toda la semana</button></div><p class="nxMuted">Toca un día para abrirlo o cerrarlo. Los cambios se guardan con «Guardar cambios».</p></section>':'')
+      +(url?'<section class="nxCard"><div class="nxH"><span><span class="nxKick">Comparte</span><strong>Enlace de carta</strong></span></div><div class="nxShare"><input class="nxIn" id="nxUrl" value="'+E(url)+'" readonly><button type="button" class="nxBtn light" data-a="nx-copy">Copiar</button></div><div class="nxGrid2"><button type="button" class="nxBtn wa sm" data-a="nx-wa">WhatsApp</button><a class="nxBtn light sm" href="'+E(url)+'" target="_blank" rel="noopener">Ver la tienda</a></div></section>':'')
+      +'<button type="button" class="nxBtn" data-a="perf-save">Guardar cambios</button></div>';
+    p._cols={tel,cat,logo,port,dir,lat,lng,gm};
+    if(lat&&lng&&window.pdMapa){try{pdMapa.tarjeta($('cnxUbHost'),{lat:$('cnxLat'),lng:$('cnxLng'),maps:gm?$('cnxGm'):null,dir:dir?$('cnxDir'):null,titulo:'Ubicación del local',etiqueta:'Local',tip:'Mueve el mapa hasta el local',gpsTxt:'Estoy aquí',pendTxt:'Ubicación lista. Presiona «Guardar cambios» para guardarla.',okTxt:'Con este punto se calcula el delivery y el motorizado llega al local.',faltaTxt:'Falta marcar el local. Sin ubicación, el delivery se cobra aproximado.',guardar:'[data-a="perf-save"]'})}catch(e){console.warn('Mapa',e)}}
+  }
+  async function savePerfil(btn){
+    const p=$('cnxPane'),c=p._cols||{},g=id=>$(id);
+    const nombre=(g('cnxNombre')&&g('cnxNombre').value.trim())||'';if(!nombre){msg('El nombre es obligatorio.',true);return}
+    const pl={nombre};
+    if(c.tel&&g('cnxTel'))pl[c.tel]=g('cnxTel').value.trim()||null;
+    if(g('cnxDesc'))pl.descripcion=g('cnxDesc').value.trim()||null;
+    if(c.cat&&g('cnxCat'))pl[c.cat]=g('cnxCat').value||null;
+    if(g('cnxRuc'))pl.ruc=g('cnxRuc').value.trim()||null;
+    if(c.dir&&g('cnxDir'))pl[c.dir]=g('cnxDir').value.trim()||null;
+    if(c.gm&&g('cnxGm'))pl[c.gm]=g('cnxGm').value.trim()||null;
+    if(c.lat&&c.lng&&g('cnxLat')&&g('cnxLng')){const a=g('cnxLat').value.trim(),b=g('cnxLng').value.trim();const la=a===''?null:Number(a),ln=b===''?null:Number(b);if((a!==''&&!isFinite(la))||(b!==''&&!isFinite(ln))){msg('La ubicación no es válida.',true);return}pl[c.lat]=la;pl[c.lng]=ln}
+    const tb=document.querySelector('#nxTiempo button.on');if(g('nxTiempo'))pl.tiempo_estimado=tb?tb.dataset.v:(cur.tiempo_estimado||null);
+    if(g('nxHor')){const parts=[];for(const r of document.querySelectorAll('#nxHor .nxHr')){if(!r.classList.contains('on'))continue;const a=r.querySelector('.ha').value,z=r.querySelector('.hc').value;const nm=r.querySelector('.nxDay').getAttribute('aria-label');if(!a||!z){msg(nm+': completa la hora de apertura y cierre.',true);return}if(a===z){msg(nm+': la hora de apertura y la de cierre no pueden ser iguales.',true);return}parts.push(r.dataset.d+'='+a+'-'+z)}pl.horario=parts.join('|')||null}
+    if(btn){btn.disabled=true;btn.textContent='Guardando…'}
+    try{await guardarNegocio(pl,'Cambios guardados');pPerfil(p)}
+    catch(e){msg('No se pudo guardar: '+(e.message||e),true)}
+    finally{const b=document.querySelector('#cnxPane [data-a="perf-save"]');if(b){b.disabled=false;b.textContent='Guardar cambios'}}
+  }
+
+  const stockDe=x=>{const k=stockKey();const v=Number(x[k]);return x[k]===null||x[k]===undefined||!isFinite(v)?null:v};
+  const CHEV='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  function nxRow(x){const st=stockDe(x),on=x.disponible!==false,img=x.imagen_url||'',L=E(String(x.nombre||'P').charAt(0).toUpperCase());
+    return '<div class="nxPRow'+(on?'':' off')+'" data-id="'+E(x.id)+'"><button type="button" class="nxPMain" data-a="p-edit">'+(img?'<img class="nxPImg" src="'+E(img)+'" alt="" loading="lazy">':'<span class="nxPImg nxIni">'+L+'</span>')+'<span class="nxPTx"><strong>'+E(x.nombre||'Producto')+'</strong><small><b>'+money(x.precio)+'</b>'+(st===null?'':st<=0?' · <em>Sin stock</em>':' · Stock '+st)+'</small></span></button><button type="button" class="nxSw'+(on?' on':'')+'" data-a="p-vis" aria-label="'+(on?'Ocultar':'Mostrar')+' en la tienda"><i></i></button></div>'}
+  function nxListHTML(){
+    const ids=new Set(cats.map(c=>String(c.id)));
+    const groups=cats.map(c=>({c,list:prods.filter(x=>String(x.categoria_id||'')===String(c.id))}));
+    const loose=prods.filter(x=>!x.categoria_id||!ids.has(String(x.categoria_id)));if(loose.length)groups.push({c:null,list:loose});
+    if(!prods.length&&!cats.length)return '<div class="nxEmpty"><b>Aún no tiene productos</b>Crea una categoría (por ejemplo «Platos») y luego agrega los productos.</div>';
+    const q=nxQ.toLowerCase();
+    return groups.map((g,gi)=>{
+      const shown=q?g.list.filter(x=>String(x.nombre||'').toLowerCase().includes(q)):g.list;if(q&&!shown.length)return '';
+      const c=g.c,on=!c||c.activo!==false,cid=c?String(c.id):'_none',open=!!q||nxOpen.has(cid);
+      const z=g.list.filter(x=>{const v=stockDe(x);return v!==null&&v<=0}).length,hid=g.list.filter(x=>x.disponible===false).length;
+      const sub=[g.list.length+' producto'+(g.list.length===1?'':'s'),z?z+' sin stock':'',hid?hid+' oculto'+(hid===1?'':'s'):'',c&&!on?'Oculta en la tienda':''].filter(Boolean).join(' · ');
+      const more=c&&nxMore.has(cid)?'<div class="nxCatMore"><button type="button" data-a="c-vis">'+(on?'Ocultar en la tienda':'Mostrar en la tienda')+'</button><button type="button" data-a="c-ren">Renombrar</button><button type="button" data-a="c-up"'+(gi===0?' disabled':'')+'>↑ Subir</button><button type="button" data-a="c-down"'+(gi>=cats.length-1?' disabled':'')+'>↓ Bajar</button><button type="button" data-a="c-del" class="red">Eliminar</button></div>':'';
+      return '<section class="nxCat'+(open?' open':'')+(on?'':' off')+'" data-cat="'+E(cid)+'"><button type="button" class="nxCatBtn" data-a="c-tog" aria-expanded="'+open+'"><span><strong>'+(c?E(c.nombre):'Sin categoría')+'</strong><small>'+E(sub)+'</small></span>'+CHEV+'</button>'
+        +(open?'<div class="nxCatBody">'+(shown.map(nxRow).join('')||'<p class="nxCatEmpty">Sin productos todavía.</p>')+'<div class="nxCatFoot"><button type="button" class="nxAddIn" data-a="c-add">+ Producto'+(c?' en '+E(c.nombre):'')+'</button>'+(c?'<button type="button" class="nxMoreBtn'+(nxMore.has(cid)?' act':'')+'" data-a="c-more" aria-label="Opciones de la categoría">⋯</button>':'')+'</div>'+more+'</div>':'')+'</section>';
+    }).join('')||'<div class="nxEmpty">No hay productos con ese nombre.</div>';
+  }
+  function pProductos(p){
+    const zero=prods.filter(x=>{const v=stockDe(x);return v!==null&&v<=0}).length;
+    p.innerHTML='<div class="nxProd"><div class="nxStats"><div><span>Productos</span><strong>'+prods.length+'</strong></div><div><span>Categorías</span><strong>'+cats.length+'</strong></div><div><span>Sin stock</span><strong>'+zero+'</strong></div></div>'
+      +'<input type="search" class="nxIn" id="nxQ" placeholder="Buscar producto" autocomplete="off" value="'+E(nxQ)+'">'
+      +'<div class="nxGrid2"><button type="button" class="nxBtn" data-a="p-new">+ Producto</button><button type="button" class="nxBtn light" data-a="c-new">+ Categoría</button></div>'
+      +dsHTML()
+      +'<div class="nxPanel" id="nxCatPanel"'+(nxCatOpen?'':' hidden')+'><div class="nxPanelHead"><strong>Nueva categoría</strong><button type="button" class="nxX" data-a="c-close" aria-label="Cerrar">×</button></div><input class="nxIn" id="cnxCatN" placeholder="Nombre (ej. Ceviches, Bebidas)"><input class="nxIn" id="cnxCatD" placeholder="Descripción (opcional)"><button type="button" class="nxBtn" data-a="c-save">Guardar categoría</button></div>'
+      +'<div id="nxList">'+nxListHTML()+'</div></div>';
+  }
+  async function nxCatAction(a,cid){
+    const c=cats.find(x=>String(x.id)===String(cid));
+    try{
+      if(a==='c-save'){const n=$('cnxCatN').value.trim();if(!n){msg('Escribe el nombre de la categoría.',true);return}
+        const pl={negocio_id:cur.id,nombre:n,descripcion:$('cnxCatD').value.trim()||null};
+        let r=await db.from('categorias_negocio').insert(Object.assign({orden:cats.length+1},pl));if(r.error&&/orden/i.test(r.error.message||''))r=await db.from('categorias_negocio').insert(pl);if(r.error)throw r.error;
+        nxCatOpen=false;msg('Categoría agregada.')}
+      else if(a==='c-vis'&&c){const {error}=await db.from('categorias_negocio').update({activo:c.activo===false}).eq('id',c.id).eq('negocio_id',cur.id);if(error)throw error;msg(c.activo===false?'Categoría visible en la tienda.':'Categoría oculta en la tienda.')}
+      else if(a==='c-ren'&&c){const n=window.pdPedir?await pdPedir('Nuevo nombre de la categoría:',c.nombre||''):null;if(!n||!String(n).trim())return;const {error}=await db.from('categorias_negocio').update({nombre:String(n).trim()}).eq('id',c.id).eq('negocio_id',cur.id);if(error)throw error;msg('Categoría guardada.')}
+      else if((a==='c-up'||a==='c-down')&&c){const l=cats.slice(),i=l.indexOf(c),j=i+(a==='c-up'?-1:1);if(j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];for(let k=0;k<l.length;k++){if(Number(l[k].orden)===k+1)continue;const {error}=await db.from('categorias_negocio').update({orden:k+1}).eq('id',l[k].id).eq('negocio_id',cur.id);if(error)throw new Error(error.message+' (falta la columna «orden» en categorias_negocio)')}}
+      else if(a==='c-del'&&c){const n=prods.filter(x=>String(x.categoria_id)===String(c.id)).length;if(!(await pdConfirmar(n?'Esta categoría tiene '+n+' producto'+(n===1?'':'s')+'. Quedarán en «Sin categoría». ¿Continuar?':'¿Eliminar la categoría «'+(c.nombre||'')+'»?')))return;
+        const u=await db.from('productos_negocio').update({categoria_id:null}).eq('categoria_id',c.id).eq('negocio_id',cur.id);if(u.error)throw u.error;
+        const {error}=await db.from('categorias_negocio').delete().eq('id',c.id).eq('negocio_id',cur.id);if(error)throw error;nxMore.delete(String(c.id));msg('Categoría eliminada.')}
+      else return;
+      await pintar();
+    }catch(e){msg('No se pudo completar: '+(e.message||e),true)}
+  }
+
   /* ---------- eventos ---------- */
-  $('cnxNegocio').addEventListener('change',e=>{tab='datos';elegir(e.target.value)});
+  $('cnxNegocio').addEventListener('change',e=>{tab='perfil';nxQ='';nxCatOpen=false;elegir(e.target.value)});
   $('cnxPane').addEventListener('change',async e=>{
     const t=e.target;if(!t||!/^cnx(Logo|Port)F$/.test(t.id)||!t.files||!t.files[0])return;
     const k=t.id==='cnxLogoF'?'logo':'portada',col=k==='logo'?pick(cur,LOGO):pick(cur,PORT);if(!col)return;
@@ -3844,8 +3956,26 @@ try{
   });
   $('cnxTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-t]');if(!b||!cur)return;tab=b.dataset.t;edit=null;dsOpen=false;msg('');pintar()});
   $('cnxPane').addEventListener('change',e=>{if(e.target&&e.target.id==='cnxDsOn')dsToggle(e.target)});
+  $('cnxPane').addEventListener('input',e=>{if(e.target&&e.target.id==='nxQ'){nxQ=e.target.value.trim();const l=$('nxList');if(l)l.innerHTML=nxListHTML()}});
+  $('cnxPane').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='cnxCatN'){e.preventDefault();nxCatAction('c-save','')}});
+  /* pestañas iguales al panel Negocio */
+  (function(){const t=$('cnxTabs');if(t&&!t.querySelector('[data-t="perfil"]'))t.innerHTML='<button type="button" data-t="perfil" class="on">Mi perfil</button><button type="button" data-t="productos">Productos</button><button type="button" data-t="acceso">Acceso</button>';const em=$('cnxEmpty');if(em)em.textContent='Elige un negocio para ver y editar lo mismo que el negocio ve en su panel: Mi perfil y Productos.'})();
   $('cnxPane').addEventListener('click',e=>{
     const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=(b.closest('[data-id]')||{dataset:{}}).dataset.id;
+    if(a==='perf-save')return savePerfil(b);
+    if(a==='nx-t'){b.parentElement.querySelectorAll('button').forEach(q=>{const on=q===b;q.classList.toggle('on',on);q.setAttribute('aria-checked',String(on))});return}
+    if(a==='nx-day'){const r=b.closest('.nxHr');const on=!r.classList.contains('on');r.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));return}
+    if(a==='nx-hcopy'){const rows=[...document.querySelectorAll('#nxHor .nxHr')];const f=rows.find(r=>r.classList.contains('on'));if(!f){msg('Primero abre al menos un día.',true);return}const A=f.querySelector('.ha').value,C=f.querySelector('.hc').value;rows.forEach(r=>{if(r.classList.contains('on')){r.querySelector('.ha').value=A;r.querySelector('.hc').value=C}});return}
+    if(a==='nx-hall'){document.querySelectorAll('#nxHor .nxHr').forEach(r=>{r.classList.add('on');r.querySelector('.nxDay').setAttribute('aria-pressed','true')});return}
+    if(a==='nx-copy'){const u=$('nxUrl');if(u){try{navigator.clipboard.writeText(u.value).then(()=>{if(window.pdInfo)pdInfo('Enlace copiado.')},()=>{u.select();document.execCommand('copy')})}catch(e){u.select();try{document.execCommand('copy')}catch(_){}}}return}
+    if(a==='nx-wa'){const u=$('nxUrl');if(u)window.open('https://wa.me/?text='+encodeURIComponent('Pide en '+(cur.nombre||'nuestro negocio')+' por Pidemás Delivery: '+u.value),'_blank','noopener');return}
+    if(a==='c-new'){nxCatOpen=!nxCatOpen;const pn=$('nxCatPanel');if(pn){pn.hidden=!nxCatOpen;if(nxCatOpen){const dp=$('cnxDsPanel');if(dp){dp.hidden=true;dsOpen=false}setTimeout(()=>{try{pn.scrollIntoView({behavior:'smooth',block:'center'});$('cnxCatN').focus({preventScroll:true})}catch(e){}},40)}}return}
+    if(a==='c-close'){nxCatOpen=false;const pn=$('nxCatPanel');if(pn)pn.hidden=true;return}
+    if(a==='c-tog'||a==='c-more'||a==='c-add'||a.startsWith('c-')){const cid=(b.closest('[data-cat]')||{dataset:{}}).dataset.cat||'';
+      if(a==='c-tog'){if(nxQ)return;nxOpen.has(cid)?nxOpen.delete(cid):nxOpen.add(cid);$('nxList').innerHTML=nxListHTML();return}
+      if(a==='c-more'){nxMore.has(cid)?nxMore.delete(cid):nxMore.add(cid);$('nxList').innerHTML=nxListHTML();return}
+      if(a==='c-add'){edit={prod:cid&&cid!=='_none'?{categoria_id:cid}:null};return pintar()}
+      return nxCatAction(a,cid)}
     if(a==='datos-save')return saveDatos();
     if(a==='ubic-save')return saveUbic();
     if(a==='gmaps-open'){const la=$('cnxLat').value.trim(),ln=$('cnxLng').value.trim(),u=($('cnxGm')&&$('cnxGm').value.trim())||(la&&ln?'https://www.google.com/maps?q='+encodeURIComponent(la+','+ln):'');if(u)window.open(u,'_blank','noopener');else msg('Aún no hay ubicación para abrir.',true);return}
@@ -3855,7 +3985,7 @@ try{
     if(a==='pw-save')return savePw(b.closest('.cnxAcc'));
     if(a==='img-del'){const k=b.dataset.k,col=k==='Logo'?pick(cur,LOGO):pick(cur,PORT);if(!col)return;(async()=>{if(window.pdConfirmar&&!(await pdConfirmar('¿Quitar '+(k==='Logo'?'el logo':'la portada')+' del negocio?')))return;try{await guardarNegocio({[col]:null},(k==='Logo'?'Logo':'Portada')+' quitado.');pintar()}catch(e){msg('No se pudo quitar: '+(e.message||e),true)}})();return}
     if(a.startsWith('cat-'))return catAction(a,id);
-    if(a==='p-new'){edit={prod:null};return pintar()}
+    if(a==='p-new'){edit={prod:null};const pn=$('nxCatPanel');if(pn)nxCatOpen=false;return pintar()}
     if(a==='p-back'){edit=null;return pintar()}
     if(a==='ds-open'){dsOpen=!dsOpen;const pn=$('cnxDsPanel');if(pn){pn.hidden=!dsOpen;if(dsOpen)setTimeout(()=>{try{pn.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}},60)}return}
     if(a==='ds-close'){dsOpen=false;const pn=$('cnxDsPanel');if(pn)pn.hidden=true;return}

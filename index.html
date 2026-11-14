@@ -51,7 +51,7 @@ window.pdQuitarCarga=salir;
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-500-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-700-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-800-normal.woff2">
-<link rel="stylesheet" href="estilos.css?v=202611140900">
+<link rel="stylesheet" href="estilos.css?v=202611141120">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'"/>
 
@@ -238,14 +238,11 @@ html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#
 <label for="cnxNegocio">Negocio</label>
 <select id="cnxNegocio"><option value="">Selecciona un negocio</option></select>
 </div>
-<p class="cnxMuted" id="cnxEmpty">Elige un negocio para ver y editar toda su configuración: datos, ubicación, horarios, categorías y carta.</p>
+<p class="cnxMuted" id="cnxEmpty">Elige un negocio para ver y editar lo mismo que el negocio ve en su panel: Mi perfil y Productos.</p>
 <div id="cnxBody" class="cnxOff">
 <div id="cnxTabs" role="tablist">
-<button type="button" data-t="datos" class="on">Datos</button>
-<button type="button" data-t="ubicacion">Ubicación</button>
-<button type="button" data-t="horarios">Horarios</button>
-<button type="button" data-t="categorias">Categorías</button>
-<button type="button" data-t="carta">Carta</button>
+<button type="button" data-t="perfil" class="on">Mi perfil</button>
+<button type="button" data-t="productos">Productos</button>
 <button type="button" data-t="acceso">Acceso</button>
 </div>
 <div id="cnxMsg" class="cnxMsg" role="status"></div>
@@ -785,7 +782,7 @@ Motorizado activo
 <script src="supabase.js?v=202611082249"></script>
 <script src="funciones.js?v=202611140815"></script>
 <script src="pedidos.js?v=202611140300"></script>
-<script src="admin.js?v=202611141200"></script>
+<script src="admin.js?v=202611141120"></script>
 <script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 <style id="pd-app-panel-css">
 /* ===== pd-app-panel · se siente como app: sin zoom, sin recargar al jalar, login fijo y centrado ===== */
