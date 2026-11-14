@@ -2099,7 +2099,7 @@ else{mm.invalidateSize();mm.setView([k.lat,k.lng],17,{animate:false})}
 }
 async function abrirCampo(cfg){
 const inp=$(cfg.id);if(!inp)return;
-const r=await elegir({titulo:cfg.titulo,icono:cfg.icono,centro:coords(inp.value)});
+const r=await (window.pdMapa?pdMapa.elegir:elegir)({titulo:cfg.titulo,icono:cfg.icono,centro:coords(inp.value)});
 if(!r)return;
 const link=linkDe(r);
 if(cfg.lugar){const nombre=inp.value.replace(/https?:\/\/\S+/g,'').replace(/[\s·–-]+$/,'').trim()||[r.linea,r.sub].filter(Boolean).join(', ');setVal(inp,(nombre?nombre+' · ':'')+link)}
@@ -3567,6 +3567,15 @@ try{
   function pUbic(p){
     const r=cur,dir=pick(r,['direccion','direccion_restaurante','ubicacion','direccion_comercial']),lat=pick(r,['latitud','latitude','lat']),lng=pick(r,['longitud','longitude','lng','lon']),gm=pick(r,['google_maps_url','google_maps','maps_url']);
     if(!dir&&!lat&&!lng&&!gm){p.innerHTML='<div class="cnxErr">La tabla negocios no tiene columnas de ubicación.</div>';return}
+    if(lat&&lng&&window.pdMapa){
+      p.innerHTML='<div class="cnxCard" id="cnxUbHost">'+(dir?F('Dirección del local','cnxDir',r[dir]):'')
+        +'<input type="hidden" id="cnxLat" value="'+E(r[lat]??'')+'"><input type="hidden" id="cnxLng" value="'+E(r[lng]??'')+'">'
+        +(gm?'<input type="hidden" id="cnxGm" value="'+E(r[gm]??'')+'">':'')
+        +'</div><button type="button" class="btn" data-a="ubic-save">Guardar ubicación</button>';
+      p._cols={dir,lat,lng,gm};
+      pdMapa.tarjeta($('cnxUbHost'),{lat:$('cnxLat'),lng:$('cnxLng'),maps:gm?$('cnxGm'):null,dir:dir?$('cnxDir'):null,titulo:'Ubicación del negocio',etiqueta:'Local',tip:'Mueve el mapa hasta el local',gpsTxt:'Estoy aquí',pendTxt:'Ubicación lista. Presiona «Guardar ubicación» para guardarla.',okTxt:'Con este punto se calcula el delivery y el motorizado llega al local.',faltaTxt:'Este negocio no tiene ubicación marcada: el delivery se cobra aproximado.',guardar:'[data-a="ubic-save"]'});
+      return;
+    }
     p.innerHTML='<div class="cnxCard">'
       +(dir?F('Dirección del local','cnxDir',r[dir]):'')
       +(gm?F('Enlace de Google Maps','cnxGm',r[gm],'type="url" placeholder="https://maps.google.com/…"'):'')
