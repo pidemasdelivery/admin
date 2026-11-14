@@ -27,7 +27,7 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-500-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-700-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-800-normal.woff2">
-<link rel="stylesheet" href="estilos.css?v=202611131750">
+<link rel="stylesheet" href="estilos.css?v=202611131920">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'"/>
 
@@ -784,7 +784,7 @@ html:root body *{overscroll-behavior-y:none!important}
 #pdFondoHoja.on{opacity:1}
 #pdFondoHoja[hidden]{display:none!important}
 </style>
-<script id="pd-app-panel-js">document.documentElement.dataset.pdSinArrastre="1";
+<script id="pd-app-panel-js">
 (function(){
   if(window.__pdAppPanel)return;window.__pdAppPanel=true;
   /* 1 · Sin zoom (pellizcar, doble toque, Ctrl + rueda o teclas) */
@@ -916,6 +916,20 @@ html:root body *{overscroll-behavior-y:none!important}
   document.addEventListener('mousemove',function(e){if(g)mover(e.clientX,e.clientY,e)},true);
   document.addEventListener('mouseup',fin,true);
   window.pdHojaDe=hojaDe;window.pdBotonCerrar=botonCerrar;
+})();
+</script>
+<script id="pd-admin-sin-barra-js">
+/* Admin sin barra inferior: el menú se abre con el botón ☰ de la cabecera (o deslizando desde la izquierda) */
+(function(){
+  function poner(){
+    const head=document.querySelector('header.top');if(!head||document.getElementById('pdMenuBtn'))return;
+    const b=document.createElement('button');b.type='button';b.id='pdMenuBtn';b.setAttribute('aria-label','Menú');
+    b.innerHTML='<i></i><i></i><i></i>';
+    b.onclick=()=>{if(typeof window.pdAbrirMenu==='function')window.pdAbrirMenu();else{const m=[...document.querySelectorAll('#nav button')].find(x=>/men[uú]/i.test(x.textContent));m&&m.click()}};
+    head.insertBefore(b,head.firstChild);
+  }
+  function ver(){const out=!document.getElementById('logout')||document.getElementById('logout').classList.contains('hidden');const b=document.getElementById('pdMenuBtn');if(b)b.hidden=out}
+  setInterval(()=>{poner();ver()},800);document.addEventListener('DOMContentLoaded',poner);
 })();
 </script>
 </body>
