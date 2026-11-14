@@ -51,7 +51,7 @@ window.pdQuitarCarga=salir;
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-500-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-700-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-800-normal.woff2">
-<link rel="stylesheet" href="estilos.css?v=202611140330">
+<link rel="stylesheet" href="estilos.css?v=202611140340">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'"/>
 
@@ -1309,7 +1309,14 @@ html.pdLoginFijo body #loginView#loginView#loginView > *{width:100%;max-width:42
     if(rj&&!rj.disabled)sec={t:'Rechazar',k:'rj'};
     else if(un&&!un.disabled&&asignado&&getComputedStyle(un).display!=='none')sec={t:'Quitar',k:'un'};
     let ds=pie.querySelector(':scope > .pdDS');
-    if(!prim&&!sec){if(ds){ds.remove();pie.classList.remove('pdDSOn');card.classList.remove('pdDSAbierta')}return}
+    if(!prim&&!sec){
+      const nom=sel&&sel.selectedIndex>0?(sel.options[sel.selectedIndex].textContent||'').trim().split(/\s+·\s+/)[0]:'';
+      if(!nom){if(ds){ds.remove();pie.classList.remove('pdDSOn');card.classList.remove('pdDSAbierta')}return}
+      if(!pie.classList.contains('pdDSOn'))pie.classList.add('pdDSOn');
+      const h0='<div class="pdDSpeek"><span class="pdDSav">'+E(ini(nom))+'</span><span class="pdDSn"><b>'+E(nom)+'</b><small>Motorizado asignado</small></span><span class="pdDSst">Asignado</span></div>';
+      if(!ds){ds=document.createElement('div');ds.className='pdDS';pie.appendChild(ds)}
+      if(ds.__h!==h0){ds.innerHTML=h0;ds.__h=h0}
+      if(card.classList.contains('pdDSAbierta'))card.classList.remove('pdDSAbierta');return}
     if(!pie.classList.contains('pdDSOn'))pie.classList.add('pdDSOn');
     const ops=puedeAsignar?opciones(sel):[];
     if(card.dataset.dsSel===undefined||!ops.some(x=>x.v===card.dataset.dsSel)){
@@ -1365,7 +1372,7 @@ html.pdLoginFijo body #loginView#loginView#loginView > *{width:100%;max-width:42
   function libre(c){
     let e=c.parentElement;const marcados=[];
     while(e&&e!==document.documentElement){const s=getComputedStyle(e);
-      if(s.transform!=='none'||s.filter!=='none'||(s.backdropFilter&&s.backdropFilter!=='none')||(s.webkitBackdropFilter&&s.webkitBackdropFilter!=='none')||s.perspective!=='none'||/paint|layout|strict|content/.test(s.contain||'')||/transform|filter|perspective/.test(s.willChange||'')||(s.contentVisibility&&s.contentVisibility!=='visible'))
+      if(s.transform!=='none'||s.filter!=='none'||(s.backdropFilter&&s.backdropFilter!=='none')||(s.webkitBackdropFilter&&s.webkitBackdropFilter!=='none')||s.perspective!=='none'||/paint|layout|strict|content/.test(s.contain||'')||/transform|filter|perspective/.test(s.willChange||'')||(s.contentVisibility&&s.contentVisibility!=='visible')||(s.containerType&&s.containerType!=='normal'))
         {if(!e.classList.contains('pdSinCB'))e.classList.add('pdSinCB')}
       if(e.classList.contains('pdSinCB'))marcados.push(e);e=e.parentElement}
     return marcados}
