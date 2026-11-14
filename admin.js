@@ -3762,7 +3762,7 @@ try{
   const EST={nueva:'Nueva',revision:'En revisión',aprobada:'Aprobada',rechazada:'Rechazada'};
   let filas=[],filtro='nueva',abiertas=new Set();
   const msg=(t,ok)=>{const m=$('solMsg');if(!m)return;m.textContent=t||'';m.classList.toggle('hidden',!t);if(t)setTimeout(()=>m.classList.add('hidden'),3500)};
-  const fecha=d=>{try{return new Date(d).toLocaleString('es-PE',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}catch(e){return''}};
+  const fecha=d=>{try{const x=new Date(d);if(isNaN(x))return'';const m=['ene','feb','mar','abr','may','jun','jul','ago','set','oct','nov','dic'][x.getMonth()];let h=x.getHours(),am=h<12?'am':'pm';h=h%12||12;return x.getDate()+' '+m+', '+h+':'+String(x.getMinutes()).padStart(2,'0')+' '+am}catch(e){return''}};
   const wa=n=>{let d=String(n||'').replace(/\D/g,'');if(d.length===9)d='51'+d;return d?'https://wa.me/'+d:''};
   const par=(k,v)=>v===null||v===undefined||v===''?'':'<div class="solPar"><span>'+E(k)+'</span><b>'+E(v)+'</b></div>';
   function detalle(r){
@@ -3772,24 +3772,28 @@ try{
     +'<h5>Productos y stock</h5>'+par('Productos',r.productos)+par('Cantidad en carta',r.num_productos)+par('Stock aproximado',r.stock_aprox)+par('Controla inventario',r.maneja_stock)+par('Fotos / catálogo',r.tiene_fotos)
     +'<h5>Atención</h5>'+par('Horario',r.horario)+par('Pedidos por día',r.pedidos_dia)+par('Preparación',r.tiempo_prep?r.tiempo_prep+' min':'')+par('Repartidores propios',r.delivery_propio)+par('Pagos',(r.pagos||[]).join(', '))+par('Comentarios',r.comentarios)
     +'<h5>Notas del administrador</h5><textarea class="solNota" data-id="'+E(r.id)+'" placeholder="Notas internas (solo las ves tú)">'+E(r.notas_admin||'')+'</textarea>'
-    +'<button type="button" class="btn alt solSaveNota" data-id="'+E(r.id)+'">Guardar nota</button>'
+    +'<button type="button" class="solB solSaveNota" data-id="'+E(r.id)+'">Guardar nota</button>'
     +'</div>';
   }
+  const CHEV='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
   function tarjeta(r){
     const open=abiertas.has(r.id),link=wa(r.rep_celular);
-    return '<article class="solCard" data-id="'+E(r.id)+'">'
-    +'<div class="solTop"><div class="solName"><strong>'+E(r.nombre_negocio)+'</strong><span>'+E([r.categoria,r.distrito].filter(Boolean).join(' · '))+'</span></div><span class="solBadge s-'+E(r.estado)+'">'+E(EST[r.estado]||r.estado)+'</span></div>'
-    +'<div class="solMeta">'+E(r.rep_nombre||'')+(r.rep_celular?' · '+E(r.rep_celular):'')+' · '+E(fecha(r.created_at))+'</div>'
-    +'<button type="button" class="solVer" data-a="ver">'+(open?'Ocultar detalle':'Ver detalle')+'</button>'
+    const ini=(String(r.nombre_negocio||'?').trim()[0]||'?').toUpperCase();
+    const fila=(k,v)=>v?'<div><small>'+E(k)+'</small><b>'+E(v)+'</b></div>':'';
+    let acts='';
+    if(link)acts+='<a class="solB" target="_blank" rel="noopener" href="'+E(link)+'">WhatsApp</a>';
+    if(r.estado!=='revision')acts+='<button type="button" class="solB" data-a="est" data-e="revision">En revisión</button>';
+    if(r.estado!=='rechazada')acts+='<button type="button" class="solB solNo" data-a="est" data-e="rechazada">Rechazar</button>';
+    if(r.estado!=='aprobada')acts+='<button type="button" class="solB solSi" data-a="est" data-e="aprobada">Aprobar</button>';
+    return '<article class="solCard'+(open?' open':'')+'" data-id="'+E(r.id)+'">'
+    +'<div class="solHead"><div class="solAv">'+E(ini)+'</div><div class="solName"><strong>'+E(r.nombre_negocio)+'</strong><span>'+E([r.categoria,r.distrito||r.ciudad].filter(Boolean).join(' · '))+'</span></div><span class="solBadge s-'+E(r.estado)+'">'+E(EST[r.estado]||r.estado)+'</span></div>'
+    +'<div class="solInfo">'+fila('Contacto',r.rep_nombre)+fila('Celular',r.rep_celular)+fila('Recibida',fecha(r.created_at))+'</div>'
+    +'<button type="button" class="solVer" data-a="ver"><span>'+(open?'Ocultar detalle':'Ver detalle')+'</span>'+CHEV+'</button>'
     +(open?detalle(r):'')
-    +'<div class="solAct">'
-    +(link?'<a class="btn alt" target="_blank" rel="noopener" href="'+E(link)+'">WhatsApp</a>':'')
-    +(r.estado!=='revision'?'<button type="button" class="btn alt" data-a="est" data-e="revision">En revisión</button>':'')
-    +(r.estado!=='aprobada'?'<button type="button" class="btn" data-a="est" data-e="aprobada">Aprobar</button>':'')
-    +(r.estado!=='rechazada'?'<button type="button" class="btn alt" data-a="est" data-e="rechazada">Rechazar</button>':'')
-    +'<button type="button" class="btn alt" data-a="crear">Crear negocio con estos datos</button>'
-    +'<button type="button" class="btn alt solDel" data-a="del">Eliminar</button>'
-    +'</div></article>';
+    +'<div class="solAct">'+acts+'</div>'
+    +'<button type="button" class="solCrear" data-a="crear">Crear negocio con estos datos</button>'
+    +'<button type="button" class="solDel" data-a="del">Eliminar solicitud</button>'
+    +'</article>';
   }
   function pintar(){
     const c={nueva:0,revision:0,aprobada:0,rechazada:0,todas:filas.length};
