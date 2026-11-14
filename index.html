@@ -1186,6 +1186,23 @@ html.pdLoginFijo body #loginView#loginView#loginView > *{width:100%;max-width:42
     if(ROL==='negocio'&&f.n===1)return 'Sigue: aceptar pedido';
     return 'Sigue: '+PASOS[f.n].toLowerCase();
   }
+  /* limpia restos de datos internos (descartables en JSON) que se cuelan en notas */
+  const RX=/__PIDEMAS_[A-Z0-9_]+__|[\[{]\s*"(?:n|p|items|cubiertos|cubiertos_precio)"/;
+  function limpiarNotas(){
+    document.querySelectorAll('#pidemasOrderFullModal, #pdoModal, #orderList, #orders, #businessOrdersList').forEach(root=>{
+      const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>RX.test(n.nodeValue||'')?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP});
+      const ns=[];while(w.nextNode())ns.push(w.currentNode);
+      ns.forEach(n=>{const p=n.parentElement;if(!p||p.closest('script,style'))return;
+        const v=n.nodeValue.replace(/__PIDEMAS_[A-Z0-9_]+__/g,'').replace(/[\[{]\s*"[\s\S]*[}\]]/g,'').replace(/^[\s|·,]+|[\s|·,]+$/g,'');
+        if(v.trim()){n.nodeValue=v;return}
+        n.nodeValue='';
+        const blk=p.closest('.pdMBlock,.pdoCard,.pdRouteBlock,.pdNtFree');
+        if(blk&&!(blk.textContent||'').replace(/notas del pedido|observaciones|notas|indicaci[oó]n del cliente/ig,'').trim())blk.style.display='none';
+        else if(!(p.textContent||'').trim())p.style.display='none';
+      });
+    });
+  }
+  setInterval(limpiarNotas,800);
   window.pdUDatos={ped:id=>PED.get(String(id)),neg:id=>NEG.get(String(id)),fase,PASOS,money,hace,codigo,cargar:ids=>cargar(ids.map(String),true)};
   /* ----- dónde va y qué se esconde ----- */
   function host(card){
