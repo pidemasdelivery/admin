@@ -1993,7 +1993,7 @@ try{
     const tt=card.querySelector(':scope > .pdPie .pdRouteAssign > .adminOrderSectionTitle');if(tt){const want=o.motorizado_id?'Motorizado asignado':'Asignar motorizado';if(tt.textContent!==want)tt.textContent=want}
     const un=card.querySelector(':scope > .pdPie .unassignBtn');if(un&&un.textContent!=='Quitar')un.textContent='Quitar';
   }
-  document.addEventListener('scroll',e=>{const c=e.target;if(!c||!c.matches||!c.matches('#orderList .adminOrderCard.is-expanded'))return;const on=c.scrollTop>70;if(on!==c.classList.contains('pdACompacto'))c.classList.toggle('pdACompacto',on)},true);
+  document.addEventListener('scroll',e=>{const c=e.target;if(!c||!c.matches||!c.matches('#orderList .adminOrderCard.is-expanded'))return;if(c.classList.contains('pdACompacto'))c.classList.remove('pdACompacto')},true);
   let p=false;
   function correr(){p=false;document.querySelectorAll('#orderList .adminOrderCard').forEach(c=>{try{c.classList.contains('is-expanded')?adentro(c):afuera(c)}catch(e){console.warn('Pedido admin:',e)}})}
   new MutationObserver(ms=>{if(ms.every(m=>m.target.closest&&m.target.closest('.pdbBody,.pdAPed,.pdAHd')))return;if(!p){p=true;requestAnimationFrame(correr)}}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
@@ -2009,3 +2009,19 @@ window.__pidemasOpenServiceModal=function(k){if(typeof window.__pdmOpen==="funct
 })();
 }catch(e){console.error("[pdserv-abrir-js]",e)}
 
+
+/* ===== pd-cabecera-fija-admin: la cabecera del detalle del pedido queda fija arriba ===== */
+try{(function(){
+  if(window.__pdCabFija)return;window.__pdCabFija=true;
+  const imp=(el,k,v)=>{if(el.style.getPropertyValue(k)!==v||el.style.getPropertyPriority(k)!=='important')el.style.setProperty(k,v,'important')};
+  function fijar(card){
+    const band=card.querySelector(':scope > .pdRoute > .pdRouteBand')||card.querySelector('.pdRouteBand');if(!band)return;
+    imp(band,'z-index','30');imp(band,'background','#fff');
+    if(band.dataset.cf!=='t'){imp(band,'position','sticky');imp(band,'top','0px')}
+    const cr=card.getBoundingClientRect(),br=band.getBoundingClientRect();
+    if(band.dataset.cf!=='t'&&card.scrollTop>4&&br.top<cr.top-2){band.dataset.cf='t';band.dataset.ty='0';imp(band,'position','relative')}
+    if(band.dataset.cf==='t'){const ty=Number(band.dataset.ty)||0,nat=br.top-ty,want=Math.max(0,cr.top-nat);if(Math.abs(want-ty)>0.5){band.dataset.ty=String(want);imp(band,'transform','translateY('+want+'px)')}}
+  }
+  document.addEventListener('scroll',e=>{const c=e.target;if(c&&c.matches&&c.matches('#orderList .adminOrderCard.is-expanded'))fijar(c)},true);
+  setInterval(()=>document.querySelectorAll('#orderList .adminOrderCard.is-expanded').forEach(c=>{try{fijar(c)}catch(_){}}),700);
+})()}catch(e){console.error('[pd-cabecera-fija-admin]',e)}
