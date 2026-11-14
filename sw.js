@@ -14,6 +14,8 @@ self.addEventListener('push',e=>{
     list.forEach(c=>c.postMessage({type:'pd-push',data:d}));
     await self.registration.showNotification(d.title||'Pidemás',{
       body:d.body||'',
+      icon:new URL('icon-192.png',self.registration.scope).href,
+      badge:new URL('icon-192.png',self.registration.scope).href,
       tag:d.tag||'pidemas',
       renotify:true,
       vibrate:[200,100,200],
@@ -34,7 +36,7 @@ self.addEventListener('notificationclick',e=>{
 
 /* ===== App instalable: abre rápido y funciona sin conexión con lo último que se cargó =====
    Siempre intenta traer la versión nueva primero (así ves los cambios que subes a GitHub). */
-const PD_CACHE='pidemas-panel-v1';
+const PD_CACHE='pidemas-panel-v2';
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('pidemas-panel-')&&k!==PD_CACHE).map(k=>caches.delete(k))))));
 self.addEventListener('fetch',e=>{
   const r=e.request;

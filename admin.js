@@ -1687,7 +1687,10 @@ if(busy||!window.db)return;busy=true;$('gxRef').classList.add('spin');
 const live=$('gxLive');
 try{
 if(!ensureMap()){live.className='g-live err';live.lastChild.textContent='No se pudo cargar el mapa. Revisa tu conexión a Internet.';return}
-const {data:motos,error}=await db.from('motorizados').select('*').order('nombre_completo');if(error)throw error;
+let {data:motos,error}=await db.from('motorizados').select('*').order('nombre_completo');if(error)throw error;
+/* Si la lista llega vacía (sesión aún cargando), se reintenta y se usa la lista que ya cargó el panel */
+if(!(motos&&motos.length)){try{await db.auth.getSession()}catch(_){}await new Promise(r=>setTimeout(r,800));const r2=await db.from('motorizados').select('*').order('nombre_completo');if(!r2.error&&r2.data&&r2.data.length)motos=r2.data}
+if(!(motos&&motos.length)){try{const lista=(typeof allMotos!=='undefined'&&Array.isArray(allMotos)&&allMotos.length)?allMotos:(Array.isArray(window.adminServiceMotos)?window.adminServiceMotos:[]);if(lista.length)motos=lista}catch(_){}}
 const act=(motos||[]).filter(m=>String(m.activo??'')!=='false');const ids=act.map(m=>String(m.id));
 const hist=new Map();
 if(ids.length){
@@ -3926,6 +3929,11 @@ try{
     a.innerHTML=(msg||'Para recibir avisos, activa las notificaciones: mantén presionado el icono de la app → <b>Información de la app</b> → <b>Notificaciones</b> → Permitir. Luego vuelve a abrir la app.')+'<button type="button" style="display:block;margin-top:10px;margin-left:auto;background:#C4410C;color:#fff;border:0;border-radius:999px;padding:8px 16px;font:700 14px Inter,system-ui,sans-serif">Entendido</button>';
     a.hidden=false;a.querySelector('button').onclick=()=>{a.hidden=true};
   }
+  /* Cuando Android no deja dar el permiso desde la app, se explica cómo hacerlo en Ajustes */
+  function instrucciones(){
+    const t='Activa las notificaciones en tu teléfono\n1. Mantén presionado el ícono de la app y toca «Información de la app».\n2. Entra a «Notificaciones» y actívalas.\n3. Vuelve a abrir la app: los avisos quedarán activados solos.';
+    if(window.pdInfo)window.pdInfo(t);else ayuda();
+  }
   let card=null;
   function tarjeta(){
     if(card&&!card.hidden)return;
@@ -3959,7 +3967,18 @@ try{
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(revisar,800)});
     // si el permiso se concede desde otro botón del panel, se guarda el celular al instante
     try{navigator.permissions.query({name:'notifications'}).then(st=>{st.onchange=()=>{if(st.state==='granted')revisar()}})}catch(_){}
-    document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(b&&/avisos|notificaci|alerta|permiso|activar/i.test((b.textContent||'')+' '+(b.id||'')))[1500,5000,12000].forEach(t=>setTimeout(revisar,t))},true);
+    document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(!b)return;
+      const txt=(b.textContent||'')+' '+(b.id||'');
+      /* Botón «Activar avisos» del panel: se pide el permiso en el mismo toque y se explica qué pasó */
+      if(/activar avisos|activa los avisos|activar notificaciones/i.test(txt)&&!b.closest('#pdPushCard')&&'Notification' in window){
+        if(Notification.permission==='granted'){revisar().then(()=>window.pdAviso&&pdAviso('Los avisos ya están activados en este teléfono ✓'));return}
+        pedir().then(p=>{
+          if(p==='granted'){setTimeout(revisar,300);window.pdAviso&&pdAviso('Avisos activados ✓ Te avisaremos de cada pedido.')}
+          else instrucciones();
+        });
+        return;
+      }
+      if(/avisos|notificaci|alerta|permiso|activar/i.test(txt))[1500,5000,12000].forEach(t=>setTimeout(revisar,t))},true);
     try{c.auth.onAuthStateChange(ev=>{
       if(ev==='SIGNED_IN')setTimeout(revisar,1500);
       if(ev==='SIGNED_OUT'){if(card)card.hidden=true;navigator.serviceWorker.getRegistration().then(r=>r&&r.pushManager.getSubscription()).then(s=>s&&s.unsubscribe()).catch(()=>{})}

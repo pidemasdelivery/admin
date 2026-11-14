@@ -52,6 +52,7 @@ html body #appView#appView#appView#appView#appView#appView > .card:first-child:h
 #pdDlg .pdDlgCard{width:100%;max-width:440px;box-sizing:border-box;background:#fff;border:1px solid var(--fr-line,#EFE3DA);border-radius:var(--r-xl,24px);box-shadow:var(--sh-lg,0 12px 32px rgba(31,26,23,.16));padding:20px 16px 16px;animation:pdDlgSube .22s cubic-bezier(.2,.8,.2,1);max-height:calc(100dvh - 80px);overflow-y:auto}
 #pdDlg .pdDlgIco{width:44px;height:44px;border-radius:var(--r-md,14px);display:flex;align-items:center;justify-content:center;background:var(--fr-peach,#FBE6DD);color:var(--fr-orange,#C4410C);margin-bottom:12px}
 #pdDlg .pdDlgIco svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#pdDlg .pdDlgIco.exito{background:#E8F3EC;color:var(--fr-green,#1F6B45)}
 #pdDlg .pdDlgIco.peligro{background:#FDECEA;color:var(--fr-red,#B42318)}
 #pdDlg .pdDlgT{margin:0 0 6px;font:800 var(--fs-xl,18px)/1.25 var(--font,Inter,sans-serif);letter-spacing:-.3px;color:var(--fr-ink,#1F1A17)}
 #pdDlg .pdDlgP{margin:0;font:500 var(--fs-md,14px)/1.45 var(--font,Inter,sans-serif);color:var(--fr-muted,#6F625A);white-space:pre-line;overflow-wrap:anywhere}
@@ -72,6 +73,9 @@ html body #appView#appView#appView#appView#appView#appView > .card:first-child:h
 #pdAvisoPila .pdAviso span{flex:1;min-width:0}
 #pdAvisoPila .pdAviso button{flex:0 0 auto;width:28px;height:28px;border-radius:8px;border:1px solid var(--fr-line,#EFE3DA);background:#fff;color:var(--fr-muted,#6F625A);font:600 16px/1 var(--font,Inter,sans-serif)}
 html.pdDlgOn,html.pdDlgOn body{overflow:hidden!important}
+
+html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #pdDlg{background:rgba(31,26,23,.45)!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0 12px calc(12px + env(safe-area-inset-bottom,0px))!important;margin:0!important;max-width:none!important;width:auto!important;height:auto!important}
+html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #pdDlg .pdDlgCard{background:#fff!important}
 </style>
 <script id="pd-dialogos-js">
 /* Reemplaza alert, confirm y prompt por tarjetas de la app.
@@ -80,7 +84,7 @@ html.pdDlgOn,html.pdDlgOn body{overflow:hidden!important}
    await pdPedir(texto, valor)→ texto escrito, o null si cancela */
 (function(){
   if(window.pdConfirmar)return;
-  const ICO={pregunta:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 0 1 5 1c0 1.8-2.5 2.2-2.5 3.6"/><path d="M12 17h.01"/></svg>',
+  const ICO={ok:'<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',pregunta:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 0 1 5 1c0 1.8-2.5 2.2-2.5 3.6"/><path d="M12 17h.01"/></svg>',
     peligro:'<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>',
     lapiz:'<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>'};
   const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -95,17 +99,17 @@ html.pdDlgOn,html.pdDlgOn body{overflow:hidden!important}
       if(!d){d=document.createElement('div');d.id='pdDlg';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');document.body.appendChild(d)}
       let [t,p]=partes(texto);if(tipo==='prompt'&&!p)t=t.replace(/:\s*$/,'');const peligro=tipo==='confirm'&&PELIGRO.test(t+' '+p);
       const etiqueta=tipo==='prompt'?(p.match(/[^.\n]*:\s*$/)?.[0]||''):'';const cuerpo=etiqueta?p.slice(0,p.length-etiqueta.length).trim():p;
-      d.innerHTML=`<div class="pdDlgCard"><div class="pdDlgIco${peligro?' peligro':''}">${tipo==='prompt'?ICO.lapiz:peligro?ICO.peligro:ICO.pregunta}</div>
+      d.innerHTML=`<div class="pdDlgCard"><div class="pdDlgIco${peligro?' peligro':''}${tipo==='exito'?' exito':''}">${tipo==='exito'?ICO.ok:tipo==='prompt'?ICO.lapiz:peligro?ICO.peligro:ICO.pregunta}</div>
         <h3 class="pdDlgT">${E(t)}</h3>${cuerpo?`<p class="pdDlgP">${E(cuerpo)}</p>`:''}
         ${tipo==='prompt'?`<div class="pdDlgCampo">${etiqueta?`<label for="pdDlgIn">${E(etiqueta.replace(/:\s*$/,''))}</label>`:''}<input id="pdDlgIn" autocomplete="off" value="${E(valor??'')}"></div>`:''}
-        <div class="pdDlgBtns"><button type="button" class="pdDlgNo">Cancelar</button><button type="button" class="pdDlgSi${peligro?' peligro':''}">${tipo==='prompt'?'Guardar':peligro?'Sí, continuar':'Aceptar'}</button></div></div>`;
+        <div class="pdDlgBtns${tipo==='info'||tipo==='exito'?' uno':''}">${tipo==='info'||tipo==='exito'?'':'<button type="button" class="pdDlgNo">Cancelar</button>'}<button type="button" class="pdDlgSi${peligro?' peligro':''}">${tipo==='prompt'?'Guardar':tipo==='exito'?'Aceptar':tipo==='info'?'Entendido':peligro?'Sí, continuar':'Aceptar'}</button></div></div>`;
       d.hidden=false;document.documentElement.classList.add('pdDlgOn');
       const inp=d.querySelector('#pdDlgIn');
       const fin=v=>{d.hidden=true;d.innerHTML='';document.documentElement.classList.remove('pdDlgOn');document.removeEventListener('keydown',tecla,true);res(v)};
       const si=()=>fin(tipo==='prompt'?(inp?inp.value:''):true),no=()=>fin(tipo==='prompt'?null:false);
       function tecla(e){if(e.key==='Escape'){e.preventDefault();no()}else if(e.key==='Enter'&&(tipo!=='prompt'||document.activeElement===inp)){e.preventDefault();si()}}
       document.addEventListener('keydown',tecla,true);
-      d.querySelector('.pdDlgSi').onclick=si;d.querySelector('.pdDlgNo').onclick=no;
+      d.querySelector('.pdDlgSi').onclick=si;const nb=d.querySelector('.pdDlgNo');if(nb)nb.onclick=no;
       setTimeout(()=>{if(inp){inp.focus();inp.select()}else d.querySelector('.pdDlgSi').focus()},60);
     });
   }
@@ -113,6 +117,7 @@ html.pdDlgOn,html.pdDlgOn body{overflow:hidden!important}
   function enCola(tipo,t,v){const p=cola.then(()=>abrir(tipo,t,v));cola=p.catch(()=>{});return p}
   window.pdConfirmar=t=>enCola('confirm',t);
   window.pdPedir=(t,v)=>enCola('prompt',t,v);
+  window.pdInfo=t=>enCola('info',t);
   window.pdAviso=function(texto){
     const t=String(texto??'').trim();if(!t)return;
     let pila=document.getElementById('pdAvisoPila');
@@ -123,7 +128,38 @@ html.pdDlgOn,html.pdDlgOn body{overflow:hidden!important}
     pila.appendChild(c);while(pila.children.length>3)pila.firstChild.remove();
     setTimeout(quitar,Math.min(9000,3500+t.length*40));
   };
-  /* por si queda alguno suelto: los avisos simples también salen como tarjeta */
+  try{window.alert=function(t){window.pdAviso(t)}}catch(_){}
+
+  /* Mensaje de éxito: ventanita con «Aceptar» cuando se guarda algo (en vez del texto pequeño dentro de la página) */
+  const OK_RE=/guardad|actualizad|registrad|cread[oa]|eliminad|anulad|agregad|añadid|enviad|confirmad|recibid|correctamente|con éxito|✓/i;
+  const ERR_RE=/no se pudo|error|falló|inválid|obligatori|primero |debes |falta /i;
+  const BTN_RE=/guardar|registrar|crear|confirmar|enviar|agregar|añadir|recibir|anular|eliminar|borrar|quitar|pagar|subir|aceptar/i;
+  let ultimoGuardar=0;
+  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button,[role=button],input[type=submit]');if(!b||b.closest('#pdDlg,#pdAvisoPila'))return;
+    if(BTN_RE.test((b.textContent||b.value||'')+' '+(b.id||'')))ultimoGuardar=Date.now()},true);
+  function titulo(t){return /guardad|actualizad/i.test(t)?'Cambios guardados':/registrad|recibid|agregad|añadid|cread/i.test(t)?'Registrado correctamente':/eliminad|anulad|borrad|quitad/i.test(t)?'Eliminado correctamente':/enviad/i.test(t)?'Enviado correctamente':'Listo'}
+  function exito(texto){
+    const t=String(texto||'').trim();const tt=titulo(t);
+    const cuerpo=t.replace(/\s*✓\s*/g,' ').trim();
+    return enCola('exito',tt+(cuerpo&&cuerpo.toLowerCase()!==tt.toLowerCase()?'\n'+cuerpo:''));
+  }
+  window.pdExito=exito;
+  const reciente=()=>Date.now()-ultimoGuardar<15000;
+  const SEL_MSG='[role=status],[aria-live],.notice,.msg,[id$=Msg],[id$=msg],[class*=Msg],[class*=msg]';
+  const visto=new WeakMap();
+  function revisarMsg(el){
+    if(!el||el.closest('#pdDlg,#pdAvisoPila,#pdPermGate,#pdAlerts,#pdxAlerts,#pdAvisoStack'))return;
+    const t=(el.textContent||'').replace(/\s+/g,' ').trim();
+    if(!t){if(el.dataset.pdExitoOculto){el.style.removeProperty('display');delete el.dataset.pdExitoOculto}return}
+    if(visto.get(el)===t)return;visto.set(el,t);
+    if(!reciente()||ERR_RE.test(t)||!OK_RE.test(t)||t.length>220)return;
+    el.style.setProperty('display','none','important');el.dataset.pdExitoOculto='1';
+    exito(t);
+  }
+  new MutationObserver(ms=>{const set=new Set();for(const m of ms){let n=m.target.nodeType===1?m.target:m.target.parentElement;if(!n)continue;const el=n.closest&&n.closest(SEL_MSG);if(el)set.add(el)}set.forEach(revisarMsg)})
+    .observe(document.documentElement,{subtree:true,childList:true,characterData:true});
+  const avisoBase=window.pdAviso;
+  window.pdAviso=function(t){const s=String(t??'');if(reciente()&&OK_RE.test(s)&&!ERR_RE.test(s))return exito(s);return avisoBase(t)};
   try{window.alert=function(t){window.pdAviso(t)}}catch(_){}
 })();
 </script>
@@ -724,7 +760,7 @@ Motorizado activo
 <script src="supabase.js?v=202611082249"></script>
 <script src="funciones.js?v=202611131700"></script>
 <script src="pedidos.js?v=202611131700"></script>
-<script src="admin.js?v=202611131730"></script>
+<script src="admin.js?v=202611131900"></script>
 <script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 <style id="pd-app-panel-css">
 /* ===== pd-app-panel · se siente como app: sin zoom, sin recargar al jalar, login fijo y centrado ===== */
