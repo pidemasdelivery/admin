@@ -3458,7 +3458,10 @@ try{
 
   let negs=[],cur=null,cats=[],prods=[],tab='datos',edit=null,map=null;
 
-  function msg(t,bad){const m=$('cnxMsg');if(!m)return;clearTimeout(msg.t);m.textContent=t||'';m.className='cnxMsg'+(t?' on':'')+(bad?' bad':'');if(t&&!bad)msg.t=setTimeout(()=>{m.className='cnxMsg'},3500);if(t&&bad)try{m.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}}
+  function msg(t,bad){
+    if(t&&!bad&&window.pdExito&&!/^(Guardando|Cargando|Cambiando)/i.test(t)&&/guardad|agregad|eliminad|actualizad|cambiad|quitad|visible|oculta|oculto/i.test(t)){const m0=$('cnxMsg');if(m0){m0.textContent='';m0.className='cnxMsg'}window.pdExito(/guardad|actualizad|cambiad/i.test(t)?'Cambios guardados':t);return}
+    if(t&&!bad&&/^(Guardando|Cargando|Cambiando)/i.test(t))t='';
+    const m=$('cnxMsg');if(!m)return;clearTimeout(msg.t);m.textContent=t||'';m.className='cnxMsg'+(t?' on':'')+(bad?' bad':'');if(t&&!bad)msg.t=setTimeout(()=>{m.className='cnxMsg'},3500);if(t&&bad)try{m.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}}
   const F=(label,id,val,extra)=>'<div class="cnxF"><label for="'+id+'">'+label+'</label><input id="'+id+'" value="'+E(val??'')+'" '+(extra||'')+'></div>';
   const SW=(id,on,txt)=>'<label class="cnxCk"><input type="checkbox" id="'+id+'"'+(on?' checked':'')+'><span>'+txt+'</span></label>';
   const TOG=(id,on,t,s)=>'<label class="cnxTog"><span class="cnxTogTx"><b>'+t+'</b>'+(s?'<small>'+s+'</small>':'')+'</span><input type="checkbox" id="'+id+'"'+(on?' checked':'')+'><i class="cnxSw" aria-hidden="true"></i></label>';
@@ -3481,7 +3484,7 @@ try{
   }
   window.cnxLoad=load;
   async function elegir(id){
-    cur=negs.find(n=>String(n.id)===String(id))||null;edit=null;
+    cur=negs.find(n=>String(n.id)===String(id))||null;edit=null;dsOpen=false;
     $('cnxBody').classList.toggle('cnxOff',!cur);$('cnxEmpty').classList.toggle('cnxOff',!!cur);
     msg('');if(!cur)return;
     await pintar();
@@ -3533,7 +3536,6 @@ try{
       +(has(r,'tiempo_estimado')?F('Tiempo estimado de entrega','cnxTiempo',r.tiempo_estimado,'placeholder="Ej. 25–40 min"'):'')
       +(has(r,'orden')?F('Orden en la tienda','cnxOrden',r.orden??0,'type="number" step="1"'):'')
       +'</div>'
-      +(has(r,'activo')?'<div class="cnxCard">'+SEC('TIENDA','En la tienda')+TOG('cnxActivo',r.activo!==false,'Negocio visible en la tienda','Si lo apagas, los clientes no verán tu negocio.')+'</div>':'')
       +'<button type="button" class="btn" data-a="datos-save">Guardar cambios</button>';
     p._cols={tel,cat,logo,port};
   }
@@ -3553,7 +3555,6 @@ try{
     if(g('cnxRuc'))pl.ruc=g('cnxRuc').value.trim()||null;
     if(g('cnxTiempo'))pl.tiempo_estimado=g('cnxTiempo').value.trim()||null;
     if(g('cnxOrden'))pl.orden=Number(g('cnxOrden').value)||0;
-    if(g('cnxActivo'))pl.activo=g('cnxActivo').checked;
     msg('Guardando…');
     try{
       const lf=g('cnxLogoF')&&g('cnxLogoF').files[0],pf=g('cnxPortF')&&g('cnxPortF').files[0];
@@ -3699,6 +3700,63 @@ try{
     finally{btn.disabled=false;btn.textContent='Cambiar contraseña'}
   }
 
+  /* ---------- Descartables (igual que en el panel del negocio) ---------- */
+  const DS_RE=/restaur|comida|poll|pizz|hambur|sangu|pavi|cevich|chifa|sushi|parrill|anticuch|helad|cafe|jugu|dulce|pastel|panader|broaster|men[uú]/i;
+  const esComida=r=>!!r&&DS_RE.test(String(r.categoria_negocio||r.categoria_comercial||r.tipo_negocio||r.categoria||''));
+  const DSK=[['taper_p','Taper pequeño','🥡','Se elige en cada producto','Ej. 0.30'],['taper_g','Taper grande','🥡','Se elige en cada producto','Ej. 0.50'],['vaso_p','Vaso pequeño','🥤','Se elige en cada producto','Ej. 0.20'],['vaso_g','Vaso grande','🥤','Se elige en cada producto','Ej. 0.30'],['bolsa','Bolsa','🛍️','Va en cada pedido','Ej. 0.20'],['cubiertos','Cubiertos','🍴','Lo pide el cliente','Ej. 0.30']];
+  function dsCfg(){let c=cur&&cur.descartables_config;if(typeof c==='string'){try{c=JSON.parse(c)}catch(e){c=null}}return c&&typeof c==='object'?c:{}}
+  const dsTxt=v=>{const n=Number(v);return v===null||v===undefined||v===''||!isFinite(n)?'':(n===0?'0':n.toFixed(2))};
+  const dsP=v=>{if(v===null||v===undefined||v==='')return null;const n=Number(v);return isFinite(n)&&n>=0?n:null};
+  const dsErr=e=>{const m=String((e&&e.message)||e||'');return /descartables|column|schema/i.test(m)?'Faltan las columnas de descartables en Supabase (descartables_activo y descartables_config).':'No se pudo guardar: '+m};
+  let dsOpen=false;
+  function dsHTML(){
+    if(!esComida(cur))return '';
+    const on=cur.descartables_activo===true,c=dsCfg();
+    return '<button type="button" class="btn alt cnxDsBtn" data-a="ds-open"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span>Configurar descartables</span></button>'
+      +'<div class="cnxDsPanel" id="cnxDsPanel"'+(dsOpen?'':' hidden')+'><div class="cnxDsHead"><b>Descartables</b><button type="button" class="cnxDsX" data-a="ds-close" aria-label="Cerrar">×</button></div>'
+      +TOG('cnxDsOn',on,'Cobrar descartables','Actívalo para sumar el precio de los descartables a los pedidos.')
+      +'<div class="cnxDsBox" id="cnxDsBox"'+(on?'':' hidden')+'><div class="cnxDsBoxH"><b>Precio por unidad</b><small>Vacío = no lo ofreces · 0 = gratis</small></div>'
+      +DSK.map(([k,n,ic,sub,ph])=>'<label class="cnxDsRow" for="cnxDs_'+k+'"><i>'+ic+'</i><span><b>'+n+'</b><small>'+sub+'</small></span><em>S/</em><input id="cnxDs_'+k+'" inputmode="decimal" maxlength="6" placeholder="'+ph+'" value="'+E(dsTxt(c[k]))+'" autocomplete="off"></label>').join('')
+      +'<button type="button" class="btn" data-a="ds-save">Guardar precios</button></div></div>';
+  }
+  async function dsToggle(inp){
+    const nuevo=inp.checked;inp.disabled=true;
+    try{await guardarNegocio({descartables_activo:nuevo},'Cambios guardados');const bx=$('cnxDsBox');if(bx)bx.hidden=!nuevo}
+    catch(e){inp.checked=!nuevo;msg(dsErr(e),true)}
+    finally{inp.disabled=false}
+  }
+  async function dsSave(btn){
+    const cfg={};
+    for(const [k,n] of DSK){const raw=String(($('cnxDs_'+k)||{}).value||'').trim().replace(',','.');
+      if(raw===''){cfg[k]=null;continue}
+      const v=Number(raw);if(!isFinite(v)||v<0||v>50){msg(n+': escribe un precio válido, por ejemplo 0.50.',true);return}
+      cfg[k]=Math.round(v*100)/100}
+    const pr=dsCfg().prod;if(pr&&typeof pr==='object')cfg.prod=pr;
+    btn.disabled=true;btn.textContent='Guardando…';
+    try{await guardarNegocio({descartables_config:cfg},'Cambios guardados')}
+    catch(e){msg(dsErr(e),true)}
+    finally{btn.disabled=false;btn.textContent='Guardar precios'}
+  }
+  function dsProdHTML(x){
+    if(!esComida(cur)||cur.descartables_activo!==true)return '';
+    const c=dsCfg(),pc=(x&&x.id&&c.prod&&c.prod[String(x.id)])||{};
+    edit.ds={taper:pc.taper==='p'||pc.taper==='g'?pc.taper:'',vaso:pc.vaso==='p'||pc.vaso==='g'?pc.vaso:''};
+    const hay=['taper_p','taper_g','vaso_p','vaso_g'].some(k=>dsP(c[k])!==null);
+    const fila=(t,nom)=>{const op=(k,lab)=>{const pr=k?dsP(c[t+'_'+k]):0,off=k&&pr===null;return '<button type="button" data-a="dsp" data-dt="'+t+'" data-dk="'+k+'"'+(off?' disabled':'')+' aria-pressed="'+(edit.ds[t]===k)+'">'+lab+(k?(off?' · sin precio':' · '+money(pr)):'')+'</button>'};
+      return '<div class="cnxDsPRow"><b>'+nom+'</b><div class="cnxDsSeg">'+op('','No lleva')+op('p','Pequeño')+op('g','Grande')+'</div></div>'};
+    return '<div class="cnxCard">'+SEC('DESCARTABLES','Descartables de este producto')+'<p class="cnxMuted">'+(hay?'Lo que elijas se agrega solo cuando el cliente pide este producto, y su precio se suma al del producto.':'Primero escribe los precios de taper y vaso en Carta → Configurar descartables.')+'</p>'+fila('taper','Taper')+fila('vaso','Vaso')+'</div>';
+  }
+  async function dsProdSave(id,ds){
+    if(!ds||!id)return '';
+    const c=Object.assign({},dsCfg()),prod=Object.assign({},c.prod||{}),k=String(id);
+    const nuevo={};if(ds.taper)nuevo.taper=ds.taper;if(ds.vaso)nuevo.vaso=ds.vaso;
+    if(JSON.stringify(nuevo)===JSON.stringify(prod[k]||{}))return '';
+    if(Object.keys(nuevo).length)prod[k]=nuevo;else delete prod[k];
+    c.prod=prod;
+    try{const {data,error}=await db.from('negocios').update({descartables_config:c}).eq('id',cur.id).select('*').maybeSingle();if(error)throw error;if(data)Object.assign(cur,data);else cur.descartables_config=c;return ''}
+    catch(e){return ' (los descartables no se guardaron: '+((e&&e.message)||e)+')'}
+  }
+
   /* ---------- Carta ---------- */
   const stockKey=()=>pick(prods[0]||{},['stock','stock_actual','cantidad_stock','existencias','cantidad_disponible'])||'stock';
   function pCarta(p){
@@ -3709,7 +3767,7 @@ try{
     const card=x=>{const st=Number(x[sk]);const vis=x.disponible!==false;const sd=splitDesc(x.descripcion).description;
       return '<div class="cnxProd'+(vis?'':' off')+'" data-id="'+E(x.id)+'"><div class="cnxPImg">'+(x.imagen_url?'<img src="'+E(x.imagen_url)+'" alt="" loading="lazy">':'<span>Sin foto</span>')+'</div><div class="cnxPTx"><b>'+E(x.nombre||'')+'</b><small>'+E(sd).slice(0,70)+'</small><div class="cnxPMeta"><strong>'+money(x.precio)+'</strong><span>Stock: '+(isFinite(st)?st:'—')+'</span><span class="cnxTag'+(vis?'':' off')+'">'+(vis?'Visible':'Oculto')+'</span></div><div class="cnxActs"><button type="button" class="btn alt" data-a="p-edit">Editar</button><button type="button" class="btn alt" data-a="p-vis">'+(vis?'Ocultar':'Mostrar')+'</button><button type="button" class="btn alt cnxDel" data-a="p-del">Eliminar</button></div></div></div>'};
     const sinSt=prods.filter(x=>{const v=Number(x[sk]);return isFinite(v)&&v<=0}).length;
-    p.innerHTML='<div class="cnxStats"><div><small>Productos</small><b>'+prods.length+'</b></div><div><small>Categorías</small><b>'+cats.length+'</b></div><div><small>Sin stock</small><b>'+sinSt+'</b></div></div><button type="button" class="btn" data-a="p-new">+ Agregar producto</button>'
+    p.innerHTML='<div class="cnxStats"><div><small>Productos</small><b>'+prods.length+'</b></div><div><small>Categorías</small><b>'+cats.length+'</b></div><div><small>Sin stock</small><b>'+sinSt+'</b></div></div><button type="button" class="btn" data-a="p-new">+ Agregar producto</button>'+dsHTML()
       +(grupos.filter(g=>g.items.length).map(g=>'<div class="cnxCard"><div class="cnxH">'+E(g.c.nombre||'')+' · '+g.items.length+'</div>'+g.items.map(card).join('')+'</div>').join('')||'<div class="cnxCard cnxMuted">Este negocio aún no tiene productos.</div>');
   }
   function pProd(p){
@@ -3723,7 +3781,7 @@ try{
       +F('URL de imagen','cnxPImg',x.imagen_url||'','type="url"')
       +'<div class="cnxF"><label for="cnxPFile">Subir imagen</label><input type="file" id="cnxPFile" accept="image/png,image/jpeg,image/webp"></div>'
       +SW('cnxPAct',x.id?x.disponible!==false:true,'Visible en la tienda (necesita stock mayor a 0)')
-      +'</div><button type="button" class="btn" data-a="p-save">Guardar producto</button>';
+      +'</div>'+dsProdHTML(x)+'<button type="button" class="btn" data-a="p-save">Guardar producto</button>';
   }
   const featRow=(n,v)=>'<div class="cnxFeat"><input class="fn" placeholder="Característica (ej. Talla)" value="'+E(n||'')+'"><input class="fv" placeholder="Valor (ej. M)" value="'+E(v||'')+'"><button type="button" class="cnxX" data-a="feat-del" aria-label="Quitar">×</button></div>';
   async function subirImgProd(id,file){
@@ -3736,7 +3794,7 @@ try{
   const pathDeUrl=u=>{const m='/storage/v1/object/public/negocios/',s=String(u||''),i=s.indexOf(m);if(i<0)return null;try{return decodeURIComponent(s.slice(i+m.length).split('?')[0])}catch(e){return s.slice(i+m.length).split('?')[0]}};
   async function quitarImgStorage(u){const pth=pathDeUrl(u);if(!pth)return;try{await db.storage.from('negocios').remove([pth])}catch(e){}}
   async function saveProd(){
-    const sk=stockKey(),x=edit.prod||{};
+    const sk=stockKey(),x=edit.prod||{},ds=edit.ds||null;
     const nombre=$('cnxPNom').value.trim(),precio=Number($('cnxPPre').value),st=Math.max(0,Math.floor(Number($('cnxPStk').value||0)));
     if(!nombre||$('cnxPPre').value===''||!isFinite(precio)){msg('Completa el nombre y el precio.',true);return}
     const feats=[...document.querySelectorAll('#cnxFeat .cnxFeat')].map(r=>({name:r.querySelector('.fn').value,value:r.querySelector('.fv').value}));
@@ -3748,10 +3806,10 @@ try{
       let id=x.id;
       if(id){const r=await db.from('productos_negocio').update(pl).eq('id',id).eq('negocio_id',cur.id);if(r.error)throw r.error}
       else{const r=await db.from('productos_negocio').insert({negocio_id:cur.id,...pl}).select('*').single();if(r.error)throw r.error;id=r.data.id}
-      let aviso='';
+      let aviso=await dsProdSave(id,ds);
       if(file){
         try{const url=await subirImgProd(id,file);const u=await db.from('productos_negocio').update({imagen_url:url}).eq('id',id).eq('negocio_id',cur.id);if(u.error)throw u.error}
-        catch(e){aviso=' (la imagen no se pudo subir: '+(e.message||e)+')'}
+        catch(e){aviso+=' (la imagen no se pudo subir: '+(e.message||e)+')'}
       }
       edit=null;await pintar();msg('Producto guardado.'+aviso,!!aviso);
     }catch(e){msg('No se pudo guardar el producto: '+(e.message||e),true)}
@@ -3781,10 +3839,11 @@ try{
     const k=t.id==='cnxLogoF'?'logo':'portada',col=k==='logo'?pick(cur,LOGO):pick(cur,PORT);if(!col)return;
     const f=t.files[0];if(!/^image\/(jpeg|png|webp)$/i.test(f.type)||f.size>5*1024*1024){msg('La imagen debe ser JPG, PNG o WEBP y pesar máximo 5 MB.',true);t.value='';return}
     const th=t.closest('.cnxLogoRow').querySelector('.cnxLogoTh');th.innerHTML='<img src="'+URL.createObjectURL(f)+'" alt="">';th.classList.add('sub');
-    try{const url=await subirImgNegocio(f,k);await guardarNegocio({[col]:url},(k==='logo'?'Logo':'Portada')+' actualizado.');if(window.pdExito)pdExito((k==='logo'?'Logo':'Portada')+' actualizado.');pintar()}
+    try{const url=await subirImgNegocio(f,k);await guardarNegocio({[col]:url},(k==='logo'?'Logo':'Portada')+' actualizado.');pintar()}
     catch(err){msg('No se pudo subir la imagen: '+(err.message||err),true);pintar()}
   });
-  $('cnxTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-t]');if(!b||!cur)return;tab=b.dataset.t;edit=null;msg('');pintar()});
+  $('cnxTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-t]');if(!b||!cur)return;tab=b.dataset.t;edit=null;dsOpen=false;msg('');pintar()});
+  $('cnxPane').addEventListener('change',e=>{if(e.target&&e.target.id==='cnxDsOn')dsToggle(e.target)});
   $('cnxPane').addEventListener('click',e=>{
     const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=(b.closest('[data-id]')||{dataset:{}}).dataset.id;
     if(a==='datos-save')return saveDatos();
@@ -3798,6 +3857,10 @@ try{
     if(a.startsWith('cat-'))return catAction(a,id);
     if(a==='p-new'){edit={prod:null};return pintar()}
     if(a==='p-back'){edit=null;return pintar()}
+    if(a==='ds-open'){dsOpen=!dsOpen;const pn=$('cnxDsPanel');if(pn){pn.hidden=!dsOpen;if(dsOpen)setTimeout(()=>{try{pn.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}},60)}return}
+    if(a==='ds-close'){dsOpen=false;const pn=$('cnxDsPanel');if(pn)pn.hidden=true;return}
+    if(a==='ds-save')return dsSave(b);
+    if(a==='dsp'){if(b.disabled||!edit||!edit.ds)return;const t=b.dataset.dt;edit.ds[t]=b.dataset.dk;b.parentElement.querySelectorAll('button').forEach(q=>q.setAttribute('aria-pressed',String(q.dataset.dk===edit.ds[t])));return}
     if(a==='p-save')return saveProd();
     if(a==='feat-add'){$('cnxFeat').insertAdjacentHTML('beforeend',featRow('',''));return}
     if(a==='feat-del'){b.closest('.cnxFeat').remove();return}
