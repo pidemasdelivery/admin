@@ -3704,7 +3704,14 @@ try{
 
   /* ---------- Descartables (igual que en el panel del negocio) ---------- */
   const DS_RE=/restaur|comida|poll|pizz|hambur|sangu|pavi|cevich|chifa|sushi|parrill|anticuch|helad|cafe|jugu|dulce|pastel|panader|broaster|men[uú]/i;
-  const esComida=r=>!!r&&DS_RE.test(String(r.categoria_negocio||r.categoria_comercial||r.tipo_negocio||r.categoria||''));
+  /* Comida y bebidas: taper, vaso, bolsa y cubiertos. Panaderías y negocios de productos: solo bolsa. Agua y gas: nada. */
+  function dsPerfil(r){const c=String(r&&(r.categoria_negocio||r.categoria_comercial||r.tipo_negocio||r.categoria)||'').trim().toLowerCase();
+    if(!c)return {tipo:'bolsa',keys:['bolsa']};
+    if(/agua|gas\b|lavander/.test(c))return {tipo:'ninguno',keys:[]};
+    if(/panader/.test(c))return {tipo:'bolsa',keys:['bolsa']};
+    if(/restaur|comida|poll|pizz|hambur|sangu|pavi|cevich|chifa|sushi|japon|parrill|anticuch|helad|cafe|jugu|dulce|pastel|broaster|men[uú]|postre|marisc|criolla/.test(c))return {tipo:'comida',keys:['taper_p','taper_g','vaso_p','vaso_g','bolsa','cubiertos']};
+    return {tipo:'bolsa',keys:['bolsa']}}
+  const esComida=r=>!!r&&dsPerfil(r).tipo!=='ninguno';
   const DSK=[['taper_p','Taper pequeño','🥡','Se elige en cada producto','Ej. 0.30'],['taper_g','Taper grande','🥡','Se elige en cada producto','Ej. 0.50'],['vaso_p','Vaso pequeño','🥤','Se elige en cada producto','Ej. 0.20'],['vaso_g','Vaso grande','🥤','Se elige en cada producto','Ej. 0.30'],['bolsa','Bolsa','🛍️','Va en cada pedido','Ej. 0.20'],['cubiertos','Cubiertos','🍴','Lo pide el cliente','Ej. 0.30']];
   function dsCfg(){let c=cur&&cur.descartables_config;if(typeof c==='string'){try{c=JSON.parse(c)}catch(e){c=null}}return c&&typeof c==='object'?c:{}}
   const dsTxt=v=>{const n=Number(v);return v===null||v===undefined||v===''||!isFinite(n)?'':(n===0?'0':n.toFixed(2))};
@@ -3713,13 +3720,13 @@ try{
   let dsOpen=false;
   function dsHTML(){
     if(!esComida(cur))return '';
-    const on=cur.descartables_activo===true,c=dsCfg();
-    return '<button type="button" class="nxBtn light cnxDsBtn" data-a="ds-open"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span>Configurar descartables</span></button>'
-      +'<div class="cnxDsPanel" id="cnxDsPanel"'+(dsOpen?'':' hidden')+'><div class="cnxDsHead"><b>Descartables</b><button type="button" class="cnxDsX" data-a="ds-close" aria-label="Cerrar">×</button></div>'
-      +TOG('cnxDsOn',on,'Cobrar descartables','Actívalo para sumar el precio de los descartables a los pedidos.')
+    const on=cur.descartables_activo===true,c=dsCfg(),PF=dsPerfil(cur),sb=PF.tipo==='bolsa';
+    return '<button type="button" class="nxBtn light cnxDsBtn" data-a="ds-open"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span>'+(sb?'Configurar bolsa':'Configurar descartables')+'</span></button>'
+      +'<div class="cnxDsPanel" id="cnxDsPanel"'+(dsOpen?'':' hidden')+'><div class="cnxDsHead"><b>'+(sb?'Bolsa':'Descartables')+'</b><button type="button" class="cnxDsX" data-a="ds-close" aria-label="Cerrar">×</button></div>'
+      +TOG('cnxDsOn',on,sb?'Cobrar bolsa':'Cobrar descartables',sb?'Actívalo para sumar el precio de la bolsa a los pedidos.':'Actívalo para sumar el precio de los descartables a los pedidos.')
       +'<div class="cnxDsBox" id="cnxDsBox"'+(on?'':' hidden')+'><div class="cnxDsBoxH"><b>Precio por unidad</b><small>Vacío = no lo ofreces · 0 = gratis</small></div>'
-      +DSK.map(([k,n,ic,sub,ph])=>'<label class="cnxDsRow" for="cnxDs_'+k+'"><span><b>'+n+'</b><small>'+sub+'</small></span><em>S/</em><input id="cnxDs_'+k+'" inputmode="decimal" maxlength="6" placeholder="'+ph+'" value="'+E(dsTxt(c[k]))+'" autocomplete="off"></label>').join('')
-      +'<button type="button" class="btn" data-a="ds-save">Guardar precios</button></div></div>';
+      +DSK.filter(([k])=>PF.keys.includes(k)).map(([k,n,ic,sub,ph])=>'<label class="cnxDsRow" for="cnxDs_'+k+'"><span><b>'+n+'</b><small>'+sub+'</small></span><em>S/</em><input id="cnxDs_'+k+'" inputmode="decimal" maxlength="6" placeholder="'+ph+'" value="'+E(dsTxt(c[k]))+'" autocomplete="off"></label>').join('')
+      +'<p class="cnxDsNota">Si entregas bolsa de plástico, por ley se cobra además el impuesto ICBPER de S/ 0.50 por bolsa: inclúyelo en el precio.</p><button type="button" class="btn" data-a="ds-save">'+(sb?'Guardar precio':'Guardar precios')+'</button></div></div>';
   }
   async function dsToggle(inp){
     const nuevo=inp.checked;inp.disabled=true;
@@ -3729,18 +3736,19 @@ try{
   }
   async function dsSave(btn){
     const cfg={};
-    for(const [k,n] of DSK){const raw=String(($('cnxDs_'+k)||{}).value||'').trim().replace(',','.');
+    const PF=dsPerfil(cur);
+    for(const [k,n] of DSK){if(!PF.keys.includes(k)){cfg[k]=null;continue}const raw=String(($('cnxDs_'+k)||{}).value||'').trim().replace(',','.');
       if(raw===''){cfg[k]=null;continue}
       const v=Number(raw);if(!isFinite(v)||v<0||v>50){msg(n+': escribe un precio válido, por ejemplo 0.50.',true);return}
       cfg[k]=Math.round(v*100)/100}
-    const pr=dsCfg().prod;if(pr&&typeof pr==='object')cfg.prod=pr;
-    btn.disabled=true;btn.textContent='Guardando…';
+    const pr=dsCfg().prod;if(pr&&typeof pr==='object'&&PF.tipo==='comida')cfg.prod=pr;
+    const t0=btn.textContent;btn.disabled=true;btn.textContent='Guardando…';
     try{await guardarNegocio({descartables_config:cfg},'Cambios guardados')}
     catch(e){msg(dsErr(e),true)}
-    finally{btn.disabled=false;btn.textContent='Guardar precios'}
+    finally{btn.disabled=false;btn.textContent=t0}
   }
   function dsProdHTML(x){
-    if(!esComida(cur)||cur.descartables_activo!==true)return '';
+    if(dsPerfil(cur).tipo!=='comida'||cur.descartables_activo!==true)return '';
     const c=dsCfg(),pc=(x&&x.id&&c.prod&&c.prod[String(x.id)])||{};
     edit.ds={taper:pc.taper==='p'||pc.taper==='g'?pc.taper:'',vaso:pc.vaso==='p'||pc.vaso==='g'?pc.vaso:''};
     const hay=['taper_p','taper_g','vaso_p','vaso_g'].some(k=>dsP(c[k])!==null);
