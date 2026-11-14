@@ -51,7 +51,7 @@ window.pdQuitarCarga=salir;
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-500-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-700-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-800-normal.woff2">
-<link rel="stylesheet" href="estilos.css?v=202611140300">
+<link rel="stylesheet" href="estilos.css?v=202611140330">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'"/>
 
@@ -1361,7 +1361,18 @@ html.pdLoginFijo body #loginView#loginView#loginView > *{width:100%;max-width:42
   document.addEventListener('touchstart',e=>{const s=e.target.closest&&e.target.closest('.adminOrderCard.is-expanded .pdDS');if(!s||e.touches.length!==1)return;const l=e.target.closest('.pdDSl');if(l&&l.scrollTop>0)return;g={y:e.touches[0].clientY,card:s.closest('.adminOrderCard'),d:0}},{passive:true,capture:true});
   document.addEventListener('touchmove',e=>{if(!g)return;g.d=e.touches[0].clientY-g.y},{passive:true,capture:true});
   document.addEventListener('touchend',()=>{if(!g)return;const c=g.card,d=g.d;g=null;if(d>50&&c.dataset.dsOpen==='1'){c.dataset.dsOpen='0';hoja(c)}else if(d<-40&&c.dataset.dsOpen!=='1'){c.dataset.dsOpen='1';hoja(c)}},true);
-  function pasar(){document.querySelectorAll('#orderList .adminOrderCard.is-expanded').forEach(c=>{try{cabecera(c);hoja(c)}catch(e){console.warn('Detalle admin:',e)}});
+  /* un padre con transform/filter/contain hace que el pedido abierto no ocupe la pantalla: se neutraliza mientras está abierto */
+  function libre(c){
+    let e=c.parentElement;const marcados=[];
+    while(e&&e!==document.documentElement){const s=getComputedStyle(e);
+      if(s.transform!=='none'||s.filter!=='none'||(s.backdropFilter&&s.backdropFilter!=='none')||(s.webkitBackdropFilter&&s.webkitBackdropFilter!=='none')||s.perspective!=='none'||/paint|layout|strict|content/.test(s.contain||'')||/transform|filter|perspective/.test(s.willChange||'')||(s.contentVisibility&&s.contentVisibility!=='visible'))
+        {if(!e.classList.contains('pdSinCB'))e.classList.add('pdSinCB')}
+      if(e.classList.contains('pdSinCB'))marcados.push(e);e=e.parentElement}
+    return marcados}
+  function pasar(){const abiertos=[...document.querySelectorAll('#orderList .adminOrderCard.is-expanded')];
+    const keep=new Set();abiertos.forEach(c=>libre(c).forEach(x=>keep.add(x)));
+    document.querySelectorAll('.pdSinCB').forEach(x=>{if(!keep.has(x))x.classList.remove('pdSinCB')});
+    abiertos.forEach(c=>{try{cabecera(c);hoja(c)}catch(e){console.warn('Detalle admin:',e)}});
     document.querySelectorAll('#orderList .adminOrderCard:not(.is-expanded)').forEach(c=>{if(c.dataset.dsOpen!==undefined){delete c.dataset.dsOpen;delete c.dataset.dsSel}if(c.classList.contains('pdDSAbierta'))c.classList.remove('pdDSAbierta')})}
   let t=null,en=false;
   new MutationObserver(m=>{if(en)return;for(const r of m){const x=r.target;if(x&&x.closest&&x.closest('.pdDS,.pdDH'))continue;en=true;try{pasar()}finally{en=false}clearTimeout(t);t=setTimeout(pasar,200);return}}).observe(document.documentElement,{childList:true,subtree:true});
