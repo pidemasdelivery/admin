@@ -1705,8 +1705,8 @@ window.pdMapa={elegir,tarjeta,coords,linkDe,leaflet,PIN,repintar:()=>tarjetas.fo
 
 <style id="pd-select-hoja-css">
 /* Selector de opciones con el diseño de Pidemás (reemplaza la lista del navegador) */
-#pdSelHoja{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(31,26,23,.45);font-family:Inter,system-ui,-apple-system,sans-serif;animation:pdSelFade .18s ease-out}
-#pdSelHoja[hidden]{display:none}
+#pdSelHoja{position:fixed!important;inset:0!important;z-index:2147483647!important;margin:0!important;border:0!important;padding:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;overflow:hidden!important;color:inherit;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(31,26,23,.45);font-family:Inter,system-ui,-apple-system,sans-serif;animation:pdSelFade .18s ease-out}
+#pdSelHoja[hidden]{display:none!important}
 #pdSelHoja .pdSelCard{background:#FFF9F5;border-radius:24px 24px 0 0;max-height:82vh;display:flex;flex-direction:column;padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 30px rgba(31,26,23,.18);animation:pdSelUp .26s cubic-bezier(.2,.8,.2,1);width:100%;max-width:560px;margin:0 auto;box-sizing:border-box}
 #pdSelHoja .pdSelGrab{width:42px;height:5px;border-radius:9px;background:#E9DCD2;margin:0 auto 12px;flex:0 0 auto}
 #pdSelHoja .pdSelHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;flex:0 0 auto}
@@ -1749,7 +1749,7 @@ window.pdMapa={elegir,tarjeta,coords,linkDe,leaflet,PIN,repintar:()=>tarjetas.fo
     return t||'Elige una opción';
   }
   let hoja=null,actual=null;
-  function cerrar(){if(!hoja||hoja.hidden)return;hoja.hidden=true;document.documentElement.style.overflow=hoja.__ov||'';const s=actual;actual=null;if(s)try{s.focus({preventScroll:true})}catch(e){}}
+  function cerrar(){if(!hoja||hoja.hidden)return;try{if(hoja.hidePopover&&hoja.matches(':popover-open'))hoja.hidePopover()}catch(e){}hoja.hidden=true;document.documentElement.style.overflow=hoja.__ov||'';const s=actual;actual=null;if(s)try{s.focus({preventScroll:true})}catch(e){}}
   function elegir(s,v){
     if(s.value!==v){s.value=v;s.dispatchEvent(new Event('input',{bubbles:true}));s.dispatchEvent(new Event('change',{bubbles:true}))}
     cerrar();
@@ -1758,7 +1758,7 @@ window.pdMapa={elegir,tarjeta,coords,linkDe,leaflet,PIN,repintar:()=>tarjetas.fo
     if(!apto(s))return;
     actual=s;
     if(!hoja){
-      hoja=document.createElement('div');hoja.id='pdSelHoja';hoja.hidden=true;
+      hoja=document.createElement('div');hoja.id='pdSelHoja';hoja.hidden=true;if('popover' in hoja)hoja.setAttribute('popover','manual');
       hoja.setAttribute('role','dialog');hoja.setAttribute('aria-modal','true');
       hoja.addEventListener('click',e=>{if(e.target===hoja)cerrar()});
       document.addEventListener('keydown',e=>{if(e.key==='Escape'&&hoja&&!hoja.hidden){e.preventDefault();cerrar()}});
@@ -1779,7 +1779,10 @@ window.pdMapa={elegir,tarjeta,coords,linkDe,leaflet,PIN,repintar:()=>tarjetas.fo
     const q=hoja.querySelector('.pdSelQ');
     if(q)q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();let vis=0;hoja.querySelectorAll('.pdSelOpt').forEach(b=>{const ok=!v||b.textContent.toLowerCase().includes(v);b.hidden=!ok;if(ok)vis++});hoja.querySelectorAll('.pdSelGrp').forEach(g=>g.hidden=!!v);let nd=hoja.querySelector('.pdSelNada');if(!vis&&!nd){nd=document.createElement('div');nd.className='pdSelNada';nd.textContent='No hay opciones con ese nombre.';hoja.querySelector('.pdSelList').appendChild(nd)}else if(vis&&nd)nd.remove()});
     hoja.__ov=document.documentElement.style.overflow;document.documentElement.style.overflow='hidden';
+    /* siempre encima de todo: al final del documento y en la capa superior (también sobre ventanas abiertas) */
+    const dlg=s.closest('dialog[open]');if(hoja.parentNode!==(dlg||document.body)||hoja.nextSibling){try{if(hoja.hidePopover&&hoja.matches(':popover-open'))hoja.hidePopover()}catch(e){}(dlg||document.body).appendChild(hoja)}
     hoja.hidden=false;
+    try{if(hoja.showPopover&&!hoja.matches(':popover-open'))hoja.showPopover()}catch(e){}
     const sel=hoja.querySelector('.pdSelOpt[aria-selected="true"]')||hoja.querySelector('.pdSelOpt');
     if(sel){try{sel.scrollIntoView({block:'center'})}catch(e){}}try{const cd=hoja.querySelector('.pdSelCard');cd.tabIndex=-1;cd.focus({preventScroll:true})}catch(e){}
   }
