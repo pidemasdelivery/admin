@@ -2725,7 +2725,11 @@ try{
     const set=(el,v)=>{if(el&&el.textContent!==v)el.textContent=v};
     const d=new Date();
     set(sb.querySelector('.pmaTx > small'),d.toLocaleDateString('es-PE',{weekday:'short',day:'2-digit',month:'short',timeZone:'America/Lima'}).replace(/\./g,'')+' · '+d.toLocaleTimeString('es-PE',{hour:'numeric',minute:'2-digit',timeZone:'America/Lima'}));
-    const n=nombre();set(sb.querySelector('.pmaTx > strong'),'Hola, '+n);set(sb.querySelector('.pmaAv'),n.charAt(0).toUpperCase());
+    const n=nombre();set(sb.querySelector('.pmaTx > strong'),'Hola, '+n);(function(){const av=sb.querySelector('.pmaAv');if(!av)return;let f='';try{f=window.__pdAdminFoto!==undefined?window.__pdAdminFoto:(localStorage.getItem('pdAdminFoto')||'')}catch(e){}
+      if(window.__pdAdminFoto===undefined&&!window.__pdAdminFotoPidiendo&&window.db&&db.auth){window.__pdAdminFotoPidiendo=1;db.auth.getUser().then(r=>{const u=r&&r.data&&r.data.user;if(!u)return null;return db.from('perfiles').select('foto_url').eq('id',u.id).maybeSingle()}).then(r=>{if(!r)return;window.__pdAdminFoto=(r.data&&r.data.foto_url)||'';try{localStorage.setItem('pdAdminFoto',window.__pdAdminFoto)}catch(e){}}).catch(()=>{}).finally(()=>{window.__pdAdminFotoPidiendo=0})}
+      const k=f?'f:'+f:'i:'+n.charAt(0).toUpperCase();if(av.__k===k)return;av.__k=k;
+      if(f){av.innerHTML='<img src="'+String(f).replace(/"/g,'&quot;')+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">';av.style.setProperty('overflow','hidden','important');av.style.setProperty('padding','0','important')}
+      else{av.textContent=n.charAt(0).toUpperCase();av.style.removeProperty('overflow');av.style.removeProperty('padding')}})();
     const err=($('ordersMsg')&&!$('ordersMsg').classList.contains('hidden')&&$('ordersMsg').textContent.trim())?true:false;
     let cls='',txt='Conectando a la base de datos…';
     if(!navigator.onLine){cls='no';txt='Sin conexión a internet'}
@@ -3349,7 +3353,7 @@ window.pdAvisarMotoWa=function(id){
  var t=String(m.telefono||'').replace(/\D/g,'');if(t.length===9)t='51'+t;
  if(t.length<11){pdAviso('El motorizado '+(m.nombre_completo||'')+' no tiene un número de WhatsApp registrado.');return}
  var cod=String(o.id).slice(0,8).toUpperCase();
- var txt=['*PIDEMÁS DELIVERY*','¡Hola, '+String(m.nombre_completo||'motorizado').trim()+'!','Tienes un pedido asignado por Administración.','Pedido: #'+cod,'Por favor, ingresa al panel, revisa los detalles y confirma la asignación.','Entra aquí: https://pidemasdeliverypiura.infinityfreeapp.com/motorizado/','Gracias por trabajar con Pidemás.'].join('\n');
+ var txt=['*PIDEMÁS DELIVERY*','¡Hola, '+String(m.nombre_completo||'motorizado').trim()+'!','Tienes un pedido asignado por Administración.','Pedido: #'+cod,'Por favor, ingresa al panel, revisa los detalles y confirma la asignación.','Entra aquí: https://pidemasdelivery.github.io/motorizado/','Gracias por trabajar con Pidemás.'].join('\n');
  var url='https://wa.me/'+t+'?text='+encodeURIComponent(txt);
  if(typeof window.pdOpenWhatsApp==='function')window.pdOpenWhatsApp(url);else window.open(url,'_blank','noopener');
 };

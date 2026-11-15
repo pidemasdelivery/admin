@@ -1749,7 +1749,7 @@ const motoPhone=String(moto.telefono||"").replace(/\D/g,"");
 const phoneForWhatsApp=motoPhone ? (motoPhone.startsWith("51")?motoPhone:(motoPhone.length===9?"51"+motoPhone:motoPhone)) : "";
 const pedidoAsignado=allOrders.find(o=>String(o.id)===String(orderId))||current||{};
 const orderCode=String(orderId).slice(0,8).toUpperCase();
-const panelUrl="https://pidemasdeliverypiura.infinityfreeapp.com/motorizado/";
+const panelUrl="https://pidemasdelivery.github.io/motorizado/";
 const whatsappMessage=[
 "*PIDEMÁS DELIVERY*",
 "¡Hola, "+String(moto.nombre_completo||"motorizado").trim()+"!",
@@ -2419,7 +2419,7 @@ const waText = [
 'Tienes un nuevo servicio de recojo y entrega asignado.',
 'Pedido: #' + String(data.id || '').slice(0, 8).toUpperCase(),
 'Por favor, entra al panel y confirma la asignación:',
-'https://pidemasdeliverypiura.infinityfreeapp.com/motorizado/'
+'https://pidemasdelivery.github.io/motorizado/'
 ].join('\n');
 const waUrl = 'https://wa.me/' + motoPhoneIntl + '?text=' + encodeURIComponent(waText);
 if (recojoWhatsAppTab) recojoWhatsAppTab.location.href = waUrl;
@@ -2511,7 +2511,7 @@ if(error)throw error;
 const compraPhoneDigits=String(moto?.telefono||'').replace(/\D/g,'');
 const compraPhoneIntl=compraPhoneDigits?(compraPhoneDigits.startsWith('51')?compraPhoneDigits:(compraPhoneDigits.length===9?'51'+compraPhoneDigits:compraPhoneDigits)):'';
 if(compraPhoneIntl){
-const compraMessage=['*PIDEMÁS DELIVERY*','¡Hola, '+String(moto?.nombre_completo||'motorizado').trim()+'!','Tienes una nueva compra asignada.','Pedido: #'+String(data.id||'').slice(0,8).toUpperCase(),'Por favor, entra al panel para revisar los detalles y atender el servicio:','https://pidemasdeliverypiura.infinityfreeapp.com/motorizado/'].join('\n');
+const compraMessage=['*PIDEMÁS DELIVERY*','¡Hola, '+String(moto?.nombre_completo||'motorizado').trim()+'!','Tienes una nueva compra asignada.','Pedido: #'+String(data.id||'').slice(0,8).toUpperCase(),'Por favor, entra al panel para revisar los detalles y atender el servicio:','https://pidemasdelivery.github.io/motorizado/'].join('\n');
 const compraWaUrl='https://wa.me/'+compraPhoneIntl+'?text='+encodeURIComponent(compraMessage);
 if(compraWhatsAppTab)compraWhatsAppTab.location.href=compraWaUrl;
 else say('Compra asignada. El navegador bloqueó WhatsApp; permite ventanas emergentes para este sitio.');
@@ -3012,7 +3012,7 @@ if(error) throw error;
 const encPhoneDigits=String(encomiendaMoto?.telefono||'').replace(/\D/g,'');
 const encPhoneIntl=encPhoneDigits?(encPhoneDigits.startsWith('51')?encPhoneDigits:(encPhoneDigits.length===9?'51'+encPhoneDigits:encPhoneDigits)):'';
 if(encPhoneIntl){
-const encMessage=['*PIDEMÁS DELIVERY*','¡Hola, '+String(encomiendaMoto?.nombre_completo||'motorizado').trim()+'!','Tienes una nueva encomienda asignada.','Pedido: #'+String(data.id||'').slice(0,8).toUpperCase(),'Por favor, entra al panel para revisar los detalles y atender el servicio:','https://pidemasdeliverypiura.infinityfreeapp.com/motorizado/'].join('\n');
+const encMessage=['*PIDEMÁS DELIVERY*','¡Hola, '+String(encomiendaMoto?.nombre_completo||'motorizado').trim()+'!','Tienes una nueva encomienda asignada.','Pedido: #'+String(data.id||'').slice(0,8).toUpperCase(),'Por favor, entra al panel para revisar los detalles y atender el servicio:','https://pidemasdelivery.github.io/motorizado/'].join('\n');
 const encWaUrl='https://wa.me/'+encPhoneIntl+'?text='+encodeURIComponent(encMessage);
 if(encomiendaWhatsAppTab)encomiendaWhatsAppTab.location.href=encWaUrl;
 else showEncMsg('Encomienda asignada. El navegador bloqueó WhatsApp; permite ventanas emergentes para este sitio.');
