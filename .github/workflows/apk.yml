@@ -131,6 +131,12 @@ jobs:
                       <meta-data android:name="android.support.customtabs.trusted.DEFAULT_URL" android:value="${defaultUrl}"/>
                       <meta-data android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR" android:resource="@color/fondo"/>
                       <meta-data android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR" android:resource="@color/fondo"/>
+                      <!-- Pantalla de carga de Pidemás mientras abre Chrome (sin barra de dirección) -->
+                      <meta-data android:name="android.support.customtabs.trusted.SPLASH_IMAGE_DRAWABLE" android:resource="@drawable/splash"/>
+                      <meta-data android:name="android.support.customtabs.trusted.SPLASH_SCREEN_BACKGROUND_COLOR" android:resource="@color/fondo"/>
+                      <meta-data android:name="android.support.customtabs.trusted.SPLASH_SCREEN_FADE_OUT_DURATION" android:value="300"/>
+                      <meta-data android:name="android.support.customtabs.trusted.FILE_PROVIDER_AUTHORITY" android:value="${applicationId}.fileprovider"/>
+                      <meta-data android:name="android.support.customtabs.trusted.SCREEN_ORIENTATION" android:value="portrait"/>
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
                           <category android:name="android.intent.category.LAUNCHER"/>
@@ -155,6 +161,13 @@ jobs:
                           <category android:name="android.intent.category.DEFAULT"/>
                       </intent-filter>
                   </service>
+                  <provider
+                      android:name="androidx.core.content.FileProvider"
+                      android:authorities="${applicationId}.fileprovider"
+                      android:grantUriPermissions="true"
+                      android:exported="false">
+                      <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/filepaths"/>
+                  </provider>
               </application>
           </manifest>
           EOF
@@ -180,6 +193,10 @@ jobs:
           EOF
           ICON=icon-maskable-512.png; [ -f "$ICON" ] || ICON=icon-512.png
           cp "$ICON" $A/app/src/main/res/drawable-nodpi/icono.png
+          SPL=splash.png; [ -f "$SPL" ] || SPL="$ICON"
+          cp "$SPL" $A/app/src/main/res/drawable-nodpi/splash.png
+          mkdir -p $A/app/src/main/res/xml
+          printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' '<paths><files-path path="twa_splash/" name="twa_splash"/></paths>' > $A/app/src/main/res/xml/filepaths.xml
           cp "$ICON" $A/app/src/main/res/mipmap-nodpi/ic_launcher.png
           cat > $A/app/src/main/res/drawable-v26/icono_centro.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
