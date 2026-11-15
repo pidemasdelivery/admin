@@ -1133,7 +1133,7 @@ const formCard=$('clienteFormTitle')?.closest('.card');
 const search=$('buscarClientesRegistrados');const list=$('clientesList');
 const ui=document.createElement('div');
 ui.innerHTML=`<div class="pdcTop"><span><span class="pdcKick">Principal</span><strong>Clientes</strong></span><button type="button" class="pdcIcon" id="pdcRefresh" aria-label="Actualizar">${REF}</button></div>
-    <div class="pdcStats"><div><span>Clientes</span><strong id="pdcN">–</strong></div><div><span>Con ubicación</span><strong id="pdcU">–</strong></div><div><span>Con DNI</span><strong id="pdcD">–</strong></div></div>
+    <div class="pdcStats"><div><span>Clientes</span><strong id="pdcN">–</strong></div><div><span>Con mapa</span><strong id="pdcU">–</strong></div><div><span>Con DNI</span><strong id="pdcD">–</strong></div></div>
     <div class="pdcBar" id="pdcBar"><button type="button" class="pdcBtn" id="pdcNew">+ Nuevo</button></div>
     <div id="pdcFormSlot"></div><div id="pdcListSlot"></div>`;
 [...tab.children].forEach(c=>c.classList.add('pdcHidden'));
@@ -1189,11 +1189,16 @@ const sep=!q&&L!==last?`<div class="pdcLetter">${E(L)}</div>`:'';last=L;
 const tel=clienteTelefono(c),dni=clienteDocumento(c),dir=clienteDireccion(c),ub=clienteUbicacion(c);
 const id=String(c.id);const w=wa(tel);
 const ubLink=/^https?:\/\//i.test(ub)?ub:(ub?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(ub):'');
-return `${sep}<div class="pdcRow ${opened.has(id)?'open':''}" data-id="${E(id)}">
-        <button type="button" class="pdcHead"><span class="pdcAv">${E(name.trim().split(/\s+/).map(x=>x[0]||'').slice(0,2).join('').toUpperCase())}</span><span class="pdcTxt"><strong>${E(name)}</strong><small>${E([tel,dir].filter(Boolean).join(' · ')||'Sin datos de contacto')}</small></span><span class="pdcChev">›</span></button>
-        <div class="pdcBody">
-          <div class="pdcInfo"><span>Número</span><b>${E(tel||'—')}</b><span>DNI</span><b>${E(dni||'—')}</b><span>Dirección</span><b>${E(dir||'—')}</b><span>Ubicación</span><b>${ubLink?`<a href="${E(ubLink)}" target="_blank" rel="noopener">Ver en mapa</a>`:'—'}</b></div>
-          <div class="pdcAct"><a href="${w?E(w):'#'}" target="_blank" rel="noopener" ${w?'':'aria-disabled="true"'}>WhatsApp</a><a href="${tel?'tel:'+E(digits(tel)):'#'}" ${tel?'':'aria-disabled="true"'}>Llamar</a><button type="button" data-act="edit">Editar</button><button type="button" class="del" data-act="del">Borrar</button></div>
+const ic=d=>`<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+const I={tel:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',dni:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c.6-1.5 1.7-2 3-2s2.4.5 3 2M14 10h4M14 13h3"/>',dir:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',map:'<path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',wa:'<path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-2-2l.8-1-1-2z"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/>',del:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>'};
+const ini=name.trim().split(/\s+/).map(x=>x[0]||'').slice(0,2).join('').toUpperCase();
+const linea=(k,lbl,val,link)=>`<div class="pccLi">${ic(I[k])}<span class="pccLiTx"><small>${lbl}</small>${link?`<a href="${E(link)}" target="_blank" rel="noopener">${E(val)}</a>`:`<b class="${val?'':'vacio'}">${E(val||'No registrado')}</b>`}</span></div>`;
+return `${sep}<div class="pccRow ${opened.has(id)?'open':''}" data-id="${E(id)}">
+        <button type="button" class="pccHead" aria-expanded="${opened.has(id)}"><span class="pccAv">${E(ini||'#')}</span><span class="pccTxt"><strong>${E(name)}</strong><small>${E(tel||'Sin número')}</small></span><svg class="pccChev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="pccBody">
+          <div class="pccInfo">${linea('tel','Número',tel)}${linea('dni','DNI',dni)}${linea('dir','Dirección',dir)}${ubLink?linea('map','Ubicación','Ver en el mapa',ubLink):linea('map','Ubicación','')}</div>
+          <div class="pccMain"><a class="pccWa" href="${w?E(w):'#'}" target="_blank" rel="noopener" ${w?'':'aria-disabled="true"'}>${ic(I.wa)}WhatsApp</a><a class="pccCall" href="${tel?'tel:'+E(digits(tel)):'#'}" ${tel?'':'aria-disabled="true"'}>${ic(I.tel)}Llamar</a></div>
+          <div class="pccSub"><button type="button" data-act="edit">${ic(I.edit)}Editar</button><button type="button" class="del" data-act="del">${ic(I.del)}Borrar</button></div>
         </div></div>`;
 }).join('');
 if(rows.length>limit)html+=`<button type="button" class="pdcMore" id="pdcMore">Ver ${Math.min(60,rows.length-limit)} más (${rows.length-limit} restantes)</button>`;
@@ -1201,8 +1206,9 @@ list.innerHTML=html;
 };
 list?.addEventListener('click',e=>{
 if(e.target.closest('#pdcMore')){limit+=60;window.renderClientes();return}
-const row=e.target.closest('.pdcRow');if(!row)return;const id=row.dataset.id;
-if(e.target.closest('.pdcHead')){row.classList.toggle('open');row.classList.contains('open')?opened.add(id):opened.delete(id);return}
+const row=e.target.closest('.pccRow');if(!row)return;const id=row.dataset.id;
+if(e.target.closest('.pccHead')){row.classList.toggle('open');const on=row.classList.contains('open');on?opened.add(id):opened.delete(id);row.querySelector('.pccHead').setAttribute('aria-expanded',String(on));return}
+if(e.target.closest('a[aria-disabled="true"]')){e.preventDefault();return}
 const b=e.target.closest('[data-act]');if(!b)return;
 if(b.dataset.act==='edit')editarClienteAdmin(id);
 if(b.dataset.act==='del')borrarClienteAdmin(id);
@@ -4341,3 +4347,47 @@ try{
   window.pdTarjetaAviso=tarjetaAviso;
   try{navigator.serviceWorker.addEventListener('message',e=>{const m=e.data||{};if(m.type==='pd-push')tarjetaAviso(m.data)})}catch(_){}
 })();
+
+/* ===== cuentas de acceso: tarjetas iguales y contraseña en ventana pequeña ===== */
+try{(function(){
+  const $=id=>document.getElementById(id);
+  const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  /* --- tarjetas de cuentas de motorizados con el mismo diseño que las de negocios --- */
+  function tarjetasMoto(){
+    const l=$('accesosMotorizadoList');if(!l)return;
+    l.querySelectorAll(':scope>.row:not(.pdaRow)').forEach(row=>{
+      const name=(row.querySelector('strong')?.textContent||'Motorizado').trim();
+      const email=(row.querySelector('small')?.textContent||'').trim();
+      const off=/inactiv/i.test(row.querySelector('.badge')?.textContent||'');
+      const btns=[...row.querySelectorAll('button')];
+      btns.forEach(b=>{if(/contrase/i.test(b.textContent))b.textContent='Contraseña';else if(/correo/i.test(b.textContent))b.textContent='Correo'});
+      row.className='row pdaRow';row.innerHTML='<span class="pdaAv">'+E(name.charAt(0).toUpperCase()||'M')+'</span><span class="pdaTxt"><strong>'+E(name)+'<span class="pdaPill'+(off?' off':'')+'">'+(off?'Inactiva':'Activa')+'</span></strong><small>'+E(email)+'</small></span><div class="pdaRowActions"></div>';
+      const ac=row.querySelector('.pdaRowActions');btns.forEach(b=>ac.appendChild(b));
+    });
+  }
+  const lm=$('accesosMotorizadoList');if(lm){new MutationObserver(tarjetasMoto).observe(lm,{childList:true});tarjetasMoto()}
+  /* --- cambiar contraseña en una ventana pequeña (negocios y motorizados) --- */
+  function gen(){const ch='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%*';const a=new Uint32Array(14);crypto.getRandomValues(a);return [...a].map(n=>ch[n%ch.length]).join('')}
+  function ventana(boxId,inputId,cancelId,msgId){
+    const box=$(boxId);if(!box||box.__pdPw)return;box.__pdPw=1;
+    const velo=document.createElement('div');velo.className='pdPwVelo';velo.hidden=true;
+    velo.innerHTML='<div class="pdPwHoja" role="dialog" aria-modal="true" aria-label="Cambiar contraseña"><div class="pdPwTop"><strong>Cambiar contraseña</strong><button type="button" class="pdPwX" aria-label="Cerrar">×</button></div></div>';
+    const hoja=velo.querySelector('.pdPwHoja');
+    box.querySelectorAll('h3').forEach(h=>h.remove());
+    box.querySelectorAll('.pdaPwTools').forEach(t=>t.remove());
+    const inp=$(inputId);
+    if(inp){const f=inp.closest('.field');f&&f.insertAdjacentHTML('afterend','<button type="button" class="pdPwGen">Generar contraseña segura</button>');
+      box.querySelector('.pdPwGen').addEventListener('click',()=>{inp.value=gen();inp.type='text';const eye=inp.parentElement.querySelector('.passwordEyeBtn');if(eye){eye.textContent='⊗';eye.setAttribute('aria-label','Ocultar contraseña')}inp.dispatchEvent(new Event('input'))})}
+    box.classList.add('pdPwBox');box.classList.remove('card');box.removeAttribute('style');hoja.appendChild(box);document.body.appendChild(velo);
+    const cerrar=()=>{const c=$(cancelId);if(c)c.click();else box.classList.add('hidden')};
+    velo.querySelector('.pdPwX').addEventListener('click',cerrar);
+    velo.addEventListener('click',e=>{if(e.target===velo)cerrar()});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!velo.hidden)cerrar()});
+    const sync=()=>{const on=!box.classList.contains('hidden');if(velo.hidden===!on)return;velo.hidden=!on;if(on)setTimeout(()=>{try{inp&&inp.focus()}catch(e){}},200)};
+    new MutationObserver(sync).observe(box,{attributes:true,attributeFilter:['class']});sync();
+    const m=$(msgId);
+    if(m)new MutationObserver(()=>{if(!velo.hidden&&/correctamente/i.test(m.textContent||'')&&!m.classList.contains('hidden')){const t=m.textContent;setTimeout(()=>{cerrar();if(window.pdExito)pdExito('Contraseña actualizada');else if(window.pdAviso)pdAviso(t)},900)}}).observe(m,{childList:true,characterData:true,subtree:true,attributes:true});
+  }
+  ventana('cambiarPasswordNegocioBox','cambiarPasswordNegocioInput','cancelarPasswordNegocioBtn','cambiarPasswordNegocioMsg');
+  ventana('cambiarPasswordMotorizadoBox','cambiarPasswordMotorizadoInput','cancelarPasswordMotorizadoBtn','cambiarPasswordMotorizadoMsg');
+})()}catch(e){console.error('[pd-cuentas-acceso]',e)}

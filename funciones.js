@@ -37,7 +37,7 @@ console.error("No se pudo restaurar la sesión:", error);
 async function loadAdmin(uid){
 const {data,error}=await db.from("perfiles").select("rol,activo").eq("id",uid).maybeSingle();
 if(error || !data || data.rol!=="administrador" || data.activo!==true){
-await db.auth.signOut(); msg($("loginMsg"),"Esta cuenta no tiene acceso de administrador."); return;
+await db.auth.signOut({scope:'local'}); msg($("loginMsg"),"Esta cuenta no tiene acceso de administrador."); return;
 }
 $("loginView").classList.add("hidden"); $("appView").classList.remove("hidden"); $("adminBottomNav")?.classList.remove("hidden"); $("logout").classList.remove("hidden");
 try{window.pdPedidosCache&&window.pdPedidosCache.pintar(uid)}catch(e){}
@@ -96,7 +96,7 @@ if(!$("loginBtn").disabled) $("loginBtn").click();
 }
 });
 setupLoginOptions();
-$("logout").onclick=async()=>{await db.auth.signOut();location.reload()};
+$("logout").onclick=async()=>{await db.auth.signOut({scope:'local'});location.reload()};
 checkAdmin().catch(e=>{
 console.error("Error al comprobar la sesión:",e);
 msg($("loginMsg"),"No se pudo comprobar la sesión. Verifica tu conexión e intenta ingresar nuevamente.");
