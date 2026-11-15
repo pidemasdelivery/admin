@@ -138,7 +138,7 @@ window.pdQuitarCarga=salir;
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-500-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-700-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-800-normal.woff2">
-<link rel="stylesheet" href="estilos.css?v=202611151120">
+<link rel="stylesheet" href="estilos.css?v=202611151700">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'"/>
 
@@ -386,6 +386,7 @@ html body #pdInstalar .shr{display:inline-block;vertical-align:-3px;width:16px;h
 </div>
 <p class="cnxMuted" id="cnxEmpty">Elige un negocio para ver y editar lo mismo que el negocio ve en su panel: Mi perfil y Productos.</p>
 <div id="cnxBody" class="cnxOff">
+<label class="cnxTog" id="cnxVisRow" style="margin:0 0 10px!important"><span class="cnxTogTx"><b>Visible en la tienda</b><small id="cnxVisTx"></small></span><input type="checkbox" id="cnxVis" aria-label="Visible en la tienda"><i class="cnxSw" aria-hidden="true"></i></label>
 <div id="cnxTabs" role="tablist">
 <button type="button" data-t="perfil" class="on">Mi perfil</button>
 <button type="button" data-t="productos">Productos</button>
@@ -470,10 +471,6 @@ html body #pdInstalar .shr{display:inline-block;vertical-align:-3px;width:16px;h
 <button class="serviceCardAdmin serviceBtn" data-service="crear-negocio" type="button">
 <span class="serviceTitleAdmin">Crear negocio</span>
 <span class="serviceTextAdmin">Registrar un restaurante o negocio.</span>
-</button>
-<button class="serviceCardAdmin serviceBtn" data-service="estado-negocios" type="button">
-<span class="serviceTitleAdmin">Estado de negocios</span>
-<span class="serviceTextAdmin">Muestra u oculta negocios en la tienda.</span>
 </button>
 <button class="serviceCardAdmin serviceBtn" data-service="descuentos" type="button">
 <span class="serviceTitleAdmin">Códigos de descuento</span>
@@ -928,7 +925,7 @@ Motorizado activo
 <script src="supabase.js?v=202611082249"></script>
 <script src="funciones.js?v=202611151600"></script>
 <script src="pedidos.js?v=202611141135"></script>
-<script src="admin.js?v=202611151600"></script>
+<script src="admin.js?v=202611151700"></script>
 <script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 <style id="pd-app-panel-css">
 /* ===== pd-app-panel · se siente como app: sin zoom, sin recargar al jalar, login fijo y centrado ===== */
@@ -1128,7 +1125,7 @@ html.pdLoginFijo body #loginView#loginView#loginView > *{width:100%;max-width:42
         '<button type="button" class="pdhSecBtn" id="pdhPassBtn">Cambiar contraseña</button><p class="h-note pdhErr" id="pdhPassMsg" role="status"></p>';
       const tel=document.createElement('section');tel.className='pdhSec';tel.id='pdhTel';
       const acc=document.createElement('section');acc.className='pdhSec';acc.id='pdhAcc';
-      acc.innerHTML='<h4>Accesos rápidos</h4><div class="pdhAccs"><button type="button" data-ir="horario">Horario de Pidemás</button><button type="button" data-ir="qr">QR Yape</button><button type="button" data-ir="tarifas">Tarifas</button><button type="button" data-ir="descuentos">Códigos de descuento</button></div>';
+      acc.innerHTML='<h4>Accesos rápidos</h4><div class="pdhAccs"><button type="button" data-ir="horario">Horario</button><button type="button" data-ir="qr">QR Yape</button><button type="button" data-ir="tarifas">Tarifas</button><button type="button" data-ir="descuentos">Códigos de descuento</button></div>';
       datos.after(seg);
       acc.addEventListener('click',e=>{const b=e.target.closest('[data-ir]');if(!b)return;const k=b.dataset.ir;
         const cerrar=()=>{const x=c.querySelector('.h-x');x&&x.click()};

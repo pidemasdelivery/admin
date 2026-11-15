@@ -1498,7 +1498,7 @@ $('pdhSheet').addEventListener('click',e=>{if(e.target.closest('[data-close]'))$
 $('pdhQrBtn').addEventListener('click',()=>{if(typeof window.__pdmOpen==='function')window.__pdmOpen('qryape')});
 $('pdhSave').onclick=async()=>{
 const n=$('pdhName').value.trim();if(!n){$('pdhMsg').textContent='Escribe tu nombre.';return}
-adminName=n;LS.set('pd_admin_name',n);applyName();
+adminName=n;LS.set('pd_admin_name',n);window.__pdAdminNombre=n;applyName();
 let saved=false;try{if(uid&&window.db){const {data,error}=await window.db.from('perfiles').update({nombre_completo:n}).eq('id',uid).select('id').maybeSingle();saved=!error&&!!data}}catch(e){}
 $('pdhMsg').textContent=saved?'✓ Guardado en tu cuenta.':'✓ Guardado en este equipo.';setTimeout(()=>{$('pdhSheet').hidden=true},700);
 };
@@ -2222,7 +2222,7 @@ const fechaTxt=s=>{try{const [y,m,d]=s.split('-').map(Number);return new Date(y,
 function abrir(){
 let m=$('pdhoModal');if(!m){m=document.createElement('div');m.id='pdhoModal';document.body.appendChild(m)}
 m.hidden=false;document.body.classList.add('pd-modal-abierto');
-m.innerHTML='<div class="bg" data-a="x"></div><div class="s"><div class="hd"><span><b>Horario de Pidemás</b><small>Cargando…</small></span><button type="button" class="x" data-a="x">×</button></div></div>';
+m.innerHTML='<div class="bg" data-a="x"></div><div class="s"><div class="hd"><span><b>Horario</b><small>Cargando…</small></span><button type="button" class="x" data-a="x">×</button></div></div>';
 m.onclick=e=>{const b=e.target.closest('[data-a]');if(b)acc(b)};
 m.oninput=leer;
 pdHorario.cargar().then(c=>{C=c;pintar()}).catch(()=>{C=pdHorario.config;pintar()});
@@ -2231,7 +2231,7 @@ function cerrar(){const m=$('pdhoModal');if(m)m.hidden=true;document.body.classL
 function pintar(){
 const m=$('pdhoModal');if(!m||!C)return;
 const fecha=C.actualizado?new Date(C.actualizado).toLocaleString('es-PE',{dateStyle:'short',timeStyle:'short'}):'nunca (valores por defecto)';
-m.querySelector('.s').innerHTML='<div class="hd"><span><b>Horario de Pidemás</b><small>Última actualización: '+E(fecha)+'</small></span><button type="button" class="x" data-a="x">×</button></div><div class="bd">'+
+m.querySelector('.s').innerHTML='<div class="hd"><span><b>Horario</b><small>Última actualización: '+E(fecha)+'</small></span><button type="button" class="x" data-a="x">×</button></div><div class="bd">'+
 '<div class="c">'+
 ORDEN.map(k=>{const d=C.dias[k];const on=d.activo!==false;return '<div class="d"><div class="dh"><span><b>'+pdHorario.NOM[k]+'</b><small class="'+(on?'':'off')+'">'+(on?'Pedidos de '+h12(d.abre)+' a '+h12(d.ultimo):'No atendemos')+'</small></span><button type="button" class="tg'+(on?' on':'')+'" data-a="dia" data-k="'+k+'" aria-label="Atiende el '+pdHorario.NOM[k]+'"></button></div>'+
 '<div class="hh"'+(on?'':' hidden')+'><label class="f">Abre<input type="time" data-k="'+k+'" data-c="abre" value="'+E(d.abre)+'"></label><label class="f">Último pedido<input type="time" data-k="'+k+'" data-c="ultimo" value="'+E(d.ultimo)+'"></label></div></div>'}).join('')+
@@ -2267,7 +2267,7 @@ finally{b.disabled=false;b.textContent='Guardar horario'}
 }
 function boton(){
 const qr=$('pdhQrBtn');if(!qr||$('pdhoBtn'))return;
-const b=document.createElement('button');b.type='button';b.id='pdhoBtn';b.className=qr.className;b.style.cssText=qr.style.cssText;b.textContent='Horario de Pidemás';
+const b=document.createElement('button');b.type='button';b.id='pdhoBtn';b.className=qr.className;b.style.cssText=qr.style.cssText;b.textContent='Horario';
 b.onclick=e=>{e.preventDefault();abrir()};qr.insertAdjacentElement('beforebegin',b);
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('pdhoModal')&&!$('pdhoModal').hidden)cerrar()});
@@ -2589,7 +2589,6 @@ try{
     ['Negocios'],
     ['cli','Clientes',abrir('clientes')],
     ['mas','Crear negocio',abrir('crear-negocio')],
-    ['neg','Estado de negocios',abrir('estado-negocios')],
     ['sol','Solicitudes de afiliación',abrir('solicitudes')],
     ['cfg','Configurar negocios',abrir('config-negocios')],
     ['Servicios'],
@@ -2605,7 +2604,7 @@ try{
     ['Más'],
     ['tag','Códigos de descuento',abrir('descuentos')],
     ['qr','QR Yape',abrir('qryape')],
-    ['hor','Horario de Pidemás',tocar('#pdhoBtn')],
+    ['hor','Horario',tocar('#pdhoBtn')],
     ['out','Cerrar sesión',()=>{const b=$('pdaLogout')||$('logout');b&&b.click()},'','out']
   ];
   const PANEL={tienda:IC.com,motorizado:IC.gps,negocios:IC.neg};
@@ -2617,30 +2616,62 @@ try{
   function montar(){
     if($('pdMenu'))return;
     const sh=document.createElement('div');sh.id='pdMenuShade';
-    const m=document.createElement('aside');m.id='pdMenu';m.setAttribute('aria-label','Menú');m.setAttribute('aria-hidden','true');
-    const logo=document.querySelector('header.top .brand-logo img');
+    const m=document.createElement('aside');m.id='pdMenu';m.className='m3';m.setAttribute('aria-label','Menú');m.setAttribute('aria-hidden','true');
     m.innerHTML='<nav></nav>';
     const nav=m.querySelector('nav');
-    /* Mi perfil: tarjeta propia arriba de "Principal" (abre la misma hoja de perfil que antes abría la R del encabezado) */
-    const per=document.createElement('div');per.className='pdPerfil';per.setAttribute('role','button');per.tabIndex=0;per.setAttribute('aria-label','Mi perfil');
-    per.innerHTML='<span class="pdPerfilAv" aria-hidden="true">R</span><span class="pdPerfilTx"><strong>Administrador</strong><small>Mi perfil</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
-    const irPerfil=()=>{cerrar();cerrarTodo();setTimeout(()=>{const me=$('pdhMe');if(me)me.click()},120)};
-    per.addEventListener('click',irPerfil);
-    per.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();irPerfil()}});
+    const S=(d,c,z)=>'<svg viewBox="0 0 24 24" aria-hidden="true" style="width:'+(z||20)+'px!important;height:'+(z||20)+'px!important;flex:0 0 '+(z||20)+'px!important;stroke:'+c+'!important">'+d+'</svg>';
+    const CH='<path d="M6 9l6 6 6-6"/>';
+    const ir=fn=>()=>{cerrar();cerrarTodo();setTimeout(fn,120)};
+    /* perfil: foto (o inicial), nombre y "Ver mi perfil" */
+    const per=document.createElement('button');per.type='button';per.className='m3Top';per.setAttribute('aria-label','Mi perfil');
+    per.innerHTML='<span class="m3Av pdPerfilAv" aria-hidden="true"></span><span class="m3Who pdPerfilTx"><strong>Administrador</strong><small>Ver mi perfil</small></span>'+S('<path d="M9 6l6 6-6 6"/>','#8A7B72',18);
+    per.addEventListener('click',ir(()=>{const me=$('pdhMe');if(me)me.click()}));
     nav.appendChild(per);
-    const todos=PRINC.concat(ITEMS);
-    todos.forEach(it=>{
-      if(it.length===1){const p=document.createElement('p');p.textContent=it[0];nav.appendChild(p);return}
-      if(it[0]==='link'){const a=document.createElement('a');a.href=it[2];a.innerHTML=P(PANEL[it[1].toLowerCase()]||IC.neg)+'<span>'+it[1]+'</span>';a.addEventListener('click',()=>cerrar());nav.appendChild(a);return}
-      const b=document.createElement('button');b.type='button';if(it[4])b.className=it[4];if(it[3])b.dataset.k=it[3];
-      b.innerHTML=P(IC[it[0]])+'<span>'+it[1]+'</span>'+(it[3]==='pedidos'?'<b class="bdg" hidden></b>':'');
-      b.addEventListener('click',()=>{cerrar();cerrarTodo();setTimeout(it[2],120)});
-      nav.appendChild(b);
+    /* buscador */
+    const bus=document.createElement('label');bus.className='m3Busca';
+    bus.innerHTML=S('<circle cx="10" cy="10" r="7"/><path d="M21 21l-6-6"/>','#8A7B72',18)+'<input type="search" id="pdMenuBuscar" placeholder="Buscar en el menú" aria-label="Buscar en el menú" autocomplete="off">';
+    nav.appendChild(bus);
+    /* principal: tres accesos grandes */
+    const tiles=document.createElement('div');tiles.className='m3Tiles';
+    PRINC.filter(it=>it.length>1).forEach(it=>{
+      const b=document.createElement('button');b.type='button';b.className='m3Tile'+(it[3]==='pedidos'?' m3Main':'');if(it[3])b.dataset.k=it[3];b.dataset.txt=it[1].toLowerCase();
+      b.innerHTML=S(IC[it[0]],it[3]==='pedidos'?'#FFFFFF':'#C4410C',22)+'<span>'+it[1]+'</span>'+(it[3]==='pedidos'?'<b class="bdg" hidden></b>':'');
+      b.addEventListener('click',ir(it[2]));tiles.appendChild(b);
+    });
+    nav.appendChild(tiles);
+    /* secciones: todas desplegadas al abrir */
+    const GI={Negocios:'neg',Servicios:'rec',Motorizados:'gps','Más':'tag'};
+    const card=document.createElement('div');card.className='m3Card';
+    let grp=null,out=null;
+    ITEMS.forEach(it=>{
+      if(it.length===1){
+        const sec=document.createElement('section');sec.className='m3Grp open';
+        const hd=document.createElement('button');hd.type='button';hd.className='m3Hd';hd.setAttribute('aria-expanded','true');
+        hd.innerHTML=S(IC[GI[it[0]]]||IC.neg,'#C4410C')+'<span>'+it[0]+'</span><small></small>'+S(CH,'#C4410C',16);
+        const bd=document.createElement('div');bd.className='m3Bd';
+        hd.addEventListener('click',()=>{const on=!sec.classList.contains('open');sec.classList.toggle('open',on);hd.setAttribute('aria-expanded',String(on))});
+        sec.append(hd,bd);card.appendChild(sec);grp={sec,bd,hd,n:0};return;
+      }
+      if(it[4]==='out'){out=it;return}
+      const b=document.createElement('button');b.type='button';b.className='m3It';if(it[3])b.dataset.k=it[3];b.dataset.txt=it[1].toLowerCase();
+      b.innerHTML=S(IC[it[0]],'#6E625A',19)+'<span>'+it[1]+'</span>';
+      b.addEventListener('click',ir(it[2]));
+      if(grp){grp.bd.appendChild(b);grp.n++;grp.hd.querySelector('small').textContent=String(grp.n)}else card.appendChild(b);
+    });
+    nav.appendChild(card);
+    if(out){const b=document.createElement('button');b.type='button';b.className='m3Out';b.innerHTML=S(IC.out,'#B42318')+'<span>Cerrar sesión</span>';b.addEventListener('click',ir(out[2]));nav.appendChild(b)}
+    /* buscar: filtra opciones y abre las secciones que coinciden */
+    const q=bus.querySelector('input');
+    q.addEventListener('input',()=>{
+      const t=q.value.trim().toLowerCase();
+      tiles.querySelectorAll('.m3Tile').forEach(b=>b.hidden=!!t&&!b.dataset.txt.includes(t));
+      tiles.hidden=!!t&&![...tiles.children].some(b=>!b.hidden);
+      card.querySelectorAll('.m3Grp').forEach(g=>{let n=0;g.querySelectorAll('.m3It').forEach(b=>{const ok=!t||b.dataset.txt.includes(t);b.hidden=!ok;if(ok)n++});g.hidden=!!t&&!n;if(t&&n){g.classList.add('open')}});
+      let vacio=nav.querySelector('.m3Vacio');const nada=!!t&&tiles.hidden&&![...card.querySelectorAll('.m3Grp')].some(g=>!g.hidden);
+      if(nada&&!vacio){vacio=document.createElement('p');vacio.className='m3Vacio';vacio.textContent='No hay opciones con ese nombre.';card.after(vacio)}else if(!nada&&vacio)vacio.remove();
     });
     sh.addEventListener('click',cerrar);
     document.body.append(sh,m);
-    const hd=document.querySelector('header.top');
-
   }
   /* antes de abrir otra ventana, cierra cualquier ventana abierta (no se apilan) */
   function cerrarTodo(){
@@ -2652,7 +2683,7 @@ try{
   window.pdCerrarVentanas=cerrarTodo;
   const logged=()=>!!document.querySelector('#appView:not(.hidden)')&&!$('logout')?.classList.contains('hidden');
   window.pdAbrirMenu=function(){abrirMenu()};
-  function abrirMenu(){montar();pintarPerfil();const m=$('pdMenu'),sh=$('pdMenuShade');m.classList.remove('drag');m.style.removeProperty('transform');const pm=$('pdmModal');const enInicio=!(pm&&!pm.hidden);m.querySelectorAll('[data-k="pedidos"]').forEach(b=>b.classList.toggle('act',enInicio));m.classList.add('on');sh.classList.add('on');m.setAttribute('aria-hidden','false')}
+  function abrirMenu(){montar();pintarPerfil();const m=$('pdMenu'),sh=$('pdMenuShade');try{const q=$('pdMenuBuscar');if(q&&q.value){q.value='';q.dispatchEvent(new Event('input'))}m.querySelectorAll('.m3Grp').forEach(g=>{g.classList.add('open');const h=g.querySelector('.m3Hd');h&&h.setAttribute('aria-expanded','true')})}catch(e){}m.classList.remove('drag');m.style.removeProperty('transform');const pm=$('pdmModal');const enInicio=!(pm&&!pm.hidden);m.querySelectorAll('[data-k="pedidos"]').forEach(b=>b.classList.toggle('act',enInicio));m.classList.add('on');sh.classList.add('on');m.setAttribute('aria-hidden','false')}
   function cerrar(){const m=$('pdMenu'),sh=$('pdMenuShade');if(!m)return;m.classList.remove('on','drag');m.style.removeProperty('transform');sh.classList.remove('on');sh.style.removeProperty('opacity');m.setAttribute('aria-hidden','true')}
   /* arrastrar de izquierda a derecha para abrir, y al revés para cerrar */
   let d=null;
@@ -2690,17 +2721,31 @@ try{
   document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrar()});
   function pintarPerfil(){
     const m=$('pdMenu');if(!m)return;
-    const av=m.querySelector('.pdPerfilAv'),nm=m.querySelector('.pdPerfilTx strong');if(!av||!nm)return;
-    const n=nombre(),me=$('pdhMe');
-    const ini=((me&&me.textContent)||'').trim()||n.charAt(0).toUpperCase()||'R';
-    if(av.textContent!==ini)av.textContent=ini;
+    const av=m.querySelector('.m3Av'),nm=m.querySelector('.m3Who strong');if(!av||!nm)return;
+    const n=nombreCompleto();
     if(nm.textContent!==n)nm.textContent=n;
+    let f='';try{f=window.__pdAdminFoto!==undefined?window.__pdAdminFoto:(localStorage.getItem('pdAdminFoto')||'')}catch(e){}
+    const k=f?'f:'+f:'i:'+n.charAt(0).toUpperCase();if(av.__k===k)return;av.__k=k;
+    if(f){av.innerHTML='<img src="'+String(f).replace(/"/g,'&quot;')+'" alt="">';av.classList.add('foto')}
+    else{av.textContent=n.charAt(0).toUpperCase()||'A';av.classList.remove('foto')}
   }
   function aviso(){const m=$('pdMenu');if(!m)return;const b=m.querySelector('.bdg');if(!b)return;let c=0;try{c=(typeof allOrders!=='undefined'&&Array.isArray(allOrders)?allOrders:[]).filter(o=>['pendiente','confirmado'].includes(String(o.estado||'').toLowerCase())&&!o.motorizado_id).length}catch(e){}b.hidden=!c;if(c&&b.textContent!==String(c))b.textContent=c>99?'99+':String(c);}
   /* --- Saludo del inicio --- */
   let okT=0;
   function vigilar(){const c=window.pdPedidosCache;if(c&&!c.__pdOk){const g=c.guardar;c.guardar=function(){okT=Date.now();return g.apply(this,arguments)};c.__pdOk=true}}
-  function nombre(){let n=($('pdhName')&&$('pdhName').value||'').trim();if(!n){try{const v=localStorage.getItem('pd_admin_name')||'';try{n=JSON.parse(v)}catch(e){n=v}}catch(e){}}n=String(n||'').trim().split(/\s+/)[0];return n||'Administrador'}
+  function nombreCompleto(){
+    let n=window.__pdAdminNombre||'';
+    if(!n){try{const v=localStorage.getItem('pd_admin_name')||'';try{n=JSON.parse(v)}catch(e){n=v}}catch(e){}}
+    if(window.__pdAdminNombre===undefined&&!window.__pdAdminNomPidiendo&&window.db&&db.auth&&logged()){window.__pdAdminNomPidiendo=1;
+      db.auth.getUser().then(r=>{const u=r&&r.data&&r.data.user;if(!u)return null;return db.from('perfiles').select('nombre_completo,foto_url').eq('id',u.id).maybeSingle()})
+        .then(r=>{if(!r||r.error){window.__pdAdminNomPidiendo=0;return}const d=r.data||{};window.__pdAdminNombre=String(d.nombre_completo||'').trim();
+          if(window.__pdAdminNombre)try{localStorage.setItem('pd_admin_name',window.__pdAdminNombre)}catch(e){}
+          if(window.__pdAdminFoto===undefined){window.__pdAdminFoto=d.foto_url||'';try{localStorage.setItem('pdAdminFoto',window.__pdAdminFoto)}catch(e){}}
+          try{pintarPerfil();saludo()}catch(e){}})
+        .catch(()=>{window.__pdAdminNomPidiendo=0})}
+    return String(n||'').trim()||'Administrador';
+  }
+  function nombre(){return nombreCompleto().split(/\s+/)[0]}
   const hoyLima=()=>new Date().toLocaleDateString('en-CA',{timeZone:'America/Lima'});
   const diaLima=v=>{const t=new Date(v);return isNaN(t)?'':t.toLocaleDateString('en-CA',{timeZone:'America/Lima'})};
   let cargoTot=0;
@@ -3499,8 +3544,25 @@ try{
     cur=negs.find(n=>String(n.id)===String(id))||null;edit=null;dsOpen=false;
     $('cnxBody').classList.toggle('cnxOff',!cur);$('cnxEmpty').classList.toggle('cnxOff',!!cur);
     msg('');if(!cur)return;
+    pintarVis();
     await pintar();
   }
+  function pintarVis(){
+    const i=$('cnxVis'),t=$('cnxVisTx');if(!i||!cur)return;const on=cur.visible_admin!==false;
+    i.checked=on;if(t)t.textContent=on?(cur.activo===false?'Visible, pero pausado por el negocio':'Los clientes ven este negocio en la tienda'):'Oculto por administración';
+  }
+  $('cnxVis')&&$('cnxVis').addEventListener('change',async()=>{
+    const i=$('cnxVis');if(!cur)return;const quiere=i.checked;
+    if(!quiere&&!(await pdConfirmar('¿Ocultar «'+(cur.nombre||'este negocio')+'» de la tienda? El negocio no podrá volver a activarlo: le saldrá un aviso para que se ponga en contacto contigo.'))){i.checked=true;return}
+    i.disabled=true;
+    try{
+      const {data,error}=await db.from('negocios').update({visible_admin:quiere}).eq('id',cur.id).select('id,visible_admin').maybeSingle();
+      if(error)throw error;if(!data||data.visible_admin!==quiere)throw new Error('Supabase no confirmó el cambio.');
+      cur.visible_admin=quiere;const n=negs.find(x=>String(x.id)===String(cur.id));if(n)n.visible_admin=quiere;
+      msg(quiere?'Negocio visible en la tienda.':'Negocio oculto en la tienda.');
+    }catch(e){i.checked=!quiere;msg('No se pudo cambiar la visibilidad: '+(e.message||e),true)}
+    finally{i.disabled=false;pintarVis()}
+  });
   async function cargarCats(){
     const {data,error}=await db.from('categorias_negocio').select('*').eq('negocio_id',cur.id);
     if(error)throw new Error('No se pudieron cargar las categorías: '+error.message);
