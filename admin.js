@@ -66,8 +66,8 @@ const cfg=config(m);const BASE_D=baseFor(m);
 const today=iso(now),nowMin=now.getHours()*60+now.getMinutes();
 const cur=periodOf(today);
 if(!cfg.ok)return {ok:false,cfg,current:{...cur,days:[],earned:0,paid:0,balance:0},periods:[],today};
-const faltas=new Map(),pagos=[],jornadas=[],descs=[];
-(rows||[]).forEach(r=>{const t=norm(r.tipo),f=String(r.fecha||'').slice(0,10);if(t==='falta'&&f&&!faltas.has(f))faltas.set(f,r);else if(t==='pago')pagos.push(r);else if(t==='descuento')descs.push(r);else if(t==='jornada'&&f)jornadas.push(r)});
+const faltas=new Map(),pagos=[],jornadas=[],descs=[],adel=new Map();
+(rows||[]).forEach(r=>{const t=norm(r.tipo),f=String(r.fecha||'').slice(0,10);if(t==='falta'&&f&&!faltas.has(f))faltas.set(f,r);else if(t==='pago')pagos.push(r);else if(t==='descuento')descs.push(r);else if(t==='jornada'&&f){if(/^d[ií]a adelantado/i.test(String(r.descripcion||''))){if(!adel.has(f))adel.set(f,r)}else jornadas.push(r)}});
 const periods=new Map();const monthGas={};
 const getP=k=>{if(!periods.has(k.key))periods.set(k.key,{...k,days:[],shifts:[],worked:0,rest:0,faltas:0,gasDays:0,gasAdj:0,adj:0,hours:0,gasTotal:0,earned:0,paid:0,payments:[],desc:0,descSet:false,descRows:[],needsDesc:k.start.slice(8,10)==='16'&&k.start>=DESC_FROM});return periods.get(k.key)};
 getP(cur);
@@ -86,7 +86,7 @@ const isWork=cfg.days.includes(key)&&!hol;
 const isRest=!isWork&&(d.getDay()===0||hol);
 const day={date:di,dow:key,label:LABEL[key],holiday:hol,work:isWork,rest:isRest,status:'',base:0,gas:0};
 if(di<cfg.hire){day.status='antes';P.days.push(day);continue}
-const passed=di<today||(di===today&&nowMin>=endMin);
+const passedN=di<today||(di===today&&nowMin>=endMin);const passed=passedN||(adel.has(di)&&di<=cur.end);if(passed&&!passedN){day.adel=adel.get(di)}
 if(d.getDate()===31){day.status='dia31';P.days.push(day);continue}
 const falta=faltas.get(di);
 if(falta&&(isWork||isRest)){day.status='falta';day.falta=falta;if(passed)P.faltas++;}
@@ -232,11 +232,11 @@ $('pdslAttCard').hidden=!!cfg.hourly;$('pdslShiftCard').hidden=!cfg.hourly;if(cf
 $('pdslCalTitle').textContent=P.label?P.label.charAt(0).toUpperCase()+P.label.slice(1):'Quincena actual';
 $('pdslCal').innerHTML=res.ok?(P.days||[]).map(d=>{
 const n=d.adjDay||S.parse(d.date).getDate();
-const sub={ajuste:'Ajuste 30 días',ajusteFuturo:'Se suma al cerrar',dia31:'Incluido en el 30',trabajado:'Trabajado'+(d.gas?' + gas':''),descanso:d.holiday?'Feriado pagado':'Descanso pagado',falta:'Falta',hoy:'Hoy · '+res.endAt,futuro:d.work?'Laborable':(d.rest?'Descanso':'—'),libre:'Libre',antes:'Antes del ingreso'}[d.status]||'';
-return `<button type="button" class="pdslDay ${d.status}" data-date="${d.date}"${d.adjDay?' data-adj="1"':''}><small>${E(d.adjDay?'Feb':SHORT[d.dow])}</small><b>${n}</b><small>${E(sub)}</small></button>`;
+const sub={ajuste:'Ajuste 30 días',ajusteFuturo:'Se suma al cerrar',dia31:'Incluido en el 30',trabajado:(d.adel?'Adelantado':'Trabajado')+(d.gas?' + gas':''),descanso:d.adel?'Adelantado · descanso':(d.holiday?'Feriado pagado':'Descanso pagado'),falta:'Falta',hoy:'Hoy · '+res.endAt,futuro:d.work?'Laborable':(d.rest?'Descanso':'—'),libre:'Libre',antes:'Antes del ingreso'}[d.status]||'';
+return `<button type="button" class="pdslDay ${d.status}${d.adel?' adelantado':''}" data-date="${d.date}"${d.adjDay?' data-adj="1"':''}><small>${E(d.adjDay?'Feb':SHORT[d.dow])}</small><b>${n}</b><small>${E(sub)}</small></button>`;
 }).join(''):'<span class="pdslMuted" style="grid-column:1/-1">Completa la configuración para ver la asistencia.</span>';
 if(res.ok){const adv=new Map();rows.forEach(r=>{if(String(r.tipo||'').toLowerCase()==='pago'&&/^adelanto/i.test(String(r.descripcion||''))){const k=String(r.fecha).slice(0,10);adv.set(k,(adv.get(k)||0)+(Number(r.monto)||0))}});
-$('pdslCal').querySelectorAll('.pdslDay').forEach(b=>{const v=adv.get(b.dataset.date);if(v>0&&!b.dataset.adj)b.insertAdjacentHTML('beforeend',`<i class="pdslAdvTag">Adelanto<br><span style="white-space:nowrap">${money(v)}</span></i>`)})}
+$('pdslCal').querySelectorAll('.pdslDay').forEach(b=>{const v=adv.get(b.dataset.date);if(v>0&&!b.dataset.adj)b.insertAdjacentHTML('beforeend',`<i class="pdslAdvTag">Adelanto<b>S/ ${Number.isInteger(Math.round(v*100)/100)?v:v.toFixed(2)}</b></i>`)})}
 fillPayPeriods();
 const pays=rows.filter(r=>String(r.tipo||'').toLowerCase()==='pago').sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).slice(0,8);
 $('pdslPayList').innerHTML=pays.length?'<div class="pdslKick" style="margin-top:4px">Últimos pagos</div>'+pays.map(r=>`<div class="pdslRow"><span><strong>${money(r.monto)}${/^adelanto/i.test(String(r.descripcion||''))?'<span class="pdslPill adv">Adelanto</span>':'<span class="pdslPill ok">Pago</span>'}</strong><small>${E(fmtD(r.fecha))}${r.descripcion?' · '+E(r.descripcion):''}${r.periodo?' · '+E(S.periodOf(String(r.periodo).slice(0,10)).label):''}</small></span><button type="button" class="pdslMini" data-del-pay="${E(r.id)}">Anular</button></div>`).join(''):'';
@@ -414,11 +414,14 @@ if(!h){h=document.createElement('div');h.id='pdslDiaSheet';h.className='pdslDiaW
 const base=money(S.baseFor(current)+(d.work&&d.dow!=='domingo'?S.GAS:0));
 const advs=rows.filter(r=>String(r.tipo||'').toLowerCase()==='pago'&&String(r.fecha).slice(0,10)===d.date&&/^adelanto/i.test(String(r.descripcion||'')));
 const puedeFalta=!!((d.work||d.rest)&&d.status!=='antes'&&d.status!=='libre'&&d.status!=='falta');
+const puedeAdel=!!((d.work||d.rest)&&(d.status==='hoy'||d.status==='futuro')&&!d.adjDay);
 const titulo=S.parse(d.date).toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long'});
 h.innerHTML=`<div class="pdslDiaSheet" role="dialog" aria-modal="true" aria-label="Día ${E(titulo)}">
  <div class="pdslDiaHead"><span><span class="pdslKick">${E(current.nombre_completo||'Motorizado')}</span><strong>${E(titulo.charAt(0).toUpperCase()+titulo.slice(1))}</strong></span><button type="button" class="pdslDiaX" aria-label="Cerrar">×</button></div>
  <div class="pdslDiaBody">
   ${d.status==='falta'?`<section class="pdslCard"><span class="pdslKick">Asistencia</span><strong class="pdslDiaT">Este día está marcado como falta</strong><p class="pdslNote">${E(d.falta&&d.falta.descripcion||'Falta')}</p><button type="button" class="pdslMini pdslOffBtn" data-dia="quitar">Quitar falta</button></section>`:''}
+  ${d.adel?`<section class="pdslCard"><span class="pdslKick">Asistencia</span><strong class="pdslDiaT">Día trabajado adelantado</strong><p class="pdslNote">Este día ya se cuenta como trabajado (${E(base)}).</p><button type="button" class="pdslMini pdslOffBtn" data-dia="desadelantar">Quitar adelanto del día</button></section>`:''}
+  ${puedeAdel?`<section class="pdslCard"><span class="pdslKick">Asistencia</span><strong class="pdslDiaT">Adelantar día trabajado</strong><p class="pdslNote">Se cuenta como trabajado desde ahora y se suma a la ${E(S.periodOf(d.date).label)} (${E(base)}).</p><button type="button" class="pdslBtn" data-dia="adelantar">Adelantar día trabajado</button></section>`:''}
   ${puedeFalta?`<section class="pdslCard"><span class="pdslKick">Asistencia</span><strong class="pdslDiaT">Registrar falta</strong><p class="pdslNote">Ese día no se pagará (${E(base)}).</p><div class="pdslField"><label for="pdslDiaMotivo">Motivo (opcional)</label><input id="pdslDiaMotivo" maxlength="200" placeholder="Ej. No se presentó"></div><button type="button" class="pdslMini pdslOffBtn" data-dia="falta">Registrar falta</button></section>`:''}
   <section class="pdslCard"><span class="pdslKick">Sueldo</span><strong class="pdslDiaT">Adelanto de sueldo este día</strong><p class="pdslNote">Se descuenta de la ${E(S.periodOf(d.date).label)}.</p>
    ${advs.map(r=>`<div class="pdslRow"><span><strong>${money(r.monto)}</strong><small>${E(r.descripcion||'Adelanto de sueldo')}</small></span><button type="button" class="pdslMini" data-dia-del="${E(r.id)}">Anular</button></div>`).join('')}
@@ -436,6 +439,11 @@ h.querySelector('.pdslDiaSheet').onclick=async ev=>{
   if(b.dataset.diaDel){if(!(await pdConfirmar('¿Anular este adelanto?')))return;b.disabled=true;
    const {error}=await db().from('control_sueldos').delete().eq('id',b.dataset.diaDel);if(error)throw error;return fin('Adelanto anulado.')}
   const a=b.dataset.dia;
+  if(a==='adelantar'){b.disabled=true;b.textContent='Guardando…';
+   const {error}=await db().from('control_sueldos').insert({motorizado_id:current.id,fecha:d.date,tipo:'jornada',monto:0,descripcion:'Día adelantado',periodo:S.periodOf(d.date).key});
+   if(error)throw error;return fin('Día adelantado: ya cuenta como trabajado.')}
+  if(a==='desadelantar'){b.disabled=true;const {error}=await db().from('control_sueldos').delete().eq('id',d.adel.id);
+   if(error)throw new Error(error.message+'. Revisa el permiso DELETE de control_sueldos.');return fin('Se quitó el adelanto del día.')}
   if(a==='quitar'){b.disabled=true;const {error}=await db().from('control_sueldos').delete().eq('id',d.falta.id);
    if(error)throw new Error(error.message+'. Revisa el permiso DELETE de control_sueldos.');return fin('Falta eliminada.')}
   if(a==='falta'){b.disabled=true;const mot=(document.getElementById('pdslDiaMotivo').value||'').trim();
@@ -446,7 +454,7 @@ h.querySelector('.pdslDiaSheet').onclick=async ev=>{
    b.disabled=true;b.textContent='Guardando…';const det=(document.getElementById('pdslDiaDet').value||'').trim();
    const {error}=await db().from('control_sueldos').insert({motorizado_id:current.id,fecha:d.date,tipo:'pago',monto,descripcion:'Adelanto de sueldo'+(det?' · '+det:''),periodo:S.periodOf(d.date).key});
    if(error)throw error;return fin('Adelanto registrado: '+money(monto)+'.')}
- }catch(err){b.disabled=false;if(b.dataset.dia==='adelanto')b.textContent='Registrar adelanto';msg('No se pudo guardar: '+(err.message||err))}
+ }catch(err){b.disabled=false;if(b.dataset.dia==='adelanto')b.textContent='Registrar adelanto';if(b.dataset.dia==='adelantar')b.textContent='Adelantar día trabajado';msg('No se pudo guardar: '+(err.message||err))}
 };
 }
 function cerrarDia(){const h=document.getElementById('pdslDiaSheet');if(h){h.hidden=true;h.innerHTML=''}document.documentElement.classList.remove('pdslDiaOn')}
@@ -4022,7 +4030,7 @@ try{
   const par=(k,v)=>v===null||v===undefined||v===''?'':'<div class="solPar"><span>'+E(k)+'</span><b>'+E(v)+'</b></div>';
   function detalle(r){
     return '<div class="solDet">'
-    +'<h5>Negocio</h5>'+par('Razón social',r.razon_social)+par('RUC',r.ruc)+par('Tipo',r.categoria)+par('Dirección',r.direccion)+par('Distrito',r.distrito)+par('Ciudad',r.ciudad)+par('Referencia',r.referencia)+par('Redes / web',r.redes)
+    +'<h5>Negocio</h5>'+par('Razón social',r.razon_social)+par('RUC',r.ruc)+par('Tipo',r.categoria)+par('Dirección',r.direccion)+par('Distrito',r.distrito)+par('Ciudad',r.ciudad)+par('Referencia',r.referencia)+(()=>{const u=solMapa(r);return u?'<div class="solPar"><span>Ubicación</span><b><a href="'+E(u.url)+'" target="_blank" rel="noopener" style="color:#C4410C;font-weight:800">Ver en el mapa</a></b></div>':''})()+par('Redes / web',r.redes)
     +'<h5>Representante</h5>'+par('Nombre',r.rep_nombre)+par('DNI',r.rep_dni)+par('Cargo',r.rep_cargo)+par('Celular',r.rep_celular)+par('Correo',r.rep_correo)
     +'<h5>Productos y stock</h5>'+par('Productos',r.productos)+par('Cantidad en carta',r.num_productos)+par('Stock aproximado',r.stock_aprox)+par('Controla inventario',r.maneja_stock)+par('Fotos / catálogo',r.tiene_fotos)
     +'<h5>Atención</h5>'+par('Horario',r.horario)+par('Pedidos por día',r.pedidos_dia)+par('Preparación',r.tiempo_prep?r.tiempo_prep+' min':'')+par('Repartidores propios',r.delivery_propio)+par('Pagos',(r.pagos||[]).join(', '))+par('Comentarios',r.comentarios)
@@ -4075,12 +4083,17 @@ try{
     const r=filas.find(x=>x.id===id);if(r)Object.assign(r,cambios);
     pintar();if(ok)msg(ok);return true;
   }
+  function solMapa(r){
+    let la=Number(r.latitud),ln=Number(r.longitud),url=r.maps_url||'';
+    if(!(la&&ln)){const m=String(r.referencia||'').match(/https?:\/\/\S*?q=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);if(m){la=Number(m[1]);ln=Number(m[2]);url=m[0]}}
+    if(!(la&&ln))return null;return {lat:la,lng:ln,url:url||('https://www.google.com/maps?q='+la+','+ln)};
+  }
   async function crearNegocio(r){
     try{
       if(window.__pdmOpen)await window.__pdmOpen('crear-negocio');
       const set=(i,v)=>{const e=$(i);if(e&&v){e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))}};
       set('rNombre',r.nombre_negocio);set('rTelefono',r.rep_celular);set('rDireccion',[r.direccion,r.distrito].filter(Boolean).join(', '));
-      set('rDescripcion',r.productos);set('rTiempo',r.tiempo_prep?r.tiempo_prep+' min':'');
+      set('rDescripcion',r.productos);set('rTiempo',r.tiempo_prep?r.tiempo_prep+' min':'');const u=solMapa(r);if(u){set('rGoogleMaps',u.url);set('rLatitud',String(u.lat));set('rLongitud',String(u.lng))}
     }catch(e){console.warn(e)}
   }
   box.addEventListener('click',async e=>{
