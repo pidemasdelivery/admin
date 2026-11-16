@@ -2031,3 +2031,82 @@ try{(function(){
   document.addEventListener('scroll',e=>{const c=e.target;if(c&&c.matches&&c.matches('#orderList .adminOrderCard.is-expanded'))fijar(c)},true);
   setInterval(()=>document.querySelectorAll('#orderList .adminOrderCard.is-expanded').forEach(c=>{try{fijar(c)}catch(_){}}),700);
 })()}catch(e){console.error('[pd-cabecera-fija-admin]',e)}
+
+/* ===== pd-pasos-admin: el detalle del pedido por pasos desplegables ===== */
+try{(function(){
+  if(window.__pdPasosA)return;window.__pdPasosA=1;
+  const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const money=n=>'S/ '+(Number(n)||0).toFixed(2);
+  const L=()=>{try{return Array.isArray(allOrders)?allOrders:[]}catch(e){return []}};
+  const svc=o=>{const t=String(o?.tipo_servicio||'').toLowerCase();return t.includes('encomienda')?'enc':t.includes('compra')?'compra':t.includes('recojo')?'recojo':'tienda'};
+  const hh=v=>{try{return new Date(v).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'numeric',minute:'2-digit'})}catch(e){return ''}};
+  const OPEN={};
+  function negNombre(o){try{const r=(window.adminRestaurantsById||new Map()).get(String(o.negocio_id||''));if(r&&r.nombre)return r.nombre}catch(e){}return o.negocio_nombre||''}
+  function motoNombre(o){if(o.motorizado_nombre)return o.motorizado_nombre;try{const m=(typeof allMotos!=='undefined'?allMotos:[]).find(z=>String(z.id)===String(o.motorizado_id));if(m)return m.nombre_completo||m.nombre||''}catch(e){}return ''}
+  function idx(o){
+    const s=String(o.estado||'').toLowerCase();
+    if(s==='cancelado'||s==='rechazado')return -1;
+    if(s==='entregado')return 4;
+    if(['en_camino','en_entrega','camino_entrega','confirmando_pago'].includes(s))return 3;
+    if(o.motorizado_id)return 2;
+    if(o.negocio_id&&!['confirmado','aceptado','asignado','pedido_aceptado','camino_recojo'].includes(s))return 0;
+    if(!o.negocio_id&&['pendiente','nuevo',''].includes(s))return 0;
+    return 1;
+  }
+  function cuentas(o){
+    const pa=String(o.pago_acordado||''),del=Number(o.costo_delivery)||0,sub=Number(o.subtotal)>0?Number(o.subtotal):Math.max(0,(Number(o.total)||0)-del);
+    if(!o.negocio_id)return {sum:o.pago_confirmado===true?'Cobrado '+money(o.total):'Cobro pendiente',body:'<div class="pdpaI"><small>Cobro</small><b>'+money(o.total)+'</b><span>'+(o.pago_confirmado===true?'Cobrado por el motorizado.':'Aún sin confirmar.')+'</span></div>'};
+    if(pa==='yape_negocio'||pa==='pagado')return {sum:o.delivery_negocio_cobrado_en?'Delivery cobrado al negocio':'Cobrar delivery '+money(del)+' al negocio',body:'<div class="pdpaI"><small>El negocio le debe a Pidemás</small><b>'+money(del)+' · delivery</b><span>'+(o.delivery_negocio_cobrado_en?'Ya lo cobraste.':'El negocio recibió todo el pago'+(pa==='yape_negocio'?' en su Yape':'')+'. Cóbrale el delivery.')+'</span></div>'};
+    if(pa==='solo_delivery')return {sum:'Sin cuentas pendientes con el negocio',body:'<div class="pdpaI"><small>Cuentas</small><b>Nada pendiente</b><span>El negocio cobró los productos y el motorizado cobró el delivery.</span></div>'};
+    return {sum:o.negocio_pagado_en?'Negocio pagado · '+money(sub):'Pagar '+money(sub)+' al negocio',body:'<div class="pdpaI"><small>Pidemás le debe al negocio</small><b>'+money(sub)+' · productos</b><span>'+(o.negocio_pagado_en?'Ya le pagaste.':'Está en «Por pagar a negocios».')+'</span></div>'};
+  }
+  function pasos(o){
+    const k=svc(o),neg=negNombre(o),mn=motoNombre(o)||'el motorizado',pa=String(o.pago_acordado||''),tmin=Number(o.tiempo_preparacion_min)||0;
+    const met=pa==='yape_negocio'?'Yape del negocio':String(o.metodo_pago||'').toLowerCase()==='yape'?'Yape de Pidemás':'efectivo';
+    const cob=pa==='pagado'?0:pa==='solo_delivery'?Number(o.costo_delivery)||0:Number(o.total)||0;
+    const ye=o.yape_negocio_estado;
+    return [
+      [o.negocio_id?'Negocio confirma':'Pedido recibido',o.negocio_id?((neg||'El negocio')+' aceptó'+(tmin?' · listo en '+tmin+' min':'')):'Aceptado por administración',
+        '<div class="pdpaI"><small>'+(o.negocio_id?'Negocio':'Servicio')+'</small><b>'+E(o.negocio_id?(neg||'Negocio'):({compra:'Compra',recojo:'Recojo y entrega',enc:'Encomienda',tienda:'Pedido'})[k])+'</b>'+(o.negocio_id?'<span>'+(idx(o)>0?'Aceptó el pedido'+(tmin?' · listo en '+tmin+' min':'')+(o.listo_para_recojo?' · ya está listo':''):'Esperando que acepte el pedido')+'</span>':'')+'</div>'],
+      ['Asignar motorizado','Asignado a '+mn,'<div class="pdpaI"><small>Motorizado</small><b>'+E(o.motorizado_id?mn:'Sin asignar')+'</b><span>'+(o.motorizado_id?(o.aceptado_en?'Aceptó el pedido a las '+hh(o.aceptado_en):'Aún no acepta'):'Elige el motorizado abajo.')+'</span></div>'],
+      [k==='compra'?'Compra':'Recojo',k==='compra'?(Number(o.subtotal)>0?'Compró '+money(o.subtotal):'Compra hecha'):((o.codigo_recojo?'Código '+o.codigo_recojo+' · ':'')+'recogido'+(o.en_camino_en?' · '+hh(o.en_camino_en):'')),
+        '<div class="pdpaI"><small>'+(k==='compra'?'Compra':'Recojo')+'</small><b>'+E(o.en_camino_en?'Recogido':o.en_local_en?mn+' está en el local':mn+' va en camino')+'</b>'+(o.codigo_recojo&&k!=='compra'?'<span>Código de recojo</span><span class="cod">'+E(o.codigo_recojo)+'</span>':'')+'</div>'],
+      ['Entrega y cobro',cob>0?(o.pago_confirmado===true?'Cobrado '+money(cob)+' · '+met:'Cobrar '+money(cob)+' · '+met):'Entregado sin cobro',
+        (pa==='yape_negocio'?'<div class="pdpaI"><small>Cobro con el Yape del negocio</small><b>'+money(cob)+'</b><span>'+(ye==='llego'?'El negocio confirmó que le llegó.':ye==='no_llego'?'Al negocio no le llegó el Yape.':ye==='esperando'?'Esperando que el negocio confirme.':'El motorizado mostrará el QR del negocio.')+'</span></div>':'')],
+      ['Cierre',cuentas(o).sum,cuentas(o).body]];
+  }
+  function fila(o,i,f,p,cuerpo){
+    const op=OPEN[o.id]||(OPEN[o.id]={});
+    const done=i<f||(f===4&&i===4),cur=i===f&&f!==4,lock=i>f;
+    const ab=lock?false:(i in op?op[i]:(cur||(f===4&&i===4)));
+    const d=document.createElement('div');d.className='pdpa'+(cur?' cur':done?' done':' lock')+(ab?' open':'');
+    d.innerHTML='<button type="button" class="pdpaH"'+(lock?' disabled':' aria-expanded="'+ab+'"')+'><span class="pdpaN">'+(done?'✓':(i+1))+'</span><span class="pdpaT"><b>'+E(p[0])+'</b>'+(done&&!ab?'<small>'+E(p[1])+'</small>':lock?'<small>Se muestra en su momento</small>':'')+'</span>'+(lock?'<svg class="pdpaL" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>':'<span class="pdpaC"></span>')+'</button><div class="pdpaB">'+(p[2]||'')+'</div>';
+    const bb=d.querySelector('.pdpaB');(cuerpo||[]).forEach(x=>x&&bb.appendChild(x));
+    if(!lock)d.querySelector('.pdpaH').addEventListener('click',e=>{e.stopPropagation();op[i]=!d.classList.contains('open');d.classList.toggle('open',op[i]);const t=d.querySelector('.pdpaT');const sm=t.querySelector('small');if(done){if(op[i]&&sm)sm.remove();else if(!op[i]&&!sm)t.insertAdjacentHTML('beforeend','<small>'+E(p[1])+'</small>')}});
+    return d;
+  }
+  function armar(card){
+    const o=L().find(x=>String(x.id)===String(card.dataset.orderId||''));if(!o)return;
+    const route=card.querySelector(':scope > .pdRoute');if(!route)return;
+    const f=idx(o);const old=route.querySelector(':scope > .pdpaW');
+    if(f<0){if(old)old.remove();return}
+    const key=[o.id,f,o.pago_confirmado,o.yape_negocio_estado,o.motorizado_id,o.delivery_negocio_cobrado_en,o.negocio_pagado_en,o.en_local_en].join('|');
+    if(old&&old.dataset.k===key)return;
+    if(old){const prev=old.querySelectorAll('.pdRouteStop,.pdRoutePay,.pdRouteBlock');const stops=route.querySelector(':scope > .pdRouteStops');prev.forEach(x=>{if(x.classList.contains('pdRouteStop')){stops&&stops.appendChild(x)}else route.insertBefore(x,route.querySelector(':scope > .pdRouteActions'))});old.remove()}
+    const stops=[...route.querySelectorAll(':scope > .pdRouteStops > .pdRouteStop')];
+    const pay=route.querySelector(':scope > .pdRoutePay');
+    const blocks=[...route.querySelectorAll(':scope > .pdRouteBlock')];
+    const P=pasos(o);
+    const C=[blocks,[],[stops[0]],[stops.length>1?stops[stops.length-1]:null,pay],[]];
+    if(f===4){C[3]=[stops.length>1?stops[stops.length-1]:null];C[4]=[pay]}
+    const W=document.createElement('div');W.className='pdpaW';W.dataset.k=key;
+    P.forEach((p,i)=>W.appendChild(fila(o,i,f,p,C[i])));
+    const band=route.querySelector(':scope > .pdRouteBand');
+    if(band)band.after(W);else route.prepend(W);
+    const st=route.querySelector(':scope > .pdRouteStops');if(st)st.classList.add('pdpaHide');
+  }
+  function todo(){document.querySelectorAll('#orderList .adminOrderCard.is-expanded').forEach(c=>{try{armar(c)}catch(e){console.warn('[pasos admin]',e)}})}
+  let q=false;const pronto=()=>{if(q)return;q=true;setTimeout(()=>{q=false;todo()},80)};
+  new MutationObserver(ms=>{if(ms.some(x=>!(x.target.closest&&x.target.closest('.pdpaW'))))pronto()}).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+  setInterval(pronto,1500);
+})()}catch(e){console.error('[pd-pasos-admin]',e)}
