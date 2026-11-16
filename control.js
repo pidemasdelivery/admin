@@ -62,7 +62,7 @@
   /* =================== 2. Por cobrar a negocios =================== */
   async function porCobrar(){
     const b=hoja('Por cobrar a negocios');await base();
-    const {data,error}=await db().from('pedidos').select('id,negocio_id,costo_delivery,nombre_cliente,entregado_en,creado_en').eq('pago_acordado','pagado').eq('estado','entregado').is('delivery_negocio_cobrado_en',null).order('creado_en',{ascending:true}).limit(1000);
+    const {data,error}=await db().from('pedidos').select('id,negocio_id,costo_delivery,nombre_cliente,entregado_en,creado_en').in('pago_acordado',['pagado','yape_negocio']).eq('estado','entregado').is('delivery_negocio_cobrado_en',null).order('creado_en',{ascending:true}).limit(1000);
     if(error){b.innerHTML='<p class="pdCtlErr">No se pudo leer: '+E(error.message)+'</p>';return}
     const g=new Map();(data||[]).forEach(p=>{const k=String(p.negocio_id||'');if(!g.has(k))g.set(k,[]);g.get(k).push(p)});
     const total=(data||[]).reduce((s,p)=>s+(Number(p.costo_delivery)||0),0);
@@ -145,7 +145,7 @@
       const desde=new Date(Date.now()-45*864e5).toISOString();
       const [y,n,c]=await Promise.all([
         db().from('cobros').select('id',{count:'exact',head:true}).eq('metodo_pago','yape').eq('confirmado',true).is('yape_recibido_en',null).gte('confirmado_en',desde),
-        db().from('pedidos').select('id',{count:'exact',head:true}).eq('pago_acordado','pagado').eq('estado','entregado').is('delivery_negocio_cobrado_en',null),
+        db().from('pedidos').select('id',{count:'exact',head:true}).in('pago_acordado',['pagado','yape_negocio']).eq('estado','entregado').is('delivery_negocio_cobrado_en',null),
         cancelados()]);
       const k={yape:y.count||0,deu:n.count||0,dev:c.length};
       window.__pdCtlCuenta=k;badges();

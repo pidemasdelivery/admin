@@ -145,7 +145,7 @@
     const b=hoja('Por pagar a negocios');if(!b)return;await negs();
     const {data,error}=await db().from('pedidos').select('id,negocio_id,subtotal,total,pago_acordado,metodo_pago,nombre_cliente,entregado_en,creado_en,motorizado_id').not('negocio_id','is',null).eq('estado','entregado').is('negocio_pagado_en',null).order('creado_en',{ascending:true}).limit(1000);
     if(error){b.innerHTML='<p class="pdCtlErr">No se pudo leer: '+E(error.message)+(/negocio_pagado/.test(error.message)?' (falta aplicar los cambios de la base)':'')+'</p>';return}
-    const D=(data||[]).filter(p=>!['solo_delivery','pagado'].includes(String(p.pago_acordado||''))&&Number(p.subtotal)>0);
+    const D=(data||[]).filter(p=>!['solo_delivery','pagado','yape_negocio'].includes(String(p.pago_acordado||''))&&Number(p.subtotal)>0);
     const g=new Map();D.forEach(p=>{const k=String(p.negocio_id);if(!g.has(k))g.set(k,[]);g.get(k).push(p)});
     const total=D.reduce((s,p)=>s+(Number(p.subtotal)||0),0);
     const motos=MO().filter(m=>m.activo!==false);
@@ -211,7 +211,7 @@
 
   function bdg(k,v){const c=window.__pdCtlCuenta=window.__pdCtlCuenta||{};c[k]=v;document.querySelectorAll('[data-ctl="'+k+'"]').forEach(b=>{let i=b.querySelector('.pdCtlBdg');if(!v){if(i)i.remove();return}if(!i){i=document.createElement('b');i.className='pdCtlBdg';b.appendChild(i)}const t=v>99?'99+':String(v);if(i.textContent!==t)i.textContent=t})}
   let ppN=0;
-  async function contarPp(){try{const r=await db().from('pedidos').select('id',{count:'exact',head:true}).not('negocio_id','is',null).eq('estado','entregado').is('negocio_pagado_en',null).not('pago_acordado','in','(solo_delivery,pagado)').gt('subtotal',0);if(!r.error){ppN=r.count||0;bdg('pneg',ppN)}}catch(e){}}
+  async function contarPp(){try{const r=await db().from('pedidos').select('id',{count:'exact',head:true}).not('negocio_id','is',null).eq('estado','entregado').is('negocio_pagado_en',null).not('pago_acordado','in','(solo_delivery,pagado,yape_negocio)').gt('subtotal',0);if(!r.error){ppN=r.count||0;bdg('pneg',ppN)}}catch(e){}}
   window.pdPedCtl={porPagar,calificaciones,reportes,alertas:verAlertas,sugerencias};
   let n=0;setInterval(()=>{if(!document.querySelector('#appView:not(.hidden)')||!db())return;n++;try{pintarAlertas();bdg('atn',ultimas.length)}catch(e){}if(n%20===1)contarPp();else bdg('pneg',ppN);if(n%2===0){pintarSugeridos().catch(()=>{});pintarTarjetas().catch(()=>{})}},4000);
 })();

@@ -364,8 +364,9 @@ if(o.incidencia&&o.incidencia_resuelta!==true)out.push(['bad','Problema: '+o.inc
 if(o.negocio_id&&s==='pendiente')out.push(['warn','Esperando que el negocio confirme']);
 const dl='S/ '+(Number(o.costo_delivery)||0).toFixed(2);
 if(o.negocio_id&&o.pago_acordado&&s!=='cancelado'){
-if(o.pago_acordado==='pagado')out.push(o.delivery_negocio_cobrado_en?['ok','Delivery '+dl+' cobrado al negocio']:['warn','Pagó todo al negocio · cobrar delivery '+dl+' al negocio','cobrar']);
-else if(s!=='entregado')out.push(['dark',o.pago_acordado==='solo_delivery'?'Pagó productos · moto cobra solo delivery '+dl:o.pago_acordado==='yape'?'Paga todo al recibir · Yape (QR)':'Paga todo al recibir · efectivo']);
+if(o.pago_acordado==='yape_negocio'&&s==='entregado')out.push(o.delivery_negocio_cobrado_en?['ok','Delivery '+dl+' cobrado al negocio']:['warn','Cobró todo con el Yape del negocio · cobrar delivery '+dl+' al negocio','cobrar']);
+else if(o.pago_acordado==='pagado')out.push(o.delivery_negocio_cobrado_en?['ok','Delivery '+dl+' cobrado al negocio']:['warn','Pagó todo al negocio · cobrar delivery '+dl+' al negocio','cobrar']);
+else if(s!=='entregado')out.push(['dark',o.pago_acordado==='solo_delivery'?'Pagó productos · moto cobra solo delivery '+dl:o.pago_acordado==='yape'?'Paga todo al recibir · Yape (QR)':o.pago_acordado==='yape_negocio'?'Paga todo al recibir · Yape del negocio':'Paga todo al recibir · efectivo']);
 }
 if(s==='asignado')out.push(['warn','Esperando que '+motoName(o.motorizado_id)+' acepte']);
 if(['aceptado','pedido_aceptado','camino_recojo'].includes(s)){const tsv=String(o.tipo_servicio||'').toLowerCase();
@@ -562,7 +563,7 @@ const moto=id=>{try{return (typeof allMotos!=='undefined'?allMotos:[]).find(m=>S
 const negocio=id=>{try{const m=window.adminRestaurantsById;return m&&m.get?m.get(String(id)):null}catch(e){return null}};
 const ORDER=['pendiente','confirmado','asignado','aceptado','en_camino','en_entrega','entregado'];
 const rank=s=>{s=String(s||'').toLowerCase();if(s==='pedido_aceptado'||s==='camino_recojo')s='aceptado';if(s==='camino_entrega')s='en_camino';if(s==='confirmando_pago')s='en_entrega';return ORDER.indexOf(s)};
-const PAGO={efectivo:'Paga todo al recibir · efectivo',yape:'Paga todo al recibir · Yape (QR)',solo_delivery:'Pagó productos · moto cobra solo delivery',pagado:'Pagó todo al negocio'};
+const PAGO={efectivo:'Paga todo al recibir · efectivo',yape:'Paga todo al recibir · Yape (QR)',yape_negocio:'Paga todo al recibir · Yape del negocio',solo_delivery:'Pagó productos · moto cobra solo delivery',pagado:'Pagó todo al negocio'};
 let openId=null,timer=null;
 function steps(o){
 const r=rank(o.estado),enc=String(o.tipo_servicio||'').toLowerCase().includes('encomienda');
@@ -1658,6 +1659,11 @@ C.push(fin?{t:'Pago por confirmar · '+E(mm)+' · <b>'+money(tot)+'</b>',c:'warn
 if(tipo==='Recojo y entrega'&&!fin)C.push({t:'Paga quien recibe'});
 }
 if(!pc&&!cancel&&mm==='Efectivo'){const d=efectivoMarca(o);if(d&&Number(d.monto)>0)C.push({t:'Paga con <b>'+money(d.monto)+'</b> · vuelto <b>'+money(Math.max(0,Number(d.monto)-tot))+'</b>'})}
+}else if(pa==='yape_negocio'){
+C.push(pc?{t:'Cobrado con el Yape del negocio · <b>'+money(tot)+'</b>',c:'ok'}:{t:(fin?'Pago por confirmar':'Cobrar')+' <b>'+money(tot)+'</b> con el Yape del negocio',c:fin?'warn':'dk'});
+if(o.yape_negocio_estado==='esperando')C.push({t:'Esperando que el negocio confirme el Yape',c:'warn'});else if(o.yape_negocio_estado==='llego')C.push({t:'El negocio confirmó que le llegó el Yape',c:'ok'});else if(o.yape_negocio_estado==='no_llego')C.push({t:'Al negocio NO le llegó el Yape',c:'warn'});
+if(o.delivery_negocio_cobrado_en)C.push({t:'Delivery pagado a Pidemás',c:'ok'});
+else if(PANEL!=='moto'&&fin)C.push({t:'Cobrar delivery <b>'+money(del)+'</b> al negocio',c:'warn'});
 }else if(pa==='pagado'){
 C.push({t:'Pagó todo al negocio',c:'dk'});
 if(/DELIVERY PAGADO POR EL NEGOCIO/i.test(ob)||o.delivery_negocio_cobrado_en)C.push({t:'Delivery pagado a Pidemás',c:'ok'});
@@ -1837,7 +1843,7 @@ try{
     return [s?(s.charAt(0).toUpperCase()+s.slice(1).replace(/_/g,' ')):'Sin estado','espera'];
   }
   function pagoTxt(o){
-    const M={efectivo:['Efectivo','efe'],yape:['Yape','yape'],pagado:['Pagado','ok'],plin:['Plin','yape'],tarjeta:['Tarjeta','na'],transferencia:['Transferencia','na'],al_final:['Paga al final','na'],solo_delivery:['Productos pagados · delivery al recibir','ok']};
+    const M={efectivo:['Efectivo','efe'],yape:['Yape','yape'],yape_negocio:['Yape del negocio','yape'],pagado:['Pagado','ok'],plin:['Plin','yape'],tarjeta:['Tarjeta','na'],transferencia:['Transferencia','na'],al_final:['Paga al final','na'],solo_delivery:['Productos pagados · delivery al recibir','ok']};
     const a=String(o.pago_acordado||'').toLowerCase(),m=String(o.metodo_pago||'').toLowerCase();
     if(a&&M[a])return M[a];
     if(o.negocio_id&&est(o)==='pendiente')return ['Pago por coordinar','na'];

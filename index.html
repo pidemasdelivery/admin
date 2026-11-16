@@ -118,7 +118,8 @@ window.pdQuitarCarga=salir;
 })();
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
-<meta name="pd-version" content="20261103073944">
+<meta name="pd-instalacion" content="1">
+<meta name="pd-version" content="202611161540">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -303,6 +304,7 @@ html body #pdInstalar .shr{display:inline-block;vertical-align:-3px;width:16px;h
   const instalada=()=>matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true;
   const ua=navigator.userAgent||'';
   const iOS=/iphone|ipad|ipod/i.test(ua)||(/macintosh/i.test(ua)&&navigator.maxTouchPoints>1);
+  const android=/android/i.test(ua)&&!/wv\)|; wv/i.test(ua);
   const iOSSafari=iOS&&/safari/i.test(ua)&&!/crios|fxios|edgios|opios|gsa\//i.test(ua);
   const NO='pdInstalarNo:'+location.pathname.replace(/[^/]*$/,''),DIAS=14; /* cada app guarda su propia respuesta */
   const descartado=()=>{const t=Number(ls.get(NO)||0);return t&&Date.now()-t<DIAS*864e5};
@@ -311,13 +313,14 @@ html body #pdInstalar .shr{display:inline-block;vertical-align:-3px;width:16px;h
       const cs=getComputedStyle(el);if(cs.position!=='fixed'||cs.display==='none'||cs.visibility==='hidden'||el.hidden)continue;
       const r=el.getBoundingClientRect();if(r.width*r.height>W*H*0.45)return true}return false}
   let aviso=null,card=null,intentos=0;
-  addEventListener('beforeinstallprompt',e=>{e.preventDefault();aviso=e;programar(6000)});
+  addEventListener('beforeinstallprompt',e=>{e.preventDefault();aviso=e;programar(400)});
+  setTimeout(function(){if(!aviso&&android&&!instalada())programar(0)},3000);
   addEventListener('appinstalled',()=>{ls.set(NO,String(Date.now()+3650*864e5));if(card)card.hidden=true});
   function programar(ms){if(instalada()||descartado()||card&&!card.hidden)return;clearTimeout(programar.t);programar.t=setTimeout(intentar,ms)}
   function intentar(){
     if(instalada()||descartado())return;
-    if(!aviso&&!iOSSafari)return;
-    if(hayVentana()||document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){if(++intentos<40)programar(5000);return}
+    if(!aviso&&!iOSSafari&&!android)return;
+    if(hayVentana()||document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){if(++intentos<40)programar(1500);return}
     mostrar();
   }
   function mostrar(){
@@ -326,6 +329,7 @@ html body #pdInstalar .shr{display:inline-block;vertical-align:-3px;width:16px;h
     const ico='<span class="ico"'+(icono?' style="background-image:url(\''+icono.replace(/'/g,'%27')+'\')"':'')+'>'+(icono?'':'P')+'</span>';
     card.innerHTML=aviso
       ?ico+'<span class="tx"><b>Instala '+NOMBRE+'</b><small>Ábrela desde tu inicio, más rápida y a pantalla completa.</small></span><span class="bt"><button type="button" class="si">Instalar</button><button type="button" class="no">Ahora no</button></span>'
+      :android?ico+'<span class="tx"><b>Instala '+NOMBRE+'</b><small>Toca ⋮ (arriba a la derecha) y luego «Instalar app» o «Agregar a pantalla principal». Si ya la tienes, ábrela desde tu inicio.</small></span><span class="bt"><button type="button" class="no">Entendido</button></span>'
       :ico+'<span class="tx"><b>Instala '+NOMBRE+'</b><small>Toca <svg class="shr" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg> Compartir y luego «Agregar a inicio».</small></span><span class="bt"><button type="button" class="no">Entendido</button></span>';
     card.hidden=false;
     const hd=document.querySelector('header.top,header');const r=hd&&hd.getBoundingClientRect();
@@ -334,7 +338,7 @@ html body #pdInstalar .shr{display:inline-block;vertical-align:-3px;width:16px;h
     const si=card.querySelector('.si');
     if(si)si.onclick=async()=>{const ev=aviso;aviso=null;card.hidden=true;if(!ev)return;try{ev.prompt();const r=await ev.userChoice;if(r&&r.outcome!=='accepted')ls.set(NO,String(Date.now()))}catch(e){}};
   }
-  if(iOSSafari&&!instalada())programar(12000);
+  if(iOSSafari&&!instalada())programar(400);
 })();
 </script>
 
@@ -927,11 +931,11 @@ Motorizado activo
 </nav>
 <script src="supabase.js?v=202611151800"></script>
 <script src="funciones.js?v=202611160930"></script>
-<script src="pedidos.js?v=202611141135"></script>
+<script src="pedidos.js?v=202611161600"></script>
 <script src="admin.js?v=202611160930"></script>
-<script src="control.js?v=202611152000"></script>
-<script src="sueldos-control.js?v=202611152000"></script>
-<script src="pedidos-control.js?v=202611160930"></script>
+<script src="control.js?v=202611161530"></script>
+<script src="sueldos-control.js?v=202611161530"></script>
+<script src="pedidos-control.js?v=202611161530"></script>
 <script src="mejoras.js?v=202611160930"></script>
 <script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 <style id="pd-app-panel-css">
@@ -1977,8 +1981,9 @@ function cabecera(h){
   }
   /* pie con botones: el último bloque de abajo queda fijo */
   let cont=h;if(h.children.length===1&&h.firstElementChild!==head)cont=h.firstElementChild;
-  const ult=[...cont.children].filter(c=>visto(c)&&c!==head).pop();
-  if(ult&&ult!==head&&ult.querySelector('button,a,[role="button"]')){
+  h.querySelectorAll('[data-pdm-pie]').forEach(x=>x.removeAttribute('data-pdm-pie'));
+  const kids=[...cont.children].filter(c=>visto(c)&&c!==head);const ult=kids.length>1?kids[kids.length-1]:null;
+  if(ult&&ult!==head&&ult!==cont.firstElementChild&&!ult.matches(CERRAR)&&!ult.querySelector(CERRAR)&&!ult.querySelector('[data-pdm-titulo],h1,h2')&&ult.querySelector('button,a,[role="button"]')){
     const r=ult.getBoundingClientRect();
     if(r.height<230&&!ult.querySelector('ul,ol,table')&&ult.querySelectorAll('button,a').length<=4){const p=getComputedStyle(ult).position;if(p!=='fixed'&&p!=='absolute')ult.setAttribute('data-pdm-pie','')}
   }
@@ -2249,6 +2254,9 @@ buscar();
 })();
 </script>
 <style id="pd-hojas-sin-brinco">
+/* el fondo aparece de una vez (sin desvanecer) para que la ventana no se vea transparente al subir */
+@keyframes pdDlgFondo{from{opacity:1}to{opacity:1}}
+@keyframes pdSelFade{from{opacity:1}to{opacity:1}}
 /* Las ventanas suben desde abajo en un solo movimiento, sin saltito ni parpadeo */
 @keyframes dcUp{from{transform:translateY(100%);opacity:1}to{transform:none;opacity:1}}
 @keyframes pdDlgSube{from{transform:translateY(100%);opacity:1}to{transform:none;opacity:1}}
@@ -2270,9 +2278,12 @@ var NO=/(no se|no pud|error|falt|intenta|revisa|se guardar[áa]|guardar\b|en viv
 var MSG=/msg|Msg|mensaje|Mensaje|aviso|Aviso|status|estado|Ok\b|exito|Exito|ok\b/;
 var HOJA='[data-pdm-hoja],.pdnSh,.pdsmHoja,.pdPwHoja,.pdxSheetCard,.pcSheet,.sheet,[role=dialog],.pdmSheet,.pdoSheet,.pdpm-sheet';
 var CERRAR='.pdnX,.pdsmX,.pdPwX,.pcX,.pdpm-x,.pdoX,[data-close],[aria-label="Cerrar"],[aria-label="cerrar"],.close,.closeBtn,.x-icon';
-var ocupado=0;
+var ocupado=0,yaAviso=0,mio=false;
+function envolver(n){var f=window[n];if(typeof f!=='function'||f.__pdGA)return;var w=function(){if(!mio)yaAviso=Date.now();return f.apply(this,arguments)};w.__pdGA=1;try{window[n]=w}catch(_){}}
+setInterval(function(){envolver('pdExito');envolver('toast')},700);
 function avisar(t){
-  ocupado=Date.now();
+  if(Date.now()-yaAviso<3000)return;/* la app ya mostró su propio aviso: no se repite */
+  mio=true;setTimeout(function(){mio=false},0);
   t=String(t||'Guardado').trim().replace(/^✓\s*/,'');
   try{if(typeof window.pdExito==='function'){window.pdExito(t);return}}catch(_){}
   try{if(typeof window.toast==='function'){window.toast('✓ '+t);return}}catch(_){}
@@ -2287,19 +2298,82 @@ function cerrarHoja(h){
   try{document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))}catch(_){}
 }
 var hechos=new WeakMap();
+var PROG=/^(guardando|actualizando|enviando|subiendo|procesando|registrando)\b/i;
+function esMensaje(el,txt){return el.getAttribute('role')==='status'||el.hasAttribute('aria-live')||MSG.test((el.id||'')+' '+(typeof el.className==='string'?el.className:''))||/^✓/.test(txt)}
+function ocultar(el,si){if(si){el.setAttribute('data-pd-msg-oculto','');el.style.setProperty('display','none','important')}else if(el.hasAttribute('data-pd-msg-oculto')){el.removeAttribute('data-pd-msg-oculto');el.style.removeProperty('display')}}
 function revisar(el){
-  if(!el||el.nodeType!==1)return;if(Date.now()-ocupado<2500)return;
-  var txt=(el.textContent||'').trim();if(txt.length<5||txt.length>170)return;
-  if(!OK.test(txt)||NO.test(txt))return;
-  if(el.closest('button,label,h1,h2,h3,strong.title,input,textarea,select'))return;
-  var esMsg=el.getAttribute('role')==='status'||el.hasAttribute('aria-live')||MSG.test((el.id||'')+' '+(typeof el.className==='string'?el.className:''))||/^✓/.test(txt);
-  if(!esMsg)return;
-  var h=el.closest(HOJA);if(!h||!h.getClientRects().length)return;
-  if(hechos.get(el)===txt)return;hechos.set(el,txt);
-  avisar(txt);
-  setTimeout(function(){if(h.isConnected&&h.getClientRects().length)cerrarHoja(h)},450);
+  if(!el||el.nodeType!==1)return;
+  var txt=(el.textContent||'').trim();
+  if(el.closest('button,label,h1,h2,h3,input,textarea,select'))return;
+  var h=el.closest(HOJA);if(!h)return;
+  if(txt.length>170)return;
+  if(!txt){return}
+  var msg=esMensaje(el,txt);
+  /* mensaje de «guardando…»: no se muestra, el botón ya indica que está trabajando */
+  if(msg&&PROG.test(txt)){ocultar(el,true);return}
+  if(msg&&OK.test(txt)&&!NO.test(txt)){
+    ocultar(el,true);
+    if(Date.now()-ocupado<2500||hechos.get(el)===txt)return;hechos.set(el,txt);ocupado=Date.now();
+    if(h.getClientRects().length)cerrarHoja(h);
+    setTimeout(function(){avisar(txt)},260);
+    return;
+  }
+  if(msg)ocultar(el,false);/* los errores sí se ven en la ventana */
 }
 new MutationObserver(function(ms){for(var i=0;i<ms.length;i++){var m=ms[i];var t=m.type==='characterData'?m.target.parentElement:m.target;revisar(t);if(m.type==='childList'){for(var j=0;j<m.addedNodes.length;j++){var n=m.addedNodes[j];if(n.nodeType===1){revisar(n);var k=n.querySelectorAll&&n.querySelectorAll('[role=status],[aria-live]');if(k)for(var q=0;q<k.length;q++)revisar(k[q])}}}}}).observe(document.documentElement,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class']});
+})();
+</script>
+<script id="pd-actualizar">
+/* Actualizaciones:
+   · Normales (pd-version): la app se actualiza sola, sin preguntar, en un momento en que no estés usando una ventana ni escribiendo.
+   · Que requieren reinstalar (pd-instalacion: cambia ícono, nombre o pantalla de arranque): solo entonces se muestra un aviso. */
+(function(){
+  if(window.__pdActualizar)return;window.__pdActualizar=1;
+  var mv=document.querySelector('meta[name="pd-version"]');if(!mv)return;var V=mv.content;
+  var mi=document.querySelector('meta[name="pd-instalacion"]');var I=mi?mi.content:'1';
+  var ls={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+  var url=location.pathname,ultimo=0,pendiente=false,toque=Date.now();
+  var instalada=matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true;
+  ['pointerdown','keydown','scroll','touchstart'].forEach(function(e){addEventListener(e,function(){toque=Date.now()},{passive:true,capture:true})});
+
+  /* --- 1. actualización normal: silenciosa --- */
+  function chequear(){
+    if(document.hidden||Date.now()-ultimo<60000)return;ultimo=Date.now();
+    fetch(url+'?pdv='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){
+      var m=t&&t.match(/<meta name="pd-version" content="([^"]+)"/);if(m&&m[1]!==V){pendiente=true;intentar()}
+    }).catch(function(){});
+  }
+  function ocupado(){
+    var a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return true;
+    var hs=document.querySelectorAll('[data-pdm-hoja],.pdnSh,.pdsmHoja,.pdPwHoja,[role=dialog],dialog[open]');
+    for(var i=0;i<hs.length;i++){if(hs[i].getClientRects().length&&hs[i].id!=='pdInstalar')return true}
+    return Date.now()-toque<20000;
+  }
+  function recargar(){var fin=function(){location.reload()};
+    try{if(navigator.serviceWorker)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(_){}})}).catch(function(){})}catch(_){}
+    fetch(location.href,{cache:'reload'}).then(fin,fin);setTimeout(fin,3000)}
+  function intentar(){if(!pendiente)return;if(document.hidden||!ocupado())recargar()}
+  setInterval(intentar,5000);
+  document.addEventListener('visibilitychange',function(){if(document.hidden){if(pendiente)recargar()}else chequear()});
+  addEventListener('focus',chequear);
+  setTimeout(chequear,2500);setInterval(chequear,5*60000);
+
+  /* --- 2. actualización que requiere reinstalar: solo esta avisa --- */
+  if(instalada){
+    var guardada=ls.get('pd-instalacion');
+    if(!guardada){ls.set('pd-instalacion',I)}
+    else if(Number(I)>Number(guardada)&&ls.get('pd-instalacion-no')!==I){setTimeout(avisoReinstalar,1500)}
+  }
+  addEventListener('appinstalled',function(){ls.set('pd-instalacion',I)});
+  function avisoReinstalar(){
+    if(document.getElementById('pdReinstalar'))return;
+    var d=document.createElement('div');d.id='pdReinstalar';d.setAttribute('role','status');
+    d.innerHTML='<span class="pdaIco" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></span><span class="pdaTx"><b>Reinstala la app</b><small>Hay una mejora en el ícono o la pantalla de inicio. Borra la app y vuelve a instalarla desde el enlace de siempre.</small></span><span class="pdaBt"><button type="button" class="ok">Entendido</button></span>';
+    d.querySelector('.ok').onclick=function(){ls.set('pd-instalacion-no',I);d.remove()};
+    document.body.appendChild(d);
+  }
+  var st=document.createElement('style');st.textContent='#pdReinstalar{position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:2147483647;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px;border-radius:16px;background:#fff;border:1px solid #F1C9B6;box-shadow:0 10px 30px rgba(31,26,23,.16);font-family:var(--font,Inter,system-ui,sans-serif)}#pdReinstalar .pdaIco{flex:0 0 38px;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#FFF1E8;color:#C4410C}#pdReinstalar .pdaIco svg{width:20px;height:20px}#pdReinstalar .pdaTx{flex:1;min-width:0;display:flex;flex-direction:column}#pdReinstalar b{font-weight:800;font-size:14.5px;line-height:1.25;color:#1F1A17}#pdReinstalar small{font-weight:500;font-size:12.5px;line-height:1.3;color:#6E625A}#pdReinstalar button{min-height:40px;padding:0 14px;border:0;border-radius:12px;background:#C4410C;color:#fff;font-weight:800;font-size:14px;font-family:inherit;cursor:pointer}';
+  document.head.appendChild(st);
 })();
 </script>
 </body>
