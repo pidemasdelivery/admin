@@ -635,7 +635,7 @@ async function loadOrdersReal(){
 clearMsg($("ordersMsg"));
 try{
 const pNeg=Promise.resolve(db.from("negocios").select("*"));
-const pMot=Promise.resolve(db.from("motorizados").select("id,nombre_completo,telefono,usuario_id,disponible,activo,ultima_ubicacion").order("nombre_completo"));
+const pMot=Promise.resolve(db.from("motorizados").select("id,nombre_completo,telefono,usuario_id,disponible,activo,ultima_ubicacion,en_descanso,en_descanso_desde").order("nombre_completo"));
 let ordersRes=await db.from("pedidos").select("*").order("creado_en",{ascending:false});
 if(ordersRes.error){
 console.warn("Pedidos: fallo ordenado por creado_en, reintentando sin ordenar:",ordersRes.error);
@@ -683,7 +683,7 @@ details=recovered;
 let motosRes=await pMot;
 if(motosRes.error){
 console.warn("No se pudieron cargar motorizados con todas las columnas:",motosRes.error);
-motosRes=await db.from("motorizados").select("id,nombre_completo,telefono,usuario_id,disponible").order("nombre_completo");
+motosRes=await db.from("motorizados").select("id,nombre_completo,telefono,usuario_id,disponible,activo,ultima_ubicacion").order("nombre_completo");
 }
 if(motosRes.error){
 console.error("No se pudieron cargar motorizados:",motosRes.error);
@@ -1326,7 +1326,7 @@ row.innerHTML=`
           const motoAccepted=["aceptado","pedido_aceptado","en_camino","camino_recojo","en_entrega","camino_entrega","confirmando_pago","entregado"].includes(estado);
           const controlsDisabled=!canAssign || assigned || motoAccepted;
           const selectedId=previousMotoSelections[String(o.id)]||o.motorizado_id||"";
-          return `<select class="motoSelect" data-order-id="${esc(String(o.id))}" ${controlsDisabled?"disabled":""}><option value="">Seleccionar motorizado</option>${allMotos.length?allMotos.map(m=>{return `<option value="${m.id}" ${String(selectedId)===String(m.id)?"selected":""}>${esc(m.nombre_completo||"Motorizado")}${m.disponible?" · Disponible":""}</option>`}).join(""):'<option value="" disabled>No hay motorizados cargados</option>'}</select><button class="btn assignBtn ${motoAccepted?"accepted-state":""}" type="button" ${(!canAssign||assigned||motoAccepted)?"disabled":""}>${assigned?"Asignado":"Asignar"}</button>${assigned&&!motoAccepted?`<button class="btn alt unassignBtn" type="button">Quitar asignación</button>`:""}`;
+          return `<select class="motoSelect" data-order-id="${esc(String(o.id))}" ${controlsDisabled?"disabled":""}><option value="">Seleccionar motorizado</option>${allMotos.length?allMotos.map(m=>{return `<option value="${m.id}" ${String(selectedId)===String(m.id)?"selected":""}>${esc(m.nombre_completo||"Motorizado")}${m.en_descanso?" · En descanso":m.disponible?" · Disponible":""}</option>`}).join(""):'<option value="" disabled>No hay motorizados cargados</option>'}</select><button class="btn assignBtn ${motoAccepted?"accepted-state":""}" type="button" ${(!canAssign||assigned||motoAccepted)?"disabled":""}>${assigned?"Asignado":"Asignar"}</button>${assigned&&!motoAccepted?`<button class="btn alt unassignBtn" type="button">Quitar asignación</button>`:""}`;
         })()}</div>
       </div>`;
 row.querySelector(".adminServiceTypeBanner")?.addEventListener("click",()=>{

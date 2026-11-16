@@ -9,7 +9,7 @@
    el mismo velo detrás y se cierran arrastrando hacia abajo.
    Va en la primera capa (@layer pdmu) para que ningún estilo anterior lo pise. */
 @layer pdmu{
-:root{--pdmu-top:56px;--pdmu-h:calc(100dvh - var(--pdmu-top));--pdmu-w:560px;--pdmu-r:24px;--pdmu-velo:rgba(31,26,23,.52)}
+:root{--pdmu-top:56px;--pdmu-h:calc(100dvh - var(--pdmu-top));--pdmu-w:560px;--pdmu-r:24px;--pdmu-velo:rgba(31,26,23,.22)}
 [data-pdm-velo]{background:var(--pdmu-velo)!important;background-image:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important;transform:none!important;filter:none!important;perspective:none!important;contain:none!important;will-change:auto!important}
 [data-pdm-velo="caja"]{background:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 #pdFondoHoja,#pdVelo,#pdmuVelo{background:var(--pdmu-velo)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
@@ -27,7 +27,7 @@ dialog[data-pdm-hoja]::backdrop{background:var(--pdmu-velo)!important;-webkit-ba
 [data-pdm-hoja][data-pdm-grip]::before{content:""!important;display:block!important;position:absolute!important;top:8px!important;left:50%!important;width:40px!important;height:5px!important;margin:0 0 0 -20px!important;border-radius:3px!important;background:#E8D9CE!important;z-index:5!important;pointer-events:none!important;opacity:1!important;transform:none!important}
 [data-pdm-oculto]{display:none!important}
 [data-pdm-cab]{position:sticky!important;top:0!important;z-index:4!important;background-color:#fff!important;box-shadow:0 -64px 0 0 #fff!important}
-[data-pdm-grip] > [data-pdm-cab]::after{content:""!important;display:block!important;position:absolute!important;top:-14px!important;left:50%!important;width:40px!important;height:5px!important;margin:0 0 0 -20px!important;border-radius:3px!important;background:#E8D9CE!important;pointer-events:none!important}
+[data-pdm-grip] > [data-pdm-cab][data-pdm-cab-ancho]::after{content:""!important;display:block!important;position:absolute!important;top:-14px!important;left:50%!important;width:40px!important;height:5px!important;margin:0 0 0 -20px!important;border-radius:3px!important;background:#E8D9CE!important;pointer-events:none!important}
 [data-pdm-cab] [data-pdm-titulo]{margin:0!important;font:800 19px/1.25 var(--font,Inter,system-ui,sans-serif)!important;letter-spacing:-.2px!important;color:#C4410C!important;text-transform:none!important}
 [data-pdm-pie]{position:sticky!important;bottom:0!important;z-index:4!important;background-color:#fff!important}
 /* abrir y cerrar rápido */
@@ -91,6 +91,7 @@ body>.toast button{background:#FFF4EC!important;color:#C4410C!important;border:1
 </style>
 
 
+
 <style id="pd-cargando">
 html.pdCarga,html.pdCarga body{background:#FFF9F5!important}
 html.pdCarga body>*{visibility:hidden!important}
@@ -140,7 +141,7 @@ window.pdQuitarCarga=salir;
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-500-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-700-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-800-normal.woff2">
-<link rel="stylesheet" href="estilos.css?v=202611151730">
+<link rel="stylesheet" href="estilos.css?v=202611161215">
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'"/>
 
@@ -925,9 +926,13 @@ Motorizado activo
 <button type="button" data-admin-nav="menu"><span class="navIcon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="navLabel">Menú</span></button>
 </nav>
 <script src="supabase.js?v=202611151800"></script>
-<script src="funciones.js?v=202611151800"></script>
+<script src="funciones.js?v=202611160930"></script>
 <script src="pedidos.js?v=202611141135"></script>
-<script src="admin.js?v=202611151800"></script>
+<script src="admin.js?v=202611160930"></script>
+<script src="control.js?v=202611152000"></script>
+<script src="sueldos-control.js?v=202611152000"></script>
+<script src="pedidos-control.js?v=202611160930"></script>
+<script src="mejoras.js?v=202611160930"></script>
 <script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 <style id="pd-app-panel-css">
 /* ===== pd-app-panel · se siente como app: sin zoom, sin recargar al jalar, login fijo y centrado ===== */
@@ -1976,6 +1981,7 @@ function cabecera(h){
       if(!t.hasAttribute('data-pdm-titulo'))t.setAttribute('data-pdm-titulo','');
     }
     const p=getComputedStyle(head).position;if(p!=='fixed'&&p!=='absolute')head.setAttribute('data-pdm-cab','');
+    try{const hw=head.getBoundingClientRect().width,hj=(head.closest('[data-pdm-hoja]')||head.parentElement).getBoundingClientRect().width;if(hj&&hw>=hj*0.8)head.setAttribute('data-pdm-cab-ancho','');else head.removeAttribute('data-pdm-cab-ancho')}catch(e){}
   }
   /* pie con botones: el último bloque de abajo queda fijo */
   let cont=h;if(h.children.length===1&&h.firstElementChild!==head)cont=h.firstElementChild;
@@ -2025,8 +2031,8 @@ function veloPropio(){
   miVelo.__h=h;miVelo.style.zIndex=String(Math.max(0,z-1));
   if(h.parentElement&&miVelo.parentElement!==h.parentElement&&h.parentElement!==document.documentElement){try{h.parentElement.insertBefore(miVelo,h)}catch(e){}}
 }
-function pedir(){if(!pend){pend=1;const w=Math.max(30,200-(Date.now()-ult));setTimeout(()=>requestAnimationFrame(()=>{ult=Date.now();try{revisar()}catch(e){pend=0}}),w)}}
-new MutationObserver(pedir).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden','open','aria-hidden']});
+function pedir(){if(pend)return;if(Date.now()-ult>160){pend=1;ult=Date.now();try{revisar()}catch(e){pend=0}return}pend=1;const w=Math.max(30,200-(Date.now()-ult));setTimeout(()=>requestAnimationFrame(()=>{ult=Date.now();try{revisar()}catch(e){pend=0}}),w)}
+new MutationObserver(function(ms){var ya=false;for(var i=0;i<ms.length&&!ya;i++){var m=ms[i];if(m.type==='childList'){for(var j=0;j<m.addedNodes.length;j++){var n=m.addedNodes[j];if(n.nodeType===1&&(POSIBLE.test(nombre(n))||n.matches('[role=dialog],dialog')||(n.querySelector&&n.querySelector('[role=dialog],dialog')))){ya=true;break}}}else{var t=m.target;if(t.nodeType===1&&t!==document.documentElement&&t!==document.body&&(POSIBLE.test(nombre(t))||t.matches('[role=dialog],dialog')))ya=true}}if(ya&&!enRev){enRev=1;try{ult=Date.now();revisar()}catch(_){}enRev=0}else pedir()}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden','open','aria-hidden']});var enRev=0;
 addEventListener('resize',pedir);
 /* las ventanas que aparecen con animación se revisan otra vez al terminar */
 let tarde=0;function despues(){clearTimeout(tarde);tarde=setTimeout(pedir,420)}
@@ -2205,6 +2211,64 @@ document.addEventListener('keydown',e=>{const i=e.target;if(!apto(i))return;if(e
 try{const orig=HTMLInputElement.prototype.showPicker;if(orig)HTMLInputElement.prototype.showPicker=function(){if(apto(this)){abrir(this);return}return orig.apply(this,arguments)}}catch(e){}
 })();
 </script>
+<script id="pd-sin-velo">
+/* Sin sombra oscura detrás de ninguna ventana: quita el fondo oscuro semitransparente de cualquier capa que cubra la pantalla */
+(function(){
+if(window.__pdSinVelo)return;window.__pdSinVelo=1;
+var st=document.createElement('style');st.id='pd-sin-velo-css';
+st.textContent='dialog::backdrop{background:rgba(31,26,23,.22)!important;-webkit-backdrop-filter:blur(5px)!important;backdrop-filter:blur(5px)!important}[data-pd-sin-velo]{background:rgba(31,26,23,.22)!important;background-image:none!important;-webkit-backdrop-filter:blur(5px)!important;backdrop-filter:blur(5px)!important}html body [data-pdm-velo]{background:rgba(31,26,23,.22)!important;-webkit-backdrop-filter:blur(5px)!important;backdrop-filter:blur(5px)!important}';
+(document.head||document.documentElement).appendChild(st);
+function oscuro(bg){var m=String(bg).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);if(!m)return false;var a=m[4]===undefined?1:+m[4];return a>0.06&&a<0.97&&+m[1]<150&&+m[2]<150&&+m[3]<150}
+function revisar(){
+  pend=0;var W=innerWidth,H=innerHeight,L=document.body?document.body.getElementsByTagName('*'):[];
+  for(var i=0;i<L.length;i++){var e=L[i];if(e.hasAttribute('data-pd-sin-velo'))continue;
+    var c=getComputedStyle(e);if(c.position!=='fixed'&&c.position!=='absolute')continue;if(c.display==='none')continue;
+    var bg=c.backgroundColor,fil=c.backdropFilter||c.webkitBackdropFilter||'none';
+    if(!oscuro(bg)&&(fil==='none'||!fil))continue;
+    var r=e.getBoundingClientRect();if(r.width<W*0.9||r.height<H*0.6)continue;
+    if(!oscuro(bg)&&fil!=='none'){var m=String(bg).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);if(m&&(m[4]===undefined||+m[4]>0.9))continue}
+    e.setAttribute('data-pd-sin-velo','');e.style.setProperty('background','rgba(31,26,23,.22)','important');e.style.setProperty('background-image','none','important');e.style.setProperty('backdrop-filter','blur(5px)','important');e.style.setProperty('-webkit-backdrop-filter','blur(5px)','important');
+  }
+}
+var pend=0;function pedir(){if(pend)return;pend=1;setTimeout(function(){requestAnimationFrame(function(){try{revisar()}catch(_){pend=0}})},16)}
+function uno(e){if(!e||e.nodeType!==1||e.hasAttribute('data-pd-sin-velo'))return;var c=getComputedStyle(e);if(c.position!=='fixed'&&c.position!=='absolute')return;if(!oscuro(c.backgroundColor))return;var r=e.getBoundingClientRect();if(r.width<innerWidth*0.9||r.height<innerHeight*0.6)return;e.setAttribute('data-pd-sin-velo','');e.style.setProperty('background','rgba(31,26,23,.22)','important');e.style.setProperty('background-image','none','important');e.style.setProperty('backdrop-filter','blur(5px)','important');e.style.setProperty('-webkit-backdrop-filter','blur(5px)','important')}
+function rapido(ms){for(var i=0;i<ms.length;i++){var m=ms[i],L=m.type==='childList'?m.addedNodes:[m.target];for(var j=0;j<L.length;j++){var n=L[j];if(n.nodeType!==1)continue;uno(n);var k=n.children;for(var q=0;q<k.length&&q<12;q++)uno(k[q])}}pedir()}
+function iniciar(){revisar();new MutationObserver(rapido).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden','open']});document.addEventListener('transitionstart',pedir,true);document.addEventListener('animationstart',pedir,true)}
+if(document.body)iniciar();else document.addEventListener('DOMContentLoaded',iniciar);
+})();
+</script>
+<script id="pd-hoja-suave">
+/* Cuando el contenido de una ventana abierta cambia de alto (carga datos), la ventana se desliza suave en vez de brincar */
+(function(){
+if(window.__pdHojaSuave||!window.ResizeObserver)return;window.__pdHojaSuave=1;
+var SEL='[data-pdm-hoja],.pdnSh,.pdsmHoja,.pdxSheetCard,.pdpm-sheet,.pdoSheet,.pdmSheet';
+var prev=new WeakMap(),vistos=new WeakSet();
+var ro=new ResizeObserver(function(L){L.forEach(function(en){var e=en.target;if(!e.isConnected)return;var r=e.getBoundingClientRect();var p=prev.get(e);prev.set(e,{top:r.top,h:r.height,t:Date.now()});
+  if(!p||r.height<40||p.h<40)return;if(Math.abs(r.bottom-(p.top+p.h))>2)return;/* solo ventanas pegadas abajo */
+  var d=r.top-p.top;if(Math.abs(d)<3||Math.abs(d)>500)return;
+  if(e.classList.contains('pdmuArrastre')||e.__pdmT)return;
+  e.style.setProperty('transition','none','important');e.style.setProperty('translate','0 '+(-d)+'px','important');e.getBoundingClientRect();
+  e.style.setProperty('transition','translate .2s ease','important');e.style.setProperty('translate','0 0','important');
+  clearTimeout(e.__pdSuT);e.__pdSuT=setTimeout(function(){e.style.removeProperty('transition');e.style.removeProperty('translate')},240);
+})});
+function buscar(){document.querySelectorAll(SEL).forEach(function(e){if(!vistos.has(e)){vistos.add(e);ro.observe(e)}})}
+var pend=0;new MutationObserver(function(){if(pend)return;pend=1;requestAnimationFrame(function(){pend=0;buscar()})}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['data-pdm-hoja','class']});
+buscar();
+})();
+</script>
+<style id="pd-hojas-sin-brinco">
+/* Las ventanas suben desde abajo en un solo movimiento, sin saltito ni parpadeo */
+@keyframes dcUp{from{transform:translateY(100%);opacity:1}to{transform:none;opacity:1}}
+@keyframes pdDlgSube{from{transform:translateY(100%);opacity:1}to{transform:none;opacity:1}}
+@keyframes pdFhUp{from{transform:translateY(100%);opacity:1}to{transform:none;opacity:1}}
+@keyframes pdHojaSube{from{transform:translateY(100%);opacity:1}to{transform:none;opacity:1}}
+@keyframes pdPwSube{from{transform:translateY(100%);opacity:1}to{transform:none;opacity:1}}
+@keyframes pdhoUp{from{transform:translateY(100%);opacity:1}to{transform:none;opacity:1}}
+@keyframes pdmUp{from{transform:translateY(100%);opacity:1}to{transform:none;opacity:1}}
+@keyframes pdtfUp{from{transform:translateY(100%);opacity:1}to{transform:none;opacity:1}}
+@keyframes spUp{from{transform:translateY(100%);opacity:1}to{transform:none;opacity:1}}
+</style>
+<style id="pd-velo-recto">html body [data-pdm-velo][data-pdm-velo][data-pdm-velo],html body [data-pd-sin-velo][data-pd-sin-velo][data-pd-sin-velo],html body .pdnOv.pdnOv.pdnOv{border-radius:0!important;border:0!important;box-shadow:none!important;outline:0!important}</style>
 </body>
 
 </html>
