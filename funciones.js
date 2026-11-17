@@ -835,7 +835,7 @@ pdAviso("No se pudo preparar el mensaje de WhatsApp: "+(e?.message||String(e)));
 }
 }
 /* Inicio sin saltos: solo se repinta la lista si los datos o filtros cambiaron de verdad; al repintar se conserva scroll y altura */
-let __pdRoSig="";
+let __pdRoSig="",__pdRoF="",__pdRoQ="";
 function __pdRoFirma(){
 try{
 const f=($("orderStatusFilter")&&$("orderStatusFilter").value)||"",q=(($("orderSearch")&&$("orderSearch").value)||"").trim().toLowerCase();
@@ -849,15 +849,28 @@ let h=5381;for(let i=0;i<t.length;i++){h=((h<<5)+h+t.charCodeAt(i))|0}
 return t.length+":"+h;
 }catch(e){return null}
 }
+let __pdRoPend=false,__pdRoOrd=new Map();
+const __pdRoRep=(k,v)=>(k==="ultima_ubicacion"||k==="ultima_ubicacion_en")?undefined:v;
+function __pdRoHash(o){try{const t=JSON.stringify(o,__pdRoRep);let h=5381;for(let i=0;i<t.length;i++){h=((h<<5)+h+t.charCodeAt(i))|0}return t.length+":"+h}catch(e){return null}}
+function __pdRoGuardar(){const m=new Map();try{(allOrders||[]).forEach(o=>m.set(String(o.id),__pdRoHash(o)))}catch(e){}__pdRoOrd=m}
+setInterval(()=>{if(!__pdRoPend)return;const l=$("orderList");if(!l||l.querySelector(".adminOrderCard.is-expanded")||l.querySelector(".adminOrderInlineTracking"))return;__pdRoPend=false;renderOrders()},700);
 function renderOrders(){
 const list=$("orderList");
 if(!list)return renderOrdersReal();
 const sig=__pdRoFirma();
 if(sig&&sig===__pdRoSig&&list.querySelector(".adminOrderCard")&&!list.querySelector(".pdSk"))return;
+/* con una tarjeta abierta no se repinta si el pedido abierto no cambió: se pinta al cerrarla */
+const abiertas=[...list.querySelectorAll(".adminOrderCard.is-expanded")].map(c=>c.getAttribute("data-order-id"));
+if(abiertas.length&&__pdRoOrd.size){
+const igual=abiertas.every(id=>{const o=(allOrders||[]).find(x=>String(x.id)===String(id));return o&&__pdRoHash(o)===__pdRoOrd.get(String(id))});
+const f=($("orderStatusFilter")&&$("orderStatusFilter").value)||"",q=(($("orderSearch")&&$("orderSearch").value)||"").trim().toLowerCase();
+if(igual&&f===__pdRoF&&q===__pdRoQ){__pdRoPend=true;return}
+}
 const y=window.scrollY||window.pageYOffset||0,h=list.offsetHeight;
 if(h>0)list.style.minHeight=h+"px";
 try{renderOrdersReal()}finally{
-__pdRoSig=__pdRoFirma()||"";
+__pdRoSig=__pdRoFirma()||"";__pdRoGuardar();__pdRoPend=false;
+__pdRoF=($("orderStatusFilter")&&$("orderStatusFilter").value)||"";__pdRoQ=(($("orderSearch")&&$("orderSearch").value)||"").trim().toLowerCase();
 if(Math.abs((window.scrollY||0)-y)>1)window.scrollTo(0,y);
 requestAnimationFrame(()=>requestAnimationFrame(()=>{list.style.minHeight=""}));
 }
