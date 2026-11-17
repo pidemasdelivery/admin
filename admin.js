@@ -2618,6 +2618,16 @@ try{
     const walk=p=>{[...p.children].forEach(c=>{if(keep.has(c)){if(c.matches('.h-sheet,[role="dialog"],#pdhSheet'))return;c.classList.add('pdCadena');walk(c)}else if(!c.classList.contains('pdFueraInicio'))c.classList.add('pdFueraInicio')})};
     walk(home);
   }
+  /* Pedidos en el Inicio: la lista va debajo de la tarjeta de información (#pdInicioTop > .pdSal) y siempre visible ahí */
+  let obsPed=null;
+  function pedidosEnInicio(){
+    const t=$('tab-pedidos'),top=$('pdInicioTop');if(!t||!top)return;
+    const sal=top.querySelector(':scope > .pdSal');if(!sal)return;
+    const pm=$('pdmBody');if(pm&&pm.contains(t))return; /* por si otra ventana la tiene prestada */
+    if(t.parentNode!==top||sal.nextElementSibling!==t)sal.after(t);
+    t.classList.remove('hidden');
+    if(!obsPed){obsPed=new MutationObserver(()=>{if(t.parentNode===top&&t.classList.contains('hidden'))t.classList.remove('hidden')});obsPed.observe(t,{attributes:true,attributeFilter:['class']})}
+  }
   /* «Pedidos» ya está en el inicio: en vez de abrir una ventana, vuelve arriba */
   function enlazar(){
     return; /* Pedidos ahora abre su ventana (modal) desde el menú */
@@ -2902,7 +2912,7 @@ try{
     window.__pdIniAbierto=true;
     try{window.__pdmOpen('pedidos')}catch(e){console.warn(e)}
   }
-  const tick=()=>{try{inicio();enlazar();abrirPedidosAlEntrar();if(logged())montar();pintarPerfil();aviso();vigilar();saludo()}catch(e){}};
+  const tick=()=>{try{inicio();pedidosEnInicio();enlazar();abrirPedidosAlEntrar();if(logged())montar();pintarPerfil();aviso();vigilar();saludo()}catch(e){}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tick,{once:true});else tick();
   setInterval(tick,800);
 })();

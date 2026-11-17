@@ -3612,7 +3612,19 @@ if(typeof window.__pidemasLoadToolData==='function')await window.__pidemasLoadTo
 if(key==='gps')setTimeout(()=>window.dispatchEvent(new Event('resize')),150);
 }catch(e){console.warn('Modal:',e)}
 }
+/* Pedidos vive en el Inicio del admin, debajo de la tarjeta de información: no se abre modal */
+function inicioPedidos(){
+close();
+const t=$('tab-pedidos'),top=$('pdInicioTop');
+if(t&&top&&t.parentNode!==top){const sal=top.querySelector(':scope > .pdSal');if(sal)sal.after(t);else top.appendChild(t)}
+if(t)t.classList.remove('hidden');
+try{const home=$('tab-restaurantes');if(home&&home.classList.contains('hidden')&&typeof window.openAdminTab==='function')window.openAdminTab('restaurantes')}catch(e){}
+if(t)t.classList.remove('hidden');
+const r=$('refreshOrders');if(r)r.click();
+setTimeout(()=>{const L=$('orderList')||t;if(L)L.scrollIntoView({behavior:'smooth',block:'start'})},150);
+}
 async function open(key){
+if(key==='pedidos'){inicioPedidos();return}
 const m=MAP[key];if(!m)return;
 const b=$(m[0]);if(!b)return;
 close();

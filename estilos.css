@@ -4427,3 +4427,6 @@ html body #pdaBell.pdaPend .pdaBadge{background:#C4410C!important}
 #pdCampAviso b{font-size:16px;font-weight:800;color:#C4410C}
 #pdCampAviso small{font-size:13px;color:#6E625A}
 @media (prefers-reduced-motion:reduce){html body #pdaBell.pdaPend svg,html body #pdaBell.pdaPend::before,html body #pdaBell.pdaPend::after{animation:none!important}}
+
+/* Inicio del admin: la lista de Pedidos va debajo de la tarjeta de información */
+html body #appView#appView#appView > section#pdInicioTop > #tab-pedidos{display:block!important;margin:0 0 14px!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
