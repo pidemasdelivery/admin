@@ -1951,7 +1951,7 @@ try{
   function pedido(r,o){
     const its=items(o);
     r.querySelectorAll(':scope > .pdRouteBlock:not(.pdAOcultar)').forEach(b=>{if(/^productos$/i.test(T(b.firstElementChild))&&its.length)b.classList.add('pdAOcultar')});
-    let box=r.querySelector(':scope > .pdAPed');
+    let box=r.querySelector('.pdAPed');
     if(!its.length){box&&box.remove();r.classList.remove('pdATotales');return}
     const del=Number(o.costo_delivery??o.delivery)||0,tot=Number(o.total)||0;
     const sub=Number(o.subtotal)||its.reduce((a,it)=>a+(Number(it.subtotal)||(Number(it.precio_unitario||it.precio)||0)*cant(it)),0);
@@ -2091,11 +2091,11 @@ try{(function(){
     const f=idx(o);const old=route.querySelector(':scope > .pdpaW');
     if(f<0){if(old)old.remove();return}
     const key=[o.id,f,o.pago_confirmado,o.yape_negocio_estado,o.motorizado_id,o.delivery_negocio_cobrado_en,o.negocio_pagado_en,o.en_local_en].join('|');
-    if(old&&old.dataset.k===key)return;
-    if(old){const prev=old.querySelectorAll('.pdRouteStop,.pdRoutePay,.pdRouteBlock');const stops=route.querySelector(':scope > .pdRouteStops');prev.forEach(x=>{if(x.classList.contains('pdRouteStop')){stops&&stops.appendChild(x)}else route.insertBefore(x,route.querySelector(':scope > .pdRouteActions'))});old.remove()}
+    if(old&&old.dataset.k===key){const suelto=route.querySelector(':scope > .pdAPed');const b0=old.querySelector('.pdpa .pdpaB');if(suelto&&b0)b0.prepend(suelto);return}
+    if(old){const prev=old.querySelectorAll('.pdRouteStop,.pdRoutePay,.pdRouteBlock,.pdAPed');const stops=route.querySelector(':scope > .pdRouteStops');prev.forEach(x=>{if(x.classList.contains('pdRouteStop')){stops&&stops.appendChild(x)}else route.insertBefore(x,route.querySelector(':scope > .pdRouteActions'))});old.remove()}
     const stops=[...route.querySelectorAll(':scope > .pdRouteStops > .pdRouteStop')];
     const pay=route.querySelector(':scope > .pdRoutePay');
-    const blocks=[...route.querySelectorAll(':scope > .pdRouteBlock')];
+    const blocks=[route.querySelector(':scope > .pdAPed'),...route.querySelectorAll(':scope > .pdRouteBlock')].filter(Boolean);
     const P=pasos(o);
     const C=[blocks,[],[stops[0]],[stops.length>1?stops[stops.length-1]:null,pay],[]];
     if(f===4){C[3]=[stops.length>1?stops[stops.length-1]:null];C[4]=[pay]}
