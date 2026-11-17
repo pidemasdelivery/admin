@@ -127,6 +127,7 @@ window.pdQuitarCarga=salir;
 <meta content="0" http-equiv="Expires"/>
 <title>Pidemás · Administración</title>
 <link rel="manifest" href="manifest.webmanifest">
+<script id="pd-build-limpia">(function(){var B='202611170320';try{if(localStorage.getItem('pdBuild')===B)return;localStorage.setItem('pdBuild',B);var p=[];if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)p.push(navigator.serviceWorker.getRegistrations().then(function(r){return Promise.all(r.map(function(x){return x.unregister()}))}));if(window.caches&&caches.keys)p.push(caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x)}))}));Promise.all(p).catch(function(){}).then(function(){location.reload()})}catch(e){}})();</script>
 <meta name="theme-color" content="#FFF9F5">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -142,7 +143,13 @@ window.pdQuitarCarga=salir;
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-500-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-700-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-800-normal.woff2">
-<link rel="stylesheet" href="estilos.css?v=202611162135">
+<link rel="stylesheet" href="estilos.css?v=202611170320">
+<style id="pd-detalle-sin-destello">
+@layer pd-tipo{html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #orderList .adminOrderCard.is-expanded:not(.pdDetOk){visibility:hidden!important}
+html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #pdmModal .m-card:has(#orderList .adminOrderCard.is-expanded){visibility:hidden!important;box-shadow:none!important}
+html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #pdmModal .m-card:has(#orderList .adminOrderCard.is-expanded) #orderList .adminOrderCard.is-expanded.pdDetOk{visibility:visible!important}}
+</style>
+
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'"/>
 
