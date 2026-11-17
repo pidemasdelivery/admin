@@ -2105,6 +2105,7 @@ try{(function(){
     try{cuentasEtapa(route,f)}catch(e){console.warn('[cuentas etapa]',e)}
     /* esperando que el negocio acepte: la etapa solo muestra el estado del negocio, sin productos ni cuentas */
     route.classList.toggle('pdAEsperaNeg',!!o.negocio_id&&f===0);
+    route.classList.toggle('pdAPasosNo',f<0);
     if(f<0){if(old)old.remove();return}
     const key=[o.id,f,o.pago_confirmado,o.yape_negocio_estado,o.motorizado_id,o.delivery_negocio_cobrado_en,o.negocio_pagado_en,o.en_local_en].join('|');
     if(old&&old.dataset.k===key){const suelto=route.querySelector(':scope > .pdAPed');const b0=old.querySelector('.pdpa .pdpaB');if(suelto&&b0)b0.prepend(suelto);return}
@@ -2125,4 +2126,6 @@ try{(function(){
   let q=false;const pronto=()=>{if(q)return;q=true;setTimeout(()=>{q=false;todo()},80)};
   new MutationObserver(ms=>{if(ms.some(x=>!(x.target.closest&&x.target.closest('.pdpaW'))))pronto()}).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
   setInterval(pronto,1500);
+  /* tras refrescar, rearma los pasos enseguida (sin esperar al intervalo) */
+  setInterval(()=>{try{if(document.querySelector('#orderList .adminOrderCard.is-expanded > .pdRoute:not(:has(> .pdpaW)):not(.pdAPasosNo)'))todo()}catch(e){}},150);
 })()}catch(e){console.error('[pd-pasos-admin]',e)}
