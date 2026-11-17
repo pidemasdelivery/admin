@@ -2620,6 +2620,7 @@ try{
   }
   /* «Pedidos» ya está en el inicio: en vez de abrir una ventana, vuelve arriba */
   function enlazar(){
+    return; /* Pedidos ahora abre su ventana (modal) desde el menú */
     const o=window.__pdmOpen;if(typeof o!=='function'||o.__pdIni)return;
     const n=function(k){if(k==='pedidos'){try{window.__pdmClose&&window.__pdmClose()}catch(e){}cerrarFab();const t=$('tab-pedidos');t&&t.scrollIntoView({behavior:'smooth',block:'start'});const r=$('refreshOrders');r&&r.click();return}return o.apply(this,arguments)};
     n.__pdIni=true;n.__pdServ=o.__pdServ;window.__pdmOpen=n;
@@ -2890,7 +2891,17 @@ try{
     totales();
   }
   window.addEventListener('online',()=>{try{saludo()}catch(e){}});window.addEventListener('offline',()=>{try{saludo()}catch(e){}});
-  const tick=()=>{try{inicio();enlazar();if(logged())montar();pintarPerfil();aviso();vigilar();saludo()}catch(e){}};
+  /* al entrar al admin, abre la ventana de Pedidos una sola vez */
+  function abrirPedidosAlEntrar(){
+    if(window.__pdIniAbierto||!logged())return;
+    if(!window.__pdIniT){window.__pdIniT=Date.now();return}
+    if(Date.now()-window.__pdIniT<900)return;
+    if(typeof window.__pdmOpen!=='function'||!$('tab-pedidos'))return;
+    const pm=$('pdmModal');if(pm&&!pm.hidden)return;
+    window.__pdIniAbierto=true;
+    try{window.__pdmOpen('pedidos')}catch(e){console.warn(e)}
+  }
+  const tick=()=>{try{inicio();enlazar();abrirPedidosAlEntrar();if(logged())montar();pintarPerfil();aviso();vigilar();saludo()}catch(e){}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tick,{once:true});else tick();
   setInterval(tick,800);
 })();
