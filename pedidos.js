@@ -2103,6 +2103,8 @@ try{(function(){
     const f=idx(o);const old=route.querySelector(':scope > .pdpaW');
     /* las cuentas (Productos / Delivery / Total / Comprobante) solo se muestran desde la etapa Entrega y cobro */
     try{cuentasEtapa(route,f)}catch(e){console.warn('[cuentas etapa]',e)}
+    /* esperando que el negocio acepte: la etapa solo muestra el estado del negocio, sin productos ni cuentas */
+    route.classList.toggle('pdAEsperaNeg',!!o.negocio_id&&f===0);
     if(f<0){if(old)old.remove();return}
     const key=[o.id,f,o.pago_confirmado,o.yape_negocio_estado,o.motorizado_id,o.delivery_negocio_cobrado_en,o.negocio_pagado_en,o.en_local_en].join('|');
     if(old&&old.dataset.k===key){const suelto=route.querySelector(':scope > .pdAPed');const b0=old.querySelector('.pdpa .pdpaB');if(suelto&&b0)b0.prepend(suelto);return}
