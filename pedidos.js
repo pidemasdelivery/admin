@@ -2085,10 +2085,24 @@ try{(function(){
     if(!lock)d.querySelector('.pdpaH').addEventListener('click',e=>{e.stopPropagation();op[i]=!d.classList.contains('open');d.classList.toggle('open',op[i]);const t=d.querySelector('.pdpaT');const sm=t.querySelector('small');if(done){if(op[i]&&sm)sm.remove();else if(!op[i]&&!sm)t.insertAdjacentHTML('beforeend','<small>'+E(p[1])+'</small>')}});
     return d;
   }
+  /* copia las cuentas del pedido dentro de la etapa "Entrega y cobro" (y solo desde ahí) */
+  function cuentasEtapa(route,f){
+    const W=route.querySelector(':scope > .pdpaW');if(!W)return;
+    const cuerpo=W.querySelectorAll(':scope > .pdpa')[3];const body=cuerpo&&cuerpo.querySelector('.pdpaB');
+    let mir=W.querySelector('.pdAMir');
+    if(f<3||!body){if(mir)mir.remove();return}
+    const box=route.querySelector('.pdAPed');
+    const h=box?[...box.querySelectorAll('.pdOrgSum,.pdOrgComp')].map(x=>x.outerHTML).join(''):'';
+    if(!h){if(mir)mir.remove();return}
+    if(!mir||mir.parentElement!==body){if(mir)mir.remove();mir=document.createElement('div');mir.className='pdAMir';body.prepend(mir)}
+    if(mir.__h!==h){mir.innerHTML=h;mir.__h=h}
+  }
   function armar(card){
     const o=L().find(x=>String(x.id)===String(card.dataset.orderId||''));if(!o)return;
     const route=card.querySelector(':scope > .pdRoute');if(!route)return;
     const f=idx(o);const old=route.querySelector(':scope > .pdpaW');
+    /* las cuentas (Productos / Delivery / Total / Comprobante) solo se muestran desde la etapa Entrega y cobro */
+    try{cuentasEtapa(route,f)}catch(e){console.warn('[cuentas etapa]',e)}
     if(f<0){if(old)old.remove();return}
     const key=[o.id,f,o.pago_confirmado,o.yape_negocio_estado,o.motorizado_id,o.delivery_negocio_cobrado_en,o.negocio_pagado_en,o.en_local_en].join('|');
     if(old&&old.dataset.k===key){const suelto=route.querySelector(':scope > .pdAPed');const b0=old.querySelector('.pdpa .pdpaB');if(suelto&&b0)b0.prepend(suelto);return}
