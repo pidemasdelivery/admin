@@ -39,6 +39,8 @@
     return hoy;
   }
   async function panelHoy(){
+    /* la tarjeta «Hoy» ya no va en el Inicio del admin */
+    {const v=$('pdHoyCard');if(v)v.remove();return}
     const sal=document.querySelector('#pdInicioTop > .pdSal');if(!sal)return;
     let c=$('pdHoyCard');if(!c){c=document.createElement('section');c.id='pdHoyCard';c.className='pdHoy';
       c.addEventListener('click',e=>{const b=e.target.closest('[data-h]');if(!b)return;const k=b.dataset.h;
