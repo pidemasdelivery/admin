@@ -4409,3 +4409,21 @@ html:root body:not(#pdNo#pdNo#pdNo#pdNo#pdNo#pdNo#pdNo#pdNo#pdNo#pdNo#pdNo#pdNo#
 /* Inicio: resumen (saludo + Hoy) fuera del modal de Pedidos */
 html body #appView#appView#appView > section#pdInicioTop{display:block!important;box-sizing:border-box!important;width:100%!important;max-width:var(--pd-shell-max)!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
 html body #appView#appView#appView > #tab-restaurantes.hidden ~ section#pdInicioTop#pdInicioTop{display:none!important}
+
+/* Campana: hay pedidos nuevos por atender */
+@keyframes pdCampVibra{0%,100%{transform:rotate(0)}8%{transform:rotate(16deg)}16%{transform:rotate(-14deg)}24%{transform:rotate(12deg)}32%{transform:rotate(-10deg)}40%{transform:rotate(6deg)}48%{transform:rotate(-4deg)}56%,100%{transform:rotate(0)}}
+@keyframes pdCampOnda{0%{transform:scale(1);opacity:.55}100%{transform:scale(1.9);opacity:0}}
+html body header.top #pdaBell.pdaPend{border-color:#C4410C!important;background:#FBE6DD!important}
+html body #pdaBell.pdaPend svg{transform-origin:50% 12%;animation:pdCampVibra 1.6s ease-in-out infinite!important}
+html body #pdaBell.pdaPend svg path{stroke:#C4410C!important}
+html body #pdaBell.pdaPend::before,html body #pdaBell.pdaPend::after{content:"";position:absolute;inset:0;border-radius:inherit;border:2px solid #C4410C;pointer-events:none;animation:pdCampOnda 1.6s ease-out infinite}
+html body #pdaBell.pdaPend::after{animation-delay:.8s}
+html body #pdaBell.pdaPend .pdaBadge{background:#C4410C!important}
+#pdCampAviso{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 70px);z-index:2147483000;display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid #C4410C;border-radius:18px;background:#fff;color:#2B1B12;font:inherit;text-align:left;box-shadow:0 10px 28px rgba(196,65,12,.28);transform:translateY(-140%);opacity:0;pointer-events:none;transition:transform .35s cubic-bezier(.2,.9,.3,1.2),opacity .25s}
+#pdCampAviso.on{transform:none;opacity:1;pointer-events:auto}
+#pdCampAviso i{flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#C4410C;display:grid;place-items:center}
+#pdCampAviso i svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transform-origin:50% 12%;animation:pdCampVibra 1s ease-in-out 3}
+#pdCampAviso span{display:flex;flex-direction:column;gap:2px}
+#pdCampAviso b{font-size:16px;font-weight:800;color:#C4410C}
+#pdCampAviso small{font-size:13px;color:#6E625A}
+@media (prefers-reduced-motion:reduce){html body #pdaBell.pdaPend svg,html body #pdaBell.pdaPend::before,html body #pdaBell.pdaPend::after{animation:none!important}}

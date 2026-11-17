@@ -2744,8 +2744,8 @@ try{
     let grp=null,out=null;
     ITEMS.forEach(it=>{
       if(it.length===1){
-        const sec=document.createElement('section');sec.className='m3Grp open';
-        const hd=document.createElement('button');hd.type='button';hd.className='m3Hd';hd.setAttribute('aria-expanded','true');
+        const sec=document.createElement('section');sec.className='m3Grp';
+        const hd=document.createElement('button');hd.type='button';hd.className='m3Hd';hd.setAttribute('aria-expanded','false');
         hd.innerHTML=S(IC[GI[it[0]]]||IC.neg,'#C4410C')+'<span>'+it[0]+'</span><small></small>'+S(CH,'#C4410C',16);
         const bd=document.createElement('div');bd.className='m3Bd';
         hd.addEventListener('click',()=>{const on=!sec.classList.contains('open');sec.classList.toggle('open',on);hd.setAttribute('aria-expanded',String(on))});
@@ -2782,7 +2782,7 @@ try{
   window.pdCerrarVentanas=cerrarTodo;
   const logged=()=>!!document.querySelector('#appView:not(.hidden)')&&!$('logout')?.classList.contains('hidden');
   window.pdAbrirMenu=function(){abrirMenu()};
-  function abrirMenu(){montar();pintarPerfil();const m=$('pdMenu'),sh=$('pdMenuShade');try{const q=$('pdMenuBuscar');if(q&&q.value){q.value='';q.dispatchEvent(new Event('input'))}m.querySelectorAll('.m3Grp').forEach(g=>{g.classList.add('open');const h=g.querySelector('.m3Hd');h&&h.setAttribute('aria-expanded','true')})}catch(e){}m.classList.remove('drag');m.style.removeProperty('transform');const pm=$('pdmModal');const enInicio=!(pm&&!pm.hidden);m.querySelectorAll('[data-k="pedidos"]').forEach(b=>b.classList.toggle('act',enInicio));m.classList.add('on');sh.classList.add('on');m.setAttribute('aria-hidden','false')}
+  function abrirMenu(){montar();pintarPerfil();const m=$('pdMenu'),sh=$('pdMenuShade');try{const q=$('pdMenuBuscar');if(q&&q.value){q.value='';q.dispatchEvent(new Event('input'))}m.querySelectorAll('.m3Grp').forEach(g=>{g.classList.remove('open');const h=g.querySelector('.m3Hd');h&&h.setAttribute('aria-expanded','false')})}catch(e){}m.classList.remove('drag');m.style.removeProperty('transform');const pm=$('pdmModal');const enInicio=!(pm&&!pm.hidden);m.querySelectorAll('[data-k="pedidos"]').forEach(b=>b.classList.toggle('act',enInicio));m.classList.add('on');sh.classList.add('on');m.setAttribute('aria-hidden','false')}
   function cerrar(){const m=$('pdMenu'),sh=$('pdMenuShade');if(!m)return;m.classList.remove('on','drag');m.style.removeProperty('transform');sh.classList.remove('on');sh.style.removeProperty('opacity');m.setAttribute('aria-hidden','true')}
   /* arrastrar de izquierda a derecha para abrir, y al revés para cerrar */
   let d=null;
@@ -2893,6 +2893,7 @@ try{
   window.addEventListener('online',()=>{try{saludo()}catch(e){}});window.addEventListener('offline',()=>{try{saludo()}catch(e){}});
   /* al entrar al admin, abre la ventana de Pedidos una sola vez */
   function abrirPedidosAlEntrar(){
+    return; /* ya no se abre sola: el modal de Pedidos espera a que lo llamen */
     if(window.__pdIniAbierto||!logged())return;
     if(!window.__pdIniT){window.__pdIniT=Date.now();return}
     if(Date.now()-window.__pdIniT<900)return;
@@ -4494,3 +4495,41 @@ try{(function(){
   ventana('cambiarPasswordNegocioBox','cambiarPasswordNegocioInput','cancelarPasswordNegocioBtn','cambiarPasswordNegocioMsg');
   ventana('cambiarPasswordMotorizadoBox','cambiarPasswordMotorizadoInput','cancelarPasswordMotorizadoBtn','cambiarPasswordMotorizadoMsg');
 })()}catch(e){console.error('[pd-cuentas-acceso]',e)}
+
+
+/* ===== pidemas-campana-pedidos-js ===== */
+try{
+/* Si hay pedidos nuevos por atender: la campana vibra sin parar, emite ondas y sale un aviso que lleva a Pedidos */
+(function(){
+  const $=id=>document.getElementById(id);
+  let ultimo=0,cerrado=0,tAv=null;
+  function pendientes(){
+    try{return (typeof allOrders!=='undefined'&&Array.isArray(allOrders)?allOrders:[]).filter(o=>['pendiente','confirmado'].includes(String(o.estado||'').toLowerCase())&&!o.motorizado_id).length}catch(e){return 0}
+  }
+  function aviso(n){
+    let a=$('pdCampAviso');
+    if(!a){a=document.createElement('button');a.type='button';a.id='pdCampAviso';a.setAttribute('role','status');
+      a.innerHTML='<i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></i><span><b></b><small>Toca para verlos</small></span>';
+      a.addEventListener('click',()=>{a.classList.remove('on');try{window.__pdmOpen&&window.__pdmOpen('pedidos')}catch(e){}});
+      document.body.appendChild(a)}
+    a.querySelector('b').textContent=n===1?'Tienes 1 pedido nuevo':'Tienes '+n+' pedidos nuevos';
+    a.classList.remove('on');void a.offsetWidth;a.classList.add('on');
+    clearTimeout(tAv);tAv=setTimeout(()=>a.classList.remove('on'),7000);
+  }
+  function revisar(){
+    const b=$('pdaBell');if(!b||b.hidden)return;
+    const logged=!$('logout')?.classList.contains('hidden');
+    const n=logged?pendientes():0;
+    b.classList.toggle('pdaPend',n>0);
+    if(n>ultimo&&logged){
+      aviso(n);
+      try{navigator.vibrate&&navigator.vibrate([200,100,200,100,350])}catch(e){}
+    }
+    if(n===0){const a=$('pdCampAviso');a&&a.classList.remove('on')}
+    ultimo=n;
+  }
+  /* el primer conteo al entrar no anuncia: solo hace vibrar la campana */
+  let primera=true;
+  setInterval(()=>{try{if(primera){const b=$('pdaBell');if(b&&!b.hidden){ultimo=pendientes();primera=false;b.classList.toggle('pdaPend',ultimo>0)}return}revisar()}catch(e){}},1500);
+})();
+}catch(e){console.error("[pidemas-campana-pedidos-js]",e)}
