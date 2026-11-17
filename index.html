@@ -148,6 +148,8 @@ window.pdQuitarCarga=salir;
 @layer pd-tipo{html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #orderList .adminOrderCard.is-expanded:not(.pdDetOk){visibility:hidden!important}
 html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #pdmModal .m-card:has(#orderList .adminOrderCard.is-expanded){visibility:hidden!important;box-shadow:none!important}
 html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #pdmModal .m-card:has(#orderList .adminOrderCard.is-expanded) #orderList .adminOrderCard.is-expanded.pdDetOk{visibility:visible!important}}
+/* el texto rojo de alerta ya no tapa el checkbox de la lista */
+@layer pd-tipo{html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #orderList .adminOrderCard:not(.is-expanded):has(> .pdAlertChip) > .pdSelChk{top:calc(12px + 27px)!important}}
 </style>
 
 
