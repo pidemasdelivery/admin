@@ -834,7 +834,35 @@ console.error("Error al preparar pedido para WhatsApp:",e);
 pdAviso("No se pudo preparar el mensaje de WhatsApp: "+(e?.message||String(e)));
 }
 }
+/* Inicio sin saltos: solo se repinta la lista si los datos o filtros cambiaron de verdad; al repintar se conserva scroll y altura */
+let __pdRoSig="";
+function __pdRoFirma(){
+try{
+const f=($("orderStatusFilter")&&$("orderStatusFilter").value)||"",q=(($("orderSearch")&&$("orderSearch").value)||"").trim().toLowerCase();
+const sel=[...selectedOrders].sort().join(",");
+const list=$("orderList");
+const exp=list?[...list.querySelectorAll(".adminOrderCard.is-expanded")].map(c=>c.getAttribute("data-order-id")).join(","):"";
+const d=JSON.stringify(allOrders,(k,v)=>(k==="ultima_ubicacion"||k==="ultima_ubicacion_en")?undefined:v);
+const m=(allMotos||[]).map(x=>[x.id,x.disponible,x.en_descanso,x.nombre_completo].join(":")).join(",");
+const t=f+"|"+q+"|"+sel+"|"+exp+"|"+m+"|"+d;
+let h=5381;for(let i=0;i<t.length;i++){h=((h<<5)+h+t.charCodeAt(i))|0}
+return t.length+":"+h;
+}catch(e){return null}
+}
 function renderOrders(){
+const list=$("orderList");
+if(!list)return renderOrdersReal();
+const sig=__pdRoFirma();
+if(sig&&sig===__pdRoSig&&list.querySelector(".adminOrderCard")&&!list.querySelector(".pdSk"))return;
+const y=window.scrollY||window.pageYOffset||0,h=list.offsetHeight;
+if(h>0)list.style.minHeight=h+"px";
+try{renderOrdersReal()}finally{
+__pdRoSig=__pdRoFirma()||"";
+if(Math.abs((window.scrollY||0)-y)>1)window.scrollTo(0,y);
+requestAnimationFrame(()=>requestAnimationFrame(()=>{list.style.minHeight=""}));
+}
+}
+function renderOrdersReal(){
 const filter=$("orderStatusFilter").value;
 const q=$("orderSearch").value.trim().toLowerCase();
 const list=$("orderList");
