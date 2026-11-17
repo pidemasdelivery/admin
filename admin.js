@@ -2855,7 +2855,7 @@ try{
     try{typeof window.pdLoadSalaryMotorizados==='function'&&window.pdLoadSalaryMotorizados()}catch(e){}
   }
   function saludo(){
-    const tab=$('tab-pedidos');if(!tab)return;
+    let tab=$('pdInicioTop');if(!tab){const t0=$('tab-restaurantes');if(!t0||!t0.parentNode)return;tab=document.createElement('section');tab.id='pdInicioTop';t0.after(tab)}
     let sb=tab.querySelector(':scope > .pdSal');
     if(!sb){
       sb=document.createElement('div');sb.className='pdSal';
@@ -2863,7 +2863,7 @@ try{
         +'<div class="pmaAcc"><button type="button" data-a="atendidos"><b>0</b><span>Atendidos hoy</span></button><button type="button" data-a="sueldo"><b>—</b><span>Sueldos</span></button><button type="button" data-a="caja"><b>—</b><span>Cajas</span></button></div>';
       tab.prepend(sb);
       sb.querySelector('.pmaAcc').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const k=b.dataset.a;
-        if(k==='atendidos'){const c=document.querySelector('#tab-pedidos .pdn-chip[data-v="entregado"]');c&&c.click();document.getElementById('orderList')?.scrollIntoView({behavior:'smooth',block:'start'});return}
+        if(k==='atendidos'){try{window.__pdmOpen&&window.__pdmOpen('pedidos')}catch(_){}setTimeout(()=>{const c=document.querySelector('#tab-pedidos .pdn-chip[data-v="entregado"]');c&&c.click();document.getElementById('orderList')?.scrollIntoView({behavior:'smooth',block:'start'})},450);return}
         if(typeof window.__pdmOpen==='function')window.__pdmOpen(k)});
     }
     const set=(el,v)=>{if(el&&el.textContent!==v)el.textContent=v};

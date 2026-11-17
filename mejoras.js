@@ -39,12 +39,12 @@
     return hoy;
   }
   async function panelHoy(){
-    const sal=document.querySelector('#tab-pedidos > .pdSal');if(!sal)return;
+    const sal=document.querySelector('#pdInicioTop > .pdSal');if(!sal)return;
     let c=$('pdHoyCard');if(!c){c=document.createElement('section');c.id='pdHoyCard';c.className='pdHoy';
       c.addEventListener('click',e=>{const b=e.target.closest('[data-h]');if(!b)return;const k=b.dataset.h;
         if(k==='dem'&&window.pdPedCtl)return pdPedCtl.alertas();if(k==='motos'){try{window.__pdmOpen&&__pdmOpen('gps')}catch(_){}return}
         if(k==='rep'&&window.pdPedCtl)return pdPedCtl.reportes(1);
-        const chip=document.querySelector('#tab-pedidos .pdn-chip[data-v="'+(k==='ent'?'entregado':k==='can'?'cancelado':'')+'"]');chip&&chip.click();$('orderList')?.scrollIntoView({behavior:'smooth',block:'start'})})}
+        try{window.__pdmOpen&&__pdmOpen('pedidos')}catch(_){}setTimeout(()=>{const chip=document.querySelector('#tab-pedidos .pdn-chip[data-v="'+(k==='ent'?'entregado':k==='can'?'cancelado':'')+'"]');chip&&chip.click();$('orderList')?.scrollIntoView({behavior:'smooth',block:'start'})},450)})}
     if(c.previousElementSibling!==sal)sal.after(c);
     const h=await leerHoy();if(!h)return;
     const html='<div class="pdHoyHd"><b>Hoy</b><button type="button" data-h="rep">Ver reporte</button></div><div class="pdHoyG">'
