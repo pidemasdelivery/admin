@@ -435,7 +435,7 @@ if(dk){const o=list().find(x=>String(x.id)===dk.dataset.delok);if(!o)return;if(!
 const ok=e.target.closest&&e.target.closest('#pfIncStack [data-ok]');
 if(ok){ok.disabled=true;const {error}=await db.from('pedidos').update({incidencia_resuelta:true}).eq('id',ok.dataset.ok);if(error){pdAviso('No se pudo marcar: '+error.message);ok.disabled=false;return}const o=list().find(x=>String(x.id)===ok.dataset.ok);if(o)o.incidencia_resuelta=true;incidencias();decorate();return}
 const see=e.target.closest&&e.target.closest('#pfIncStack [data-see]');
-if(see){try{window.openAdminTab&&window.openAdminTab('pedidos')}catch(_){}setTimeout(()=>{const c=document.querySelector(`.adminOrderCard[data-order-id="${CSS.escape(see.dataset.see)}"]`);if(c){c.classList.add('is-expanded');c.scrollIntoView({behavior:'smooth',block:'start'})}},500)}
+if(see){try{window.openAdminTab&&window.openAdminTab('pedidos')}catch(_){}try{window.pdDtAbrir&&pdDtAbrir()}catch(_){}setTimeout(()=>{const c=document.querySelector(`.adminOrderCard[data-order-id="${CSS.escape(see.dataset.see)}"]`);if(c){c.classList.add('is-expanded');c.scrollIntoView({behavior:'smooth',block:'start'})}},500)}
 });
 function refresh(){try{decorate();incidencias()}catch(e){console.warn('Seguimiento coordinado:',e)}}
 if(typeof window.loadOrders==='function'){const lo=window.loadOrders;window.loadOrders=async function(){const r=await lo.apply(this,arguments);refresh();return r}}
@@ -838,7 +838,7 @@ box.innerHTML=items.slice(0,1).map(x=>`<div class="pfInc pfGuia"><span><b>Guía 
 document.addEventListener('click',e=>{
 const ok=e.target.closest&&e.target.closest('#pfGuiaStack [data-gok]');if(ok){marcar(ok.dataset.gok);avisos();return}
 const see=e.target.closest&&e.target.closest('#pfGuiaStack [data-gsee]');
-if(see){marcar(see.dataset.gk);avisos();try{window.openAdminTab&&window.openAdminTab('pedidos')}catch(_){}setTimeout(()=>{const c=document.querySelector(`.adminOrderCard[data-order-id="${CSS.escape(see.dataset.gsee)}"]`);if(c){c.classList.add('is-expanded');c.scrollIntoView({behavior:'smooth',block:'start'})}},500)}
+if(see){marcar(see.dataset.gk);avisos();try{window.openAdminTab&&window.openAdminTab('pedidos')}catch(_){}try{window.pdDtAbrir&&pdDtAbrir()}catch(_){}setTimeout(()=>{const c=document.querySelector(`.adminOrderCard[data-order-id="${CSS.escape(see.dataset.gsee)}"]`);if(c){c.classList.add('is-expanded');c.scrollIntoView({behavior:'smooth',block:'start'})}},500)}
 });
 if(typeof window.loadOrders==='function'){const lo=window.loadOrders;window.loadOrders=async function(){const r=await lo.apply(this,arguments);try{avisos()}catch(e){}return r}}
 setInterval(()=>{try{avisos()}catch(e){}},20000);

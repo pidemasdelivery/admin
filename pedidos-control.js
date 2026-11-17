@@ -56,7 +56,7 @@
     const nuevas=A.filter(a=>!vistos.has(a.k+a.o.id));nuevas.forEach(a=>vistos.add(a.k+a.o.id));
     if(nuevas.length&&window.pdAviso)pdAviso(nuevas.length===1?ref(nuevas[0].o.id)+' · '+nuevas[0].t:nuevas.length+' pedidos nuevos con demora. Toca el aviso rojo de la lista.');
   }
-  function abrirPedido(id){try{window.pdCtl&&pdCtl.cerrarHoja()}catch(_){}try{window.openAdminTab&&window.openAdminTab('pedidos')}catch(_){}setTimeout(()=>{const c=document.querySelector('.adminOrderCard[data-order-id="'+CSS.escape(String(id))+'"]');if(c){if(!c.classList.contains('is-expanded'))c.querySelector('.adminOrderSection')?.click();c.classList.add('is-expanded');c.scrollIntoView({behavior:'smooth',block:'start'})}},250)}
+  function abrirPedido(id){try{window.pdCtl&&pdCtl.cerrarHoja()}catch(_){}try{window.openAdminTab&&window.openAdminTab('pedidos')}catch(_){}try{window.pdDtAbrir&&pdDtAbrir()}catch(_){}setTimeout(()=>{const c=document.querySelector('.adminOrderCard[data-order-id="'+CSS.escape(String(id))+'"]');if(c){if(!c.classList.contains('is-expanded'))c.querySelector('.adminOrderSection')?.click();c.classList.add('is-expanded');c.scrollIntoView({behavior:'smooth',block:'start'})}},250)}
   async function verAlertas(){
     const b=hoja('Pedidos que necesitan atención');if(!b)return;await negs();
     const sug=await sugerencias();

@@ -939,11 +939,11 @@ Motorizado activo
 </nav>
 <script src="supabase.js?v=202611151800"></script>
 <script src="funciones.js?v=202611161700"></script>
-<script src="pedidos.js?v=202611162135"></script>
-<script src="admin.js?v=202611160930"></script>
+<script src="pedidos.js?v=202611170400"></script>
+<script src="admin.js?v=202611170400"></script>
 <script src="control.js?v=202611161530"></script>
 <script src="sueldos-control.js?v=202611161530"></script>
-<script src="pedidos-control.js?v=202611161650"></script>
+<script src="pedidos-control.js?v=202611170400"></script>
 <script src="mejoras.js?v=202611160930"></script>
 <script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 <style id="pd-app-panel-css">
@@ -1538,9 +1538,10 @@ html.pdLoginFijo body #loginView#loginView#loginView > *{width:100%;max-width:42
       if(e.classList.contains('pdSinCB'))marcados.push(e);e=e.parentElement}
     return marcados}
   /* sin destello: la tarjeta abierta queda invisible (estilo en línea !important) hasta tener la cabecera nueva; y el modal "Pedidos" de atrás se oculta */
-  function dtListo(c){if(!c.dataset.dtT)c.dataset.dtT=String(Date.now());const ok=!!c.querySelector('.pdDH')||Date.now()-(+c.dataset.dtT)>1500;
+  function dtListo(c){if(!c.dataset.dtT)c.dataset.dtT=String(Date.now());const ok=(!!c.querySelector('.pdDH')&&!!c.querySelector('.pdpaW'))||Date.now()-(+c.dataset.dtT)>2500;
     if(ok){c.classList.add('pdDetOk');c.style.setProperty('visibility','visible','important')}else{c.classList.remove('pdDetOk');c.style.setProperty('visibility','hidden','important')}}
-  function dtFondo(on){document.querySelectorAll('#pdmModal .m-card,.m-card[data-dt-fondo]').forEach(m=>{if(on){m.setAttribute('data-dt-fondo','1');m.style.setProperty('visibility','hidden','important');m.style.setProperty('box-shadow','none','important')}else if(m.hasAttribute('data-dt-fondo')){m.removeAttribute('data-dt-fondo');m.style.removeProperty('visibility');m.style.removeProperty('box-shadow')}})}
+  function dtFondo(on){if(!on&&Date.now()<(window.__dtHold||0))return;document.querySelectorAll('#pdmModal .m-card,.m-card[data-dt-fondo]').forEach(m=>{if(on){m.setAttribute('data-dt-fondo','1');m.style.setProperty('visibility','hidden','important');m.style.setProperty('box-shadow','none','important')}else if(m.hasAttribute('data-dt-fondo')){m.removeAttribute('data-dt-fondo');m.style.removeProperty('visibility');m.style.removeProperty('box-shadow')}})}
+  window.pdDtAbrir=function(){window.__dtHold=Date.now()+2500;dtFondo(true);[30,120,300,600].forEach(t=>setTimeout(()=>{if(Date.now()<(window.__dtHold||0))dtFondo(true)},t))};
   function pasar(){const abiertos=[...document.querySelectorAll('#orderList .adminOrderCard.is-expanded')];
     const keep=new Set();abiertos.forEach(c=>libre(c).forEach(x=>keep.add(x)));
     document.querySelectorAll('.pdSinCB').forEach(x=>{if(!keep.has(x))x.classList.remove('pdSinCB')});

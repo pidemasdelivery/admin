@@ -4431,7 +4431,7 @@ try{
     const esc=v=>String(v||'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
     c.innerHTML='<span style="flex:0 0 40px;height:40px;border-radius:12px;background:#FBE6DD;color:#C4410C;display:flex;align-items:center;justify-content:center;font-size:20px">🔔</span><span style="flex:1;min-width:0"><b style="display:block;font-size:15px;font-weight:800">'+esc(d.title)+'</b><small style="display:block;font-size:13px;color:#6B5E57;margin-top:2px">'+esc(d.body)+'</small></span>';
     const fuera=()=>{c.remove()};
-    c.onclick=()=>{fuera();if(d.pedidoId){try{window.openAdminTab&&window.openAdminTab('pedidos')}catch(_){}setTimeout(()=>{const k=document.querySelector('.adminOrderCard[data-order-id="'+CSS.escape(String(d.pedidoId))+'"]');if(k){k.classList.add('is-expanded');k.scrollIntoView({behavior:'smooth',block:'start'})}},500)}};
+    c.onclick=()=>{fuera();if(d.pedidoId){try{window.openAdminTab&&window.openAdminTab('pedidos')}catch(_){}try{window.pdDtAbrir&&pdDtAbrir()}catch(_){}setTimeout(()=>{const k=document.querySelector('.adminOrderCard[data-order-id="'+CSS.escape(String(d.pedidoId))+'"]');if(k){k.classList.add('is-expanded');k.scrollIntoView({behavior:'smooth',block:'start'})}},500)}};
     box.prepend(c);while(box.children.length>3)box.lastChild.remove();
     setTimeout(fuera,9000);
     try{window.loadOrders&&window.loadOrders()}catch(_){}
