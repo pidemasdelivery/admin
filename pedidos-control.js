@@ -58,6 +58,7 @@
   }
   /* Abre el detalle del pedido SIN pasar por el inicio: si el modal "Pedidos" ya está abierto no se vuelve a abrir ni a recargar la lista */
   function pedidosAbierto(){const pm=$('pdmModal'),t=$('pdmTitle');return !!pm&&!pm.hidden&&/pedidos/i.test((t&&t.textContent)||'')&&!!pm.querySelector('#orderList')}
+  window.pdAbrirPedidoAdmin=abrirPedido;
   function abrirPedido(id){
     try{window.pdCtl&&pdCtl.cerrarHoja()}catch(_){}
     /* la lista ya está a la vista (inicio o modal): no se abre ningún modal; solo si no se ve, se abre Pedidos */
@@ -74,6 +75,8 @@
     },250);
   }
   async function verAlertas(){
+    /* un solo pedido con alerta: se abre su detalle directo, sin la hoja intermedia */
+    if(ultimas.length===1){abrirPedido(ultimas[0].o.id);return}
     const b=hoja('Pedidos que necesitan atención');if(!b)return;await negs();
     const sug=await sugerencias();
     b.innerHTML=ultimas.length?ultimas.map(a=>{const s=a.k==='acep'||a.k==='asig'||a.k==='prog'?(sug.get(String(a.o.id))||[]).filter(x=>String(x.m.id)!==String(a.o.motorizado_id))[0]:null;
