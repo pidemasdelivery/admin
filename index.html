@@ -1533,11 +1533,13 @@ html.pdLoginFijo body #loginView#loginView#loginView > *{width:100%;max-width:42
   function pasar(){const abiertos=[...document.querySelectorAll('#orderList .adminOrderCard.is-expanded')];
     const keep=new Set();abiertos.forEach(c=>libre(c).forEach(x=>keep.add(x)));
     document.querySelectorAll('.pdSinCB').forEach(x=>{if(!keep.has(x))x.classList.remove('pdSinCB')});
-    abiertos.forEach(c=>{try{cabecera(c);hoja(c)}catch(e){console.warn('Detalle admin:',e)}});
-    document.querySelectorAll('#orderList .adminOrderCard:not(.is-expanded)').forEach(c=>{if(c.dataset.dsOpen!==undefined){delete c.dataset.dsOpen;delete c.dataset.dsSel}if(c.classList.contains('pdDSAbierta'))c.classList.remove('pdDSAbierta')})}
+    abiertos.forEach(c=>{try{cabecera(c);hoja(c)}catch(e){console.warn('Detalle admin:',e)}finally{if(!c.dataset.dtT)c.dataset.dtT=String(Date.now());if(c.querySelector('.pdDH')||Date.now()-(+c.dataset.dtT)>1500)c.classList.add('pdDetOk')}});
+    document.querySelectorAll('#orderList .adminOrderCard:not(.is-expanded)').forEach(c=>{if(c.classList.contains('pdDetOk')){c.classList.remove('pdDetOk');delete c.dataset.dtT}if(c.dataset.dsOpen!==undefined){delete c.dataset.dsOpen;delete c.dataset.dsSel}if(c.classList.contains('pdDSAbierta'))c.classList.remove('pdDSAbierta')})}
   let t=null,en=false;
   new MutationObserver(m=>{if(en)return;for(const r of m){const x=r.target;if(x&&x.closest&&x.closest('.pdDS,.pdDH'))continue;en=true;try{pasar()}finally{en=false}clearTimeout(t);t=setTimeout(pasar,200);return}}).observe(document.documentElement,{childList:true,subtree:true});
   setInterval(pasar,700);
+  /* al abrir el pedido se arma el diseño nuevo al instante (antes esperaba hasta 700 ms y se veía el viejo) */
+  new MutationObserver(m=>{for(const r of m){const x=r.target;if(x&&x.classList&&x.classList.contains('adminOrderCard')){const ab=x.classList.contains('is-expanded'),ok=x.classList.contains('pdDetOk');if(ab!==ok){pasar();setTimeout(pasar,60);setTimeout(pasar,250);break}}}}).observe(document.documentElement,{attributes:true,attributeFilter:['class'],subtree:true});
 })();
 </script>
 <script id="pd-mapa-js" data-layer="pd-tipo">

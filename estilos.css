@@ -4356,3 +4356,10 @@ html:root body #orderList .pdPcBar .pdHistBtn:is(.pdHistBtn,#phX#phX#phX#phX#phX
 html:root body #orderList .pdPcBar .pdHistBtn svg{flex:0 0 18px}
 html:root body #orderList .pdPcBar > *:empty{display:none!important}
 html:root body .pdpaB .pdAPed{margin:0!important;order:0!important}
+
+
+/* pd-detalle-pedido: sin destello del diseño viejo y sin el modal "Pedidos" asomando detrás */
+@layer pd-tipo{html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #orderList .adminOrderCard.is-expanded:not(.pdDetOk){visibility:hidden!important}
+html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #pdmModal .m-card:has(#orderList .adminOrderCard.is-expanded){visibility:hidden!important;box-shadow:none!important}
+html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #pdmModal .m-card:has(#orderList .adminOrderCard.is-expanded) #orderList .adminOrderCard.is-expanded.pdDetOk{visibility:visible!important}
+}
