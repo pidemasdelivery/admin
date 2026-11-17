@@ -100,13 +100,13 @@
     cards.forEach(c=>{const o=L().find(x=>String(x.id)===c.dataset.orderId);if(!o)return;const s=est(o);
       let bar=c.querySelector(':scope > .pdPcBar');if(!bar){bar=document.createElement('div');bar.className='pdPcBar';c.appendChild(bar)}
       const cod=codigos.get(String(o.id));const parts=[];
-      if(cod&&!['entregado','cancelado'].includes(s))parts.push('<span class="pdPcCod">Código de entrega <b>'+E(cod)+'</b></span>');
+      if(cod&&o.negocio_id&&!['entregado','cancelado'].includes(s))parts.push('<span class="pdPcCod">Código de entrega <b>'+E(cod)+'</b></span>');
       if(o.entrega_verificada)parts.push('<span class="pdcjRev ok">Entrega verificada con '+(o.entrega_verificada==='foto'?'foto':'código')+'</span>');
       if(o.entrega_foto_url)parts.push('<a class="pdcjAct" target="_blank" rel="noopener" href="'+E(o.entrega_foto_url)+'">Ver foto de entrega</a>');
       if(s==='cancelado'&&(o.cancelado_por||o.motivo_cancelacion))parts.push('<span class="pdcjRev bad">Anulado'+(o.cancelado_por?' por '+E(o.cancelado_por):'')+(o.motivo_cancelacion?' · '+E(o.motivo_cancelacion):'')+'</span>');
       if(s==='entregado'&&o.telefono_cliente)parts.push('<button type="button" class="pdcjAct" data-pc="calif" data-id="'+E(o.id)+'">'+(o.calificacion_pedida_en?'Volver a pedir calificación':'Pedir calificación por WhatsApp')+'</button>');
-      if(cod&&!['entregado','cancelado'].includes(s)&&(o.telefono_cliente||o.telefono_receptor))parts.push('<button type="button" class="pdcjAct" data-pc="cod" data-id="'+E(o.id)+'">Enviar código por WhatsApp</button>');
-      parts.push('<button type="button" class="pdcjAct edit" data-pc="hist" data-id="'+E(o.id)+'">Historial de cambios</button>');
+      if(cod&&o.negocio_id&&!['entregado','cancelado'].includes(s)&&(o.telefono_cliente||o.telefono_receptor))parts.push('<button type="button" class="pdcjAct" data-pc="cod" data-id="'+E(o.id)+'">Enviar código por WhatsApp</button>');
+      parts.push('<button type="button" class="pdcjAct edit pdHistBtn" data-pc="hist" data-id="'+E(o.id)+'"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>Historial de cambios</button>');
       const h=parts.join('');if(bar.__h!==h){bar.__h=h;bar.innerHTML=h}});
   }
   document.addEventListener('click',async e=>{

@@ -2489,6 +2489,7 @@ const lugar=get('admCompraLugar'), detalle=get('admCompraDetalle'), pago=get('ad
 const ubicacion=get('admCompraUbicacion'), comprobante=get('admCompraComprobante'), documento=get('admCompraDocumento');
 const pagoNormalizado=['efectivo','yape','pagado'].includes(pago.toLowerCase())?pago.toLowerCase():'efectivo';
 const montoNumerico=monto===''||!Number.isFinite(Number(monto))?0:Math.max(0,Number(monto));
+if(!pago){say('Elige cómo pagará el cliente la compra y el servicio: efectivo, Yape o ya pagado.');$id('admCompraPago')?.focus();return;}
 if(!motoId){say('Selecciona un motorizado para asignar la compra.');$id('admCompraMoto')?.focus();return;}
 const compraWhatsAppTab=window.open('about:blank','_blank');
 let moto=(adminServiceMotos||[]).find(m=>String(m.id)===motoId);
