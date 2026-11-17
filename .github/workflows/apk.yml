@@ -46,19 +46,22 @@ jobs:
           echo "VCODE=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
           echo "La app $NOMBRE (pe.pidemas.$ID) abrira: https://$HOST/$REPO/"
 
-      - name: Clave de firma (se crea una sola vez)
+      # La clave de firma NO vive en el repositorio (es publico). Se lee de los secrets del repo:
+      #   KEYSTORE_BASE64   -> el archivo .keystore en base64
+      #   KEYSTORE_PASSWORD -> contrasena del keystore y de la clave (alias "pidemas")
+      - name: Clave de firma (desde los secrets del repositorio)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
-          if [ ! -f firma/pidemas.keystore ]; then
-            mkdir -p firma
-            keytool -genkeypair -keystore firma/pidemas.keystore -alias pidemas -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass pidemas2026 -keypass pidemas2026 -dname "CN=Pidemas Delivery, O=Pidemas, L=Piura, C=PE"
-            git config user.name "github-actions"
-            git config user.email "github-actions@users.noreply.github.com"
-            git add firma/pidemas.keystore
-            git commit -m "Clave de firma de la app [skip ci]"
-            git pull --rebase
-            git push
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::error::Faltan los secrets KEYSTORE_BASE64 y/o KEYSTORE_PASSWORD (Settings > Secrets and variables > Actions)."
+            exit 1
           fi
+          mkdir -p "$RUNNER_TEMP/firma"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/firma/pidemas.keystore"
+          echo "KEYSTORE_FILE=$RUNNER_TEMP/firma/pidemas.keystore" >> "$GITHUB_ENV"
+          echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
 
       - name: Armar el proyecto Android
         run: |
@@ -93,10 +96,10 @@ jobs:
             }
             signingConfigs {
               release {
-                storeFile rootProject.file('../firma/pidemas.keystore')
-                storePassword 'pidemas2026'
+                storeFile file(System.getenv('KEYSTORE_FILE'))
+                storePassword System.getenv('KEYSTORE_PASSWORD')
                 keyAlias 'pidemas'
-                keyPassword 'pidemas2026'
+                keyPassword System.getenv('KEYSTORE_PASSWORD')
               }
             }
             buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
@@ -218,7 +221,7 @@ jobs:
           gradle --no-daemon assembleRelease
           mkdir -p ../salida
           cp app/build/outputs/apk/release/app-release.apk ../salida/pidemas-$ID.apk
-          FP=$(keytool -list -v -keystore ../firma/pidemas.keystore -alias pidemas -storepass pidemas2026 | grep 'SHA256:' | head -1 | sed 's/.*SHA256: *//')
+          FP=$(keytool -list -v -keystore "$KEYSTORE_FILE" -alias pidemas -storepass "$KEYSTORE_PASSWORD" | grep 'SHA256:' | head -1 | sed 's/.*SHA256: *//')
           echo "$PKG $FP" > ../salida/huella.txt
           echo "Huella de la firma: $FP"
           echo "### $NOMBRE listo" >> "$GITHUB_STEP_SUMMARY"
