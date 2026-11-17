@@ -60,12 +60,16 @@
   function pedidosAbierto(){const pm=$('pdmModal'),t=$('pdmTitle');return !!pm&&!pm.hidden&&/pedidos/i.test((t&&t.textContent)||'')&&!!pm.querySelector('#orderList')}
   function abrirPedido(id){
     try{window.pdCtl&&pdCtl.cerrarHoja()}catch(_){}
-    if(!pedidosAbierto()){try{window.openAdminTab&&window.openAdminTab('pedidos')}catch(_){}}
-    try{window.pdDtAbrir&&pdDtAbrir()}catch(_){}
+    /* la lista ya está a la vista (inicio o modal): no se abre ningún modal; solo si no se ve, se abre Pedidos */
+    const L0=$('orderList'),visible=!!L0&&L0.getClientRects().length>0;
+    if(!visible&&!pedidosAbierto()){try{window.openAdminTab&&window.openAdminTab('pedidos')}catch(_){}try{window.pdDtAbrir&&pdDtAbrir()}catch(_){}}
     const sel='.adminOrderCard[data-order-id="'+CSS.escape(String(id))+'"]';let n=0;
     const tm=setInterval(()=>{
       const c=document.querySelector('#orderList '+sel)||document.querySelector(sel);
-      if(c){clearInterval(tm);if(!c.classList.contains('is-expanded'))c.querySelector('.adminOrderSection')?.click();c.classList.add('is-expanded');c.scrollIntoView({behavior:'smooth',block:'start'});return}
+      if(c){clearInterval(tm);
+        /* se abre como lo hace el toque normal en la tarjeta (button.pdList), para que se arme el diseño nuevo del detalle */
+        if(!c.classList.contains('is-expanded')){const b=c.querySelector(':scope > button.pdList')||c.querySelector('.adminOrderSection');b&&b.click()}
+        setTimeout(()=>{if(!c.classList.contains('is-expanded'))c.classList.add('is-expanded');try{c.scrollIntoView({behavior:'smooth',block:'start'})}catch(_){}},120);return}
       if(++n>20){clearInterval(tm);ok('No se encontró ese pedido en la lista.')}
     },250);
   }
