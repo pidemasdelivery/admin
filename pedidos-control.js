@@ -56,7 +56,19 @@
     const nuevas=A.filter(a=>!vistos.has(a.k+a.o.id));nuevas.forEach(a=>vistos.add(a.k+a.o.id));
     if(nuevas.length&&window.pdAviso)pdAviso(nuevas.length===1?ref(nuevas[0].o.id)+' · '+nuevas[0].t:nuevas.length+' pedidos nuevos con demora. Toca el aviso rojo de la lista.');
   }
-  function abrirPedido(id){try{window.pdCtl&&pdCtl.cerrarHoja()}catch(_){}try{window.openAdminTab&&window.openAdminTab('pedidos')}catch(_){}try{window.pdDtAbrir&&pdDtAbrir()}catch(_){}setTimeout(()=>{const c=document.querySelector('.adminOrderCard[data-order-id="'+CSS.escape(String(id))+'"]');if(c){if(!c.classList.contains('is-expanded'))c.querySelector('.adminOrderSection')?.click();c.classList.add('is-expanded');c.scrollIntoView({behavior:'smooth',block:'start'})}},250)}
+  /* Abre el detalle del pedido SIN pasar por el inicio: si el modal "Pedidos" ya está abierto no se vuelve a abrir ni a recargar la lista */
+  function pedidosAbierto(){const pm=$('pdmModal'),t=$('pdmTitle');return !!pm&&!pm.hidden&&/pedidos/i.test((t&&t.textContent)||'')&&!!pm.querySelector('#orderList')}
+  function abrirPedido(id){
+    try{window.pdCtl&&pdCtl.cerrarHoja()}catch(_){}
+    if(!pedidosAbierto()){try{window.openAdminTab&&window.openAdminTab('pedidos')}catch(_){}}
+    try{window.pdDtAbrir&&pdDtAbrir()}catch(_){}
+    const sel='.adminOrderCard[data-order-id="'+CSS.escape(String(id))+'"]';let n=0;
+    const tm=setInterval(()=>{
+      const c=document.querySelector('#orderList '+sel)||document.querySelector(sel);
+      if(c){clearInterval(tm);if(!c.classList.contains('is-expanded'))c.querySelector('.adminOrderSection')?.click();c.classList.add('is-expanded');c.scrollIntoView({behavior:'smooth',block:'start'});return}
+      if(++n>20){clearInterval(tm);ok('No se encontró ese pedido en la lista.')}
+    },250);
+  }
   async function verAlertas(){
     const b=hoja('Pedidos que necesitan atención');if(!b)return;await negs();
     const sug=await sugerencias();
