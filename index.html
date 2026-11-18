@@ -18590,6 +18590,31 @@ ${P} :is([data-pdm-hoja],#pdmModal,#pdhSheet) :is([data-pdm-cab],.m-head,.h-head
 ${P} [data-pdm-hoja] [data-pdm-pie]{bottom:0!important}
 ${P} :is(.pdCtlStat){background:#FDEBDF!important;color:#1F1A17!important;box-shadow:none!important;border:0!important}
 ${P} .pdCtlStat *{color:inherit!important}
+
+/* ---- tema: el contenido de las secciones de siempre con los mismos componentes del diseño nuevo ---- */
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard){font-family:PdInter,Inter,system-ui,sans-serif!important;color:#1F1A17!important;-webkit-tap-highlight-color:transparent!important;scrollbar-width:none!important;padding-bottom:20px!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard)::-webkit-scrollbar{display:none!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) *{-webkit-tap-highlight-color:transparent!important;scrollbar-width:none!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) :is(button,label,a,.chip,[role=tab]){-webkit-user-select:none!important;user-select:none!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) :is(h1,h2,h3,h4,h5,[class*=Title],[class*=title],[class*=Tit]):not(button):not(label){color:#1F1A17!important;font-weight:800!important;letter-spacing:0!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) :is(h3,h4,[class*=SecHead] strong,[class*=Head] > span > strong,[class*=Head] strong){font-size:17px!important;color:#1F1A17!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) :is([class*=Kick],[class*=kick],[class*=kicker],.pdn-kicker){font-size:12px!important;font-weight:800!important;letter-spacing:.06em!important;text-transform:uppercase!important;color:#6B5E55!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) label:not(:has(input[type=checkbox],input[type=radio])){font:700 14px/1.3 PdInter,Inter,system-ui,sans-serif!important;color:#1F1A17!important;text-transform:none!important;letter-spacing:0!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]),select){height:54px!important;min-height:54px!important;border-radius:14px!important;border:1.5px solid #F1E4DA!important;background-color:#FFFFFF!important;padding:0 16px!important;font:600 16px PdInter,Inter,system-ui,sans-serif!important;color:#1F1A17!important;box-shadow:none!important;outline:none!important;box-sizing:border-box!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) textarea{min-height:96px!important;border-radius:14px!important;border:1.5px solid #F1E4DA!important;background:#FFFFFF!important;padding:12px 16px!important;font:500 16px PdInter,Inter,system-ui,sans-serif!important;color:#1F1A17!important;box-shadow:none!important;outline:none!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) :is(input,select,textarea):focus{border-color:#C4410C!important;box-shadow:none!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) :is(input,textarea)::placeholder{color:#A8988C!important;font-weight:500!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) select{-webkit-appearance:none!important;appearance:none!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%236B5E55' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 14px center!important;padding-right:44px!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) input:is([type=checkbox],[type=radio]){accent-color:#C4410C!important;width:22px!important;height:22px!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) p:not([class*=Kick]){color:#6B5E55;line-height:1.45!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) :is([class*=Card],[class*=card]:not(.m-card),[class*=Sec]:not(section[id^=tab-]),.pdnSec,fieldset){border-radius:18px!important;border-color:#F1E4DA!important;box-shadow:none!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) :is(button,.btn,a[class*=btn],a[class*=Btn]):not(.sw):not([role=switch]):not([class*=Tog]):not([class*=tog]){border-radius:12px!important;box-shadow:none!important;font-family:PdInter,Inter,system-ui,sans-serif!important;text-transform:none!important;letter-spacing:0!important;transition:none!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) :is(button,a):hover{filter:none!important;transform:none!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) :is([class*=Bar] > i,[class*=bar] > s,[class*=Steps] > i){border-radius:3px!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) section[id^=tab-]{border:0!important;box-shadow:none!important;background:transparent!important;padding:14px!important;margin:0!important;max-width:none!important}
+html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) section[id^=tab-] > :is(h2.adminPageTitle,.pdn-kicker):first-of-type,html.pdaPag :is([data-pdm-hoja],#pdmModal .m-card,#pdhSheet .h-sheetCard) .adminPageTitle{display:none!important}
+html.pdaApp body{-webkit-tap-highlight-color:transparent!important;overscroll-behavior:none!important}
+
 html.pdaPag #nav,html.pdaApp #nav{visibility:hidden!important}
 html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer-events:none!important}
 }`;
@@ -18612,7 +18637,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       <span class="ad">${IC.user}<span style="min-width:0"><b>${E(o.nombre_cliente||o.nombre_remitente||'Cliente')}</b><span>${E([o.telefono_cliente,o.direccion_entrega].filter(Boolean).join(' · '))}</span></span></span></button>`;
   }
   function inicio(){
-    const sal=document.querySelector('.pdSal');const kp=[...(sal?sal.querySelectorAll('.pmaAcc > button b'):[])].map(b=>b.textContent.trim());
+    const sal=document.querySelector('.pdSal');const kp=[...(sal?sal.querySelectorAll('.pmaAcc > button b'):[])].map(b=>b.textContent.trim());if(window.__pdaSueldoTotal!=null)kp[1]=M(window.__pdaSueldoTotal);if(window.__pdaCajaTotal!=null)kp[2]=M(window.__pdaCajaTotal);
     const con=sal&&sal.querySelector('.con');const nom=((sal&&sal.querySelector('.pmaTx strong'))||{}).textContent||'Hola, Admin';
     const av=document.querySelector('#pdMenu .m3Av');const foto=window.__pdAdminFoto||'';
     const todos=L(),cnt=CH.map(c=>todos.filter(c[2]).length);
@@ -18652,6 +18677,159 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     return h||'<div class="vac">No hay nada con ese nombre.</div>';
   }
   const top2=(k,t,right)=>`<div class="top"><div class="row"><div class="ttl"><div class="kick" style="color:#6B5E55">${E(k)}</div><div class="h1">${E(t)}</div></div>${right||''}</div></div>`;
+
+  /* =============== CAJAS (rehecha) =============== */
+  const D=()=>{try{return db}catch(e){return window.db}};
+  const C2={};let sub=null,ignorarPop=false;
+  function cargar(k,fn,force){const c=C2[k];if(c&&!force&&(c.busy||Date.now()-c.t<45000))return c;C2[k]={busy:true,t:Date.now(),data:c&&c.data,err:null};
+    Promise.resolve().then(fn).then(d=>{C2[k]={t:Date.now(),data:d}},e=>{C2[k]={t:Date.now(),data:c&&c.data,err:String(e&&e.message||e)}}).finally(()=>{key='';pintar()});return C2[k]}
+  const CJ={moto:null,pane:'recibir',rec:'',recNota:'',dar:'',darMot:'',darNota:'',msg:'',ok:'',lim:40,abierta:null,q:''};
+  async function movsDe(motoId){const rows=[];for(let from=0;;from+=1000){let q=D().from('movimientos_caja').select('id,motorizado_id,pedido_id,tipo,monto,descripcion,creado_en,comprobante_url,revision,revision_nota,esperado,recibido,diferencia');if(motoId)q=q.eq('motorizado_id',motoId);const {data,error}=await q.order('creado_en',{ascending:false}).order('id',{ascending:false}).range(from,from+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000||rows.length>=100000)break}return rows}
+  function datosCaja(force){return cargar('caja',async()=>{const [mr,mv]=await Promise.all([D().from('motorizados').select('id,nombre_completo,telefono,activo').order('nombre_completo'),movsDe()]);if(mr.error)throw mr.error;const by=new Map();mv.forEach(m=>{const k=String(m.motorizado_id);if(!by.has(k))by.set(k,[]);by.get(k).push(m)});return {motos:mr.data||[],by}},force)}
+  const CA=()=>window.PdCaja;
+  const iniN=n=>E(String(n||'M').trim().split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase());
+  const dtl=t=>new Date(t).toLocaleString('es-PE',{timeZone:'America/Lima',day:'2-digit',month:'short',hour:'numeric',minute:'2-digit'}).replace('.','');
+  const diaL=t=>new Date(t).toLocaleDateString('es-PE',{timeZone:'America/Lima',weekday:'long',day:'2-digit',month:'short'}).replace('.','');
+  function caja(){
+    const c=datosCaja(),P=CA();const head=top2('Control de caja','Cajas',`<button type="button" class="ib" data-a="cj:act" aria-label="Actualizar">${IC.refresh}</button>`);
+    if(!c.data||!P)return {head,body:c.err?`<div class="err">${E(c.err)}</div>`:'<div class="load">Cargando las cajas…</div>'};
+    const bal=m=>P.balance(c.data.by.get(String(m.id))||[]);
+    const L2=c.data.motos.filter(m=>m.activo!==false||Math.abs(bal(m))>0.004);const tot=L2.reduce((s,m)=>s+bal(m),0),ab=L2.filter(m=>Math.abs(bal(m))>0.004).length;
+    window.__pdaCajaTotal=tot;
+    const ql=CJ.q.trim().toLowerCase();const vis=L2.filter(m=>!ql||String(m.nombre_completo||'').toLowerCase().includes(ql)||String(m.telefono||'').includes(ql)).sort((a,b)=>Math.abs(bal(b))-Math.abs(bal(a))||String(a.nombre_completo).localeCompare(String(b.nombre_completo)));
+    let h=`<div class="amt"><div class="k">Saldo total en cajas</div><div class="n">${M(tot)}</div><div class="pill">${ab} de ${L2.length} con efectivo por entregar</div></div>`;
+    h+=U.note('Efectivo que tiene cada motorizado: cobros, lo que le das y lo que paga. Al recibir su caja completa, empieza una nueva.');
+    h+=`<div class="fld"><label for="cjQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar motorizado</label><input id="cjQ" type="search" placeholder="Buscar motorizado" value="${E(CJ.q)}" data-in="cjq"></div>`;
+    h+=`<div id="cjL" style="display:flex;flex-direction:column;gap:10px">${cjFilas()}</div>`;
+    return {head,body:h};
+  }
+  function cjFilas(){const c=C2.caja,P=CA();if(!c||!c.data||!P)return '';const bal=m=>P.balance(c.data.by.get(String(m.id))||[]);const L2=c.data.motos.filter(m=>m.activo!==false||Math.abs(bal(m))>0.004);const ql=CJ.q.trim().toLowerCase();const vis=L2.filter(m=>!ql||String(m.nombre_completo||'').toLowerCase().includes(ql)||String(m.telefono||'').includes(ql)).sort((a,b)=>Math.abs(bal(b))-Math.abs(bal(a))||String(a.nombre_completo).localeCompare(String(b.nombre_completo)));let h='';
+    h+=vis.length?vis.map(m=>{const b=bal(m),sp=P.split(c.data.by.get(String(m.id))||[]);return `<button type="button" class="tl" data-cm="${E(m.id)}"><span class="ic" style="font-weight:800;font-size:15px">${iniN(m.nombre_completo)}</span><span class="tx"><b>${E(m.nombre_completo||'Motorizado')}</b><span>${Math.abs(b)<0.005?'Sin efectivo pendiente':b<0?'Saldo negativo':'Caja abierta'+(sp.openedAt?' desde '+E(dtl(sp.openedAt)):'')}</span></span><b style="font-size:17px;white-space:nowrap;color:${b<-0.004?'#B42318':Math.abs(b)<0.005?'#6B5E55':'#1F1A17'}">${M(b)}</b>${IC.chev}</button>`}).join(''):'<div class="vac">No hay motorizados con ese nombre.</div>';
+    return h}
+  function cajaMoto(){
+    const c=datosCaja(),P=CA(),m=CJ.moto;if(!m||!c.data||!P)return {head:top3('Cajas','Caja'),body:'<div class="load">Cargando…</div>'};
+    const all=c.data.by.get(String(m.id))||[],sp=P.split(all),s=P.summary(sp.current),bal=s.balance;
+    const head=top3('Caja de',m.nombre_completo||'Motorizado',`<button type="button" class="ib" data-a="cj:uno" aria-label="Actualizar">${IC.refresh}</button>`);
+    let h=`<div class="amt"><div class="k">${bal<-0.004?'Saldo negativo':'Efectivo que debe entregarte'}</div><div class="n" style="${bal<-0.004?'color:#B42318':''}">${M(bal)}</div><div class="pill">${sp.openedAt?'Caja abierta desde '+E(dtl(sp.openedAt)):'Caja nueva'}</div></div>`;
+    h+=`<div class="g2"><div class="kp"><span>Cobros</span><b>${M(s.cobros)}</b></div><div class="kp"><span>Le diste</span><b>${M(s.fondos)}</b></div><div class="kp"><span>Pagos</span><b>${M(s.pagos)}</b></div><div class="kp"><span>Gastos y entregas</span><b>${M(s.gastos+s.entregas)}</b></div></div>`;
+    h+=`<div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button type="button" data-cp="recibir" class="${CJ.pane==='recibir'?'on':''}">Recibir caja</button><button type="button" data-cp="dar" class="${CJ.pane==='dar'?'on':''}">Darle efectivo</button></div>`;
+    let foot='';
+    if(CJ.pane==='recibir'){
+      if(CJ.rec===''&&bal>0.004)CJ.rec=bal.toFixed(2);
+      const v=P.r2(Number(String(CJ.rec).replace(',','.'))||0),d=P.r2(v-bal);
+      const hint=bal<=0.004?(bal<0?'No hay efectivo por recibir: el saldo es negativo.':'No hay efectivo por recibir en esta caja.'):!(v>0)?'Si te entrega todo, la caja se cierra y empieza una nueva.':v>bal+0.004?'Te entrega más que el saldo. Si contaste bien, cierra la caja con sobrante de '+M(v-bal)+'.':Math.abs(d)<0.005?'Entrega total: la caja queda en S/ 0.00 y empieza una nueva.':'Entrega parcial: quedan '+M(bal-v)+' pendientes. Si ya contaste todo y falta dinero, cierra con faltante.';
+      h+=`<div class="cd"><div class="fld"><label for="cjR">Monto que te entrega (S/)</label><input id="cjR" inputmode="decimal" placeholder="0.00" value="${E(CJ.rec)}" data-in="cjrec"${bal<=0.004?' disabled':''}></div>${fld2('cjRN','Observación (opcional)','cjrecn',CJ.recNota,'Ej. Entregó en efectivo / Yape')}<div style="font-size:14px;color:#6B5E55;line-height:1.45" id="cjHint">${E(hint)}</div></div>`;
+      const puede=bal>0.004&&v>0&&v<=bal+0.004;const dif=bal>0.004&&v>0&&Math.abs(d)>=0.005;
+      foot=`<button type="button" class="b o" style="height:54px;font-size:16px" data-a="cj:recibir"${puede?'':' disabled'}>${Math.abs(d)<0.005&&v>0?'Recibir caja completa · '+M(v):v>0&&v<bal?'Recibir entrega parcial · '+M(v):'Registrar entrega'}</button>`+(dif?`<button type="button" class="b" style="height:48px;color:#B42318;border-color:#F4C7C3" data-a="cj:dif">Cerrar caja con ${d<0?'faltante de '+M(-d):'sobrante de '+M(d)}</button>`:'');
+    }else{
+      h+=`<div class="cd"><div class="fld"><label for="cjD">Monto que le das (S/)</label><input id="cjD" inputmode="decimal" placeholder="0.00" value="${E(CJ.dar)}" data-in="cjdar"></div><div class="fld"><label>Motivo</label><div class="chips" style="flex-wrap:wrap">${['Sencillo para vueltos','Para compra','Para encomienda','Otro'].map(x=>`<button type="button" data-mot="${E(x)}" class="${CJ.darMot===x?'on':''}">${E(x)}</button>`).join('')}</div></div>${CJ.darMot==='Otro'?fld2('cjDN','Detalle del motivo','cjdarn',CJ.darNota,'Escribe el motivo'):''}</div>`;
+      foot=`<button type="button" class="b o" style="height:54px;font-size:16px" data-a="cj:dar">Darle efectivo${Number(String(CJ.dar).replace(',','.'))>0?' · '+M(Number(String(CJ.dar).replace(',','.'))):''}</button>`;
+    }
+    if(CJ.msg)h+=`<div class="err">${E(CJ.msg)}</div>`;if(CJ.ok)h+=`<div class="msgok">${E(CJ.ok)}</div>`;
+    const cur=sp.current;let last='';
+    const fila=(x,del)=>{const k=P.kind(x),a=P.amount(x),inc=x.tipo==='ingreso',rv=String(x.revision||'');
+      return `<div class="mv"><span class="ic" style="background:${inc?'#FDEBDF':'#F6EFE9'};color:${inc?'#C4410C':'#6B5E55'}">${inc?IC.cash:IC.wallet}</span><span class="tx"><b>${E(P.LABEL[k]||'Movimiento')}${rv==='pendiente'?' <span class="pl m">Por revisar</span>':rv==='rechazado'?' <span class="pl r">Rechazado</span>':rv==='aprobado'?' <span class="pl g">Aprobado</span>':''}</b><span>${E(P.clean(x))} · ${E(hora(x.creado_en))}${x.pedido_id?' · '+E(ref(x.pedido_id)):''}</span>${x.comprobante_url?`<span><a href="${E(x.comprobante_url)}" target="_blank" rel="noopener" style="color:#C4410C;font-weight:700">Ver comprobante</a>${rv==='pendiente'&&del?` · <a href="#" data-rv="aprobado:${E(x.id)}" style="color:#0F5E2E;font-weight:700">Aprobar</a> · <a href="#" data-rv="rechazado:${E(x.id)}" style="color:#B42318;font-weight:700">Rechazar</a>`:''}</span>`:''}</span><span class="am">${inc?'+':'−'} ${M(a)}</span>${del?`<button type="button" class="ib" style="width:34px;height:34px;flex:0 0 34px;color:#B42318" data-del="${E(x.id)}" aria-label="Borrar movimiento">${IC.x}</button>`:''}</div>`};
+    const grp=(L2,del)=>{last='';return L2.map(x=>{const k=diaL(x.creado_en);const t=k!==last?`<div class="lbl" style="margin:10px 0 0">${E(k)}</div>`:'';last=k;return t+fila(x,del)}).join('')};
+    h+=`<div class="cd"><div class="lbl">Movimientos de la caja abierta</div>${cur.length?grp(cur.slice(0,CJ.lim),true)+(cur.length>CJ.lim?`<button type="button" class="b" data-a="cj:mas">Ver ${cur.length-CJ.lim} más</button>`:''):'<div style="color:#6B5E55;font-size:15px">Sin movimientos desde la última entrega.</div>'}</div>`;
+    const cl=sp.closed;
+    h+=`<div class="cd"><div class="lbl">Cajas entregadas</div>${cl.length?cl.slice(0,15).map((x,i)=>{const amt=P.amount(x.closer),rs=P.kind(x.closer)==='reinicio',df=Number(x.closer.diferencia)||0,ab=CJ.abierta===i;
+      return `<button type="button" class="mv" style="width:100%;background:transparent;border-left:0;border-right:0;border-top:0;text-align:left;cursor:pointer;font:inherit;color:inherit" data-cl="${i}"><span class="ic" style="background:#E9F6EE;color:#15803D">${IC.check}</span><span class="tx"><b>${rs?'Reinicio de caja':'Entregó '+M(x.closer.recibido!=null?x.closer.recibido:amt)}${df<-0.004?' <span class="pl r">Faltó '+M(-df)+'</span>':df>0.004?' <span class="pl g">Sobró '+M(df)+'</span>':''}</b><span>${E(dtl(x.closer.creado_en))} · ${x.summary.count} movimientos</span></span>${ab?IC.x:IC.chev}</button>${ab?`<div style="padding:0 0 8px">${x.movs.length?grp(x.movs,false):'<div style="color:#6B5E55">Sin movimientos.</div>'}</div>`:''}`}).join(''):'<div style="color:#6B5E55;font-size:15px">Todavía no te ha entregado ninguna caja.</div>'}</div>`;
+    return {head,body:h,foot};
+  }
+  const fld2=(id,l,k,v,ph)=>`<div class="fld"><label for="${id}">${l}</label><input id="${id}" value="${E(v??'')}" data-in="${k}"${ph?` placeholder="${E(ph)}"`:''} maxlength="200"></div>`;
+  const top3=(k,t,right)=>`<div class="top"><div class="row"><button type="button" class="back2" data-a="volver" aria-label="Volver">${IC.back}</button><div class="ttl"><div class="kick" style="color:#6B5E55">${E(k)}</div><div class="h1">${E(t)}</div></div>${right||''}</div></div>`;
+  async function recargaMoto(){const c=C2.caja;if(!c||!c.data||!CJ.moto)return;try{c.data.by.set(String(CJ.moto.id),await movsDe(CJ.moto.id))}catch(e){CJ.msg='No se pudo actualizar: '+(e.message||e)}key='';pintar()}
+  async function cajaAccion(A,el){
+    const P=CA(),m=CJ.moto,c=C2.caja;if(!P||!m||!c||!c.data)return;CJ.msg='';CJ.ok='';
+    const bal=P.r2(P.balance(c.data.by.get(String(m.id))||[])),nom=m.nombre_completo||'este motorizado';
+    const conf=t=>window.pdConfirmar?pdConfirmar(t):Promise.resolve(confirm(t));
+    if(A==='cj:recibir'){const v=P.r2(Number(String(CJ.rec).replace(',','.'))||0),note=CJ.recNota.trim();
+      if(!(v>0)||v>bal+0.004){CJ.msg='Revisa el monto.';return}
+      if(/^\d+([.,]\d+)?$/.test(note)){CJ.msg='En Observación escribiste solo un número. Si es lo que te entrega, escríbelo en «Monto que te entrega».';return}
+      const total=Math.abs(v-bal)<0.005;
+      if(!(await conf((total?'¿Recibir la caja completa de ':'¿Registrar entrega parcial de ')+nom+' por '+M(v)+'?')))return;
+      const q=await D().from('movimientos_caja').insert(Object.assign({motorizado_id:m.id,tipo:'retiro',monto:v,descripcion:(total?'LIQUIDACIÓN DE CAJA':'ENTREGA PARCIAL DE CAJA')+(note?' · '+note:'')},total?{esperado:bal,recibido:v,diferencia:0}:{})).select('id');
+      if(q.error||!q.data||!q.data.length){CJ.msg='No se pudo registrar: '+(q.error?q.error.message:'Supabase no confirmó el registro.');return}
+      CJ.rec='';CJ.recNota='';await recargaMoto();CJ.ok=total?'Caja recibida. Empieza una caja nueva.':'Entrega parcial registrada.';return}
+    if(A==='cj:dif'){const v=P.r2(Number(String(CJ.rec).replace(',','.'))||0),d=P.r2(v-bal);if(!(v>0)||Math.abs(d)<0.005)return;
+      if(!(await conf('¿Cerrar la caja de '+nom+'?\nEl sistema esperaba '+M(bal)+' y te entregó '+M(v)+'. '+(d<0?'Faltan ':'Sobran ')+M(Math.abs(d))+'. La caja queda en S/ 0.00 y empieza una nueva.')))return;
+      const note=CJ.recNota.trim();
+      const q=await D().from('movimientos_caja').insert({motorizado_id:m.id,tipo:'retiro',monto:bal>0?bal:v,descripcion:'LIQUIDACIÓN DE CAJA · '+(d<0?'faltante ':'sobrante ')+M(Math.abs(d))+(note?' · '+note:''),esperado:bal,recibido:v,diferencia:d}).select('id');
+      if(q.error||!q.data||!q.data.length){CJ.msg='No se pudo registrar: '+(q.error?q.error.message:'Supabase no confirmó el registro.');return}
+      if(d<0&&window.PdSueldo&&(await conf('¿Descontar el faltante de '+M(-d)+' del sueldo de '+nom+'?'))){const S=window.PdSueldo,f=S.todayIso();const r=await D().from('control_sueldos').insert({motorizado_id:m.id,fecha:f,tipo:'descuento',monto:P.r2(-d),descripcion:'Descuento faltante de caja',periodo:S.periodOf(f).key});if(r.error)(window.pdAviso||alert)('La caja se cerró, pero no se pudo crear el descuento: '+r.error.message)}
+      CJ.rec='';CJ.recNota='';await recargaMoto();CJ.ok='Caja cerrada con '+(d<0?'faltante':'sobrante')+' de '+M(Math.abs(d))+'.';return}
+    if(A==='cj:dar'){const v=P.r2(Number(String(CJ.dar).replace(',','.'))||0),note=(CJ.darMot==='Otro'?CJ.darNota:CJ.darMot).trim();
+      if(!(v>0)){CJ.msg='Escribe el monto que le das.';return}if(!note){CJ.msg='Elige o escribe el motivo.';return}
+      const q=await D().from('movimientos_caja').insert({motorizado_id:m.id,tipo:'ingreso',monto:v,descripcion:'INGRESO DE ADMINISTRADOR · '+note});
+      if(q.error){CJ.msg='No se pudo registrar: '+q.error.message;return}
+      CJ.dar='';CJ.darMot='';CJ.darNota='';await recargaMoto();CJ.ok='Se agregaron '+M(v)+' a su caja.';return}
+  }
+  async function cajaBorrar(id){const mt=window.pdPedir?await pdPedir('¿Por qué borras este movimiento? (ej. monto mal escrito)'):prompt('Motivo');if(mt===null)return;if(!String(mt).trim()){(window.pdAviso||alert)('Escribe un motivo para borrar el movimiento.');return}
+    const q=await D().from('movimientos_caja').delete().eq('id',id).eq('motorizado_id',CJ.moto.id).select('id');if(q.error||!q.data||!q.data.length){CJ.msg='No se pudo borrar: '+(q.error?q.error.message:'revisa el permiso de borrar.');key='';pintar();return}
+    console.info('[Caja] Movimiento borrado',id,'motivo:',String(mt).trim());await recargaMoto();CJ.ok='Movimiento borrado.'}
+  async function cajaRevision(v){const [st,id]=v.split(':');let upd;
+    if(st==='aprobado')upd={revision:'aprobado',revisado_en:new Date().toISOString(),revision_nota:null};
+    else{const n=window.pdPedir?await pdPedir('¿Por qué lo rechazas? (el motorizado lo verá):\nMotivo:',''):prompt('Motivo');if(n===null)return;upd={revision:'rechazado',revisado_en:new Date().toISOString(),revision_nota:String(n).trim()||'Sin comprobante válido'}}
+    const q=await D().from('movimientos_caja').update(upd).eq('id',id);if(q.error){CJ.msg='No se pudo guardar: '+q.error.message;key='';pintar();return}
+    await recargaMoto();CJ.ok=st==='aprobado'?'Pago aprobado.':'Pago rechazado: ya no se descuenta de su caja.'}
+
+  /* =============== SUELDOS (rehecha) =============== */
+  const SL={moto:null,per:'',monto:'',nota:'',msg:'',ok:'',q:''};
+  function datosSueldo(force){return cargar('sueldo',async()=>{const [mr,cr]=await Promise.all([D().from('motorizados').select('*').order('nombre_completo'),D().from('control_sueldos').select('*').order('fecha',{ascending:true}).limit(20000)]);if(mr.error)throw mr.error;if(cr.error)throw cr.error;const by=new Map();(cr.data||[]).forEach(r=>{const k=String(r.motorizado_id);if(!by.has(k))by.set(k,[]);by.get(k).push(r)});return {motos:(mr.data||[]).filter(m=>m.activo!==false),by}},force)}
+  function calcS(m){const S2=window.PdSueldo,c=C2.sueldo;if(!S2||!c||!c.data)return null;try{return S2.calc(m,c.data.by.get(String(m.id))||[])}catch(e){return null}}
+  const pend=r=>r&&r.ok?(r.periods||[]).reduce((s,p)=>s+Math.max(0,p.balance||0),0):0;
+  function sueldos(){
+    const c=datosSueldo(),S2=window.PdSueldo;const head=top2('Pagos a motorizados','Sueldos',`<button type="button" class="ib" data-a="sl:act" aria-label="Actualizar">${IC.refresh}</button>`);
+    if(!c.data||!S2)return {head,body:c.err?`<div class="err">${E(c.err)}</div>`:'<div class="load">Cargando los sueldos…</div>'};
+    const R=c.data.motos.map(m=>({m,r:calcS(m)}));const tot=R.reduce((s,x)=>s+pend(x.r),0),con=R.filter(x=>pend(x.r)>0.004).length,sin=R.filter(x=>!x.r||!x.r.ok).length;
+    window.__pdaSueldoTotal=tot;
+    let h=`<div class="amt"><div class="k">Sueldos pendientes</div><div class="n">${M(tot)}</div><div class="pill">${con} de ${R.length} por pagar${sin?' · '+sin+' sin configurar':''}</div></div>`;
+    h+=U.note('Los días se suman solos al terminar cada jornada. Para marcar faltas o cambiar el horario, entra al motorizado y toca «Configuración y asistencia».');
+    h+=`<div class="fld"><label for="slQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar motorizado</label><input id="slQ" type="search" placeholder="Buscar motorizado" value="${E(SL.q)}" data-in="slq"></div><div id="slL" style="display:flex;flex-direction:column;gap:10px">${slFilas()}</div>`;
+    return {head,body:h};
+  }
+  function slFilas(){const c=C2.sueldo;if(!c||!c.data)return '';const ql=SL.q.trim().toLowerCase();
+    return c.data.motos.map(m=>({m,r:calcS(m)})).filter(x=>!ql||String(x.m.nombre_completo||'').toLowerCase().includes(ql)).sort((a,b)=>pend(b.r)-pend(a.r)||String(a.m.nombre_completo).localeCompare(String(b.m.nombre_completo))).map(({m,r})=>{const p=pend(r);
+      return `<button type="button" class="tl" data-sm="${E(m.id)}"><span class="ic" style="font-weight:800;font-size:15px">${iniN(m.nombre_completo)}</span><span class="tx"><b>${E(m.nombre_completo||'Motorizado')}</b><span>${!r||!r.ok?'Sin configurar':p>0.004?'Por pagar':'Al día'}</span></span><b style="font-size:17px;white-space:nowrap;color:${!r||!r.ok||p<0.005?'#6B5E55':'#1F1A17'}">${!r||!r.ok?'—':M(p)}</b>${IC.chev}</button>`}).join('')||'<div class="vac">No hay motorizados con ese nombre.</div>'}
+  function sueldoMoto(){
+    const m=SL.moto,r=m&&calcS(m),S2=window.PdSueldo;const head=top3('Sueldo de',m?m.nombre_completo||'Motorizado':'Motorizado',`<button type="button" class="ib" data-a="sl:act" aria-label="Actualizar">${IC.refresh}</button>`);
+    if(!m||!S2||!C2.sueldo||!C2.sueldo.data)return {head,body:'<div class="load">Cargando…</div>'};
+    let h='',foot='';
+    const cfgBtn=`<button type="button" class="b" data-a="sl:cfg">${IC.list}Configuración, asistencia y descuentos</button>`;
+    if(!r||!r.ok){h+=`<div class="amt"><div class="k">Sueldo</div><div class="n" style="font-size:30px">Sin configurar</div><div class="pill">Falta: ${E(((r&&r.cfg&&r.cfg.missing)||['ingreso, horario y días']).join(', '))}</div></div>`+cfgBtn;return {head,body:h}}
+    const P2=r.current,cfg=r.cfg,rows=C2.sueldo.data.by.get(String(m.id))||[];
+    h+=`<div class="amt"><div class="k">Por pagar en total</div><div class="n">${M(pend(r))}</div><div class="pill">${E(P2.label||'Quincena actual')}: ${M(Math.max(0,P2.balance))}</div></div>`;
+    const gas=r.hourly?P2.gasTotal:P2.gasDays*(S2.GAS||8),desc=(P2.descRows||[]).reduce((s,x)=>s+(Number(x.monto)||0),0);
+    h+=`<div class="cd"><div class="lbl">${E(P2.label||'Quincena actual')}</div><div class="li"><span>Sueldo</span><b>${M(P2.earned-gas)}</b></div><div class="li"><span>Gasolina</span><b>${M(gas)}</b></div><div class="li"><span>Ganado</span><b>${M(P2.earned)}</b></div>${desc?`<div class="li"><span>Descuentos</span><b>− ${M(desc)}</b></div>`:''}<div class="li"><span>Ya pagado</span><b>− ${M(P2.paid)}</b></div><div class="li" style="border-top:1px solid #F1E4DA;padding-top:8px"><span>Pendiente</span><b style="font-size:18px">${M(Math.max(0,P2.balance))}</b></div></div>`;
+    const dias=(P2.days||[]).filter(d=>d.status&&d.status!=='antes');
+    if(dias.length){const cl=d=>({trabajado:'t',descanso:'r',falta:'f',hoy:'h'})[d.status]||'';const tx=d=>({trabajado:'T',descanso:'D',falta:'F',hoy:'Hoy'})[d.status]||new Date(d.date+'T12:00:00').getDate();
+      h+=`<div class="cd"><div class="lbl">Asistencia</div><div class="cal">${dias.map(d=>`<div><small>${E(String(d.label||'').slice(0,3))}</small><i class="${cl(d)}">${tx(d)}</i></div>`).join('')}</div><div class="ley"><span><b style="color:#0F5E2E">T</b> Trabajado</span><span><b style="color:#9A330A">D</b> Descanso</span><span><b style="color:#9B1C1C">F</b> Falta</span></div></div>`}
+    const per=(r.periods||[]).filter(p=>p.balance>0.004).reverse();
+    if(!SL.per&&per.length){SL.per=per[0].key;SL.monto=per[0].balance.toFixed(2)}
+    h+=`<div class="cd"><div class="lbl">Registrar pago</div>${per.length?`<div class="opts">${per.map(p=>`<button type="button" class="opt${SL.per===p.key?' on':''}" data-sp="${E(p.key)}"><b>${E(p.label)}</b><span>Pendiente ${M(p.balance)}${p.needsDesc&&!p.descSet?' · falta el descuento AFP/ONP':''}</span></button>`).join('')}</div>
+      <div class="fld"><label for="slM">Monto (S/)</label><input id="slM" inputmode="decimal" value="${E(SL.monto)}" data-in="slm" placeholder="0.00"></div><div class="fld"><label for="slN">Detalle</label><input id="slN" value="${E(SL.nota)}" data-in="sln" maxlength="200" placeholder="Ej. Yape, efectivo"></div>`:'<div style="color:#6B5E55;font-size:15px">No tiene quincenas pendientes de pago.</div>'}</div>`;
+    if(SL.msg)h+=`<div class="err">${E(SL.msg)}</div>`;if(SL.ok)h+=`<div class="msgok">${E(SL.ok)}</div>`;
+    h+=cfgBtn;
+    const D7={lunes:'Lun',martes:'Mar',miercoles:'Mié',jueves:'Jue',viernes:'Vie',sabado:'Sáb',domingo:'Dom'},O7=['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
+    h+=`<div class="cd"><div class="lbl">Contrato</div><div class="li"><span>Ingreso</span><b>${cfg.hire?E(S2.parse(cfg.hire).toLocaleDateString('es-PE')):'—'}</b></div><div class="li"><span>Horario</span><b>${cfg.hourly?'Por horas':cfg.times?E(S2.fmtTime(cfg.times.start)+' – '+S2.fmtTime(cfg.times.end)):'—'}</b></div><div class="li"><span>Días</span><b>${E(O7.filter(d=>(cfg.days||[]).includes(d)).map(d=>D7[d]).join(', ')||'—')}</b></div></div>`;
+    const pays=rows.filter(x=>String(x.tipo||'').toLowerCase()==='pago').sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).slice(0,12);
+    h+=`<div class="cd"><div class="lbl">Pagos hechos</div>${pays.length?pays.map(x=>`<div class="mv"><span class="ic" style="background:#E9F6EE;color:#15803D">${IC.check}</span><span class="tx"><b>${M(x.monto)}</b><span>${E(new Date(String(x.fecha).slice(0,10)+'T12:00:00').toLocaleDateString('es-PE',{day:'2-digit',month:'short'}))}${x.descripcion?' · '+E(x.descripcion):''}</span></span></div>`).join(''):'<div style="color:#6B5E55;font-size:15px">Aún no hay pagos.</div>'}</div>`;
+    if(per.length)foot=`<button type="button" class="b o" style="height:54px;font-size:16px" data-a="sl:pagar">Registrar pago${Number(String(SL.monto).replace(',','.'))>0?' · '+M(Number(String(SL.monto).replace(',','.'))):''}</button>`;
+    return {head,body:h,foot};
+  }
+  async function sueldoPagar(){
+    const m=SL.moto,r=calcS(m),S2=window.PdSueldo;SL.msg='';SL.ok='';if(!r||!r.ok){SL.msg='Completa primero la configuración del motorizado.';return}
+    const p=(r.periods||[]).find(x=>x.key===SL.per),monto=Number(String(SL.monto).replace(',','.'));
+    if(!p){SL.msg='Elige la quincena que pagas.';return}if(!Number.isFinite(monto)||monto<=0){SL.msg='Escribe un monto válido.';return}
+    if(p.needsDesc&&!p.descSet){SL.msg='Primero registra el descuento AFP/ONP de fin de mes (en «Configuración, asistencia y descuentos»; pon 0 si no tiene).';return}
+    const conf=t=>window.pdConfirmar?pdConfirmar(t):Promise.resolve(confirm(t));
+    if(monto>p.balance+0.004&&!(await conf('El monto es mayor a lo pendiente de esa quincena ('+M(Math.max(0,p.balance))+'). ¿Registrar de todas formas?')))return;
+    if(!(await conf('¿Registrar un pago de '+M(monto)+' a '+(m.nombre_completo||'este motorizado')+' por la '+p.label+'?')))return;
+    const q=await D().from('control_sueldos').insert({motorizado_id:m.id,fecha:S2.todayIso(),tipo:'pago',monto,descripcion:SL.nota.trim()||'Pago de sueldo',periodo:p.key});
+    if(q.error){SL.msg='No se pudo registrar: '+q.error.message;return}
+    SL.per='';SL.monto='';SL.nota='';C2.sueldo.t=0;await new Promise(res=>{datosSueldo(true);const t=setInterval(()=>{if(C2.sueldo&&!C2.sueldo.busy){clearInterval(t);res()}},150)});SL.ok='Pago registrado: '+M(monto)+'.';
+  }
+  function sueldoViejo(){const m=SL.moto;abrirSeccion('sueldo','sueldo','Sueldo de '+(m&&m.nombre_completo||''));setTimeout(()=>{const b=document.querySelector(`#pdslMotos .pdslMoto[data-id="${CSS.escape(String(m&&m.id))}"]`);if(b)b.click();else{const s=$('pdslSelect');if(s){s.value=String(m.id);s.dispatchEvent(new Event('change',{bubbles:true}))}}},700)}
 
   /* =============== PÁGINAS DE SIEMPRE (marco) =============== */
   const DLG='#pdDlg,#pdpeVelo,#pfSheet,#pdYNOv,#pdmmVelo,#pdsmVelo,pd-ventana';
@@ -18711,7 +18889,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     return false;
   }
   function visible(){const av=$('appView'),lg=$('loginView');if(!av||av.classList.contains('hidden')||(lg&&!lg.classList.contains('hidden')))return false;return !tapada()}
-  function vista(){return tab==='menu'?menu():inicio()}
+  function vista(){if(sub==='cajamoto')return cajaMoto();if(sub==='sueldomoto')return sueldoMoto();return tab==='menu'?menu():tab==='caja'?caja():tab==='sueldo'?sueldos():inicio()}
   function pintar(){
     const H=document.documentElement;
     if(!visible()){if(host&&host.style.display!=='none'){host.style.display='none';H.classList.remove('pdaApp','pdaPag');H.style.overflow='';if(topH)topH.style.display='none'}return}
@@ -18731,7 +18909,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     else{H.classList.remove('pdaPag');host.classList.remove('solo');if(topH)topH.style.display='none';keyTop=''}
     if(tocando)return;
     const act=root.activeElement;if(act&&act.tagName==='INPUT')return;
-    const v=pv?{head:'',body:'',foot:''}:vista();const pag=pv?'vieja':tab;
+    const v=pv?{head:'',body:'',foot:''}:vista();const pag=pv?'vieja':(sub||tab);
     const k=pag+'|'+v.head+v.body+(v.foot||'')+nav();
     if(k===key)return;key=k;
     const lst=root.querySelector('.list');if(lst&&root.__pag)scrollMem[root.__pag]=lst.scrollTop;
@@ -18743,25 +18921,42 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function abrirSeccion(k,m,kk){ultimo='';if(window.PdPasos&&PdPasos.isOpen())PdPasos.close();marca=m;kick=kk||'Administración';if(movido)volverLista();try{window.__pdmOpen&&window.__pdmOpen(k)}catch(e){console.warn(e)}key='';setTimeout(pintar,60)}
   function ir(t){
     if(window.PdPasos&&PdPasos.isOpen())PdPasos.close();
-    if(t==='caja')return abrirSeccion('caja','caja','Control de caja');
-    if(t==='sueldo')return abrirSeccion('sueldo','sueldo','Pagos a motorizados');
     if(t==='clientes')return abrirSeccion('clientes','clientes','Clientes');
     if(paginaVieja())cerrarVieja();
-    tab=t;marca=t;key='';if(t==='menu')abiertoGr=null;pintar();
+    if(sub&&history.state?.pdApp){ignorarPop=true;history.back()}sub=null;
+    tab=t;marca=t;key='';if(t==='menu')abiertoGr=null;if(t==='caja'&&C2.caja)C2.caja.t=0;if(t==='sueldo'&&C2.sueldo)C2.sueldo.t=0;pintar();
   }
   function abrirPedido(id){
     const o=L().find(x=>String(x.id)===String(id));
     if(o&&o.negocio_id&&!svc(o)&&typeof window.pdAbrirPasosAdmin==='function')return window.pdAbrirPasosAdmin(id);
     abrirVieja(id);
   }
+  /* mientras escribe un monto: actualiza la ayuda y el botón sin redibujar el campo */
+  function vivo(){const v=vista();const t=document.createElement('template');t.innerHTML=v.body;const nh=t.content.getElementById('cjHint'),oh=root.getElementById('cjHint');if(nh&&oh)oh.textContent=nh.textContent;const f=root.querySelector('.foot');if(f&&v.foot!=null&&f.innerHTML!==v.foot)f.innerHTML=v.foot}
   function entrada(e){const el=e.target,k=el.dataset&&el.dataset.in;if(!k)return;
     if(k==='q'){q=el.value;limite=40;const box=root.getElementById('aLista');if(box){const ql=q.trim().toLowerCase();box.innerHTML=lista(L().filter((CH.find(c=>c[0]===chip)||CH[0])[2]).filter(o=>!ql||[o.id,ref(o.id),o.nombre_cliente,o.telefono_cliente,o.nombre_remitente,NEG(o.negocio_id).nombre].join(' ').toLowerCase().includes(ql)))}}
+    if(k==='cjq'){CJ.q=el.value;const b=root.getElementById('cjL');if(b)b.innerHTML=cjFilas();return}
+    if(k==='cjrec'){CJ.rec=el.value.replace(/[^\d.,]/g,'');vivo();return}
+    if(k==='cjrecn'){CJ.recNota=el.value;return}
+    if(k==='cjdar'){CJ.dar=el.value.replace(/[^\d.,]/g,'');vivo();return}
+    if(k==='cjdarn'){CJ.darNota=el.value;return}
+    if(k==='slq'){SL.q=el.value;const b=root.getElementById('slL');if(b)b.innerHTML=slFilas();return}
+    if(k==='slm'){SL.monto=el.value.replace(/[^\d.,]/g,'');vivo();return}
+    if(k==='sln'){SL.nota=el.value;return}
     if(k==='mq'){mq=el.value;const g=root.getElementById('mG');if(g)g.innerHTML=grupos()}}
   async function clic(e){
     tocando=false;
     const t=e.target.closest('[data-t]');if(t){ir(t.dataset.t);return}
     const c=e.target.closest('[data-c]');if(c){chip=c.dataset.c;limite=40;key='';pintar();return}
     const o=e.target.closest('[data-o]');if(o){const s=SEL();if(selModo&&s){const id=String(o.dataset.o);s.has(id)?s.delete(id):s.add(id);key='';pintar();return}abrirPedido(o.dataset.o);return}
+    const cm=e.target.closest('[data-cm]');if(cm){const c=C2.caja;const m=c&&c.data&&c.data.motos.find(x=>String(x.id)===cm.dataset.cm);if(m){Object.assign(CJ,{moto:m,pane:'recibir',rec:'',recNota:'',dar:'',darMot:'',darNota:'',msg:'',ok:'',lim:40,abierta:null});sub='cajamoto';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}return}
+    const sm=e.target.closest('[data-sm]');if(sm){const c=C2.sueldo;const m=c&&c.data&&c.data.motos.find(x=>String(x.id)===sm.dataset.sm);if(m){Object.assign(SL,{moto:m,per:'',monto:'',nota:'',msg:'',ok:''});sub='sueldomoto';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}return}
+    const sp=e.target.closest('[data-sp]');if(sp){SL.per=sp.dataset.sp;const r=calcS(SL.moto);const p=r&&(r.periods||[]).find(x=>x.key===SL.per);if(p)SL.monto=Math.max(0,p.balance).toFixed(2);key='';pintar();return}
+    const cp=e.target.closest('[data-cp]');if(cp){CJ.pane=cp.dataset.cp;CJ.msg='';CJ.ok='';key='';pintar();return}
+    const mot=e.target.closest('[data-mot]');if(mot){CJ.darMot=mot.dataset.mot;key='';pintar();return}
+    const cl=e.target.closest('[data-cl]');if(cl){const i=+cl.dataset.cl;CJ.abierta=CJ.abierta===i?null:i;key='';pintar();return}
+    const dl=e.target.closest('[data-del]');if(dl){await cajaBorrar(dl.dataset.del);key='';pintar();return}
+    const rv=e.target.closest('[data-rv]');if(rv){e.preventDefault();await cajaRevision(rv.dataset.rv);key='';pintar();return}
     const g=e.target.closest('[data-g]');if(g){abiertoGr=abiertoGr===g.dataset.g?null:g.dataset.g;key='';pintar();return}
     const it=e.target.closest('[data-it]');if(it){const b=document.querySelector(`#pdMenu .m3It[data-txt="${CSS.escape(it.dataset.it)}"]`);if(b){marca='menu';kick=it.dataset.gk||'Administración';ultimo=((it.querySelector('span')||{}).textContent||'').trim();if(movido)volverLista();b.click();key='';setTimeout(pintar,80)}return}
     const a=e.target.closest('[data-a]');if(!a)return;
@@ -18772,10 +18967,19 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       case 'selmodo':{selModo=!selModo;const s=SEL();if(!selModo&&s)s.clear();key='';pintar();break}
       case 'borrar':{const s=SEL();if(!s||!s.size)break;try{await window.deleteSelectedOrders()}catch(err){(window.pdAviso||alert)(String(err.message||err))}if(!s.size)selModo=false;key='';pintar();break}
       case 'mas':limite+=40;key='';pintar();break;
+      case 'volver':sub=null;key='';pintar();if(history.state?.pdApp){ignorarPop=true;history.back()}break;
+      case 'cj:act':if(C2.caja)C2.caja.t=0;datosCaja(true);key='';pintar();break;
+      case 'cj:uno':await recargaMoto();break;
+      case 'sl:act':if(C2.sueldo)C2.sueldo.t=0;datosSueldo(true);key='';pintar();break;
+      case 'sl:cfg':sueldoViejo();break;
+      case 'sl:pagar':{if(a.disabled)break;a.disabled=true;try{await sueldoPagar()}finally{key='';pintar()}break}
+      case 'cj:mas':CJ.lim+=40;key='';pintar();break;
+      case 'cj:recibir':case 'cj:dif':case 'cj:dar':{if(a.disabled)break;a.disabled=true;try{await cajaAccion(a.dataset.a,a)}finally{key='';pintar()}break}
       case 'perfil':{ultimo='Mi perfil';marca='menu';kick='Mi cuenta';const b=document.querySelector('#pdMenu .m3Top');if(b)b.click();setTimeout(()=>{key='';pintar()},120);break}
       case 'salir':{const b=document.querySelector('#pdMenu .m3Out');if(b)b.click();break}
     }
   }
+  addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(sub){sub=null;key='';pintar()}});
   setInterval(pintar,600);
   window.pdAppAdm={pintar,ir,navH:()=>{if(!host||host.style.display==='none'||!root)return 0;const n=root.querySelector('.nv');return n?n.offsetHeight:0}};
 })();
