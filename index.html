@@ -18551,7 +18551,17 @@ input.cod{text-align:center;font-size:30px;letter-spacing:.4em;height:64px}
 .load{padding:24px;text-align:center;color:#6B5E55;font-size:15px}
 `+`
 :host{z-index:2147482000}
-:host(.solo){top:auto!important;height:var(--navh,74px)!important;background:transparent}
+:host(.solo){display:none!important}
+.dwb{position:absolute;inset:0;background:rgba(31,26,23,.18);z-index:20;animation:dwf .2s ease-out}
+.dw{position:absolute;top:0;bottom:0;left:0;width:min(86%,360px);background:#FFF9F5;z-index:21;display:flex;flex-direction:column;box-shadow:8px 0 30px rgba(31,26,23,.12);animation:dwi .22s ease-out}
+@keyframes dwi{from{transform:translateX(-100%)}to{transform:none}}@keyframes dwf{from{opacity:0}to{opacity:1}}
+.dwh{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 14px) 14px 14px;background:#FFFFFF;border-bottom:1px solid #F1E4DA}
+.dwh .yo{flex:1 1 0%;min-width:0}
+.dwl{flex:1 1 0%;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none}.dwl>*{flex-shrink:0}
+.dwp{display:flex;flex-direction:column;background:#FFFFFF;border:1px solid #F1E4DA;border-radius:18px;overflow:hidden}
+.dwp button{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border:0;border-top:1px solid #F6EFE9;background:transparent;color:#1F1A17;font-size:16px;font-weight:700;text-align:left;cursor:pointer}
+.dwp button:first-child{border-top:0}.dwp button span:first-of-type{flex:1 1 0%}.dwp button svg{color:#C4410C}
+.dwp button.on{background:#FFF4EC;color:#9A330A}
 :host(.solo) .app{background:transparent}
 .sel{flex:0 0 26px;width:26px;height:26px;border-radius:8px;border:2px solid #E3CFC2;background:#FFFFFF;display:flex;align-items:center;justify-content:center;color:#FFFFFF}
 .sel.on{background:#C4410C;border-color:#C4410C}.sel svg{width:16px;height:16px}
@@ -18653,7 +18663,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const nb=Number((($('pdaBell')||{}).querySelector?.('.pdaBadge,.badge,b,span')||{}).textContent)||0;
     const f=new Date().toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'short',timeZone:'America/Lima'}).replace('.','');
     const s=SEL(),ns=s?s.size:0;
-    return {head:`<div class="hd"><span class="ava"${foto?` style="background-image:url('${E(foto)}')"`:''}>${foto?'':E(((av||{}).textContent||'A').trim().charAt(0))}</span><div style="flex:1 1 0%;min-width:0"><div class="kick" style="color:#6B5E55">${E(f)}</div><div class="h1" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(nom)}</div>${con?`<span class="con ${E(con.className.replace('con','').trim())}"><i></i>${E((con.textContent||'').trim())}</span>`:''}</div><button type="button" class="ib" data-a="act" aria-label="Actualizar">${IC.refresh}</button><button type="button" class="ib" data-a="bell" aria-label="Avisos">${IC.bell}${nb?`<span class="bd">${nb>99?'99+':nb}</span>`:''}</button></div>`,
+    return {head:`<div class="hd"><button type="button" class="ib" data-a="cajon" aria-label="Abrir menú">${IC.menu}</button><span class="ava"${foto?` style="background-image:url('${E(foto)}')"`:''}>${foto?'':E(((av||{}).textContent||'A').trim().charAt(0))}</span><div style="flex:1 1 0%;min-width:0"><div class="kick" style="color:#6B5E55">${E(f)}</div><div class="h1" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${E(nom)}</div>${con?`<span class="con ${E(con.className.replace('con','').trim())}"><i></i>${E((con.textContent||'').trim())}</span>`:''}</div><button type="button" class="ib" data-a="act" aria-label="Actualizar">${IC.refresh}</button><button type="button" class="ib" data-a="bell" aria-label="Avisos">${IC.bell}${nb?`<span class="bd">${nb>99?'99+':nb}</span>`:''}</button></div>`,
       body:h,foot:selModo?`<button type="button" class="b o" style="height:54px;font-size:16px;background:${ns?'#B42318':'#D8CBC1'}" data-a="borrar"${ns?'':' disabled'}>${IC.trash}Eliminar ${ns?ns+' pedido'+(ns===1?'':'s'):'seleccionados'}</button>`:''};
   }
   function lista(fil){return fil.length?fil.slice(0,limite).map(tarjeta).join('')+(fil.length>limite?`<button type="button" class="b mas" data-a="mas">Ver ${Math.min(40,fil.length-limite)} más</button>`:''):`<div class="vac">${q||chip?'No hay pedidos con ese filtro.':'Todavía no hay pedidos.'}</div>`}
@@ -18679,7 +18689,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       h+=`<div class="gr${ab?' ab':''}"><button type="button" class="gh" data-g="${E(tit)}"><span class="ic">${GIC[tit]||IC.list}</span><b>${E(tit)}</b>${tb?`<span class="bd" style="position:static;border:0">${tb}</span>`:`<small>${its.length}</small>`}${IC.chev}</button>${ab?its.map(x=>`<button type="button" class="gi" data-it="${E(x.t)}" data-gk="${E(tit)}"><span>${E(x.n)}</span>${x.bd?`<span class="bd">${E(x.bd)}</span>`:''}${IC.chev}</button>`).join(''):''}</div>`});
     return h||'<div class="vac">No hay nada con ese nombre.</div>';
   }
-  const top2=(k,t,right)=>`<div class="top"><div class="row"><div class="ttl"><div class="kick" style="color:#6B5E55">${E(k)}</div><div class="h1">${E(t)}</div></div>${right||''}</div></div>`;
+  const top2=(k,t,right)=>`<div class="top"><div class="row"><button type="button" class="back2" data-a="cajon" aria-label="Abrir menú">${IC.menu}</button><div class="ttl"><div class="kick" style="color:#6B5E55">${E(k)}</div><div class="h1">${E(t)}</div></div>${right||''}</div></div>`;
 
   /* =============== CAJAS (rehecha) =============== */
   const D=()=>{try{return db}catch(e){return window.db}};
@@ -19390,11 +19400,20 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const s=$('orderSearch');if(s){s.value='';try{window.renderOrders&&window.renderOrders()}catch(_){}}document.documentElement.style.overflow='';pintar()}
 
   /* =============== MENÚ INFERIOR Y PINTADO =============== */
+  /* Menú lateral (sin menú inferior): se abre con el botón ☰ de la cabecera */
+  let cajon=false,cajonT=0;
   function nav(){
-    const act=paginaVieja()?marca:tab;const nP=L().filter(CH[1][2]).length;
-    const it=[['inicio','Inicio',IC.home],['caja','Cajas',IC.cash],['sueldo','Sueldos',IC.wallet],['clientes','Clientes',IC.group],['menu','Menú',IC.menu]];
-    return `<nav class="nv" aria-label="Menú principal">${it.map(x=>`<button type="button" data-t="${x[0]}" class="${act===x[0]?'on':''}"${act===x[0]?' aria-current="page"':''}><span class="i">${x[2]}</span>${x[1]}${x[0]==='inicio'&&nP?`<span class="bd">${nP}</span>`:''}</button>`).join('')}</nav>`;
+    if(!cajon)return '';
+    const m=$('pdMenu'),top=m&&m.querySelector('.m3Top'),nom=top?(top.querySelector('strong')||{}).textContent||'Admin':'Admin',foto=window.__pdAdminFoto||'',nP=L().filter(CH[1][2]).length;
+    const act=sub==='sec'?'':tab;
+    const it=[['inicio','Pedidos',IC.box,nP],['caja','Cajas',IC.cash],['sueldo','Sueldos',IC.wallet],['clientes','Clientes',IC.group]];
+    return `<div class="dwb" data-a="cajon"></div><aside class="dw" aria-label="Menú"><div class="dwh"><button type="button" class="yo" data-a="perfil" style="border:0;padding:0;background:transparent"><span class="ava"${foto?` style="background-image:url('${E(foto)}')"`:''}>${foto?'':E(nom.trim().charAt(0))}</span><span style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:18px">${E(nom)}</b><span style="font-size:13px;color:#6B5E55">Ver mi perfil</span></span></button><button type="button" class="ib" data-a="cajon" aria-label="Cerrar menú">${IC.x}</button></div>
+      <div class="dwl"><div class="fld"><label for="mQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar en el menú</label><input id="mQ" type="search" placeholder="Buscar en el menú" value="${E(mq)}" data-in="mq"></div>
+      <nav class="dwp">${it.map(x=>`<button type="button" data-t="${x[0]}" class="${act===x[0]?'on':''}">${x[2]}<span>${x[1]}</span>${x[3]?`<span class="bd" style="position:static;border:0">${x[3]}</span>`:''}</button>`).join('')}</nav>
+      <div id="mG" style="display:flex;flex-direction:column;gap:10px">${grupos()}</div>
+      <button type="button" class="b" style="color:#B42318;border-color:#F4C7C3" data-a="salir">${IC.logout}Cerrar sesión</button></div></aside>`;
   }
+
   const IGN=new Set(['pdAppShell','appView','loginView','pdFondoHoja','nav','pdMenu','pdMenuShade','pdmModal']);
   function tapada(){
     const W=innerWidth,H=innerHeight;
@@ -19433,7 +19452,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const lst=root.querySelector('.list');if(lst&&root.__pag)scrollMem[root.__pag]=lst.scrollTop;
     root.innerHTML=`<style>${ESTILO}</style><div class="app">${pv?'':v.head+`<div class="list">${v.body}</div>`+(v.foot?`<div class="foot">${v.foot}</div>`:'')}${nav()}</div>`;
     const nl=root.querySelector('.list');if(nl)nl.scrollTop=root.__pag===pag?(scrollMem[pag]||0):0;root.__pag=pag;
-    const nv=root.querySelector('.nv');if(nv){const nh=nv.offsetHeight;H.style.setProperty('--pda-nav',nh+'px');host.style.setProperty('--navh',nh+'px')}
+    H.style.setProperty('--pda-nav','0px');
     if(!pv)H.style.overflow='hidden';
   }
   function abrirSeccion(k,m,kk){ultimo='';if(window.PdPasos&&PdPasos.isOpen())PdPasos.close();marca=m;kick=kk||'Administración';if(movido)volverLista();try{window.__pdmOpen&&window.__pdmOpen(k)}catch(e){console.warn(e)}key='';setTimeout(pintar,60)}
@@ -19441,7 +19460,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(window.PdPasos&&PdPasos.isOpen())PdPasos.close();
     if(paginaVieja())cerrarVieja();
     if(sub&&history.state?.pdApp){ignorarPop=true;history.back()}sub=null;
-    tab=t;marca=t;key='';if(t==='menu')abiertoGr=null;if(t==='caja'&&C2.caja)C2.caja.t=0;if(t==='sueldo'&&C2.sueldo)C2.sueldo.t=0;if(t==='clientes'&&C2.cli)C2.cli.t=0;pintar();
+    if(t==='menu'){cajon=true;abiertoGr=null;key='';pintar();return}
+    tab=t;marca=t;key='';if(t==='caja'&&C2.caja)C2.caja.t=0;if(t==='sueldo'&&C2.sueldo)C2.sueldo.t=0;if(t==='clientes'&&C2.cli)C2.cli.t=0;pintar();
   }
   function abrirPedido(id){
     const o=L().find(x=>String(x.id)===String(id));
@@ -19470,7 +19490,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(k==='mq'){mq=el.value;const g=root.getElementById('mG');if(g)g.innerHTML=grupos()}}
   async function clic(e){
     tocando=false;
-    const t=e.target.closest('[data-t]');if(t){ir(t.dataset.t);return}
+    const t=e.target.closest('[data-t]');if(t){cajon=false;ir(t.dataset.t);return}
     const c=e.target.closest('[data-c]');if(c){chip=c.dataset.c;limite=40;key='';pintar();return}
     const o=e.target.closest('[data-o]');if(o){const s=SEL();if(selModo&&s){const id=String(o.dataset.o);s.has(id)?s.delete(id):s.add(id);key='';pintar();return}abrirPedido(o.dataset.o);return}
     const cm=e.target.closest('[data-cm]');if(cm){const c=C2.caja;const m=c&&c.data&&c.data.motos.find(x=>String(x.id)===cm.dataset.cm);if(m){Object.assign(CJ,{moto:m,pane:'recibir',rec:'',recNota:'',dar:'',darMot:'',darNota:'',msg:'',ok:'',lim:40,abierta:null});sub='cajamoto';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}return}
@@ -19485,9 +19505,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const dl=e.target.closest('[data-del]');if(dl){await cajaBorrar(dl.dataset.del);key='';pintar();return}
     const rv=e.target.closest('[data-rv]');if(rv){e.preventDefault();await cajaRevision(rv.dataset.rv);key='';pintar();return}
     const g=e.target.closest('[data-g]');if(g){abiertoGr=abiertoGr===g.dataset.g?null:g.dataset.g;key='';pintar();return}
-    const it=e.target.closest('[data-it]');if(it&&SEC[it.dataset.it]){abrirSec(it.dataset.it);return}if(it){const b=document.querySelector(`#pdMenu .m3It[data-txt="${CSS.escape(it.dataset.it)}"]`);if(b){marca='menu';kick=it.dataset.gk||'Administración';ultimo=((it.querySelector('span')||{}).textContent||'').trim();if(movido)volverLista();b.click();key='';setTimeout(pintar,80)}return}
+    const it=e.target.closest('[data-it]');if(it)cajon=false;if(it&&SEC[it.dataset.it]){abrirSec(it.dataset.it);return}if(it){const b=document.querySelector(`#pdMenu .m3It[data-txt="${CSS.escape(it.dataset.it)}"]`);if(b){marca='menu';kick=it.dataset.gk||'Administración';ultimo=((it.querySelector('span')||{}).textContent||'').trim();if(movido)volverLista();b.click();key='';setTimeout(pintar,80)}return}
     const a=e.target.closest('[data-a]');if(!a)return;
     switch(a.dataset.a){
+      case 'cajon':if(!cajon&&paginaVieja())cerrarVieja();cajon=!cajon;if(cajon){abiertoGr=null;mq='';cajonT=Date.now();try{history.pushState({pdApp:1,cajon:1},'')}catch(_){}}else if(history.state&&history.state.cajon){ignorarPop=true;history.back()}key='';pintar();break;
       case 'act':{a.classList.add('spin');const r=$('refreshOrders');if(r)r.click();else try{await window.loadOrders()}catch(_){}setTimeout(()=>{key='';pintar()},800);break}
       case 'bell':{ultimo='Avisos';marca=tab;kick='Avisos';$('pdaBell')?.click();setTimeout(()=>{key='';pintar()},120);break}
       case 'atendidos':chip='entregado';limite=40;tab='inicio';key='';pintar();break;
@@ -19508,13 +19529,13 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       case 'sl:pagar':{if(a.disabled)break;a.disabled=true;try{await sueldoPagar()}finally{key='';pintar()}break}
       case 'cj:mas':CJ.lim+=40;key='';pintar();break;
       case 'cj:recibir':case 'cj:dif':case 'cj:dar':{if(a.disabled)break;a.disabled=true;try{await cajaAccion(a.dataset.a,a)}finally{key='';pintar()}break}
-      case 'perfil':{abrirSec('__perfil');break;ultimo='Mi perfil';marca='menu';kick='Mi cuenta';const b=document.querySelector('#pdMenu .m3Top');if(b)b.click();setTimeout(()=>{key='';pintar()},120);break}
+      case 'perfil':{cajon=false;abrirSec('__perfil');break;ultimo='Mi perfil';marca='menu';kick='Mi cuenta';const b=document.querySelector('#pdMenu .m3Top');if(b)b.click();setTimeout(()=>{key='';pintar()},120);break}
       case 'salir':{const b=document.querySelector('#pdMenu .m3Out');if(b)b.click();break}
     }
   }
-  addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(sub){sub=null;key='';pintar()}});
+  addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub){sub=null;key='';pintar()}});
   setInterval(pintar,600);
-  window.pdAppAdm={pintar,ir,navH:()=>{if(!host||host.style.display==='none'||!root)return 0;const n=root.querySelector('.nv');return n?n.offsetHeight:0}};
+  window.pdAppAdm={pintar,ir,navH:()=>0};
 })();
 
 </script>
