@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611181955">
+<meta name="pd-version" content="202611182000">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -19345,7 +19345,9 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   async function cajaPorCambioPago(o,antes,despues){
     try{
       const a=String(antes||'').toLowerCase(),d=String(despues||'').toLowerCase();if(a===d||!o.motorizado_id)return;
-      if(!(o.pago_confirmado===true&&Number(o.monto_recibido)>0))return;
+      const pagadoAntes=String(o.pago_servicio_momento||'').toLowerCase()==='pagado'||o.pago_acordado==='pagado';
+      if(pagadoAntes)return;
+      if(!((o.pago_confirmado===true&&Number(o.monto_recibido)>0)||String(o.estado||'').toLowerCase()==='entregado'))return;
       const tot=Math.round((Number(o.total)||0)*100)/100;if(!(tot>0))return;
       const {data:mv}=await D().from('movimientos_caja').select('id,tipo,monto,descripcion').eq('pedido_id',o.id).eq('motorizado_id',o.motorizado_id);
       const L=mv||[],cobro=L.filter(x=>x.tipo==='ingreso'&&!/^INGRESO MANUAL/i.test(String(x.descripcion||''))).reduce((a,x)=>a+Number(x.monto||0),0),corr=L.filter(x=>/Corrección de pago/i.test(String(x.descripcion||''))).reduce((a,x)=>a+(x.tipo==='ingreso'?1:-1)*Number(x.monto||0),0);
