@@ -18986,6 +18986,89 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="guardar">Guardar</button>`}},
     async a(){const f=SF['alerta de caja alta'];const v=Math.max(0,r2(String(f.v).replace(',','.')));const q=await D().from('ajustes_pidemas').upsert({clave:'caja_alerta',valor:{monto:v},actualizado_en:new Date().toISOString()});if(q.error){mal('No se pudo guardar: '+q.error.message);return}ok(v?'Alerta guardada en '+M(v):'Alerta desactivada');volverSub()}};
 
+  /* --- Pedidos con demora --- */
+  const UMB={negocio:5,asignar:5,aceptar:3,extra:40};
+  function programado(o){try{if(o.programado_para)return T(o.programado_para);const d=window.pdTarifa&&pdTarifa.desgloseDePedido(o.observaciones);if(d&&d.programado)return T(d.programado)}catch(e){}return 0}
+  function alertasP(){const now=Date.now(),out=[],mn=ms=>Math.round(ms/60000);
+    L().forEach(o=>{const s=est(o);if(['entregado','cancelado','rechazado'].includes(s))return;const prog=programado(o);if(prog&&prog-now>45*60000)return;
+      const base=prog&&prog>T(o.creado_en)?Math.max(T(o.creado_en),prog-45*60000):T(o.creado_en);
+      if(prog&&!o.motorizado_id&&prog-now<=30*60000){out.push({o,k:'prog',t:'Programado para las '+new Date(prog).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'numeric',minute:'2-digit'})+' y sin motorizado'});return}
+      if(o.negocio_id&&s==='pendiente'&&!o.negocio_aceptado_en&&now-base>UMB.negocio*60000){out.push({o,k:'neg',t:(NEG(o.negocio_id).nombre||'El negocio')+' no lo acepta hace '+mn(now-base)+' min'});return}
+      if(!o.motorizado_id&&['pendiente','confirmado'].includes(s)&&(!o.negocio_id||o.negocio_aceptado_en)){const d=o.negocio_aceptado_en?T(o.negocio_aceptado_en):base;if(now-d>UMB.asignar*60000){out.push({o,k:'asig',t:'Sin motorizado hace '+mn(now-d)+' min'});return}}
+      if(s==='asignado'&&!o.aceptado_en&&o.asignado_en&&now-T(o.asignado_en)>UMB.aceptar*60000){out.push({o,k:'acep',t:(o.motorizado_nombre||'El motorizado')+' no acepta hace '+mn(now-T(o.asignado_en))+' min'});return}
+      if(['aceptado','en_camino','en_entrega','asignado'].includes(s)){const lim=(Number(o.tiempo_preparacion_min)||20)+UMB.extra,e=mn(now-base);if(e>lim)out.push({o,k:'tarde',t:'Demorado: '+e+' min desde que se pidió'})}});
+    return out}
+  SEC['pedidos con demora']={g:'Control de pedidos',t:'Pedidos con demora',rf:1,
+    load:async()=>{let sug=new Map();try{if(window.pdPedCtl&&pdPedCtl.sugerencias)sug=await pdPedCtl.sugerencias()}catch(e){}return {sug}},
+    v(){const c=datos('pedidos con demora',this.load);const A=alertasP();const sug=(c.data&&c.data.sug)||new Map();
+      let h=`<div class="amt"><div class="k">Necesitan atención</div><div class="n">${A.length}</div><div class="pill">${A.length?'Revisa y actúa':'Todo en orden'}</div></div>`;
+      h+=A.length?A.map(a=>{const s=['acep','asig','prog'].includes(a.k)?(sug.get(String(a.o.id))||[]).filter(x=>String(x.m.id)!==String(a.o.motorizado_id))[0]:null;
+        return `<div class="cd"><b style="font-size:16px">${E(ref(a.o.id))} · ${E(a.o.nombre_cliente||'Cliente')}</b><span class="pl r" style="align-self:flex-start">${E(a.t)}</span><div class="btns${s?' b2':''}" style="${s?'':'grid-template-columns:1fr'}"><button type="button" class="b" data-o="${E(a.o.id)}">Ver pedido</button>${s?`<button type="button" class="b o" data-sa="asig:${E(a.o.id)}:${E(s.m.id)}">Asignar a ${E(String(s.m.nombre_completo||'').split(' ')[0])}${s.km!=null?' · '+s.km.toFixed(1)+' km':''}</button>`:''}</div></div>`}).join(''):vacio('Todo en orden. Ningún pedido tiene demora.');
+      return {body:h}},
+    async a(x){const [,id,m]=x.split(':');if(typeof assignOrder!=='function')return;await assignOrder(id,m);ok('Motorizado asignado');recargar('pedidos con demora')}};
+
+  /* --- Por pagar a negocios --- */
+  SEC['por pagar a negocios']={g:'Control de pedidos',t:'Por pagar a negocios',rf:1,
+    load:async()=>{const b=await baseCtl();const {data,error}=await D().from('pedidos').select('id,negocio_id,subtotal,total,pago_acordado,metodo_pago,nombre_cliente,entregado_en,creado_en,motorizado_id').not('negocio_id','is',null).eq('estado','entregado').is('negocio_pagado_en',null).order('creado_en',{ascending:true}).limit(1000);if(error)throw error;
+      return {b,P:(data||[]).filter(p=>!['solo_delivery','pagado','yape_negocio'].includes(String(p.pago_acordado||''))&&Number(p.subtotal)>0)}},
+    v(){const k='por pagar a negocios',c=datos(k,this.load);if(!c.data)return {body:cargando(c)};const {b,P}=c.data,f=SF[k];f.off=f.off||{};f.quien=f.quien||{};f.met=f.met||{};
+      const g=new Map();P.forEach(p=>{const x=String(p.negocio_id);if(!g.has(x))g.set(x,[]);g.get(x).push(p)});const tot=P.reduce((s,p)=>s+(Number(p.subtotal)||0),0);
+      let h=`<div class="amt"><div class="k">Total por pagar</div><div class="n">${M(tot)}</div><div class="pill">${g.size} negocio${g.size===1?'':'s'}</div></div>`+U.note('Pedidos donde el cliente le pagó todo a Pidemás (al motorizado o por Yape): le debes al negocio el valor de los productos.');
+      if(!g.size)return {body:h+vacio('No le debes nada a ningún negocio.')};
+      h+=[...g.entries()].map(([nid,L2])=>{const n=b.negs.find(x=>String(x.id)===nid)||{},t=L2.reduce((s,p)=>s+(Number(p.subtotal)||0),0),w=telW(n.telefono);
+        const msg=['Hola, '+(n.nombre||'')+' 👋','Te escribimos de *Pidemás Delivery*. Este es el resumen de lo que te pagamos por tus pedidos:',...L2.map(p=>'• '+ref(p.id)+' · '+fch(p.entregado_en||p.creado_en)+' · '+M(p.subtotal)),'','*Total: '+M(t)+'*'].join('\n');
+        const q=f.quien[nid]||'admin',mt=f.met[nid]||'efectivo';
+        return `<div class="cd"><div class="row"><div style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:17px">${E(n.nombre||'Negocio')}</b><span style="font-size:13px;color:#6B5E55">${L2.length} pedido${L2.length===1?'':'s'} · ${M(t)}</span></div>${w?`<a class="b g" style="height:40px;padding:0 12px" target="_blank" rel="noopener" href="https://wa.me/${w}?text=${encodeURIComponent(msg)}">${U.I.wa}Resumen</a>`:''}</div>
+          ${L2.map(p=>{const on=!f.off[p.id];return `<button type="button" class="opt${on?' on':''}" style="flex-direction:row;align-items:center;gap:10px" data-sa="tg:${E(p.id)}"><span class="sel${on?' on':''}">${on?IC.check:''}</span><span style="flex:1 1 0%"><b style="font-size:15px">${E(ref(p.id))}</b> <span>· ${E(fch(p.entregado_en||p.creado_en))}</span></span><b>${M(p.subtotal)}</b></button>`}).join('')}
+          <div class="lbl" style="margin-top:4px">¿Cómo le pagaste?</div><div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button type="button" class="${mt==='efectivo'?'on':''}" data-sa="mt:${E(nid)}:efectivo">Efectivo</button><button type="button" class="${mt==='yape'?'on':''}" data-sa="mt:${E(nid)}:yape">Yape / transferencia</button></div>
+          <div class="lbl">¿Quién le pagó?</div><div class="opts">${[['admin','Administración',''],...b.motos.filter(m=>m.activo!==false).map(m=>[m.id,m.nombre_completo,'Sale de su caja'])].map(x=>`<button type="button" class="opt${String(q)===String(x[0])?' on':''}" data-sa="qn:${E(nid)}:${E(x[0])}"><b>${E(x[1])}</b>${x[2]?`<span>${E(x[2])}</span>`:''}</button>`).join('')}</div>
+          <button type="button" class="b o" data-sa="pag:${E(nid)}">Marcar como pagado</button></div>`}).join('');
+      return {body:h}},
+    async a(x){const k='por pagar a negocios',f=SF[k],c=C2['s:'+k],p=x.split(':');
+      if(p[0]==='tg'){f.off[p[1]]=!f.off[p[1]];return}if(p[0]==='qn'){f.quien[p[1]]=p[2];return}if(p[0]==='mt'){f.met[p[1]]=p[2];return}
+      if(p[0]==='pag'){const nid=p[1],{b,P}=c.data,L2=P.filter(y=>String(y.negocio_id)===nid&&!f.off[y.id]);if(!L2.length){mal('Marca al menos un pedido.');return}
+        const met=f.met[nid]||'efectivo',quien=f.quien[nid]||'admin',n=b.negs.find(y=>String(y.id)===nid)||{},t=r2(L2.reduce((s,y)=>s+(Number(y.subtotal)||0),0));
+        if(!(await conf('¿Registrar que le pagaste '+M(t)+' a '+(n.nombre||'el negocio')+' ('+met+')?')))return;
+        const now=new Date().toISOString();for(const y of L2){const r=await D().from('pedidos').update({negocio_pagado_en:now,negocio_pagado_metodo:met,negocio_pagado_monto:r2(y.subtotal)}).eq('id',y.id);if(r.error){mal('No se pudo registrar: '+r.error.message);return}}
+        if(quien!=='admin'){const r=await D().from('movimientos_caja').insert(L2.map(y=>({motorizado_id:quien,pedido_id:y.id,tipo:'retiro',monto:r2(y.subtotal),descripcion:'PAGO A NEGOCIO · '+(n.nombre||'Negocio')+' · Pedido '+ref(y.id)})));if(r.error){mal('No se pudo registrar en la caja: '+r.error.message);return}}
+        ok('Pago al negocio registrado');recargar(k)}}};
+
+  /* --- Calificaciones --- */
+  SEC['calificaciones']={g:'Control de pedidos',t:'Calificaciones',rf:1,
+    load:async()=>{const b=await baseCtl();const {data,error}=await D().from('calificaciones').select('*').order('creado_en',{ascending:false}).limit(500);if(error)throw error;return {b,C:data||[]}},
+    v(){const c=datos('calificaciones',this.load);if(!c.data)return {body:cargando(c)};const {b,C}=c.data;
+      const prom=(k,kk)=>{const g=new Map();C.forEach(x=>{const id=x[kk],v=Number(x[k]);if(!id||!v)return;const y=g.get(String(id))||{s:0,n:0};y.s+=v;y.n++;g.set(String(id),y)});return [...g].map(([id,y])=>({id,p:y.s/y.n,n:y.n})).sort((a,b2)=>b2.p-a.p)};
+      const st=v=>'★'.repeat(Math.round(v))+'☆'.repeat(5-Math.round(v));const pm=prom('estrellas_motorizado','motorizado_id'),pn=prom('estrellas_negocio','negocio_id');
+      const malas=C.filter(x=>Math.min(x.estrellas_negocio||5,x.estrellas_motorizado||5)<=2||x.comentario).slice(0,25);
+      const lista=(L2,nom)=>L2.length?L2.map(x=>fila(E(nom(x.id)),x.n+' calificación'+(x.n===1?'':'es'),`<span style="white-space:nowrap"><span class="stars">${st(x.p)}</span> <b>${x.p.toFixed(1)}</b></span>`)).join(''):'<div style="color:#6B5E55;font-size:15px">Aún no hay.</div>';
+      let h=`<div class="amt"><div class="k">Calificaciones recibidas</div><div class="n">${C.length}</div><div class="pill">Últimas 500</div></div>`;
+      h+=`<div class="cd"><div class="lbl">Motorizados</div>${lista(pm,id=>mN(b,id))}</div><div class="cd"><div class="lbl">Negocios</div>${lista(pn,id=>(b.negs.find(n=>String(n.id)===id)||{}).nombre||'Negocio')}</div>`;
+      h+=`<div class="cd"><div class="lbl">Comentarios y calificaciones bajas</div>${malas.length?malas.map(x=>fila(E(ref(x.pedido_id))+' · negocio '+(x.estrellas_negocio||'—')+'★ · motorizado '+(x.estrellas_motorizado||'—')+'★',E(x.comentario||'Sin comentario')+' · '+E(fecha(x.creado_en)))).join(''):'<div style="color:#6B5E55;font-size:15px">Sin comentarios.</div>'}</div>`;
+      return {body:h}}};
+
+  /* --- Reportes de pedidos --- */
+  SEC['reportes de pedidos']={g:'Control de pedidos',t:'Reportes de pedidos',rf:1,
+    load:async()=>{const b=await baseCtl();const dias=SF['reportes de pedidos'].d||7;const {data,error}=await D().from('pedidos').select('id,estado,negocio_id,motorizado_id,tipo_servicio,total,subtotal,costo_delivery,creado_en,asignado_en,aceptado_en,en_camino_en,entregado_en,cancelado_por,motivo_cancelacion').gte('creado_en',new Date(Date.now()-dias*864e5).toISOString()).limit(5000);if(error)throw error;return {b,P:data||[],dias}},
+    v(){const f=SF['reportes de pedidos'];f.d=f.d||7;const c=datos('reportes de pedidos',this.load);
+      let h=`<div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[[1,'Hoy'],[7,'7 días'],[30,'30 días']].map(x=>`<button type="button" class="${f.d===x[0]?'on':''}" data-sa="d:${x[0]}">${x[1]}</button>`).join('')}</div>`;
+      if(!c.data||c.data.dias!==f.d)return {body:h+cargando(c)};const {b,P}=c.data,ent=P.filter(p=>est(p)==='entregado'),can=P.filter(p=>est(p)==='cancelado');
+      const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:0,dur=(a,b2)=>ent.map(p=>p[a]&&p[b2]?(T(p[b2])-T(p[a]))/60000:null).filter(x=>x!=null&&x>=0&&x<600);
+      const hr=new Array(24).fill(0);P.forEach(p=>{hr[+new Date(p.creado_en).toLocaleString('en-US',{timeZone:'America/Lima',hour:'numeric',hour12:false})%24]++});const mx=Math.max(1,...hr);
+      const pN=new Map();ent.filter(p=>p.negocio_id).forEach(p=>{const x=pN.get(String(p.negocio_id))||{n:0,v:0};x.n++;x.v+=Number(p.subtotal)||0;pN.set(String(p.negocio_id),x)});
+      const pM=new Map();ent.filter(p=>p.motorizado_id).forEach(p=>{const x=pM.get(String(p.motorizado_id))||{n:0,d:0};x.n++;x.d+=Number(p.costo_delivery)||0;pM.set(String(p.motorizado_id),x)});
+      const mo=new Map();can.forEach(p=>{const k=(p.cancelado_por?p.cancelado_por+': ':'')+(p.motivo_cancelacion||'Sin motivo');mo.set(k,(mo.get(k)||0)+1)});
+      const venta=ent.reduce((s,p)=>s+(Number(p.total)||0),0),nN=id=>(b.negs.find(n=>String(n.id)===String(id))||{}).nombre||'Negocio';
+      h+=`<div class="amt"><div class="k">Venta entregada</div><div class="n">${M(venta)}</div><div class="pill">${ent.length} entregados · ticket ${M(ent.length?venta/ent.length:0)}</div></div>`;
+      h+=`<div class="cols3"><div class="kp"><span>Pedidos</span><b>${P.length}</b></div><div class="kp"><span>Anulados</span><b>${can.length}</b></div><div class="kp"><span>Delivery</span><b style="font-size:17px">${M(ent.reduce((s,p)=>s+(Number(p.costo_delivery)||0),0))}</b></div></div>`;
+      h+=`<div class="cd"><div class="lbl">Tiempo promedio por etapa</div><div class="li"><span>Pedido → asignado</span><b>${Math.round(avg(dur('creado_en','asignado_en')))} min</b></div><div class="li"><span>Asignado → aceptado</span><b>${Math.round(avg(dur('asignado_en','aceptado_en')))} min</b></div><div class="li"><span>Aceptado → en camino</span><b>${Math.round(avg(dur('aceptado_en','en_camino_en')))} min</b></div><div class="li"><span>Total hasta entregar</span><b>${Math.round(avg(dur('creado_en','entregado_en')))} min</b></div></div>`;
+      if(hr.some(Boolean))h+=`<div class="cd"><div class="lbl">Pedidos por hora</div>${hr.map((n,x)=>n?`<div style="display:flex;align-items:center;gap:10px"><span style="width:44px;font-size:13px;color:#6B5E55">${x%12||12} ${x<12?'am':'pm'}</span><div class="bar" style="flex:1"><s style="width:${Math.max(4,Math.round(n*100/mx))}%"></s></div><b style="width:24px;text-align:right">${n}</b></div>`:'').join('')}</div>`;
+      h+=`<div class="cd"><div class="lbl">Venta por negocio</div>${[...pN].sort((a,b2)=>b2[1].v-a[1].v).map(([id,x])=>fila(E(nN(id)),x.n+' pedido'+(x.n===1?'':'s'),`<span class="am">${M(x.v)}</span>`)).join('')||'<div style="color:#6B5E55">Sin ventas.</div>'}</div>`;
+      h+=`<div class="cd"><div class="lbl">Entregas por motorizado</div>${[...pM].sort((a,b2)=>b2[1].n-a[1].n).map(([id,x])=>fila(E(mN(b,id)),'Delivery '+M(x.d),`<span class="am">${x.n}</span>`)).join('')||'<div style="color:#6B5E55">Sin entregas.</div>'}</div>`;
+      if(mo.size)h+=`<div class="cd"><div class="lbl">Motivos de anulación</div>${[...mo].sort((a,b2)=>b2[1]-a[1]).map(([k,n])=>`<div class="li"><span>${E(k)}</span><b>${n}</b></div>`).join('')}</div>`;
+      const csv=['Pedido;Estado;Tipo;Negocio;Motorizado;Total;Delivery;Creado;Entregado;Anulado por;Motivo',...P.map(p=>[ref(p.id),p.estado,p.tipo_servicio||'',p.negocio_id?nN(p.negocio_id):'',p.motorizado_id?mN(b,p.motorizado_id):'',p.total||0,p.costo_delivery||0,fecha(p.creado_en),p.entregado_en?fecha(p.entregado_en):'',p.cancelado_por||'',p.motivo_cancelacion||''].join(';'))].join('\n');
+      return {body:h,foot:`<a class="b" style="height:50px" download="pedidos-${f.d}d.csv" href="data:text/csv;charset=utf-8,${encodeURIComponent('﻿'+csv)}">${IC.list}Descargar Excel (CSV)</a>`}},
+    async a(x){SF['reportes de pedidos'].d=+x.split(':')[1];recargar('reportes de pedidos')}};
+
   /* =============== PÁGINAS DE SIEMPRE (marco) =============== */
   const DLG='#pdDlg,#pdpeVelo,#pfSheet,#pdYNOv,#pdmmVelo,#pdsmVelo,pd-ventana';
   function paginaVieja(){
