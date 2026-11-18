@@ -18285,7 +18285,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
     const root=host.attachShadow({mode:'open'});
     document.body.appendChild(host);
     /* en el motorizado el menú de abajo queda visible también en el detalle */
-    try{const nh=window.pdAppMoto&&window.pdAppMoto.navH?window.pdAppMoto.navH():0;if(nh>0)host.style.bottom=nh+'px'}catch(_){}
+    try{const nh=(()=>{const A=window.pdAppMoto||window.pdAppNeg;return A&&A.navH?A.navH():0})();if(nh>0)host.style.bottom=nh+'px'}catch(_){}
     cur={host,root,model,ocultas:[],open:{},key:null,lastActive:-2,onClose:opts&&opts.onClose,ov:document.documentElement.style.overflow};
     document.documentElement.style.overflow='hidden';
     cur.propio=propio();
@@ -18490,7 +18490,7 @@ input.cod{text-align:center;font-size:30px;letter-spacing:.4em;height:64px}
   }
   const vis=el=>{if(!el||!el.isConnected||el.hidden)return false;const cs=getComputedStyle(el);return cs.display!=='none'&&!!el.innerHTML.trim()};
   function esconder(el){if(el.dataset.pdEspejo)return;el.dataset.pdEspejo='1';['opacity:0','pointer-events:none','backdrop-filter:none','-webkit-backdrop-filter:none','background:transparent','filter:none'].forEach(x=>{const [k,v]=x.split(':');el.style.setProperty(k,v,'important')})}
-  const abajo=()=>{try{return window.pdAppMoto&&window.pdAppMoto.navH?window.pdAppMoto.navH():0}catch(e){return 0}};
+  const abajo=()=>{try{return (()=>{const A=window.pdAppMoto||window.pdAppNeg;return A&&A.navH?A.navH():0})()}catch(e){return 0}};
   /* lee la ventana original y la arma con el diseño nuevo */
   function armar(el){
     const titulo=(el.querySelector('h2,h3,.pdsmTop strong,.hd h2,strong')||{}).textContent||'';
