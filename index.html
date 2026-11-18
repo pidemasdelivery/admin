@@ -18569,7 +18569,7 @@ input.cod{text-align:center;font-size:30px;letter-spacing:.4em;height:64px}
 .pl.r{background:#FDE8E8;color:#9B1C1C}.pl.m{background:#FFF4EC;color:#9A330A}
 .con{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#6B5E55}.con i{width:8px;height:8px;border-radius:50%;background:#A8988C}
 .con.ok{color:#0F5E2E}.con.ok i{background:#15803D}.con.no{color:#9B1C1C}.con.no i{background:#B42318}
-.cols2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cols3 .mt b,.cols2 .mt b{font-size:20px}
+.cols2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.cols3 .mt b,.cols2 .mt b{font-size:20px}.slc{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.slc>small{text-align:center;font-size:12px;font-weight:800;color:#6B5E55;padding:2px 0}.slc button{min-height:60px;height:auto;border-radius:12px;border:1px solid #F1E4DA;background:#FFFFFF;color:#1F1A17;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 1px;font:inherit;cursor:pointer;min-width:0}.slc button b{font-size:17px;font-weight:800;line-height:1.1}.slc button small{font-size:10px;font-weight:700;color:#6B5E55;line-height:1.1;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.slc button em{font-style:normal;font-size:9px;font-weight:800;color:#9A330A;background:#FDEBDF;border-radius:6px;padding:1px 3px;max-width:100%;overflow:hidden;white-space:nowrap}.slc .trabajado,.slc .ajuste{background:#E9F6EE;border-color:#CDEBD7}.slc .trabajado small,.slc .ajuste small{color:#0F5E2E}.slc .descanso{background:#FFF4EC;border-color:#F6D9C4}.slc .descanso small{color:#9A330A}.slc .falta{background:#FDE8E8;border-color:#F4C7C3}.slc .falta small,.slc .falta b{color:#9B1C1C}.slc .hoy{border:2px solid #C4410C}.slc .hoy small{color:#C4410C}.slc .libre,.slc .antes,.slc .dia31,.slc .ajusteFuturo{background:#F6EFE9;color:#9C8F86}.slc button:disabled{cursor:default}.slc .adel{box-shadow:inset 0 0 0 2px #15803D}
 .tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .tiles button{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px 12px;border-radius:16px;border:1px solid #F1E4DA;background:#FFFFFF;color:#1F1A17;font-size:14px;font-weight:800;cursor:pointer;text-align:left}
 .tiles button svg{color:#C4410C}.tiles button.on{border:1.5px solid #C4410C;background:#FFF4EC}
@@ -18787,7 +18787,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     await recargaMoto();CJ.ok=st==='aprobado'?'Pago aprobado.':'Pago rechazado: ya no se descuenta de su caja.'}
 
   /* =============== SUELDOS (rehecha) =============== */
-  const SL={moto:null,per:'',monto:'',nota:'',msg:'',ok:'',q:''};
+  const SL={moto:null,per:'',monto:'',nota:'',msg:'',ok:'',q:'',pest:'',modo:'pago',vista:null,dia:null,bol:'',hist:null,f:{},cfg:null};
   function datosSueldo(force){return cargar('sueldo',async()=>{const [mr,cr]=await Promise.all([D().from('motorizados').select('*').order('nombre_completo'),D().from('control_sueldos').select('*').order('fecha',{ascending:true}).limit(20000)]);if(mr.error)throw mr.error;if(cr.error)throw cr.error;const by=new Map();(cr.data||[]).forEach(r=>{const k=String(r.motorizado_id);if(!by.has(k))by.set(k,[]);by.get(k).push(r)});return {motos:(mr.data||[]).filter(m=>m.activo!==false),by}},force)}
   function calcS(m){const S2=window.PdSueldo,c=C2.sueldo;if(!S2||!c||!c.data)return null;try{return S2.calc(m,c.data.by.get(String(m.id))||[])}catch(e){return null}}
   const pend=r=>r&&r.ok?(r.periods||[]).reduce((s,p)=>s+Math.max(0,p.balance||0),0):0;
@@ -18797,52 +18797,302 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const R=c.data.motos.map(m=>({m,r:calcS(m)}));const tot=R.reduce((s,x)=>s+pend(x.r),0),con=R.filter(x=>pend(x.r)>0.004).length,sin=R.filter(x=>!x.r||!x.r.ok).length;
     window.__pdaSueldoTotal=tot;
     let h=`<div class="amt"><div class="k">Sueldos pendientes</div><div class="n">${M(tot)}</div><div class="pill">${con} de ${R.length} por pagar${sin?' · '+sin+' sin configurar':''}</div></div>`;
-    h+=U.note('Los días se suman solos al terminar cada jornada. Para marcar faltas o cambiar el horario, entra al motorizado y toca «Configuración y asistencia».');
+    h+=U.note('Los días se suman solos al terminar cada jornada. Para ver su calendario, marcar faltas, dar adelantos o cambiar el horario, entra al motorizado.');
     h+=`<div class="fld"><label for="slQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar motorizado</label><input id="slQ" type="search" placeholder="Buscar motorizado" value="${E(SL.q)}" data-in="slq"></div><div id="slL" style="display:flex;flex-direction:column;gap:10px">${slFilas()}</div>`;
     return {head,body:h};
   }
   function slFilas(){const c=C2.sueldo;if(!c||!c.data)return '';const ql=SL.q.trim().toLowerCase();
     return c.data.motos.map(m=>({m,r:calcS(m)})).filter(x=>!ql||String(x.m.nombre_completo||'').toLowerCase().includes(ql)).sort((a,b)=>pend(b.r)-pend(a.r)||String(a.m.nombre_completo).localeCompare(String(b.m.nombre_completo))).map(({m,r})=>{const p=pend(r);
       return `<button type="button" class="tl" data-sm="${E(m.id)}"><span class="ic" style="font-weight:800;font-size:15px">${iniN(m.nombre_completo)}</span><span class="tx"><b>${E(m.nombre_completo||'Motorizado')}</b><span>${!r||!r.ok?'Sin configurar':p>0.004?'Por pagar':'Al día'}</span></span><b style="font-size:17px;white-space:nowrap;color:${!r||!r.ok||p<0.005?'#6B5E55':'#1F1A17'}">${!r||!r.ok?'—':M(p)}</b>${IC.chev}</button>`}).join('')||'<div class="vac">No hay motorizados con ese nombre.</div>'}
+  /* =============== SUELDO DE UN MOTORIZADO (todo nativo: calendario, asistencia, pagos, descuentos, préstamos, cierre) =============== */
+  const r2s=n=>Math.round((Number(n)||0)*100)/100;
+  const numv=v=>Number(String(v??'').replace(',','.'));
+  const fDs=i=>{try{return window.PdSueldo.parse(i).toLocaleDateString('es-PE',{day:'2-digit',month:'short'}).replace('.','')}catch(e){return i}};
+  const capS=s=>String(s||'').charAt(0).toUpperCase()+String(s||'').slice(1);
+  const confS=t=>window.pdConfirmar?pdConfirmar(t):Promise.resolve(confirm(t));
+  const hmS=t=>{const [a,b]=String(t||'').split(':').map(Number);return (a||0)*60+(b||0)};
+  const DS=['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],DSC={lunes:'Lun',martes:'Mar',miercoles:'Mié',jueves:'Jue',viernes:'Vie',sabado:'Sáb',domingo:'Dom'};
+  const tipoS=x=>String(x&&x.tipo||'').toLowerCase();
+  const slRows=()=>{const c=C2.sueldo;return (c&&c.data&&SL.moto&&c.data.by.get(String(SL.moto.id)))||[]};
+  const muted=t=>`<div style="color:#6B5E55;font-size:15px">${t}</div>`;
+  const avisos=()=>(SL.msg?`<div class="err">${E(SL.msg)}</div>`:'')+(SL.ok?`<div class="msgok">${E(SL.ok)}</div>`:'');
+  function slx(force){const m=SL.moto;if(!m)return {};const id=String(m.id);return cargar('slx:'+id,async()=>{
+    const r=calcS(m),P=r&&r.current,cfg=r&&r.cfg;
+    const q=async p=>{try{const x=await p;return x&&!x.error?x.data:null}catch(e){return null}};
+    const [c,p,j,a,t]=await Promise.all([
+      q(D().from('quincenas_cerradas').select('*').eq('motorizado_id',id).order('inicio',{ascending:false})),
+      q(D().from('prestamos').select('*').eq('motorizado_id',id).order('creado_en',{ascending:false})),
+      q(D().from('justificaciones').select('*').eq('motorizado_id',id).order('fecha',{ascending:false}).limit(30)),
+      q(D().from('asistencia_revisada').select('*').eq('motorizado_id',id)),
+      q(D().from('ajustes_pidemas').select('valor').eq('clave','tardanza').maybeSingle())]);
+    let gps=[];if(P&&P.start&&cfg&&cfg.ok&&!cfg.hourly){const g=await q(D().rpc('asistencia_gps',{p_moto:id,p_desde:P.start,p_hasta:P.end}));if(Array.isArray(g))gps=g}
+    return {cierres:c||[],prestamos:p||[],justif:j||[],rev:a||[],tard:Object.assign({tolerancia:10,cada:15,monto:2},t&&t.valor||{}),gps,ctl:c!==null,pres:p!==null};
+  },force)}
+  const esperaS=k=>new Promise(res=>{const t=setInterval(()=>{if(!C2[k]||!C2[k].busy){clearInterval(t);res()}},120)});
+  async function slRe(soloX){const id=String(SL.moto.id);
+    if(!soloX){datosSueldo(true);await esperaS('sueldo');const n=C2.sueldo&&C2.sueldo.data&&C2.sueldo.data.motos.find(x=>String(x.id)===id);if(n)SL.moto=n}
+    slx(true);await esperaS('slx:'+id);key='';pintar()}
+  async function insS(row){const q=await D().from('control_sueldos').insert(row);if(q.error)throw q.error}
+  async function delS(tabla,id){const q=await D().from(tabla).delete().eq('id',id);if(q.error)throw new Error(q.error.message+'. Revisa el permiso de borrar.')}
+  function abrirV(v){SL.vista=v;SL.msg='';try{history.pushState({pdApp:1,slv:1},'')}catch(_){}}
+  function cerrarV(){SL.vista=null;if(history.state&&history.state.slv){ignorarPop=true;history.back()}}
+
   function sueldoMoto(){
-    const m=SL.moto,r=m&&calcS(m),S2=window.PdSueldo;const head=top3('Sueldo de',m?m.nombre_completo||'Motorizado':'Motorizado',`<button type="button" class="ib" data-a="sl:act" aria-label="Actualizar">${IC.refresh}</button>`);
+    const m=SL.moto,S2=window.PdSueldo;
+    if(SL.vista&&m&&S2&&C2.sueldo&&C2.sueldo.data){const v=slVista();if(v)return v}
+    const r=m&&calcS(m);
+    const head=top3('Sueldo de',m?m.nombre_completo||'Motorizado':'Motorizado',`<button type="button" class="ib" data-a="sl:act" aria-label="Actualizar">${IC.refresh}</button>`);
     if(!m||!S2||!C2.sueldo||!C2.sueldo.data)return {head,body:'<div class="load">Cargando…</div>'};
-    let h='',foot='';
-    const cfgBtn=`<button type="button" class="b" data-a="sl:cfg">${IC.list}Configuración, asistencia y descuentos</button>`;
-    if(!r||!r.ok){h+=`<div class="amt"><div class="k">Sueldo</div><div class="n" style="font-size:30px">Sin configurar</div><div class="pill">Falta: ${E(((r&&r.cfg&&r.cfg.missing)||['ingreso, horario y días']).join(', '))}</div></div>`+cfgBtn;return {head,body:h}}
-    const P2=r.current,cfg=r.cfg,rows=C2.sueldo.data.by.get(String(m.id))||[];
-    h+=`<div class="amt"><div class="k">Por pagar en total</div><div class="n">${M(pend(r))}</div><div class="pill">${E(P2.label||'Quincena actual')}: ${M(Math.max(0,P2.balance))}</div></div>`;
-    const gas=r.hourly?P2.gasTotal:P2.gasDays*(S2.GAS||8),desc=(P2.descRows||[]).reduce((s,x)=>s+(Number(x.monto)||0),0);
-    h+=`<div class="cd"><div class="lbl">${E(P2.label||'Quincena actual')}</div><div class="li"><span>Sueldo</span><b>${M(P2.earned-gas)}</b></div><div class="li"><span>Gasolina</span><b>${M(gas)}</b></div><div class="li"><span>Ganado</span><b>${M(P2.earned)}</b></div>${desc?`<div class="li"><span>Descuentos</span><b>− ${M(desc)}</b></div>`:''}<div class="li"><span>Ya pagado</span><b>− ${M(P2.paid)}</b></div><div class="li" style="border-top:1px solid #F1E4DA;padding-top:8px"><span>Pendiente</span><b style="font-size:18px">${M(Math.max(0,P2.balance))}</b></div></div>`;
-    const dias=(P2.days||[]).filter(d=>d.status&&d.status!=='antes');
-    if(dias.length){const cl=d=>({trabajado:'t',descanso:'r',falta:'f',hoy:'h'})[d.status]||'';const tx=d=>({trabajado:'T',descanso:'D',falta:'F',hoy:'Hoy'})[d.status]||new Date(d.date+'T12:00:00').getDate();
-      h+=`<div class="cd"><div class="lbl">Asistencia</div><div class="cal">${dias.map(d=>`<div><small>${E(String(d.label||'').slice(0,3))}</small><i class="${cl(d)}">${tx(d)}</i></div>`).join('')}</div><div class="ley"><span><b style="color:#0F5E2E">T</b> Trabajado</span><span><b style="color:#9A330A">D</b> Descanso</span><span><b style="color:#9B1C1C">F</b> Falta</span></div></div>`}
-    const per=(r.periods||[]).filter(p=>p.balance>0.004).reverse();
-    if(!SL.per&&per.length){SL.per=per[0].key;SL.monto=per[0].balance.toFixed(2)}
-    h+=`<div class="cd"><div class="lbl">Registrar pago</div>${per.length?`<div class="opts">${per.map(p=>`<button type="button" class="opt${SL.per===p.key?' on':''}" data-sp="${E(p.key)}"><b>${E(p.label)}</b><span>Pendiente ${M(p.balance)}${p.needsDesc&&!p.descSet?' · falta el descuento AFP/ONP':''}</span></button>`).join('')}</div>
-      <div class="fld"><label for="slM">Monto (S/)</label><input id="slM" inputmode="decimal" value="${E(SL.monto)}" data-in="slm" placeholder="0.00"></div><div class="fld"><label for="slN">Detalle</label><input id="slN" value="${E(SL.nota)}" data-in="sln" maxlength="200" placeholder="Ej. Yape, efectivo"></div>`:'<div style="color:#6B5E55;font-size:15px">No tiene quincenas pendientes de pago.</div>'}</div>`;
-    if(SL.msg)h+=`<div class="err">${E(SL.msg)}</div>`;if(SL.ok)h+=`<div class="msgok">${E(SL.ok)}</div>`;
-    h+=cfgBtn;
-    const D7={lunes:'Lun',martes:'Mar',miercoles:'Mié',jueves:'Jue',viernes:'Vie',sabado:'Sáb',domingo:'Dom'},O7=['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
-    h+=`<div class="cd"><div class="lbl">Contrato</div><div class="li"><span>Ingreso</span><b>${cfg.hire?E(S2.parse(cfg.hire).toLocaleDateString('es-PE')):'—'}</b></div><div class="li"><span>Horario</span><b>${cfg.hourly?'Por horas':cfg.times?E(S2.fmtTime(cfg.times.start)+' – '+S2.fmtTime(cfg.times.end)):'—'}</b></div><div class="li"><span>Días</span><b>${E(O7.filter(d=>(cfg.days||[]).includes(d)).map(d=>D7[d]).join(', ')||'—')}</b></div></div>`;
-    const pays=rows.filter(x=>String(x.tipo||'').toLowerCase()==='pago').sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).slice(0,12);
-    h+=`<div class="cd"><div class="lbl">Pagos hechos</div>${pays.length?pays.map(x=>`<div class="mv"><span class="ic" style="background:#E9F6EE;color:#15803D">${IC.check}</span><span class="tx"><b>${M(x.monto)}</b><span>${E(new Date(String(x.fecha).slice(0,10)+'T12:00:00').toLocaleDateString('es-PE',{day:'2-digit',month:'short'}))}${x.descripcion?' · '+E(x.descripcion):''}</span></span></div>`).join(''):'<div style="color:#6B5E55;font-size:15px">Aún no hay pagos.</div>'}</div>`;
-    if(per.length)foot=`<button type="button" class="b o" style="height:54px;font-size:16px" data-a="sl:pagar">Registrar pago${Number(String(SL.monto).replace(',','.'))>0?' · '+M(Number(String(SL.monto).replace(',','.'))):''}</button>`;
+    slx();
+    if(!SL.pest)SL.pest=r&&r.ok?'resumen':'ajustes';
+    const T=[['resumen','Resumen'],['asis','Asistencia'],['pagos','Pagos'],['ajustes','Ajustes']];
+    let h=`<div class="seg" role="tablist" style="grid-template-columns:repeat(4,minmax(0,1fr))">${T.map(t=>`<button type="button" role="tab" aria-selected="${SL.pest===t[0]}" class="${SL.pest===t[0]?'on':''}" data-sx="pest:${t[0]}">${t[1]}</button>`).join('')}</div>`+avisos();
+    let foot='';
+    if(SL.pest==='ajustes')h+=slAjustes(r);
+    else if(!r||!r.ok)h+=`<div class="amt"><div class="k">Sueldo</div><div class="n" style="font-size:30px">Sin configurar</div><div class="pill">Falta: ${E(((r&&r.cfg&&r.cfg.missing)||['ingreso, horario y días']).join(', '))}</div></div><button type="button" class="b o" data-sx="pest:ajustes">Completar la configuración</button>`;
+    else if(SL.pest==='asis')h+=r.hourly?slJornadas(r):slAsis(r);
+    else if(SL.pest==='pagos'){const x=slPagos(r);h+=x.h;foot=x.foot}
+    else h+=slResumen(r);
     return {head,body:h,foot};
   }
-  async function sueldoPagar(){
-    const m=SL.moto,r=calcS(m),S2=window.PdSueldo;SL.msg='';SL.ok='';if(!r||!r.ok){SL.msg='Completa primero la configuración del motorizado.';return}
-    const p=(r.periods||[]).find(x=>x.key===SL.per),monto=Number(String(SL.monto).replace(',','.'));
-    if(!p){SL.msg='Elige la quincena que pagas.';return}if(!Number.isFinite(monto)||monto<=0){SL.msg='Escribe un monto válido.';return}
-    if(p.needsDesc&&!p.descSet){SL.msg='Primero registra el descuento AFP/ONP de fin de mes (en «Configuración, asistencia y descuentos»; pon 0 si no tiene).';return}
-    const conf=t=>window.pdConfirmar?pdConfirmar(t):Promise.resolve(confirm(t));
-    if(monto>p.balance+0.004&&!(await conf('El monto es mayor a lo pendiente de esa quincena ('+M(Math.max(0,p.balance))+'). ¿Registrar de todas formas?')))return;
-    if(!(await conf('¿Registrar un pago de '+M(monto)+' a '+(m.nombre_completo||'este motorizado')+' por la '+p.label+'?')))return;
-    const q=await D().from('control_sueldos').insert({motorizado_id:m.id,fecha:S2.todayIso(),tipo:'pago',monto,descripcion:SL.nota.trim()||'Pago de sueldo',periodo:p.key});
-    if(q.error){SL.msg='No se pudo registrar: '+q.error.message;return}
-    SL.per='';SL.monto='';SL.nota='';C2.sueldo.t=0;await new Promise(res=>{datosSueldo(true);const t=setInterval(()=>{if(C2.sueldo&&!C2.sueldo.busy){clearInterval(t);res()}},150)});SL.ok='Pago registrado: '+M(monto)+'.';
+  const liS=(l,s,v,st)=>`<div class="li"><span>${l}${s?`<small style="display:block;font-size:13px;color:#6B5E55;font-weight:500">${s}</small>`:''}</span><b${st?` style="${st}"`:''}>${v}</b></div>`;
+  function slResumen(r){
+    const S2=window.PdSueldo,P=r.current,x=slx().data;
+    const gas=r.hourly?r2s(P.gasTotal):r2s(P.gasDays*S2.GAS),dias=P.worked+P.adj+P.rest;
+    let h=`<div class="amt"><div class="k">${E(capS(P.label))}</div><div class="n">${M(Math.max(0,P.balance))}</div><div class="pill">${P.balance<-0.004?'Adelantado '+M(-P.balance):'Pendiente de esta quincena'}</div></div>`;
+    if(r.previousDue>0.004)h+=`<div class="err">Quincenas anteriores sin pagar: ${M(r.previousDue)}</div>`;
+    const st=r.hourly?[['Jornadas',P.worked],['Horas',P.hours],['Gasolina',M(P.gasTotal)],['Pagado',M(P.paid)]]:[['Trabajados',P.worked+P.adj],['Descansos',P.rest],['Días con gasolina',P.gasDays],['Faltas',P.faltas]];
+    h+=`<div class="cols2">${st.map(s=>`<div class="kp"><span>${s[0]}</span><b>${E(s[1])}</b></div>`).join('')}</div>`;
+    const g=new Map();(P.descRows||[]).forEach(y=>{const d=String(y.descripcion||'Descuento').replace(/^Descuento\s+/i,'').replace(/\s*·.*$/,'');const k=/AFP|ONP/i.test(d)?'AFP/ONP':/^cuota/i.test(d)?'cuota de préstamo':/^tardanza/i.test(d)?'tardanzas':/faltante/i.test(d)?'faltante de caja':d;g.set(k,(g.get(k)||0)+(Number(y.monto)||0))});
+    h+=`<div class="cd"><div class="lbl">Detalle de la quincena</div>${liS('Sueldo',r.hourly?`${P.worked} jornada${P.worked===1?'':'s'} · ${P.hours} h`:`${dias} día${dias===1?'':'s'} pagado${dias===1?'':'s'}`,M(P.earned-gas))}${liS('Gasolina',r.hourly?P.hours+' h trabajadas':`${P.gasDays} día${P.gasDays===1?'':'s'} × ${M(S2.GAS)}`,M(gas))}${liS('Ganado','',M(P.earned))}${[...g].map(([k,v])=>liS('Descuento '+E(k),'','− '+M(v),'color:#B42318')).join('')}${liS('Ya pagado','','− '+M(P.paid))}<div class="li" style="border-top:1px solid #F1E4DA;padding-top:8px"><span>Pendiente</span><b style="font-size:18px">${M(Math.max(0,P.balance))}</b></div></div>`;
+    if(P.needsDesc&&!P.descSet)h+=`<div class="err">Falta el descuento AFP/ONP de fin de mes. Regístralo en «Pagos» antes de pagar.</div>`;
+    h+=U.note(r.hourly?'Solo se suman las jornadas que registras en «Asistencia».':`Cada jornada se suma sola ${E(r.endAt)} (hora de salida). Mes de 30 días${P.start>=S2.FIXED_FROM?' · sueldo fijo S/ 480.38 por quincena'+(P.gasAdj>0?' (incluye ajuste de gasolina '+M(P.gasAdj)+')':''):''}.`);
+    if(x&&x.ctl){const cie=k=>x.cierres.find(c=>c.periodo===k);const L2=(r.periods||[]).filter(p=>p.earned>0.004||p.paid>0.004||cie(p.key)).slice(0,4);
+      h+=`<div class="cd"><div class="lbl">Cierre de quincena y boletas</div>${L2.length?L2.map(p=>{const q=cie(p.key),pd=q?Math.max(0,r2s(q.ganado-q.descuentos-p.paid)):Math.max(0,p.balance);
+        return `<div class="mv" style="flex-wrap:wrap"><span class="tx" style="flex:1 1 0%;min-width:0"><b>${E(capS(p.label))}</b><span>Ganado ${M(q?q.ganado:p.earned)} · desc. ${M(q?q.descuentos:p.desc)} · pagado ${M(p.paid)} · pendiente ${M(pd)}</span></span>${q?(q.recibido_conforme_en?'<span class="pl g">Cerrada · conforme</span>':'<span class="pl m">Falta su conforme</span>'):'<span class="pl n">Abierta</span>'}${q?`<div class="btns b2" style="width:100%"><button type="button" class="b" data-sx="boleta:${E(p.key)}">Ver boleta</button><button type="button" class="b rojo" data-sx="reabrir:${E(p.key)}">Reabrir</button></div>`:`<button type="button" class="b" style="width:100%" data-sx="cerrar:${E(p.key)}">Cerrar quincena</button>`}</div>`}).join(''):muted('Aún no hay quincenas con sueldo.')}<div style="font-size:14px;color:#6B5E55">Al cerrar, los días, faltas y descuentos quedan congelados (se pueden seguir registrando pagos). El motorizado ve su boleta y toca «Recibí conforme».</div><button type="button" class="b" data-sx="hist">${IC.list}Historial de cambios</button></div>`}
+    const hist=(r.periods||[]).filter(p=>!p.isCurrent);
+    if(hist.length)h+=`<div class="cd"><div class="lbl">Quincenas anteriores</div>${hist.map(p=>`<div class="mv" style="flex-wrap:wrap"><span class="tx" style="flex:1 1 0%;min-width:0"><b>${E(capS(p.label))}</b><span>${r.hourly?p.worked+' jornadas · '+p.hours+' h':(p.worked+p.adj)+' trabajados · '+p.rest+' descansos · '+p.faltas+' faltas'} · ganado ${M(p.earned)} · pagado ${M(p.paid)}</span></span>${p.balance>0.004?`<button type="button" class="b o" style="width:auto;padding:0 14px;height:40px" data-sx="pagarper:${E(p.key)}">Pagar ${M(p.balance)}</button>`:'<span class="pl g">Pagado</span>'}</div>`).join('')}</div>`;
+    return h;
   }
-  function sueldoViejo(){const m=SL.moto;abrirSeccion('sueldo','sueldo','Sueldo de '+(m&&m.nombre_completo||''));setTimeout(()=>{const b=document.querySelector(`#pdslMotos .pdslMoto[data-id="${CSS.escape(String(m&&m.id))}"]`);if(b)b.click();else{const s=$('pdslSelect');if(s){s.value=String(m.id);s.dispatchEvent(new Event('change',{bubbles:true}))}}},700)}
+  function offDias(){const f=SL.f,S2=window.PdSueldo,a=f.oa,b=f.ob||a;if(!a||b<a)return [];const out=[];for(let d=S2.parse(a);S2.iso(d)<=b&&out.length<400;d.setDate(d.getDate()+1))out.push(S2.iso(d));return out}
+  function offInfo(){const L2=offDias();if(!L2.length)return 'Elige desde qué día y hasta qué día.';const S2=window.PdSueldo,cfg=S2.config(SL.moto||{});const pay=L2.filter(di=>{const d=S2.parse(di);return d.getDate()!==31&&(cfg.days.includes(S2.KEYS[d.getDay()])||d.getDay()===0)}).length;
+    return `${L2.length} día${L2.length===1?'':'s'}: no se pagarán${pay!==L2.length?' ('+pay+' eran días pagados)':''}.`}
+  function slAsis(r){
+    const S2=window.PdSueldo,P=r.current,rows=slRows(),f=SL.f,x=slx().data;
+    const adv=new Map();rows.forEach(y=>{if(tipoS(y)==='pago'&&/^adelanto/i.test(String(y.descripcion||''))){const k=String(y.fecha).slice(0,10);adv.set(k,(adv.get(k)||0)+(Number(y.monto)||0))}});
+    const SUB={ajuste:'Ajuste',ajusteFuturo:'Al cerrar',dia31:'En el 30',trabajado:'Trabajó',descanso:'Pagado',falta:'Falta',hoy:'Hoy',futuro:'',libre:'Libre',antes:'—'};
+    const days=P.days||[],reales=days.filter(d=>!d.adjDay),off=reales[0]?(S2.parse(reales[0].date).getDay()+6)%7:0;
+    const cal='<div class="slc">'+['L','M','M','J','V','S','D'].map(y=>`<small aria-hidden="true">${y}</small>`).join('')+'<span></span>'.repeat(off)+days.map(d=>{const n=d.adjDay||S2.parse(d.date).getDate();const s=d.adel?'Adelant.':(d.status==='descanso'&&d.holiday?'Feriado':SUB[d.status]||'');const v=!d.adjDay&&adv.get(d.date);const no=d.adjDay||d.status==='dia31';
+      return `<button type="button" class="${E(d.status)}${d.adel?' adel':''}"${no?' disabled':` data-sx="dia:${d.date}"`} aria-label="${E((d.label||'')+' '+n+(s?': '+s:'')+(v?', adelanto '+M(v):''))}"><b>${n}</b><small>${E(s)}</small>${v?`<em>${M(v).replace('S/ ','S/')}</em>`:''}</button>`}).join('')+'</div>';
+    let h=`<div class="cd"><div class="lbl">${E(capS(P.label))}</div>${cal}<div class="ley"><span><b style="color:#0F5E2E">■</b> Trabajó</span><span><b style="color:#E8A27A">■</b> Descanso pagado</span><span><b style="color:#B42318">■</b> Falta</span></div><div style="font-size:14px;color:#6B5E55">Toca un día para registrar o quitar una falta, adelantar el día trabajado o darle un adelanto de sueldo.</div></div>`;
+    h+=`<div class="cd"><div class="lbl">Días sin pago (vacaciones o permisos)</div><div class="two"><div class="fld"><label for="slOa">Desde</label><input id="slOa" type="date" value="${E(f.oa||'')}" data-in="sx:oa"></div><div class="fld"><label for="slOb">Hasta</label><input id="slOb" type="date" value="${E(f.ob||'')}" data-in="sx:ob"></div></div><div class="fld"><label for="slOw">Motivo</label><input id="slOw" maxlength="200" value="${E(f.ow||'')}" data-in="sx:ow" placeholder="Ej. Vacaciones"></div><div id="slOi" style="font-size:14px;color:#6B5E55">${E(offInfo())}</div><div class="btns b2"><button type="button" class="b o" data-sx="offsi">Registrar</button><button type="button" class="b" data-sx="offno">Quitar</button></div></div>`;
+    if(x){const cfg=r.cfg,start=cfg.times.start,end=cfg.times.end,t=x.tard;const g=new Map(x.gps.map(y=>[String(y.fecha).slice(0,10),y])),rv=new Map(x.rev.map(y=>[String(y.fecha).slice(0,10),y]));
+      const dl=days.filter(d=>!d.adjDay&&d.work&&(d.status==='trabajado'||d.status==='hoy')).reverse();
+      const fil=dl.map(d=>{const y=g.get(d.date),rr=rv.get(d.date);let est,acc='';
+        if(!y){est=d.status==='hoy'?'<span class="pl n">Aún sin conexión</span>':'<span class="pl r">Sin conexión GPS</span>';if(d.status!=='hoy'&&!rr)acc=`<button type="button" class="b rojo" data-sx="gfalta:${d.date}">Marcar falta</button><button type="button" class="b" data-sx="perdonar:${d.date}">Sí estuvo</button>`}
+        else{const tarde=Math.max(0,hmS(y.primera)-start-(Number(t.tolerancia)||0));est=tarde>0?`<span class="pl m">Tarde ${tarde} min</span>`:'<span class="pl g">A tiempo</span>';if(tarde>0&&!rr){const mo=r2s(Math.ceil(tarde/(Number(t.cada)||15))*(Number(t.monto)||0));acc=`<button type="button" class="b o" data-sx="tard:${d.date}:${tarde}:${mo}">Descontar ${M(mo)}</button><button type="button" class="b" data-sx="perdonar:${d.date}">Perdonar</button>`}}
+        if(rr){acc='';est=`<span class="pl ${rr.decision==='perdonado'?'g':'r'}">${rr.decision==='perdonado'?'Perdonado':rr.decision==='falta'?'Falta registrada':'Tardanza descontada'}</span>`}
+        return `<div class="mv" style="flex-wrap:wrap"><span class="tx" style="flex:1 1 0%;min-width:0"><b>${E(fDs(d.date))} · ${E(d.label)}</b><span>Entró ${E(y?String(y.primera).slice(0,5):'—')} · salió ${E(y?String(y.ultima).slice(0,5):'—')}</span></span>${est}${acc?`<div class="btns b2" style="width:100%">${acc}</div>`:''}</div>`}).join('');
+      h+=`<div class="cd"><div class="lbl">Puntualidad por GPS</div><div style="font-size:14px;color:#6B5E55">Según la primera conexión de su app cada día. Horario ${E(S2.fmtTime(start))} – ${E(S2.fmtTime(end))} · tolerancia ${Number(t.tolerancia)||0} min · se descuenta ${M(t.monto)} por cada ${Number(t.cada)||15} min de retraso.</div>${fil||muted('Todavía no hay días trabajados en esta quincena.')}<button type="button" class="b" data-sx="vtard">Configurar tardanzas</button></div>`;
+      if(x.justif.length)h+=`<div class="cd"><div class="lbl">Justificaciones enviadas</div>${x.justif.slice(0,6).map(j=>`<div class="mv" style="flex-wrap:wrap"><span class="tx" style="flex:1 1 0%;min-width:0"><b>${E(fDs(String(j.fecha).slice(0,10)))}</b><span>${E(j.motivo||'')}</span></span>${j.visto_en?'<span class="pl g">Visto</span>':''}${j.foto_url||!j.visto_en?`<div class="btns${j.foto_url&&!j.visto_en?' b2':''}" style="width:100%">${j.foto_url?`<a class="b" href="${E(j.foto_url)}" target="_blank" rel="noopener">Ver justificante</a>`:''}${j.visto_en?'':`<button type="button" class="b" data-sx="visto:${E(j.id)}">Marcar como visto</button>`}</div>`:''}</div>`).join('')}<div style="font-size:14px;color:#6B5E55">Las faltas se descuentan igual; la justificación queda como registro.</div></div>`;
+    }
+    return h;
+  }
+  function slJornadas(r){
+    const S2=window.PdSueldo,f=SL.f;if(!f.shf)f.shf=S2.todayIso();
+    const tot=(numv(f.shp)||0)+(numv(f.shg)||0);
+    let h=`<div class="cd"><div class="lbl">Registrar jornada (por horas)</div><div class="two"><div class="fld"><label for="slShf">Fecha</label><input id="slShf" type="date" max="${S2.todayIso()}" value="${E(f.shf)}" data-in="sx:shf"></div><div class="fld"><label for="slShh">Horas</label><input id="slShh" inputmode="decimal" value="${E(f.shh||'')}" data-in="sx:shh" placeholder="0"></div></div><div class="two"><div class="fld"><label for="slShp">Sueldo (S/)</label><input id="slShp" inputmode="decimal" value="${E(f.shp||'')}" data-in="sx:shp" placeholder="0.00"></div><div class="fld"><label for="slShg">Gasolina (S/)</label><input id="slShg" inputmode="decimal" value="${E(f.shg||'')}" data-in="sx:shg" placeholder="0.00"></div></div><div class="li"><span>Total de la jornada</span><b id="slSht">${M(tot)}</b></div><button type="button" class="b o" data-sx="jor">Registrar jornada</button></div>`;
+    const L2=slRows().filter(y=>tipoS(y)==='jornada').sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).slice(0,20);
+    h+=`<div class="cd"><div class="lbl">Jornadas registradas</div>${L2.length?L2.map(y=>{const s=S2.shift(y);return `<div class="mv"><span class="tx" style="flex:1 1 0%;min-width:0"><b>${E(fDs(y.fecha))} · ${s.horas} h · ${M(s.sueldo+s.gas)}</b><span>Sueldo ${M(s.sueldo)} · gasolina ${M(s.gas)}</span></span><button type="button" class="ib" data-sx="deljor:${E(y.id)}" aria-label="Anular jornada">${IC.trash}</button></div>`}).join(''):muted('Aún no hay jornadas registradas.')}</div>`;
+    return h;
+  }
+  const afpRows=p=>(p&&p.descRows||[]).filter(y=>/AFP|ONP/i.test(String(y.descripcion||'')));
+  function slPagos(r){
+    const S2=window.PdSueldo,f=SL.f,rows=slRows(),x=slx().data;let foot='';
+    let h=`<div class="seg" style="grid-template-columns:1fr 1fr"><button type="button" class="${SL.modo==='pago'?'on':''}" data-sx="modo:pago">Pago de quincena</button><button type="button" class="${SL.modo==='adelanto'?'on':''}" data-sx="modo:adelanto">Adelanto</button></div>`;
+    const mv=numv(SL.monto);
+    if(SL.modo==='adelanto'){
+      const cur=S2.periodOf(S2.todayIso()),d=S2.parse(cur.end);d.setDate(d.getDate()+1);const nx=S2.periodOf(S2.iso(d));
+      const opts=[cur,nx].map((p,i)=>{const full=(r.periods||[]).find(y=>y.key===p.key);const paid=full?full.paid:rows.filter(y=>tipoS(y)==='pago'&&String(y.periodo||'')===p.key).reduce((a,y)=>a+(Number(y.monto)||0),0);return {key:p.key,label:p.label,paid,i}});
+      if(!opts.some(o=>o.key===SL.per))SL.per=opts[0].key;
+      h+=`<div class="cd"><div class="lbl">Quincena que adelantas</div><div class="opts">${opts.map(p=>`<button type="button" class="opt${SL.per===p.key?' on':''}" data-sx="per:${E(p.key)}"><b>${E(capS(p.label))}</b><span>${p.i?'La siguiente':'En curso'}${p.paid>0.004?' · ya pagado '+M(p.paid):''}</span></button>`).join('')}</div><div class="fld"><label for="slM">Monto (S/)</label><input id="slM" inputmode="decimal" value="${E(SL.monto)}" data-in="slm" placeholder="0.00"></div><div class="fld"><label for="slN">Detalle</label><input id="slN" value="${E(SL.nota)}" data-in="sln" maxlength="200" placeholder="Ej. Adelanto por Yape"></div><div style="font-size:14px;color:#6B5E55">Se descuenta de lo que gane en esa quincena.</div></div>`;
+      foot=`<button type="button" class="b o" style="height:54px;font-size:16px" data-sx="pagar">Registrar adelanto${mv>0?' · '+M(mv):''}</button>`;
+    }else{
+      const per=(r.periods||[]).filter(p=>p.isCurrent||p.balance>0.004).sort((a,b)=>a.start.localeCompare(b.start));
+      if(!per.some(p=>p.key===SL.per)){const due=per.find(p=>p.balance>0.004)||per[per.length-1];SL.per=due?due.key:'';SL.monto=due&&due.balance>0.004&&!(due.needsDesc&&!due.descSet)?due.balance.toFixed(2):''}
+      const p=per.find(y=>y.key===SL.per),blocked=!!(p&&p.needsDesc&&!p.descSet);
+      h+=`<div class="cd"><div class="lbl">Quincena que pagas</div><div class="opts">${per.map(y=>`<button type="button" class="opt${SL.per===y.key?' on':''}" data-sx="per:${E(y.key)}"><b>${E(capS(y.label))}</b><span>${y.needsDesc&&!y.descSet?'Falta el descuento AFP/ONP':y.balance>0.004?'Pendiente '+M(y.balance):'Al día'}</span></button>`).join('')}</div></div>`;
+      if(p&&(p.needsDesc||p.descSet)){const af=afpRows(p),sum=r2s(af.reduce((a,y)=>a+(Number(y.monto)||0),0)),sig=p.key+'|'+af.map(y=>y.id).join(',');
+        if(f.dk!==sig){f.dk=sig;f.dm=af.length?sum.toFixed(2):'';const last=af[af.length-1];f.dt=last&&/onp/i.test(String(last.descripcion||''))?'ONP':'AFP'}
+        h+=`<div class="cd"><div class="lbl">Descuento AFP/ONP de fin de mes</div><div class="seg" style="grid-template-columns:1fr 1fr"><button type="button" class="${f.dt==='AFP'?'on':''}" data-sx="dt:AFP">AFP</button><button type="button" class="${f.dt==='ONP'?'on':''}" data-sx="dt:ONP">ONP</button></div><div class="fld"><label for="slDm">Monto del descuento (S/)</label><input id="slDm" inputmode="decimal" value="${E(f.dm||'')}" data-in="sx:dm" placeholder="0.00"></div><div style="font-size:14px;color:#6B5E55">${af.length?`Registrado: <b>${M(sum)}</b>. Ganado ${M(p.earned)} − descuentos = <b>${M(Math.max(0,p.earned-p.desc))}</b>.`:'<b>Obligatorio</b> en la 2.ª quincena: escribe el descuento de este mes (pon 0 si no tiene). Sin esto no se puede registrar el pago.'}</div><button type="button" class="b${af.length?'':' o'}" data-sx="desc">${af.length?'Actualizar descuento':'Guardar descuento'}</button></div>`}
+      if(p)h+=`<div class="cd"><div class="fld"><label for="slM">Monto (S/)</label><input id="slM" inputmode="decimal" value="${E(SL.monto)}" data-in="slm" placeholder="0.00"></div><div class="fld"><label for="slN">Detalle</label><input id="slN" value="${E(SL.nota)}" data-in="sln" maxlength="200" placeholder="Ej. Yape, efectivo"></div></div>`;
+      if(p)foot=blocked?`<button type="button" class="b" style="height:54px;font-size:15px" disabled>Primero registra el descuento AFP/ONP</button>`:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sx="pagar">Registrar pago${mv>0?' · '+M(mv):''}</button>`;
+    }
+    const pays=rows.filter(y=>tipoS(y)==='pago').sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).slice(0,12);
+    h+=`<div class="cd"><div class="lbl">Pagos hechos</div>${pays.length?pays.map(y=>{const ad=/^adelanto/i.test(String(y.descripcion||''));return `<div class="mv"><span class="ic" style="background:${ad?'#FFF4EC':'#E9F6EE'};color:${ad?'#9A330A':'#15803D'}">${ad?IC.swap:IC.check}</span><span class="tx" style="flex:1 1 0%;min-width:0"><b>${M(y.monto)} <span class="pl ${ad?'m':'g'}" style="height:22px;font-size:12px">${ad?'Adelanto':'Pago'}</span></b><span>${E(fDs(y.fecha))}${y.descripcion?' · '+E(y.descripcion):''}${y.periodo?' · '+E(S2.periodOf(String(y.periodo).slice(0,10)).label):''}</span></span><button type="button" class="ib" data-sx="delpago:${E(y.id)}" aria-label="Anular pago">${IC.trash}</button></div>`}).join(''):muted('Aún no hay pagos.')}</div>`;
+    if(x&&x.pres){const P=r.current,cuo=pid=>rows.filter(y=>String(y.prestamo_id||'')===String(pid));
+      h+=`<div class="cd"><div class="lbl">Préstamos en cuotas</div>${x.prestamos.length?x.prestamos.map(p=>{const cu=cuo(p.id),pag=r2s(cu.reduce((a,y)=>a+(Number(y.monto)||0),0)),rest=r2s(p.monto-pag),fin=rest<=0.004||!p.activo,ya=cu.some(y=>String(y.periodo)===String(P.key));
+        return `<div class="mv" style="flex-wrap:wrap"><span class="tx" style="flex:1 1 0%;min-width:0"><b>${M(p.monto)} en ${p.cuotas} cuota${p.cuotas===1?'':'s'}${p.motivo?' · '+E(p.motivo):''}</b><span>Cuotas descontadas: ${cu.length} de ${p.cuotas} · ${M(pag)}</span></span>${fin?`<span class="pl g">${p.activo===false&&rest>0.004?'Anulado':'Pagado'}</span>`:`<span class="pl m">Faltan ${M(rest)}</span>`}${fin?'':`<div class="btns b2" style="width:100%">${ya?'<span class="pl g" style="justify-content:center;height:44px">Cuota de esta quincena aplicada</span>':`<button type="button" class="b o" data-sx="cuota:${E(p.id)}">Descontar cuota</button>`}<button type="button" class="b rojo" data-sx="anular:${E(p.id)}">Anular saldo</button></div>`}</div>`}).join(''):muted('Sin préstamos.')}
+        <div class="two"><div class="fld"><label for="slPm">Monto prestado (S/)</label><input id="slPm" inputmode="decimal" value="${E(f.pm||'')}" data-in="sx:pm" placeholder="0"></div><div class="fld"><label for="slPc">Cuotas (quincenas)</label><input id="slPc" inputmode="numeric" value="${E(f.pc==null?'2':f.pc)}" data-in="sx:pc"></div></div><div class="fld"><label for="slPo">Motivo</label><input id="slPo" maxlength="80" value="${E(f.po||'')}" data-in="sx:po" placeholder="Ej. Reparación de la moto"></div><button type="button" class="b" data-sx="prestar">${IC.plus}Registrar préstamo</button><div style="font-size:14px;color:#6B5E55">Cada quincena, al cerrarla, se descuenta una cuota automáticamente.</div></div>`}
+    return {h,foot};
+  }
+  function slAjustes(r){
+    const m=SL.moto,S2=window.PdSueldo,cfg=S2.config(m);
+    if(!SL.cfg||SL.cfg.id!==String(m.id)){const pad=n=>String(n).padStart(2,'0'),hm2=x=>pad(Math.floor(x/60))+':'+pad(x%60);SL.cfg={id:String(m.id),tipo:cfg.hourly?'por_horas':'completo',hire:cfg.hire||'',a:cfg.times?hm2(cfg.times.start):'08:00',b:cfg.times?hm2(cfg.times.end):'13:00',days:cfg.days.length?cfg.days.slice():['lunes','martes','miercoles','jueves','viernes','sabado']}}
+    const c=SL.cfg;let h='';
+    if(!r||!r.ok)h+=`<div class="amt"><div class="k">Sueldo</div><div class="n" style="font-size:30px">Sin configurar</div><div class="pill">Falta: ${E(((r&&r.cfg&&r.cfg.missing)||['ingreso, horario y días']).join(', '))}</div></div>`;
+    h+=`<div class="cd"><div class="lbl">Tipo de sueldo</div><div class="seg" style="grid-template-columns:1fr 1fr"><button type="button" class="${c.tipo==='completo'?'on':''}" data-sx="tipo:completo">Sueldo fijo</button><button type="button" class="${c.tipo==='por_horas'?'on':''}" data-sx="tipo:por_horas">Por horas</button></div>
+      <div class="fld"><label for="slHi">Fecha de ingreso</label><input id="slHi" type="date" value="${E(c.hire)}" data-in="sc:hire"></div>`;
+    if(c.tipo==='completo')h+=`<div class="two"><div class="fld"><label for="slHa">Entrada</label><input id="slHa" type="time" value="${E(c.a)}" data-in="sc:a"></div><div class="fld"><label for="slHb">Salida</label><input id="slHb" type="time" value="${E(c.b)}" data-in="sc:b"></div></div>
+      <div class="lbl" style="margin-top:4px">Días laborables</div><div class="chips" style="flex-wrap:wrap">${DS.map(d=>`<button type="button" class="${c.days.includes(d)?'on':''}" aria-pressed="${c.days.includes(d)}" data-sx="cfgdia:${d}">${DSC[d]}</button>`).join('')}</div>
+      <div style="font-size:14px;color:#6B5E55">El domingo y los feriados que no trabaja se pagan como descanso. Cada jornada se suma sola a la hora de salida.</div>`;
+    else h+=`<div style="font-size:14px;color:#6B5E55">Por horas: solo se suman las jornadas que registras en «Asistencia».</div>`;
+    h+=`<button type="button" class="b o" data-sx="cfgsave">Guardar configuración</button></div>`;
+    return h;
+  }
+  function slVista(){
+    const m=SL.moto,S2=window.PdSueldo,r=calcS(m),f=SL.f,x=slx().data,nom=m.nombre_completo||'Motorizado';
+    const hd=t=>top3(nom,t,'');
+    if(SL.vista==='dia'){const d=r&&r.ok&&(r.current.days||[]).find(y=>y.date===SL.dia&&!y.adjDay);if(!d){SL.vista=null;return null}
+      const titulo=capS(S2.parse(d.date).toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long'}));
+      const base=M(S2.baseFor(m)+(d.work&&d.dow!=='domingo'?S2.GAS:0));
+      const advs=slRows().filter(y=>tipoS(y)==='pago'&&String(y.fecha).slice(0,10)===d.date&&/^adelanto/i.test(String(y.descripcion||'')));
+      const puedeFalta=!!((d.work||d.rest)&&!['antes','libre','falta'].includes(d.status)),puedeAdel=!!((d.work||d.rest)&&(d.status==='hoy'||d.status==='futuro'));
+      const EST={trabajado:'Trabajado',descanso:d.holiday?'Feriado pagado':'Descanso pagado',falta:'Falta',hoy:'Hoy · se suma '+r.endAt,futuro:d.work?'Día laborable':d.rest?'Descanso':'Libre',libre:'Libre (no se paga)',antes:'Antes de su ingreso'};
+      let h=avisos()+`<div class="cd"><div class="lbl">Estado del día</div><div style="font-size:18px;font-weight:800">${E(d.adel?'Adelantado · cuenta como trabajado':EST[d.status]||'—')}</div>${d.gas?`<div style="font-size:14px;color:#6B5E55">Incluye gasolina ${M(d.gas)}</div>`:''}</div>`;
+      if(d.status==='falta')h+=`<div class="cd"><div class="lbl">Falta registrada</div><div style="font-size:15px">${E(d.falta&&d.falta.descripcion||'Falta')}</div><button type="button" class="b" data-sx="dquitar">Quitar falta</button></div>`;
+      if(d.adel)h+=`<div class="cd"><div class="lbl">Día adelantado</div><div style="font-size:14px;color:#6B5E55">Ya se cuenta como trabajado (${E(base)}).</div><button type="button" class="b" data-sx="ddesadel">Quitar adelanto del día</button></div>`;
+      else if(puedeAdel)h+=`<div class="cd"><div class="lbl">Adelantar día trabajado</div><div style="font-size:14px;color:#6B5E55">Se cuenta como trabajado desde ahora y se suma a la ${E(S2.periodOf(d.date).label)} (${E(base)}).</div><button type="button" class="b o" data-sx="dadel">Adelantar día trabajado</button></div>`;
+      if(puedeFalta)h+=`<div class="cd"><div class="lbl">Registrar falta</div><div style="font-size:14px;color:#6B5E55">Ese día no se pagará (${E(base)}).</div><div class="fld"><label for="slDf">Motivo (opcional)</label><input id="slDf" maxlength="200" value="${E(f.dmot||'')}" data-in="sx:dmot" placeholder="Ej. No se presentó"></div><button type="button" class="b rojo" data-sx="dfalta">Registrar falta</button></div>`;
+      h+=`<div class="cd"><div class="lbl">Adelanto de sueldo este día</div><div style="font-size:14px;color:#6B5E55">Se descuenta de la ${E(S2.periodOf(d.date).label)}.</div>${advs.map(y=>`<div class="mv"><span class="tx" style="flex:1 1 0%;min-width:0"><b>${M(y.monto)}</b><span>${E(y.descripcion||'Adelanto de sueldo')}</span></span><button type="button" class="ib" data-sx="delpago:${E(y.id)}" aria-label="Anular adelanto">${IC.trash}</button></div>`).join('')}<div class="two"><div class="fld"><label for="slDa">Monto (S/)</label><input id="slDa" inputmode="decimal" value="${E(f.dam||'')}" data-in="sx:dam" placeholder="0.00"></div><div class="fld"><label for="slDd">Detalle</label><input id="slDd" maxlength="200" value="${E(f.dde||'')}" data-in="sx:dde" placeholder="Ej. Yape"></div></div><button type="button" class="b o" data-sx="dadv">Registrar adelanto</button></div>`;
+      return {head:hd(titulo),body:h};
+    }
+    if(SL.vista==='boleta'){const q=x&&x.cierres.find(c=>c.periodo===SL.bol);if(!q){SL.vista=null;return null}const d=q.detalle||{};
+      const txt=['*PIDEMÁS DELIVERY · Boleta de pago*',nom,(d.label||q.periodo),'','Días pagados: '+(d.dias||0)+(d.descansos?' + '+d.descansos+' descanso(s)':'')+(d.faltas?' · faltas: '+d.faltas:''),'Sueldo: '+M(d.sueldo),'Gasolina: '+M(d.gasolina),'*Ganado: '+M(q.ganado)+'*',...(d.descuentos||[]).map(y=>'− '+y.d+': '+M(y.m)),...(d.pagos||[]).map(y=>'Pago '+fDs(y.f)+': '+M(y.m)),'*Pendiente: '+M(q.pendiente)+'*',q.recibido_conforme_en?'✓ Recibió conforme':''].join('\n');
+      const tel=String(m.telefono||'').replace(/\D/g,'').replace(/^(\d{9})$/,'51$1');
+      let h=`<div class="amt"><div class="k">${E(capS(d.label||q.periodo))}</div><div class="n">${M(q.pendiente)}</div><div class="pill">${q.recibido_conforme_en?'Recibió conforme el '+E(dtl(q.recibido_conforme_en)):'Esperando su «Recibí conforme»'}</div></div>`;
+      h+=`<div class="cd"><div class="lbl">Boleta de pago</div>${liS('Días pagados','',(d.dias||0)+(d.descansos?' + '+d.descansos+' desc.':''))}${d.faltas?liS('Faltas','',d.faltas):''}${liS('Sueldo','',M(d.sueldo))}${liS('Gasolina','',M(d.gasolina))}${liS('Ganado','',M(q.ganado))}${(d.descuentos||[]).map(y=>liS(E(y.d||'Descuento'),'','− '+M(y.m),'color:#B42318')).join('')}${(d.pagos||[]).map(y=>liS('Pago '+E(fDs(y.f)),'',M(y.m))).join('')}<div class="li" style="border-top:1px solid #F1E4DA;padding-top:8px"><span>Pendiente</span><b style="font-size:18px">${M(q.pendiente)}</b></div></div>`;
+      h+=`<a class="b g" target="_blank" rel="noopener" href="https://wa.me/${E(tel)}?text=${encodeURIComponent(txt)}">${U.I&&U.I.wa||''}Enviar boleta por WhatsApp</a>`;
+      return {head:hd('Boleta'),body:h};
+    }
+    if(SL.vista==='hist'){const T={jornada:'Jornada',falta:'Falta',pago:'Pago',descuento:'Descuento'};let h;
+      if(SL.hist==null)h='<div class="load">Cargando…</div>';else if(typeof SL.hist==='string')h=`<div class="err">${E(SL.hist)}</div>`;
+      else h=SL.hist.length?`<div class="cd">${SL.hist.map(y=>{const z=y.despues||y.antes||{},a=y.antes||{};return `<div class="mv"><span class="tx" style="flex:1 1 0%;min-width:0"><b>${E(T[tipoS(z)]||z.tipo||'Registro')} ${E(y.accion||'')}${z.fecha?' · '+E(fDs(String(z.fecha).slice(0,10))):''}</b><span>${E(dtl(y.creado_en))} · ${y.es_admin?'Administración':'Sistema / motorizado'}${z.monto!=null?' · '+M(z.monto):''}${y.accion==='editado'&&a.monto!=null&&String(a.monto)!==String(z.monto)?' (antes '+M(a.monto)+')':''}${z.descripcion?' · '+E(z.descripcion):''}</span></span></div>`}).join('')}</div>`:'<div class="vac">Sin cambios registrados todavía.</div>';
+      return {head:hd('Historial de cambios'),body:h};
+    }
+    if(SL.vista==='tard'){
+      return {head:hd('Tardanzas'),body:avisos()+U.note('Se compara la primera conexión de su app con la hora de entrada. Aplica a todos los motorizados.')+`<div class="cd"><div class="fld"><label for="slT1">Tolerancia (minutos sin descuento)</label><input id="slT1" inputmode="numeric" value="${E(f.t1)}" data-in="sx:t1"></div><div class="fld"><label for="slT2">Cada cuántos minutos de retraso</label><input id="slT2" inputmode="numeric" value="${E(f.t2)}" data-in="sx:t2"></div><div class="fld"><label for="slT3">Se descuenta (S/)</label><input id="slT3" inputmode="decimal" value="${E(f.t3)}" data-in="sx:t3"></div><button type="button" class="b o" data-sx="tsave">Guardar</button></div>`};
+    }
+    SL.vista=null;return null;
+  }
+  function slVivo(k,el){const f=SL.f,S2=window.PdSueldo;
+    if(k==='oa'||k==='ob'){if(k==='oa'&&(!f.ob||f.ob<f.oa)){f.ob=f.oa;const b=root.getElementById('slOb');if(b)b.value=f.ob}const i=root.getElementById('slOi');if(i)i.textContent=offInfo();return}
+    if(k==='shh'||k==='shp'||k==='shg'){if(k==='shp')f.shpT=1;if(k==='shg')f.shgT=1;
+      if(k==='shh'){const s=S2.hourly(numv(f.shh));if(!f.shpT){f.shp=s.sueldo?s.sueldo.toFixed(2):'';const e=root.getElementById('slShp');if(e)e.value=f.shp}if(!f.shgT){f.shg=s.gas?s.gas.toFixed(2):'';const e=root.getElementById('slShg');if(e)e.value=f.shg}}
+      const t=root.getElementById('slSht');if(t)t.textContent=M((numv(f.shp)||0)+(numv(f.shg)||0))}}
+  function montoPer(k){const r=calcS(SL.moto),p=r&&(r.periods||[]).find(y=>y.key===k);SL.monto=p&&p.balance>0.004&&!(p.needsDesc&&!p.descSet)?p.balance.toFixed(2):''}
+  async function slAccion(v){
+    const i=v.indexOf(':'),a=i<0?v:v.slice(0,i),arg=i<0?'':v.slice(i+1);
+    const m=SL.moto,S2=window.PdSueldo,f=SL.f;if(!m||!S2)return;const id=m.id,nom=m.nombre_completo||'este motorizado';
+    switch(a){
+      case 'pest':SL.pest=arg;SL.msg='';SL.ok='';return;
+      case 'modo':SL.modo=arg;SL.per='';SL.monto='';SL.nota='';SL.msg='';return;
+      case 'per':SL.per=arg;if(SL.modo==='pago')montoPer(arg);else SL.monto='';return;
+      case 'pagarper':SL.pest='pagos';SL.modo='pago';SL.per=arg;montoPer(arg);SL.msg='';SL.ok='';return;
+      case 'tipo':SL.cfg.tipo=arg;return;
+      case 'cfgdia':{const s=SL.cfg.days,j=s.indexOf(arg);j<0?s.push(arg):s.splice(j,1);return}
+      case 'dt':f.dt=arg;return;
+      case 'dia':SL.dia=arg;f.dmot='';f.dam='';f.dde='';abrirV('dia');return;
+      case 'boleta':SL.bol=arg;abrirV('boleta');return;
+      case 'hist':{SL.hist=null;abrirV('hist');D().from('control_sueldos_historial').select('*').eq('motorizado_id',id).order('creado_en',{ascending:false}).limit(80).then(q=>{SL.hist=q.error?q.error.message:(q.data||[]);key='';pintar()},e=>{SL.hist=String(e&&e.message||e);key='';pintar()});return}
+      case 'vtard':{const t=(slx().data||{}).tard||{tolerancia:10,cada:15,monto:2};f.t1=String(t.tolerancia);f.t2=String(t.cada);f.t3=String(t.monto);abrirV('tard');return}
+    }
+    SL.msg='';SL.ok='';
+    const fin=async(t,soloX)=>{if(SL.vista)cerrarV();await slRe(soloX);SL.ok=t};
+    try{
+      if(a==='pagar'){const monto=r2s(numv(SL.monto));
+        if(SL.modo==='adelanto'){if(!SL.per){SL.msg='Elige la quincena que adelantas.';return}if(!(monto>0)){SL.msg='Escribe un monto válido.';return}
+          const lab=S2.periodOf(SL.per.slice(0,10)).label;if(!(await confS('¿Registrar un adelanto de '+M(monto)+' a '+nom+' para la '+lab+'?')))return;
+          await insS({motorizado_id:id,fecha:S2.todayIso(),tipo:'pago',monto,descripcion:'Adelanto de sueldo'+(SL.nota.trim()?' · '+SL.nota.trim():''),periodo:SL.per});
+          SL.monto='';SL.nota='';return fin('Adelanto registrado: '+M(monto)+'.')}
+        const r=calcS(m);if(!r||!r.ok){SL.msg='Completa primero la configuración del motorizado.';return}
+        const p=(r.periods||[]).find(y=>y.key===SL.per);if(!p){SL.msg='Elige la quincena que pagas.';return}if(!(monto>0)){SL.msg='Escribe un monto válido.';return}
+        if(p.needsDesc&&!p.descSet){SL.msg='Primero registra el descuento AFP/ONP de fin de mes (pon 0 si no tiene).';return}
+        if(monto>p.balance+0.004&&!(await confS('El monto es mayor a lo pendiente de esa quincena ('+M(Math.max(0,p.balance))+'). ¿Registrar de todas formas?')))return;
+        if(!(await confS('¿Registrar un pago de '+M(monto)+' a '+nom+' por la '+p.label+'?')))return;
+        await insS({motorizado_id:id,fecha:S2.todayIso(),tipo:'pago',monto,descripcion:SL.nota.trim()||'Pago de sueldo',periodo:p.key});
+        SL.per='';SL.monto='';SL.nota='';return fin('Pago registrado: '+M(monto)+'.')}
+      if(a==='desc'){const r=calcS(m),p=r&&(r.periods||[]).find(y=>y.key===SL.per);if(!p)return;const raw=String(f.dm??'').trim(),monto=numv(raw);
+        if(raw===''||!Number.isFinite(monto)||monto<0){SL.msg='Escribe el monto del descuento (pon 0 si no tiene).';return}
+        for(const y of afpRows(p))await delS('control_sueldos',y.id);
+        await insS({motorizado_id:id,fecha:S2.todayIso(),tipo:'descuento',monto:r2s(monto),descripcion:'Descuento '+(f.dt||'AFP'),periodo:p.key});
+        f.dk='';await fin('Descuento '+(f.dt||'AFP')+' guardado: '+M(monto)+'.');montoPer(p.key);return}
+      if(a==='delpago'){if(!(await confS('¿Anular este pago? Se volverá a mostrar como pendiente.')))return;await delS('control_sueldos',arg);return fin('Pago anulado.')}
+      if(a==='offsi'||a==='offno'){const L2=offDias();if(!L2.length){SL.msg='Elige fechas válidas («Hasta» no puede ser antes de «Desde»).';return}
+        const rows=slRows();
+        if(a==='offsi'){if(L2.length>62){SL.msg='Máximo 62 días por registro.';return}const have=new Set(rows.filter(y=>tipoS(y)==='falta').map(y=>String(y.fecha).slice(0,10)));const why=String(f.ow||'').trim()||'Día sin pago';
+          const ins=L2.filter(d=>!have.has(d)).map(d=>({motorizado_id:id,fecha:d,tipo:'falta',monto:0,descripcion:why,periodo:S2.periodOf(d).key}));if(!ins.length){SL.msg='Esas fechas ya estaban registradas como días sin pago.';return}
+          if(!(await confS('¿Registrar '+ins.length+' día'+(ins.length===1?'':'s')+' sin pago para '+nom+'? '+offInfo())))return;
+          await insS(ins);f.ow='';try{window.pdhReload&&window.pdhReload()}catch(_){}return fin(ins.length+' día'+(ins.length===1?'':'s')+' sin pago registrado'+(ins.length===1?'':'s')+'.')}
+        const S3=new Set(L2),del=rows.filter(y=>tipoS(y)==='falta'&&S3.has(String(y.fecha).slice(0,10)));if(!del.length){SL.msg='No hay días sin pago en esas fechas.';return}
+        if(!(await confS('¿Quitar '+del.length+' día'+(del.length===1?'':'s')+' sin pago? Volverán a pagarse.')))return;
+        for(const y of del)await delS('control_sueldos',y.id);try{window.pdhReload&&window.pdhReload()}catch(_){}return fin('Días sin pago quitados.')}
+      if(a==='jor'){const fecha=f.shf,horas=numv(f.shh),pay=numv(f.shp)||0,gas=numv(f.shg)||0;
+        if(!fecha){SL.msg='Elige la fecha de la jornada.';return}if(!(horas>0)){SL.msg='Escribe las horas trabajadas.';return}if(fecha>S2.todayIso()){SL.msg='No puedes registrar una jornada de una fecha futura.';return}
+        if(slRows().some(y=>tipoS(y)==='jornada'&&String(y.fecha).slice(0,10)===fecha)&&!(await confS('Ya hay una jornada el '+fDs(fecha)+'. ¿Registrar otra?')))return;
+        const base={motorizado_id:id,fecha,tipo:'jornada',monto:r2s(pay),descripcion:horas+' h · gasolina S/ '+gas.toFixed(2),periodo:S2.periodOf(fecha).key};
+        let q=await D().from('control_sueldos').insert({...base,horas,gasolina:r2s(gas)});if(q.error&&/horas|gasolina/.test(q.error.message||''))q=await D().from('control_sueldos').insert(base);if(q.error)throw q.error;
+        Object.assign(f,{shh:'',shp:'',shg:'',shpT:0,shgT:0});return fin('Jornada registrada.')}
+      if(a==='deljor'){if(!(await confS('¿Anular esta jornada? Dejará de sumarse al sueldo.')))return;await delS('control_sueldos',arg);return fin('Jornada anulada.')}
+      if(a==='cfgsave'){const c=SL.cfg;
+        if(c.tipo==='completo'){if(!c.hire||!c.a||!c.b||!c.days.length){SL.msg='Completa la fecha de ingreso, el horario y al menos un día laborable.';return}if(c.a===c.b){SL.msg='La hora de entrada y de salida no pueden ser iguales.';return}}
+        const days=DS.filter(d=>c.days.includes(d));
+        const patch=c.tipo==='por_horas'?{tipo_sueldo:'por_horas',fecha_ingreso:c.hire||null}:{tipo_sueldo:'completo',fecha_ingreso:c.hire,horario_trabajo:c.a+' – '+c.b,dias_laborables:days};
+        const q=await D().from('motorizados').update(patch).eq('id',id).select('*').maybeSingle();
+        if(q.error){if(/tipo_sueldo/.test(q.error.message||''))throw new Error('falta la columna tipo_sueldo en motorizados.');throw q.error}if(!q.data)throw new Error('No se actualizó el motorizado (revisa permisos).');
+        Object.assign(m,q.data);SL.cfg=null;await fin('Configuración guardada.');const r=calcS(SL.moto);if(r&&r.ok)SL.pest='resumen';return}
+      const d=SL.vista==='dia'&&calcS(m)?.current?.days?.find(y=>y.date===SL.dia&&!y.adjDay);
+      if(a==='dquitar'&&d&&d.falta){await delS('control_sueldos',d.falta.id);return fin('Falta eliminada.')}
+      if(a==='ddesadel'&&d&&d.adel){await delS('control_sueldos',d.adel.id);return fin('Se quitó el adelanto del día.')}
+      if(a==='dadel'&&d){await insS({motorizado_id:id,fecha:d.date,tipo:'jornada',monto:0,descripcion:'Día adelantado',periodo:S2.periodOf(d.date).key});return fin('Día adelantado: ya cuenta como trabajado.')}
+      if(a==='dfalta'&&d){await insS({motorizado_id:id,fecha:d.date,tipo:'falta',monto:0,descripcion:String(f.dmot||'').trim()||'Falta',periodo:S2.periodOf(d.date).key});return fin('Falta registrada el '+fDs(d.date)+'.')}
+      if(a==='dadv'&&d){const monto=r2s(numv(f.dam));if(!(monto>0)){SL.msg='Escribe un monto válido.';return}const det=String(f.dde||'').trim();
+        await insS({motorizado_id:id,fecha:d.date,tipo:'pago',monto,descripcion:'Adelanto de sueldo'+(det?' · '+det:''),periodo:S2.periodOf(d.date).key});return fin('Adelanto registrado: '+M(monto)+'.')}
+      const x=slx().data||{};
+      if(a==='cerrar'){const r=calcS(m);let P=r&&(r.periods||[]).find(y=>y.key===arg);if(!P)return;
+        if(P.isCurrent&&S2.todayIso()<P.end&&!(await confS('Esta quincena todavía no termina (hasta el '+fDs(P.end)+'). ¿Cerrarla igual?')))return;
+        if(P.needsDesc&&!P.descSet&&!(await confS('Falta registrar el descuento AFP/ONP de fin de mes. ¿Cerrar sin él?')))return;
+        let n=0;for(const p of (x.prestamos||[]).filter(p=>p.activo!==false)){if(!slRows().some(y=>String(y.prestamo_id||'')===String(p.id)&&String(y.periodo)===arg)){if(await aplicarCuota(p,P))n++}}
+        if(n){await slRe();P=(calcS(SL.moto).periods||[]).find(y=>y.key===arg)}
+        const r3=calcS(SL.moto),gas=r3.hourly?r2s(P.gasTotal):r2s(P.gasDays*S2.GAS);
+        const det={label:P.label,dias:P.worked+P.adj,descansos:P.rest,faltas:P.faltas,horas:P.hours,sueldo:r2s(P.earned-gas),gasolina:gas,descuentos:(P.descRows||[]).map(y=>({d:y.descripcion,m:Number(y.monto)})),pagos:(P.payments||[]).map(y=>({f:y.fecha,d:y.descripcion,m:Number(y.monto)}))};
+        if(!(await confS('¿Cerrar la '+P.label+'?\nGanado '+M(P.earned)+' · descuentos '+M(P.desc)+' · pagado '+M(P.paid)+' · pendiente '+M(Math.max(0,P.balance))+(n?'\nSe descontó '+n+' cuota'+(n===1?'':'s')+' de préstamo.':''))))return;
+        let uid=null;try{uid=(await D().auth.getUser()).data.user.id}catch(_){}
+        const q=await D().from('quincenas_cerradas').insert({motorizado_id:id,periodo:arg,inicio:P.start,fin:P.end,ganado:r2s(P.earned),descuentos:r2s(P.desc),pagado:r2s(P.paid),pendiente:r2s(Math.max(0,P.balance)),detalle:det,cerrado_por:uid});if(q.error)throw q.error;
+        if(m.usuario_id)try{await D().from('notificaciones').insert({usuario_id:m.usuario_id,tipo:'sistema',titulo:'Tu boleta está lista',mensaje:'Se cerró tu '+P.label+'. Revisa tu boleta y toca «Recibí conforme».'})}catch(_){}
+        return fin('Quincena cerrada.',true)}
+      if(a==='reabrir'){const q=(x.cierres||[]).find(c=>c.periodo===arg);if(!q)return;if(!(await confS('¿Reabrir esta quincena? Se podrán volver a cambiar días, faltas y descuentos, y el motorizado tendrá que confirmar otra vez.')))return;await delS('quincenas_cerradas',q.id);return fin('Quincena reabierta.',true)}
+      if(a==='tard'){const [fe,mn,mo]=arg.split(':');if(!(await confS('¿Descontar '+M(+mo)+' por llegar '+mn+' min tarde el '+fDs(fe)+'?')))return;
+        await insS({motorizado_id:id,fecha:fe,tipo:'descuento',monto:+mo,descripcion:'Tardanza '+fDs(fe)+' · '+mn+' min',periodo:S2.periodOf(fe).key});
+        await D().from('asistencia_revisada').upsert({motorizado_id:id,fecha:fe,decision:'tardanza',minutos:+mn});return fin('Tardanza descontada.')}
+      if(a==='gfalta'){if(!(await confS('¿Registrar falta el '+fDs(arg)+'? No tuvo ninguna conexión ese día.')))return;
+        await insS({motorizado_id:id,fecha:arg,tipo:'falta',monto:0,descripcion:'Sin conexión GPS',periodo:S2.periodOf(arg).key});
+        await D().from('asistencia_revisada').upsert({motorizado_id:id,fecha:arg,decision:'falta'});return fin('Falta registrada.')}
+      if(a==='perdonar'){const q=await D().from('asistencia_revisada').upsert({motorizado_id:id,fecha:arg,decision:'perdonado'});if(q.error)throw q.error;return fin('Marcado como perdonado.',true)}
+      if(a==='visto'){const q=await D().from('justificaciones').update({visto_en:new Date().toISOString()}).eq('id',arg);if(q.error)throw q.error;return fin('Justificación marcada como vista.',true)}
+      if(a==='prestar'){const mo=r2s(numv(f.pm)),c=Math.round(numv(f.pc)||0),why=String(f.po||'').trim();if(!(mo>0)||!(c>=1&&c<=24)){SL.msg='Escribe el monto y de 1 a 24 cuotas.';return}
+        if(!(await confS('¿Registrar un préstamo de '+M(mo)+' en '+c+' cuota'+(c===1?'':'s')+' de '+M(mo/c)+'?')))return;
+        const q=await D().from('prestamos').insert({motorizado_id:id,monto:mo,cuotas:c,motivo:why||null});if(q.error)throw q.error;f.pm='';f.pc='2';f.po='';return fin('Préstamo registrado.',true)}
+      if(a==='cuota'){const p=(x.prestamos||[]).find(y=>String(y.id)===arg);if(!p)return;const r=calcS(m);if(!(await confS('¿Descontar '+M(cuotaMonto(p))+' de la '+r.current.label+'?')))return;await aplicarCuota(p,r.current);return fin('Cuota descontada.')}
+      if(a==='anular'){if(!(await confS('¿Anular el saldo pendiente de este préstamo? Ya no se descontarán más cuotas.')))return;const q=await D().from('prestamos').update({activo:false}).eq('id',arg);if(q.error)throw q.error;return fin('Saldo del préstamo anulado.',true)}
+      if(a==='tsave'){const t={tolerancia:Math.max(0,Math.round(numv(f.t1)||0)),cada:Math.max(1,Math.round(numv(f.t2)||15)),monto:Math.max(0,r2s(numv(f.t3)))};
+        const q=await D().from('ajustes_pidemas').upsert({clave:'tardanza',valor:t,actualizado_en:new Date().toISOString()});if(q.error)throw q.error;return fin('Tardanzas guardadas.',true)}
+    }catch(err){SL.ok='';SL.msg='No se pudo guardar: '+String(err&&err.message||err)}
+  }
+  const cuotasP=p=>slRows().filter(y=>String(y.prestamo_id||'')===String(p.id));
+  function cuotaMonto(p){const cu=cuotasP(p),pag=cu.reduce((a,y)=>a+(Number(y.monto)||0),0),rest=r2s(p.monto-pag);if(rest<=0.004)return 0;const base=r2s(p.monto/p.cuotas);return cu.length+1>=p.cuotas?rest:Math.min(base,rest)}
+  async function aplicarCuota(p,P){const mo=cuotaMonto(p);if(mo<=0)return false;const n=cuotasP(p).length+1,S2=window.PdSueldo;
+    await insS({motorizado_id:p.motorizado_id,fecha:P.end<=S2.todayIso()?P.end:S2.todayIso(),tipo:'descuento',monto:mo,descripcion:'Cuota de préstamo '+n+'/'+p.cuotas+(p.motivo?' · '+p.motivo:''),periodo:P.key,prestamo_id:p.id});return true}
 
   /* =============== CLIENTES (rehecha) =============== */
   const CL={q:'',sel:null,f:null,lim:60};
@@ -19447,7 +19697,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     else{cls(H,'pdaPag',0);cls(host,'solo',0);if(topH&&topH.style.display!=='none')topH.style.display='none';keyTop=''}
     if(tocando)return;
     const act=root.activeElement;if(act&&(act.tagName==='INPUT'||act.tagName==='TEXTAREA'||act.tagName==='SELECT'))return;
-    const v=pv?{head:'',body:'',foot:''}:vista();const pag=pv?'vieja':(sub||tab);
+    const v=pv?{head:'',body:'',foot:''}:vista();const pag=pv?'vieja':sub==='sueldomoto'?'sl:'+SL.pest+':'+(SL.vista||''):(sub||tab);
     const k=pag+'|'+v.head+v.body+(v.foot||'')+nav();
     if(k===key)return;key=k;
     const lst=root.querySelector('.list');if(lst&&root.__pag)scrollMem[root.__pag]=lst.scrollTop;
@@ -19481,6 +19731,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(k==='slq'){SL.q=el.value;const b=root.getElementById('slL');if(b)b.innerHTML=slFilas();return}
     if(k==='slm'){SL.monto=el.value.replace(/[^\d.,]/g,'');vivo();return}
     if(k==='sln'){SL.nota=el.value;return}
+    if(k.startsWith('sx:')){SL.f[k.slice(3)]=el.value;slVivo(k.slice(3),el);return}
+    if(k.startsWith('sc:')){if(SL.cfg)SL.cfg[k.slice(3)]=el.value;return}
     if(k==='clq'){CL.q=el.value;CL.lim=60;const b=root.getElementById('clL');if(b)b.innerHTML=clFilas();return}
     if(k.startsWith('sf:')){SF[secK][k.slice(3)]=el.value;const vv=el.dataset.vivo;if(vv&&SEC[secK].lista){clearTimeout(entrada.t);entrada.t=setTimeout(()=>{const b=root.getElementById(vv);if(b)b.innerHTML=SEC[secK].lista()},250)}return}
     if(k==='qrfile'){const fl=el.files&&el.files[0];el.value='';if(!fl)return;if(!/^image\//.test(fl.type)||fl.size>5*1024*1024){mal('Elige una imagen (PNG o JPG) de menos de 5 MB.');return}SF['qr yape'].file=fl;SF['qr yape'].prev=URL.createObjectURL(fl);key='';pintar();return}
@@ -19495,10 +19747,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const c=e.target.closest('[data-c]');if(c){chip=c.dataset.c;limite=40;key='';pintar();return}
     const o=e.target.closest('[data-o]');if(o){const s=SEL();if(selModo&&s){const id=String(o.dataset.o);s.has(id)?s.delete(id):s.add(id);key='';pintar();return}abrirPedido(o.dataset.o);return}
     const cm=e.target.closest('[data-cm]');if(cm){const c=C2.caja;const m=c&&c.data&&c.data.motos.find(x=>String(x.id)===cm.dataset.cm);if(m){Object.assign(CJ,{moto:m,pane:'recibir',rec:'',recNota:'',dar:'',darMot:'',darNota:'',msg:'',ok:'',lim:40,abierta:null});sub='cajamoto';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}return}
-    const sm=e.target.closest('[data-sm]');if(sm){const c=C2.sueldo;const m=c&&c.data&&c.data.motos.find(x=>String(x.id)===sm.dataset.sm);if(m){Object.assign(SL,{moto:m,per:'',monto:'',nota:'',msg:'',ok:''});sub='sueldomoto';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}return}
+    const sm=e.target.closest('[data-sm]');if(sm){const c=C2.sueldo;const m=c&&c.data&&c.data.motos.find(x=>String(x.id)===sm.dataset.sm);if(m){Object.assign(SL,{moto:m,per:'',monto:'',nota:'',msg:'',ok:'',pest:'',modo:'pago',vista:null,dia:null,f:{},cfg:null});sub='sueldomoto';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}return}
     const sp=e.target.closest('[data-sp]');if(sp){SL.per=sp.dataset.sp;const r=calcS(SL.moto);const p=r&&(r.periods||[]).find(x=>x.key===SL.per);if(p)SL.monto=Math.max(0,p.balance).toFixed(2);key='';pintar();return}
     const cli=e.target.closest('[data-cli]');if(cli){const x=(C2.cli&&C2.cli.data||[]).find(y=>String(y.id)===cli.dataset.cli);if(x){CL.sel=x;sub='cliente';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}return}
     const en=e.target.closest('[data-env]');if(en){let s2=[];try{s2=JSON.parse(localStorage.getItem('pidemas-admin-masivo-enviados')||'[]')}catch(_){}if(!s2.includes(en.dataset.env)){s2.push(en.dataset.env);try{localStorage.setItem('pidemas-admin-masivo-enviados',JSON.stringify(s2))}catch(_){}}setTimeout(()=>{const b=root.getElementById('mvL');if(b&&SEC[secK]&&SEC[secK].lista)b.innerHTML=SEC[secK].lista()},300);return}
+    const sx=e.target.closest('[data-sx]');if(sx){e.preventDefault();if(sx.disabled)return;sx.disabled=true;try{await slAccion(sx.dataset.sx)}catch(err){SL.msg=String(err&&err.message||err)}finally{sx.disabled=false;key='';pintar()}return}
     const sa=e.target.closest('[data-sa]');if(sa&&SEC[secK]){e.preventDefault();if(sa.disabled)return;sa.disabled=true;try{await SEC[secK].a(sa.dataset.sa)}catch(err){mal(String(err&&err.message||err))}finally{sa.disabled=false;key='';pintar()}return}
     const cp=e.target.closest('[data-cp]');if(cp){CJ.pane=cp.dataset.cp;CJ.msg='';CJ.ok='';key='';pintar();return}
     const mot=e.target.closest('[data-mot]');if(mot){CJ.darMot=mot.dataset.mot;key='';pintar();return}
@@ -19516,7 +19769,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       case 'selmodo':{selModo=!selModo;const s=SEL();if(!selModo&&s)s.clear();key='';pintar();break}
       case 'borrar':{const s=SEL();if(!s||!s.size)break;try{await window.deleteSelectedOrders()}catch(err){(window.pdAviso||alert)(String(err.message||err))}if(!s.size)selModo=false;key='';pintar();break}
       case 'mas':limite+=40;key='';pintar();break;
-      case 'volver':sub=null;key='';pintar();if(history.state?.pdApp){ignorarPop=true;history.back()}break;
+      case 'volver':if(sub==='sueldomoto'&&SL.vista){cerrarV();SL.msg='';key='';pintar();break}sub=null;key='';pintar();if(history.state?.pdApp){ignorarPop=true;history.back()}break;
       case 'cj:act':if(C2.caja)C2.caja.t=0;datosCaja(true);key='';pintar();break;
       case 'cj:uno':await recargaMoto();break;
       case 'sl:act':if(C2.sueldo)C2.sueldo.t=0;datosSueldo(true);key='';pintar();break;
@@ -19526,15 +19779,13 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       case 'cl:borrar':await cliBorrar();break;
       case 'cl:mas':CL.lim+=60;{const b=root.getElementById('clL');if(b)b.innerHTML=clFilas()}break;
       case 'sec:rf':recargar(secK);key='';pintar();break;
-      case 'sl:cfg':sueldoViejo();break;
-      case 'sl:pagar':{if(a.disabled)break;a.disabled=true;try{await sueldoPagar()}finally{key='';pintar()}break}
       case 'cj:mas':CJ.lim+=40;key='';pintar();break;
       case 'cj:recibir':case 'cj:dif':case 'cj:dar':{if(a.disabled)break;a.disabled=true;try{await cajaAccion(a.dataset.a,a)}finally{key='';pintar()}break}
       case 'perfil':{cajon=false;abrirSec('__perfil');break;ultimo='Mi perfil';marca='menu';kick='Mi cuenta';const b=document.querySelector('#pdMenu .m3Top');if(b)b.click();setTimeout(()=>{key='';pintar()},120);break}
       case 'salir':{const b=document.querySelector('#pdMenu .m3Out');if(b)b.click();break}
     }
   }
-  addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub){sub=null;key='';pintar()}});
+  addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar()}});
   setInterval(pintar,600);
   window.pdAppAdm={pintar,ir,navH:()=>0};
 })();
