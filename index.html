@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611181725">
+<meta name="pd-version" content="202611181740">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -18801,6 +18801,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function cjFilas(){const c=C2.caja,P=CA();if(!c||!c.data||!P)return '';const bal=m=>P.balance(c.data.by.get(String(m.id))||[]);const L2=c.data.motos.filter(m=>m.activo!==false||Math.abs(bal(m))>0.004);const ql=CJ.q.trim().toLowerCase();const vis=L2.filter(m=>!ql||String(m.nombre_completo||'').toLowerCase().includes(ql)||String(m.telefono||'').includes(ql)).sort((a,b)=>Math.abs(bal(b))-Math.abs(bal(a))||String(a.nombre_completo).localeCompare(String(b.nombre_completo)));let h='';
     h+=vis.length?vis.map(m=>{const b=bal(m),sp=P.split(c.data.by.get(String(m.id))||[]);return `<button type="button" class="tl" data-cm="${E(m.id)}"><span class="ic" style="font-weight:800;font-size:15px">${iniN(m.nombre_completo)}</span><span class="tx"><b>${E(m.nombre_completo||'Motorizado')}</b><span>${Math.abs(b)<0.005?'Sin efectivo pendiente':b<0?'Saldo negativo':'Caja abierta'+(sp.openedAt?' desde '+E(dtl(sp.openedAt)):'')}</span></span><b style="font-size:17px;white-space:nowrap;color:${b<-0.004?'#B42318':Math.abs(b)<0.005?'#6B5E55':'#1F1A17'}">${M(b)}</b>${IC.chev}</button>`}).join(''):'<div class="vac">No hay motorizados con ese nombre.</div>';
     return h}
+  const diaK=t=>new Date(t).toLocaleDateString('en-CA',{timeZone:'America/Lima'});
+  const diaDe=x=>{const m=/· Día (\d{4}-\d{2}-\d{2})/.exec(String(x.descripcion||''));return m?m[1]:diaK(x.creado_en)};
+  function porDias(P,cur){const g=new Map();cur.forEach(x=>{const k=diaDe(x);if(!g.has(k))g.set(k,[]);g.get(k).push(x)});
+    return [...g.entries()].map(([k,L])=>({k,saldo:P.r2(P.summary(L).balance),recibido:L.some(x=>/· Día \d/.test(String(x.descripcion||''))),n:L.length})).sort((a,b)=>b.k.localeCompare(a.k))}
+  const diaTxt=k=>{const d=new Date(k+'T12:00:00-05:00');const hoy=diaK(Date.now()),ay=diaK(Date.now()-864e5);return (k===hoy?'Hoy · ':k===ay?'Ayer · ':'')+d.toLocaleDateString('es-PE',{weekday:'long',day:'2-digit',month:'short',timeZone:'America/Lima'}).replace('.','')};
   function cajaMoto(){
     const c=datosCaja(),P=CA(),m=CJ.moto;if(!m||!c.data||!P)return {head:top3('Cajas','Caja'),body:'<div class="load">Cargando…</div>'};
     const all=c.data.by.get(String(m.id))||[],sp=P.split(all),s=P.summary(sp.current),bal=s.balance;
@@ -18813,6 +18818,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(CJ.rec===''&&bal>0.004)CJ.rec=bal.toFixed(2);
       const v=P.r2(Number(String(CJ.rec).replace(',','.'))||0),d=P.r2(v-bal);
       const hint=bal<=0.004?(bal<0?'No hay efectivo por recibir: el saldo es negativo.':'No hay efectivo por recibir en esta caja.'):!(v>0)?'Si te entrega todo, la caja se cierra y empieza una nueva.':v>bal+0.004?'Te entrega más que el saldo. Si contaste bien, cierra la caja con sobrante de '+M(v-bal)+'.':Math.abs(d)<0.005?'Entrega total: la caja queda en S/ 0.00 y empieza una nueva.':'Entrega parcial: quedan '+M(bal-v)+' pendientes. Si ya contaste todo y falta dinero, cierra con faltante.';
+      const DS=porDias(P,sp.current).filter(d=>Math.abs(d.saldo)>0.004||d.recibido);
+      if(DS.length>1||(DS.length===1&&DS[0].k!==diaK(Date.now())))h+=`<div class="cd"><div class="lbl">Recibir por día</div><div style="font-size:14px;color:#6B5E55;line-height:1.45">Recibe solo lo de un día. Los demás días quedan como están.</div>${DS.map(d=>`<div class="mv" style="align-items:center"><span class="tx"><b style="text-transform:capitalize">${E(diaTxt(d.k))}</b><span>${d.n} movimiento${d.n===1?'':'s'}</span></span>${Math.abs(d.saldo)<0.005?`<span class="pl g">Recibido</span>`:d.saldo<0?`<b style="color:#B42318;white-space:nowrap">${M(d.saldo)}</b>`:`<button type="button" class="b o" style="height:40px;padding:0 14px;font-size:14px;white-space:nowrap" data-a="cj:dia:${d.k}">Recibir ${M(d.saldo)}</button>`}</div>`).join('')}</div>`;
       h+=`<div class="cd"><div class="fld"><label for="cjR">Monto que te entrega (S/)</label><input id="cjR" inputmode="decimal" placeholder="0.00" value="${E(CJ.rec)}" data-in="cjrec"${bal<=0.004?' disabled':''}></div>${fld2('cjRN','Observación (opcional)','cjrecn',CJ.recNota,'Ej. Entregó en efectivo / Yape')}<div style="font-size:14px;color:#6B5E55;line-height:1.45" id="cjHint">${E(hint)}</div></div>`;
       const puede=bal>0.004&&v>0&&v<=bal+0.004;const dif=bal>0.004&&v>0&&Math.abs(d)>=0.005;
       foot=`<button type="button" class="b o" style="height:54px;font-size:16px" data-a="cj:recibir"${puede?'':' disabled'}>${Math.abs(d)<0.005&&v>0?'Recibir caja completa · '+M(v):v>0&&v<bal?'Recibir entrega parcial · '+M(v):'Registrar entrega'}</button>`+(dif?`<button type="button" class="b" style="height:48px;color:#B42318;border-color:#F4C7C3" data-a="cj:dif">Cerrar caja con ${d<0?'faltante de '+M(-d):'sobrante de '+M(d)}</button>`:'');
@@ -18846,6 +18853,12 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const q=await D().from('movimientos_caja').insert(Object.assign({motorizado_id:m.id,tipo:'retiro',monto:v,descripcion:(total?'LIQUIDACIÓN DE CAJA':'ENTREGA PARCIAL DE CAJA')+(note?' · '+note:'')},total?{esperado:bal,recibido:v,diferencia:0}:{})).select('id');
       if(q.error||!q.data||!q.data.length){CJ.msg='No se pudo registrar: '+(q.error?q.error.message:'Supabase no confirmó el registro.');return}
       CJ.rec='';CJ.recNota='';await recargaMoto();CJ.ok=total?'Caja recibida. Empieza una caja nueva.':'Entrega parcial registrada.';return}
+    if(A.startsWith('cj:dia:')){const k=A.slice(7),D2=porDias(P,P.split(c.data.by.get(String(m.id))||[]).current).find(d=>d.k===k);if(!D2||!(D2.saldo>0.004)){CJ.msg='Ese día no tiene efectivo por recibir.';return}
+      const v=D2.saldo,total=Math.abs(v-bal)<0.005;
+      if(!(await conf('¿Recibir la caja del '+diaTxt(k).replace(/^(Hoy|Ayer) · /,'')+' de '+nom+' por '+M(v)+'?\nLos demás días quedan como están.')))return;
+      const q=await D().from('movimientos_caja').insert(Object.assign({motorizado_id:m.id,tipo:'retiro',monto:v,descripcion:(total?'LIQUIDACIÓN DE CAJA':'ENTREGA PARCIAL DE CAJA')+' · Día '+k},total?{esperado:bal,recibido:v,diferencia:0}:{})).select('id');
+      if(q.error||!q.data||!q.data.length){CJ.msg='No se pudo registrar: '+(q.error?q.error.message:'Supabase no confirmó el registro.');return}
+      CJ.rec='';await recargaMoto();CJ.ok='Caja del '+diaTxt(k).replace(/^(Hoy|Ayer) · /,'')+' recibida · '+M(v)+'.'+(total?' La caja queda en S/ 0.00.':'');return}
     if(A==='cj:dif'){const v=P.r2(Number(String(CJ.rec).replace(',','.'))||0),d=P.r2(v-bal);if(!(v>0)||Math.abs(d)<0.005)return;
       if(!(await conf('¿Cerrar la caja de '+nom+'?\nEl sistema esperaba '+M(bal)+' y te entregó '+M(v)+'. '+(d<0?'Faltan ':'Sobran ')+M(Math.abs(d))+'. La caja queda en S/ 0.00 y empieza una nueva.')))return;
       const note=CJ.recNota.trim();
@@ -20031,6 +20044,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const it=e.target.closest('[data-it]');if(it)cajon=false;if(it&&it.dataset.it==='pedidos'){ir('inicio');return}if(it&&(it.dataset.it==='cajas'||it.dataset.it==='sueldos'||it.dataset.it==='clientes')&&!SEC[it.dataset.it]){ir(it.dataset.it==='cajas'?'caja':it.dataset.it==='sueldos'?'sueldo':'clientes');return}if(it&&SEC[it.dataset.it]){abrirSec(it.dataset.it);return}if(it){const b=document.querySelector(`#pdMenu .m3It[data-txt="${CSS.escape(it.dataset.it)}"]`);if(b){marca='menu';kick=it.dataset.gk||'Administración';ultimo=((it.querySelector('span')||{}).textContent||'').trim();if(movido)volverLista();b.click();key='';setTimeout(pintar,80)}return}
     const chm=e.target.closest('[data-chmas]');if(chm){const c=chm.parentNode.querySelector('.chips');if(c){const fin=c.scrollLeft+c.clientWidth>=c.scrollWidth-4;c.scrollTo({left:fin?0:c.scrollLeft+Math.max(160,c.clientWidth*.6),behavior:'smooth'});setTimeout(()=>chm.classList.toggle('fin',c.scrollLeft+c.clientWidth>=c.scrollWidth-4),400)}return}
     const a=e.target.closest('[data-a]');if(!a)return;
+    if(a.dataset.a.startsWith('cj:dia:')){if(a.disabled)return;a.disabled=true;try{await cajaAccion(a.dataset.a,a)}finally{key='';pintar()}return}
     if(PE.f&&a.dataset.a.startsWith('pe:set:')){const [,,k,v]=a.dataset.a.split(':');PE.f[k]=v;key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:met:')){PE.f.metodo=a.dataset.a.slice(7);key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:quitar:')){const i=+a.dataset.a.slice(10),x=PE.f.items[i];if(x&&PE.f.items.length>1){PE.f.quitar.push(x.id);PE.f.items.splice(i,1);key='';pintar()}else if(x){(window.pdAviso||alert)('El pedido debe tener al menos un producto.')}return}
