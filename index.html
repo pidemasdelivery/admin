@@ -6739,7 +6739,7 @@ const moto=allMotos.find(m=>String(m.id)===String(pedido.motorizado_id));
 if(!moto?.usuario_id)return;
 const {error}=await db.from("notificaciones").insert({
 usuario_id:moto.usuario_id,
-pedido_id:pedido.id,
+pedido_id:tipo==="pedido_eliminado"?null:pedido.id,
 tipo,
 titulo,
 mensaje,
@@ -18573,7 +18573,9 @@ input.cod{text-align:center;font-size:30px;letter-spacing:.4em;height:64px}
 .dwp button.on{background:#FFF4EC;color:#9A330A}
 :host(.solo) .app{background:transparent}
 .sel{flex:0 0 26px;width:26px;height:26px;border-radius:8px;border:2px solid #E3CFC2;background:#FFFFFF;display:flex;align-items:center;justify-content:center;color:#FFFFFF}
-.sel.on{background:#C4410C;border-color:#C4410C}.sel svg{width:16px;height:16px}
+.sel.on{background:#C4410C;border-color:#C4410C}
+.chW{position:relative}.chW .chips{scrollbar-width:none;padding-right:52px}.chW .chips::-webkit-scrollbar{display:none}
+.chA{position:absolute;right:0;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:1px solid #F1E4DA;background:#FFFFFF;color:#C4410C;display:flex;align-items:center;justify-content:center;box-shadow:-14px 0 14px #FFF9F5,0 2px 6px rgba(31,26,23,.12);cursor:pointer}.chA svg{width:22px;height:22px;transition:transform .2s}.chA.fin svg{transform:rotate(180deg)}.sel svg{width:16px;height:16px}
 .oc.sl2{border:1.5px solid #C4410C;background:#FFF4EC}
 .pl.r{background:#FDE8E8;color:#9B1C1C}.pl.m{background:#FFF4EC;color:#9A330A}
 .con{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#6B5E55}.con i{width:8px;height:8px;border-radius:50%;background:#A8988C}
@@ -18666,7 +18668,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const ql=q.trim().toLowerCase();const fil=todos.filter((CH.find(c=>c[0]===chip)||CH[0])[2]).filter(o=>!ql||[o.id,ref(o.id),o.nombre_cliente,o.telefono_cliente,o.nombre_remitente,NEG(o.negocio_id).nombre].join(' ').toLowerCase().includes(ql));
     let h=`<div class="cols2"><button type="button" class="mt" data-t="sueldo"><span>Sueldos</span><b>${E(kp[1]||'—')}</b></button><button type="button" class="mt" data-t="caja"><span>Cajas</span><b>${E(kp[2]||'—')}</b></button></div>`;
     h+=`<div class="fld"><label for="aQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar pedido</label><input id="aQ" type="search" placeholder="N.º de pedido, cliente o teléfono" value="${E(q)}" data-in="q"></div>`;
-    h+=`<div class="chips">${CH.map((c,i)=>`<button type="button" data-c="${c[0]}" class="${chip===c[0]?'on':''}">${c[1]}${cnt[i]?' · '+cnt[i]:''}</button>`).join('')}</div>`;
+    h+=`<div class="chW"><div class="chips">${CH.map((c,i)=>`<button type="button" data-c="${c[0]}" class="${chip===c[0]?'on':''}">${c[1]}${cnt[i]?' · '+cnt[i]:''}</button>`).join('')}</div><button type="button" class="chA" data-chmas aria-label="Ver más filtros"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button></div>`;
     h+=`<div class="row" style="justify-content:space-between"><div class="lbl" style="margin:0">${fil.length} pedido${fil.length===1?'':'s'}</div><button type="button" class="b" style="height:40px;padding:0 14px" data-a="selmodo">${selModo?'Listo':'Seleccionar'}</button></div>`;
     h+=`<div id="aLista" style="display:flex;flex-direction:column;gap:10px">${lista(fil)}</div>`;
     const nb=Number((($('pdaBell')||{}).querySelector?.('.pdaBadge,.badge,b,span')||{}).textContent)||0;
@@ -19788,6 +19790,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const rv=e.target.closest('[data-rv]');if(rv){e.preventDefault();await cajaRevision(rv.dataset.rv);key='';pintar();return}
     const g=e.target.closest('[data-g]');if(g){abiertoGr=abiertoGr===g.dataset.g?null:g.dataset.g;key='';pintar();return}
     const it=e.target.closest('[data-it]');if(it)cajon=false;if(it&&SEC[it.dataset.it]){abrirSec(it.dataset.it);return}if(it){const b=document.querySelector(`#pdMenu .m3It[data-txt="${CSS.escape(it.dataset.it)}"]`);if(b){marca='menu';kick=it.dataset.gk||'Administración';ultimo=((it.querySelector('span')||{}).textContent||'').trim();if(movido)volverLista();b.click();key='';setTimeout(pintar,80)}return}
+    const chm=e.target.closest('[data-chmas]');if(chm){const c=chm.parentNode.querySelector('.chips');if(c){const fin=c.scrollLeft+c.clientWidth>=c.scrollWidth-4;c.scrollTo({left:fin?0:c.scrollLeft+Math.max(160,c.clientWidth*.6),behavior:'smooth'});setTimeout(()=>chm.classList.toggle('fin',c.scrollLeft+c.clientWidth>=c.scrollWidth-4),400)}return}
     const a=e.target.closest('[data-a]');if(!a)return;
     switch(a.dataset.a){
       case 'cajon':if(!cajon&&paginaVieja())cerrarVieja();cajon=!cajon;if(cajon){abiertoGr=null;mq='';cajonT=Date.now();try{history.pushState({pdApp:1,cajon:1},'')}catch(_){}}else if(history.state&&history.state.cajon){ignorarPop=true;history.back()}key='';pintar();break;
