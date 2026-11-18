@@ -4531,7 +4531,7 @@ html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#
       function tecla(e){if(e.key==='Escape'){e.preventDefault();no()}else if(e.key==='Enter'&&(tipo!=='prompt'||document.activeElement===inp)){e.preventDefault();si()}}
       document.addEventListener('keydown',tecla,true);
       d.querySelector('.pdDlgSi').onclick=si;const nb=d.querySelector('.pdDlgNo');if(nb)nb.onclick=no;
-      setTimeout(()=>{if(inp){inp.focus();inp.select()}else d.querySelector('.pdDlgSi').focus()},60);
+      setTimeout(()=>{if(inp){inp.focus();inp.select()}else{const b=d.querySelector('.pdDlgSi');if(b)b.focus()}},60);
     });
   }
   /* una pregunta a la vez */
@@ -18283,6 +18283,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
     if(e===1){const mm=MOTOS().find(x=>String(x.id)===elegido[id]);m.cta={label:mm?'Asignar a '+String(mm.nombre_completo||'').split(' ')[0]:'Asignar',off:!mm,hint:mm?'':'Elige un motorizado de la lista',busy:'Asignando…',run:()=>asignar(id)}}
     else if(e===4&&!finCerrado)m.cta={label:'Delivery cobrado al negocio',green:true,busy:'Guardando…',run:()=>deliveryCobrado(o)};
     else if(e===2&&st(o)==='asignado')m.alt=[{label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}}];
+    if(e!==-1&&typeof window.pdAdmEditarPedido==='function')m.alt=(m.alt||[]).concat([{label:'Editar pedido',run:()=>window.pdAdmEditarPedido(id)}]);
     m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()}};
     return m;
   }
@@ -19185,6 +19186,62 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     try{window.loadClientes&&window.loadClientes()}catch(_){}C2.cli&&(C2.cli.t=0);datosCli(true);CL.sel=null;volverSub()}
   function volverSub(){sub=null;key='';pintar();if(history.state?.pdApp){ignorarPop=true;history.back()}}
 
+
+  /* =============== EDITAR PEDIDO =============== */
+  const PE={f:null};
+  const n2=v=>{const x=Number(String(v??'').replace(',','.'));return Number.isFinite(x)?x:0};
+  async function pedidoEditar(id){
+    const o=L().find(x=>String(x.id)===String(id));if(!o)return;
+    try{if(window.PdPasos&&PdPasos.isOpen())PdPasos.close()}catch(_){}
+    try{if(paginaVieja())cerrarVieja()}catch(_){}
+    const sv=svc(o);
+    PE.f={id:o.id,sv,nombre:o.nombre_cliente||'',tel:o.telefono_cliente||'',dir:o.direccion_entrega||'',ref:o.referencia_entrega||'',
+      rnom:o.nombre_remitente||'',rtel:o.telefono_remitente||'',rdir:o.direccion_recojo||'',
+      sub:o.subtotal!=null?String(Number(o.subtotal).toFixed(2)):'',del:o.costo_delivery!=null?String(Number(o.costo_delivery).toFixed(2)):'',
+      extra:Math.round((n2(o.total)-n2(o.subtotal)-n2(o.costo_delivery))*100)/100,
+      metodo:String(o.metodo_pago||'efectivo').toLowerCase(),obs:o.observaciones||'',items:null,quitar:[],msg:''};
+    if(!sub)try{history.pushState({pdApp:1},'')}catch(_){}
+    sub='pedidoform';key='';pintar();
+    try{const r=await D().from('detalle_pedidos').select('*').eq('pedido_id',o.id);if(PE.f&&String(PE.f.id)===String(o.id)){PE.f.items=(r.data||[]).map(d=>({id:d.id,n:d.nombre_producto||'Producto',q:String(d.cantidad||1),p:String(Number(d.precio_unitario??(n2(d.subtotal)/(Number(d.cantidad)||1))).toFixed(2))}));key='';pintar()}}catch(_){if(PE.f)PE.f.items=[]}
+  }
+  window.pdAdmEditarPedido=pedidoEditar;
+  window.editOrder=id=>pedidoEditar(id);
+  const peSub=f=>f.items&&f.items.length?Math.round(f.items.reduce((a,x)=>a+n2(x.q)*n2(x.p),0)*100)/100:n2(f.sub);
+  const peTot=f=>Math.round((peSub(f)+n2(f.del)+(f.extra||0))*100)/100;
+  function pedidoForm(){
+    const f=PE.f;if(!f)return {head:top3('Pedidos','Editar pedido'),body:''};
+    const fl=(id,l,k,ph,o)=>`<div class="fld"><label for="${id}">${l}</label><input id="${id}" value="${E(f[k])}" data-in="pe:${k}"${ph?` placeholder="${E(ph)}"`:''}${o||''}></div>`;
+    let h=`<div class="cd" style="flex-direction:row;align-items:center;gap:10px"><span style="font-size:14px;color:#6B5E55">Corrige lo que se envió mal. Si ya hay un motorizado asignado, le avisamos del cambio.</span></div>`;
+    if(f.sv)h+=`<div class="cd"><div class="lbl">Quien envía / recojo</div>${fl('peRn','Nombre','rnom','')}${fl('peRt','Teléfono','rtel','',' type="tel" inputmode="numeric" maxlength="15"')}${fl('peRd','Dirección de recojo','rdir','')}</div>`;
+    h+=`<div class="cd"><div class="lbl">${f.sv==='Recojo y entrega'?'Quien recibe / entrega':'Cliente y entrega'}</div>${fl('peN','Nombre','nombre','')}${fl('peT','Teléfono','tel','',' type="tel" inputmode="numeric" maxlength="15"')}${fl('peD','Dirección de entrega','dir','')}${fl('peR','Referencia','ref','Ej. puerta azul')}</div>`;
+    if(f.items===null)h+=`<div class="load">Cargando productos…</div>`;
+    else if(f.items.length)h+=`<div class="cd"><div class="lbl">Productos</div>${f.items.map((x,i)=>`<div style="display:flex;flex-direction:column;gap:6px;padding:8px 0;border-bottom:1px solid #F1E4DA"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b style="font-size:15px;overflow-wrap:anywhere">${E(x.n)}</b><button type="button" class="ib" style="width:36px;height:36px;color:#B42318" data-a="pe:quitar:${i}" aria-label="Quitar ${E(x.n)}">${IC.trash}</button></div><div class="two"><div class="fld"><label for="peQ${i}">Cantidad</label><input id="peQ${i}" inputmode="numeric" value="${E(x.q)}" data-in="peq:${i}"></div><div class="fld"><label for="peP${i}">Precio c/u (S/)</label><input id="peP${i}" inputmode="decimal" value="${E(x.p)}" data-in="pep:${i}"></div></div></div>`).join('')}</div>`;
+    h+=`<div class="cd"><div class="lbl">Montos</div>${f.items&&f.items.length?'':fl('peS',f.sv==='Compra'?'Gasto de la compra (S/)':'Productos (S/)','sub','0.00',' inputmode="decimal"')}${fl('peL','Delivery / servicio (S/)','del','0.00',' inputmode="decimal"')}
+      <div class="li"><span>Productos</span><b id="peSu">${M(peSub(f))}</b></div>${f.extra?`<div class="li"><span>${f.extra>0?'Otros cargos (bolsa, etc.)':'Descuento'}</span><b>${M(f.extra)}</b></div>`:''}<div class="li" style="font-size:17px"><span>Total</span><b id="peTo">${M(peTot(f))}</b></div></div>`;
+    h+=`<div class="cd"><div class="lbl">Pago</div><div class="seg" style="grid-template-columns:1fr 1fr">${[['efectivo','Efectivo'],['yape','Yape']].map(x=>`<button type="button" class="${f.metodo===x[0]?'on':''}" data-a="pe:met:${x[0]}">${x[1]}</button>`).join('')}</div></div>`;
+    h+=`<div class="cd">${fl('peO','Observaciones','obs','')}</div>`;
+    if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
+    return {head:top3('Pedido '+ref(f.id),'Editar pedido'),body:h,foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-a="pe:guardar">Guardar cambios · ${M(peTot(f))}</button>`};
+  }
+  function peVivo(){const f=PE.f;if(!f)return;const a=root.getElementById('peSu'),b=root.getElementById('peTo'),g=root.querySelector('[data-a="pe:guardar"]');if(a)a.textContent=M(peSub(f));if(b)b.textContent=M(peTot(f));if(g)g.textContent='Guardar cambios · '+M(peTot(f))}
+  async function pedidoGuardar(){
+    const f=PE.f;f.msg='';const o=L().find(x=>String(x.id)===String(f.id));if(!o){f.msg='No se encontró el pedido.';return}
+    if(!f.nombre.trim()||!f.dir.trim()){f.msg='Completa el nombre y la dirección de entrega.';return}
+    if(f.items&&f.items.some(x=>!(n2(x.q)>0)||n2(x.p)<0)){f.msg='Revisa las cantidades y precios.';return}
+    const subT=peSub(f),del=n2(f.del),tot=peTot(f);if(tot<0){f.msg='El total no puede ser negativo.';return}
+    const conf=window.pdConfirmar?await pdConfirmar('¿Guardar los cambios del pedido '+ref(f.id)+'?\nTotal: '+M(tot)):confirm('¿Guardar?');if(!conf)return;
+    const patch={nombre_cliente:f.nombre.trim(),telefono_cliente:f.tel.trim(),direccion_entrega:f.dir.trim(),referencia_entrega:f.ref.trim(),subtotal:subT,costo_delivery:del,total:tot,metodo_pago:f.metodo,observaciones:f.obs.trim()};
+    if(f.sv){patch.nombre_remitente=f.rnom.trim();patch.telefono_remitente=f.rtel.trim();patch.direccion_recojo=f.rdir.trim()}
+    try{
+      if(f.items){for(const x of f.items){const q=Math.round(n2(x.q)),p=Math.round(n2(x.p)*100)/100;const r=await D().from('detalle_pedidos').update({cantidad:q,precio_unitario:p,subtotal:Math.round(q*p*100)/100}).eq('id',x.id);if(r.error)throw r.error}
+        for(const id of f.quitar){const r=await D().from('detalle_pedidos').delete().eq('id',id);if(r.error)throw r.error}}
+      const r=await D().from('pedidos').update(patch).eq('id',o.id).select('id').maybeSingle();if(r.error)throw r.error;if(!r.data)throw new Error('Supabase no guardó el cambio. Revisa los permisos.');
+      try{if(typeof notifyMotoOrderChange==='function')await notifyMotoOrderChange(o,'Pedido actualizado por Pidemás',`El pedido ${ref(o.id)} fue corregido. Revisa los datos antes de seguir.`)}catch(_){}
+      Object.assign(o,patch);try{await window.loadOrders()}catch(_){}
+      (window.pdExito||window.pdAviso||alert)('Pedido actualizado');PE.f=null;volverSub();
+    }catch(err){f.msg='No se pudo guardar: '+(err?.message||err)}
+  }
+
   /* =============== SECCIONES DEL MENÚ REHECHAS (registro) =============== */
   /* Cada sección: titulo, grupo y una función que devuelve {body,foot}. Las que no están aquí abren la página de siempre. */
   const SEC={};let secK=null;const SF={};
@@ -19706,7 +19763,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     return false;
   }
   function visible(){const av=$('appView'),lg=$('loginView');if(!av||av.classList.contains('hidden')||(lg&&!lg.classList.contains('hidden')))return false;return !tapada()}
-  function vista(){if(sub==='cajamoto')return cajaMoto();if(sub==='sueldomoto')return sueldoMoto();if(sub==='cliente')return cliente();if(sub==='sec')return secVista();if(sub==='clienteform')return clienteForm();return tab==='menu'?menu():tab==='caja'?caja():tab==='sueldo'?sueldos():tab==='clientes'?clientes():inicio()}
+  function vista(){if(sub==='cajamoto')return cajaMoto();if(sub==='sueldomoto')return sueldoMoto();if(sub==='cliente')return cliente();if(sub==='sec')return secVista();if(sub==='clienteform')return clienteForm();if(sub==='pedidoform')return pedidoForm();return tab==='menu'?menu():tab==='caja'?caja():tab==='sueldo'?sueldos():tab==='clientes'?clientes():inicio()}
   const cls=(el,c,on)=>{if(el&&el.classList.contains(c)!==!!on)el.classList.toggle(c,!!on)};
   function pintar(){
     const H=document.documentElement;
@@ -19770,6 +19827,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(k.startsWith('hr:')){const [,d,c]=k.split(':');SF['horario'].C.dias[d][c]=el.value;return}
     if(k.startsWith('dc:')){const f=SF['códigos de descuento'];if(f&&f.ed){let v=el.value;if(k==='dc:codigo'){v=v.toUpperCase().replace(/\s+/g,'');el.value=v}f.ed[k.slice(3)]=v;clearTimeout(entrada.d);entrada.d=setTimeout(()=>{const t=document.createElement('template');t.innerHTML=SEC['códigos de descuento'].form().body;const n=t.content.querySelector('.note'),o=root.querySelector('.list .note:last-of-type');const all=root.querySelectorAll('.list .note');if(n&&all.length)all[all.length-1].innerHTML=n.innerHTML},200)}return}
     if(k.startsWith('cf:')){CL.f[k.slice(3)]=el.value;return}
+    if(PE.f&&k.startsWith('pe:')){PE.f[k.slice(3)]=el.value;peVivo();return}
+    if(PE.f&&(k.startsWith('peq:')||k.startsWith('pep:'))){const x=PE.f.items[+k.slice(4)];if(x)x[k[2]==='q'?'q':'p']=el.value;peVivo();return}
     if(k==='mq'){mq=el.value;const g=root.getElementById('mG');if(g)g.innerHTML=grupos()}}
   async function clic(e){
     tocando=false;
@@ -19792,6 +19851,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const it=e.target.closest('[data-it]');if(it)cajon=false;if(it&&SEC[it.dataset.it]){abrirSec(it.dataset.it);return}if(it){const b=document.querySelector(`#pdMenu .m3It[data-txt="${CSS.escape(it.dataset.it)}"]`);if(b){marca='menu';kick=it.dataset.gk||'Administración';ultimo=((it.querySelector('span')||{}).textContent||'').trim();if(movido)volverLista();b.click();key='';setTimeout(pintar,80)}return}
     const chm=e.target.closest('[data-chmas]');if(chm){const c=chm.parentNode.querySelector('.chips');if(c){const fin=c.scrollLeft+c.clientWidth>=c.scrollWidth-4;c.scrollTo({left:fin?0:c.scrollLeft+Math.max(160,c.clientWidth*.6),behavior:'smooth'});setTimeout(()=>chm.classList.toggle('fin',c.scrollLeft+c.clientWidth>=c.scrollWidth-4),400)}return}
     const a=e.target.closest('[data-a]');if(!a)return;
+    if(PE.f&&a.dataset.a.startsWith('pe:met:')){PE.f.metodo=a.dataset.a.slice(7);key='';pintar();return}
+    if(PE.f&&a.dataset.a.startsWith('pe:quitar:')){const i=+a.dataset.a.slice(10),x=PE.f.items[i];if(x&&PE.f.items.length>1){PE.f.quitar.push(x.id);PE.f.items.splice(i,1);key='';pintar()}else if(x){(window.pdAviso||alert)('El pedido debe tener al menos un producto.')}return}
     switch(a.dataset.a){
       case 'cajon':if(!cajon&&paginaVieja())cerrarVieja();cajon=!cajon;if(cajon){abiertoGr=null;mq='';cajonT=Date.now();try{history.pushState({pdApp:1,cajon:1},'')}catch(_){}}else if(history.state&&history.state.cajon){ignorarPop=true;history.back()}key='';pintar();break;
       case 'act':{a.classList.add('spin');const r=$('refreshOrders');if(r)r.click();else try{await window.loadOrders()}catch(_){}setTimeout(()=>{key='';pintar()},800);break}
@@ -19808,6 +19869,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       case 'cl:editar':{const x=CL.sel;CL.f={id:x.id,nombre:cliN(x),tel:cliT(x),dni:x.documento||x.dni||'',dir:x.direccion||'',ubi:cliU(x),msg:''};sub='clienteform';key='';pintar();break}
       case 'cl:guardar':{if(a.disabled)break;a.disabled=true;try{await cliGuardar()}finally{key='';pintar()}break}
       case 'cl:borrar':await cliBorrar();break;
+      case 'pe:guardar':{if(a.disabled)break;a.disabled=true;try{await pedidoGuardar()}finally{if(PE.f){key='';pintar()}}break}
       case 'cl:mas':CL.lim+=60;{const b=root.getElementById('clL');if(b)b.innerHTML=clFilas()}break;
       case 'sec:rf':recargar(secK);key='';pintar();break;
       case 'cj:mas':CJ.lim+=40;key='';pintar();break;
