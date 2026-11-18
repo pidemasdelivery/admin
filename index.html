@@ -18222,8 +18222,80 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
     if(e){error='No se pudo guardar: '+e.message;return}o.delivery_negocio_cobrado_en=now;
   }
 
+
+  /* ---------- Servicios (recojo y entrega, compra, encomienda) ---------- */
+  const limpiar=t=>String(t||'').replace(/__PIDEMAS_[A-Z_]+__\s*\{[^{}]*\}/g,'').replace(/\[COMPROBANTE_YAPE:[^\]]*\]/gi,'').replace(/\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+){2,}\b/g,'').replace(/(?:^|[|·])\s*Ubicaci[oó]n[^:|·]*:\s*[^|·]*/gi,'').split(/[|·]/).map(x=>x.trim()).filter(Boolean);
+  const campo=(o,...ls)=>{const raw=String(o.observaciones||'');for(const l of ls){const x=l.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const m=raw.match(new RegExp('(?:^|[|·]\\s*)'+x+'\\s*:\\s*([^|·]*)','i'));if(m&&m[1].trim())return m[1].trim()}return ''};
+  const link=v=>{const t=String(v||'').trim();if(!t)return '';return /^https?:\/\//i.test(t)?t:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(t)};
+  function etapaSvc(o){
+    const s=st(o);if(s==='cancelado')return -1;if(s==='entregado')return 4;
+    if(!o.motorizado_id)return 1;
+    if(['en_camino','en_entrega','camino_entrega','confirmando_pago'].includes(s))return 3;
+    return 2;
+  }
+  function modeloSvc(o){
+    const id=String(o.id),t=svc(o),e=etapaSvc(o),s0=st(o),mo=moto(o),mn=o.motorizado_nombre||mo.nombre_completo||'El motorizado';
+    const NOM={enc:'Encomienda',compra:'Compra',recojo:'Recojo y entrega'}[t]||'Pedido';
+    const yape=String(o.metodo_pago||'').toLowerCase()==='yape',metodo=yape?'Yape':'Efectivo';
+    const mom=String(o.pago_servicio_momento||'').toLowerCase(),alRec=mom==='recojo_efectivo'||mom==='recojo_yape';
+    const remN=o.nombre_remitente||o.nombre_cliente||'Cliente',remT=o.telefono_remitente||o.telefono_cliente;
+    const recN=t==='compra'?(o.nombre_cliente||remN):(o.nombre_receptor||o.nombre_cliente||'Quien recibe'),recT=t==='compra'?(o.telefono_cliente||remT):(o.telefono_receptor||o.telefono_cliente);
+    const enAg=o.pedido_en_agencia===true||String(o.pedido_en_agencia||'').toLowerCase()==='true';
+    let paq=[];try{paq=Array.isArray(o.paquetes_envio)?o.paquetes_envio:JSON.parse(o.paquetes_envio||'[]')}catch(_){}
+    const guias=!!o.guia_url||paq.some(p=>p&&(p.enviado_whatsapp||p.guia_url));
+    const titulos=t==='enc'?['Pedido recibido','Asignar motorizado','Recojo de paquetes','Agencia y guía','Cerrado']:['Pedido recibido','Asignar motorizado',t==='compra'?'Compra':'Recojo','Entrega y cobro','Cerrado'];
+    const steps=titulos.map((tt,i)=>({title:tt,state:e===-1?'locked':e===4||i<e?'done':i===e?'active':'locked'}));
+    const cobra=o.pago_confirmado===true&&!(Number(o.monto_recibido)>0)?0:Number(o.total||0);
+    const notas=limpiar(o.observaciones).filter(x=>!/^(Compra solicitada|Comprobante|DNI\/RUC|Lugar de compra|¿De dónde|¿Qué desea|Monto entregado|Cambio para|Pago por Yape)/i.test(x));
+    /* 0 · Pedido recibido */
+    {const s=steps[0];s.sum=NOM+' · '+M(o.total)+(o.creado_en?' · '+U.hora(o.creado_en):'');
+      let h=`<div class="box"><div class="k">${E(NOM)}</div><div class="li"><span>${t==='compra'?'Cliente':'Quien envía'}</span><b>${E(remN)}</b></div>`;
+      if(t==='compra'){const det=campo(o,'Compra solicitada','¿Qué desea que compremos?'),lug=o.direccion_recojo||campo(o,'Lugar de compra','¿De dónde desea la compra?'),cmp=campo(o,'Comprobante');
+        h+=`<div class="li"><span>Comprar en</span><b style="text-align:right">${E(lug||'—')}</b></div><div class="li" style="align-items:flex-start"><span>Qué comprar</span><b style="text-align:right;white-space:normal">${E(det||'—')}</b></div>${cmp?`<div class="li"><span>Comprobante</span><b>${E(cmp)}</b></div>`:''}`}
+      if(t==='enc')h+=`<div class="li"><span>Agencia</span><b>${E(o.agencia_destino||'—')}</b></div><div class="li"><span>Destino</span><b>${E(o.destino_final||o.direccion_entrega||'—')}</b></div><div class="li"><span>Pago del envío</span><b>${o.tipo_pago_encomienda==='pago_en_agencia'?'En agencia':'A destino'}</b></div>`;
+      h+=`${Number(o.subtotal)>0?`<div class="li"><span>${t==='compra'?'Compra':'Productos'}</span><b>${M(o.subtotal)}</b></div>`:''}<div class="li"><span>Servicio</span><b>${M(o.costo_delivery||(Number(o.total)-Number(o.subtotal||0)))}</b></div><div class="li"><span>Total · ${E(metodo)}${alRec?' al recoger':''}</span><b>${M(o.total)}</b></div></div>`;
+      if(notas.length)h+=`<div class="box"><div class="k">Notas</div><div style="font-size:15px;line-height:1.45">${E(notas.join(' · '))}</div></div>`;
+      s.body=h+U.contact(null,remT,'Hola, te escribimos de Pidemás por tu pedido '+U.ref(id)+'.');}
+    /* 1 · Asignar */
+    {const s=steps[1];s.sum='Asignado a '+mn;
+      if(e===1){const la=o.latitud_recojo,lo=o.longitud_recojo;
+        const libres=MOTOS().filter(m=>m.activo!==false&&!m.en_descanso).map(m=>({m,d:km(la,lo,m.latitud,m.longitud)})).sort((a,b)=>(b.m.disponible===true)-(a.m.disponible===true)||((a.d??1e9)-(b.d??1e9))).slice(0,8);
+        s.body=`<div><div class="lbl">Motorizados sugeridos (más cerca y libres)</div><div class="opts" data-act="moto">${libres.map(x=>`<button type="button" class="opt${elegido[id]===String(x.m.id)?' on':''}" data-m="${E(x.m.id)}" style="flex-direction:row;align-items:center;gap:12px"><span class="av r" style="flex:0 0 40px;width:40px;height:40px;font-size:16px">${E(U.ini(x.m.nombre_completo))}</span><span style="flex:1;min-width:0;display:flex;flex-direction:column"><b>${E(x.m.nombre_completo||'Motorizado')}</b><span>${x.m.disponible===true?'Libre':'Ocupado'}${x.m.placa?' · '+E(x.m.placa):''}</span></span><b style="font-size:14px;white-space:nowrap">${x.d!=null?x.d.toFixed(1)+' km':''}</b></button>`).join('')||'<div class="note">No hay motorizados activos.</div>'}</div></div>`;
+      }else s.body=U.who(mn,'Motorizado asignado'+(o.asignado_en?' · '+U.hora(o.asignado_en):''),mo.foto_url||'',true)+U.contact(null,mo.telefono,'');}
+    /* 2 · Recojo / compra */
+    {const s=steps[2];s.locked='Se muestra al asignar el motorizado';s.sum=(t==='compra'?'Compra hecha':'Recogido')+(o.en_camino_en?' · '+U.hora(o.en_camino_en):'');
+      let h=s0==='asignado'?U.st('Esperando que '+E(mn)+' acepte el pedido'):U.st(E(mn)+(t==='compra'?' está haciendo la compra':' va a recoger'),e>2?'ok':'');
+      h+=U.who(t==='compra'?(o.direccion_recojo||'Lugar de compra'):remN,t==='compra'?'Compra aquí':'Quien envía · recojo aquí','',true)+(t==='compra'?'':U.addr(o.direccion_recojo,o.referencia_recojo))+U.contact(null,remT,'');
+      if(t==='compra')h+=Number(o.subtotal)>0?U.st('Gasto de la compra registrado · '+M(o.subtotal),'ok'):U.note('El motorizado registra cuánto gastó en la compra.');
+      if(alRec)h+=o.pago_confirmado===true?U.st('Cobro al recoger registrado · '+M(o.total)+' · '+metodo,'ok'):U.st('Cobra '+M(o.total)+' al recoger ('+(mom==='recojo_yape'?'Yape':'efectivo')+')');
+      s.body=h;}
+    /* 3 · Entrega o agencia */
+    {const s=steps[3];s.locked=t==='compra'?'Se muestra al terminar la compra':'Se muestra al recoger';
+      if(t==='enc'){s.sum=guias?'Guías enviadas':'En agencia';
+        s.body=(enAg?U.st('Paquetes en la agencia '+E(o.agencia_destino||''),'ok'):U.st(E(mn)+' va a la agencia '+E(o.agencia_destino||'')))+
+          (guias?U.st('Guías y claves enviadas por el motorizado. Mándalas al cliente.','ok'):enAg?U.st('Esperando la foto de la guía y la clave'):'')+
+          U.who(o.nombre_receptor||'—','Recibe en destino · '+E(o.destino_final||o.direccion_entrega||''),'',true)+U.contact(null,o.telefono_receptor,'');}
+      else{s.sum=(cobra>0&&!alRec?'Cobrado '+M(cobra)+' · '+metodo:'Entregado');
+        s.body=(['en_entrega','confirmando_pago'].includes(s0)?U.st(E(mn)+' llegó donde '+E(recN),'ok'):U.st(E(mn)+' va camino donde '+E(recN)))+
+          (!alRec&&cobra>0?`<div class="amt"><div class="k">Cobro al cliente</div><div class="n">${M(cobra)}</div><div class="pill">${E(metodo)}</div></div>`:U.st('Ya está pagado: no se cobra al entregar','ok'))+
+          (o.pago_confirmado===true&&!alRec&&cobra>0?U.st('El motorizado confirmó el cobro','ok'):'')+
+          U.who(recN,t==='compra'?'Cliente':'Quien recibe','',true)+U.addr(o.direccion_entrega,o.referencia_entrega)+U.contact(null,recT,'');}}
+    /* 4 · Cerrado */
+    {const s=steps[4];s.locked='Se muestra al entregar';s.sum='Entregado'+(o.entregado_en?' · '+U.hora(o.entregado_en):'');s.body=U.st('Pedido entregado'+(o.entregado_en?' a las '+U.hora(o.entregado_en):''),'ok');}
+
+    const m={kicker:'Admin · '+NOM+' · '+U.ref(id),steps,err:error,acts:{}};
+    if(e===-1){m.title='Pedido cancelado';m.chip='Cancelado';m.chipCls='mal';m.fin={mal:true,title:'Pedido cancelado',text:(o.cancelado_por?'Lo canceló '+o.cancelado_por+'. ':'')+(o.motivo_cancelacion||'')};}
+    else{m.title=e===4?'Pedido entregado':titulos[e];m.chip=e===4?'Listo':'Paso '+(e+1)+' de 5';if(e===4){m.chipCls='ok';m.fin={title:'Pedido entregado',text:o.entregado_en?'Entregado a las '+U.hora(o.entregado_en)+'.':''}}}
+    if(e===1){const mm=MOTOS().find(x=>String(x.id)===elegido[id]);m.cta={label:mm?'Asignar a '+String(mm.nombre_completo||'').split(' ')[0]:'Asignar',off:!mm,hint:mm?'':'Elige un motorizado de la lista',busy:'Asignando…',run:()=>asignar(id)}}
+    m.alt=[];
+    if(e===2&&s0==='asignado')m.alt.push({label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}});
+    if(e!==-1&&typeof window.pdAdmEditarPedido==='function')m.alt.push({label:'Editar pedido',run:()=>window.pdAdmEditarPedido(id)});
+    m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()}};
+    return m;
+  }
   function modelo(){
     const o=L().find(x=>String(x.id)===String(abierto));if(!o)return null;
+    if(!esNegocio(o))return modeloSvc(o);
     const id=String(o.id),e=etapa(o),n=NEG(o.negocio_id),pa=String(o.pago_acordado||'').toLowerCase();
     const negNom=n.nombre||'Negocio',cli=o.nombre_cliente||'Cliente',mo=moto(o),mn=o.motorizado_nombre||mo.nombre_completo||'El motorizado';
     const yape=String(o.metodo_pago||'').toLowerCase()==='yape';
@@ -18296,7 +18368,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
     const btn=ev.target.closest('button,a,input,select,textarea,label,summary');
     if(btn&&!btn.matches('.pdList,.pdbTog,[data-acc="tog"]'))return;
     if(card.classList.contains('is-expanded'))return;
-    const o=L().find(x=>String(x.id)===String(card.dataset.orderId));if(!esNegocio(o))return;
+    const o=L().find(x=>String(x.id)===String(card.dataset.orderId));if(!o)return;
     ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();abrir(o.id);
   },true);
 })();
@@ -19206,6 +19278,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   }
   window.pdAdmEditarPedido=pedidoEditar;
   window.editOrder=id=>pedidoEditar(id);
+  window.pdAbrirPedidoAdmin=id=>{try{if(paginaVieja())cerrarVieja()}catch(_){}const o=L().find(x=>String(x.id)===String(id));if(o&&typeof window.pdAbrirPasosAdmin==='function')return window.pdAbrirPasosAdmin(id)};
   const peSub=f=>f.items&&f.items.length?Math.round(f.items.reduce((a,x)=>a+n2(x.q)*n2(x.p),0)*100)/100:n2(f.sub);
   const peTot=f=>Math.round((peSub(f)+n2(f.del)+(f.extra||0))*100)/100;
   function pedidoForm(){
@@ -19803,7 +19876,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   }
   function abrirPedido(id){
     const o=L().find(x=>String(x.id)===String(id));
-    if(o&&o.negocio_id&&!svc(o)&&typeof window.pdAbrirPasosAdmin==='function')return window.pdAbrirPasosAdmin(id);
+    if(o&&typeof window.pdAbrirPasosAdmin==='function')return window.pdAbrirPasosAdmin(id);
     abrirVieja(id);
   }
   /* mientras escribe un monto: actualiza la ayuda y el botón sin redibujar el campo */
