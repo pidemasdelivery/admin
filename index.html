@@ -18077,6 +18077,362 @@ new MutationObserver(function(ms){for(var i=0;i<ms.length;i++){var m=ms[i];var t
   document.head.appendChild(st);
 })();
 </script>
+<script id="pd-pasos-motor">
+/* ===== Pidemás · Pedido por pasos (motor común de admin, motorizado y negocio) =====
+   Se dibuja dentro de una caja aislada (Shadow DOM): ningún CSS ni script viejo de la página
+   puede cambiar su diseño. Cada panel le pasa un "modelo" con sus pasos. */
+(function(){
+  if(window.PdPasos)return;
+  const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const I={
+    back:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+    check:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    chev:'<svg class="chev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+    lock:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A7B70" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+    arrow:'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+    pin:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#C4410C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+    nav:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg>',
+    phone:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>',
+    wa:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.5 7.4L3 20.5l1.6-5.3A8.4 8.4 0 1 1 21 11.5z"/></svg>',
+    info:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#C4410C" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.5v.01"/></svg>',
+    ok:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    big:'<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+  };
+  const CSS=`
+:host{all:initial;position:fixed;inset:0;z-index:2147483000;display:block;font-family:PdInter,Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#1F1A17;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+*,*::before,*::after{box-sizing:border-box}
+button{font-family:inherit;-webkit-tap-highlight-color:transparent}
+.app{position:absolute;inset:0;display:flex;flex-direction:column;background:#FFF9F5;overflow:hidden;animation:entra .22s ease-out}
+@keyframes entra{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.top{background:#FFFFFF;border-bottom:1px solid #F1E4DA;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 12px;display:flex;flex-direction:column;gap:10px;flex:0 0 auto}
+.row{display:flex;align-items:center;gap:12px}
+.back{width:44px;height:44px;flex:0 0 44px;border-radius:12px;border:1px solid #F1E4DA;background:#FFFFFF;display:flex;align-items:center;justify-content:center;color:#1F1A17;padding:0;cursor:pointer}
+.ttl{flex:1 1 0%;min-width:0}
+.kick{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6B5E55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.h1{font-size:20px;font-weight:800;line-height:1.2}
+.chip{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:999px;background:#FDEBDF;color:#9A330A;font-size:13px;font-weight:800;white-space:nowrap;flex:0 0 auto}
+.chip.ok{background:#E9F6EE;color:#0F5E2E}.chip.mal{background:#FDE8E8;color:#9B1C1C}
+.bars{display:grid;gap:6px}.bars i{display:block;height:5px;border-radius:3px;background:#EADFD6}
+.bars i.d{background:#15803D}.bars i.a{background:#C4410C}
+.list{flex:1 1 0%;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 14px 20px;display:flex;flex-direction:column;gap:10px}
+.card{flex:0 0 auto;border-radius:18px;overflow:hidden;background:#F6EFE9;border:1px solid #F1E4DA;opacity:.85;transition:border-color .2s,background .2s}
+.card.d{background:#FFFFFF;opacity:1}
+.card.a{background:#FFFFFF;border:1.5px solid #C4410C;box-shadow:0 6px 18px rgba(196,65,12,.10);opacity:1}
+.head{width:100%;display:flex;align-items:center;gap:12px;padding:14px;background:transparent;border:0;text-align:left;color:inherit;cursor:pointer}
+.card.l .head{cursor:default}
+.dot{flex:0 0 34px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;background:#EADFD6;color:#6B5E55}
+.card.d .dot{background:#15803D;color:#FFFFFF}.card.a .dot{background:#C4410C;color:#FFFFFF}
+.hx{flex:1 1 0%;min-width:0}
+.ht{display:block;font-size:16px;font-weight:800}
+.hs{display:block;font-size:13px;font-weight:500;color:#6B5E55;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chev{color:#6B5E55;transition:transform .2s;flex:0 0 auto}.open .chev{transform:rotate(180deg)}
+.body{padding:0 14px 14px;display:flex;flex-direction:column;gap:12px}
+.who{display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;background:#FFF9F5}
+.av{flex:0 0 48px;width:48px;height:48px;border-radius:12px;background:#FDEBDF center/cover no-repeat;color:#C4410C;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;text-transform:uppercase}
+.av.r{border-radius:50%}
+.wn{font-size:17px;font-weight:800;overflow-wrap:anywhere}.ws{font-size:13px;color:#6B5E55;font-weight:500}
+.st{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:#FFF4EC;color:#9A330A;font-size:14px;font-weight:600;line-height:1.35}
+.st .pt{width:8px;height:8px;border-radius:50%;background:#C4410C;flex:0 0 8px}
+.st.ok{background:#E9F6EE;color:#0F5E2E;font-weight:700}.st.mal{background:#FDE8E8;color:#9B1C1C;font-weight:700}
+.addr{display:flex;gap:10px;align-items:flex-start}.addr svg{flex:0 0 22px;margin-top:2px}
+.at{font-size:18px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}.ar{font-size:14px;color:#6B5E55;margin-top:3px;overflow-wrap:anywhere}
+.btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.btns.b2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.b{height:48px;border-radius:12px;border:1px solid #F1E4DA;background:#FFFFFF;color:#1F1A17;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;padding:0 8px;text-decoration:none}
+.b.o{border:0;background:#C4410C;color:#FFFFFF}.b.g{border:0;background:#15803D;color:#FFFFFF}
+.b.soft{height:46px;border:1px solid #F1C9B6;background:#FFF4EC;color:#9A330A}
+.b[disabled]{opacity:.45;pointer-events:none}
+.code{padding:18px 14px;border-radius:16px;background:#1F1A17;color:#FFFFFF;text-align:center}
+.code .k{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#F6C7AE}
+.code .n{font-size:54px;font-weight:800;letter-spacing:.18em;margin-top:4px;line-height:1.1}
+.code .s{font-size:14px;color:#E9DCD3;margin-top:4px}
+.note{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:14px;background:#FFF9F5;font-size:14px;line-height:1.45}.note svg{flex:0 0 20px}
+.box{padding:12px;border-radius:14px;border:1px dashed #E3CFC2;font-size:14px;line-height:1.5}
+.box .k,.lbl{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6B5E55;margin-bottom:4px}
+.li{display:flex;justify-content:space-between;gap:10px}.li b{white-space:nowrap}
+.amt{padding:18px 14px;border-radius:16px;background:#FDEBDF;text-align:center}
+.amt .k{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#9A330A}
+.amt .n{font-size:44px;font-weight:800;margin-top:4px;letter-spacing:-.02em;line-height:1.1}
+.pill{display:inline-flex;align-items:center;gap:6px;margin-top:8px;height:30px;padding:0 12px;border-radius:999px;background:#FFFFFF;font-size:14px;font-weight:700}
+.sum{padding:12px 14px;border-radius:14px;background:#FFF9F5;font-size:15px;display:flex;flex-direction:column;gap:6px}.sum span{color:#6B5E55}
+.qr{display:flex;gap:12px;align-items:center;width:100%;padding:12px;border-radius:14px;border:1.5px solid #E4D3F5;background:#FFFFFF;text-align:left;color:#1F1A17;cursor:zoom-in}
+.qr .im{flex:0 0 84px;width:84px;height:84px;border-radius:10px;border:1px solid #F1E4DA;background:#FFFFFF center/contain no-repeat;display:flex;align-items:center;justify-content:center;font-size:11px;color:#6B5E55;text-align:center}
+.qr .t{display:flex;flex-direction:column;gap:3px;min-width:0}
+.qr .k{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6D28D9}
+.qr .a{font-size:16px;font-weight:800}.qr .b2{font-size:15px;font-weight:600}.qr .c{font-size:12px;color:#6B5E55}
+.inp{width:100%;height:54px;border-radius:14px;border:1.5px solid #F1E4DA;background:#FFFFFF;padding:0 16px;font:700 20px PdInter,Inter,system-ui,sans-serif;color:#1F1A17;outline:none}
+.inp:focus{border-color:#C4410C}
+.quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.quick button{height:42px;border-radius:12px;border:1px solid #F1E4DA;background:#FFFFFF;font-size:14px;font-weight:700;color:#1F1A17;cursor:pointer}
+.quick button.on{border:0;background:#C4410C;color:#FFFFFF}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;flex-direction:column;gap:2px;width:100%;padding:12px 14px;border-radius:14px;border:1px solid #F1E4DA;background:#FFFFFF;text-align:left;color:#1F1A17;cursor:pointer}
+.opt b{font-size:15px}.opt span{font-size:13px;color:#6B5E55}
+.opt.on{border:1.5px solid #C4410C;background:#FFF4EC}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.grid4 button{height:44px;border-radius:12px;border:1px solid #F1E4DA;background:#FFFFFF;font-size:14px;font-weight:700;color:#1F1A17;cursor:pointer}
+.grid4 button.on{border:0;background:#C4410C;color:#FFFFFF}
+.msg{white-space:pre-wrap;padding:12px 14px;border-radius:14px;background:#F3FBF6;border:1px solid #CFEBDA;font-size:14px;line-height:1.45}
+.fin{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:22px 16px;border-radius:18px;background:#FFFFFF;border:1px solid #F1E4DA}
+.fin .ic{width:72px;height:72px;border-radius:50%;background:#15803D;display:flex;align-items:center;justify-content:center}
+.fin.mal .ic{background:#B42318}
+.fin .t{font-size:22px;font-weight:800}.fin .s{font-size:15px;color:#6B5E55;line-height:1.45}
+.fin .li2{display:flex;gap:8px;align-items:center;padding:10px 12px;border-radius:12px;background:#FFF9F5;font-size:14px;text-align:left;width:100%}
+.foot{flex:0 0 auto;background:#FFFFFF;border-top:1px solid #F1E4DA;padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 12px);display:flex;flex-direction:column;gap:8px}
+.sl{position:relative;width:100%;height:62px;border-radius:999px;border:0;padding:0;background:#C4410C;color:#FFFFFF;font:800 16px PdInter,Inter,system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden;cursor:grab}
+.sl.g{background:#15803D}
+.sl.off{background:#D8CBC1;cursor:not-allowed}
+.sl .fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:rgba(255,255,255,.18);width:0}
+.sl .lb{position:relative;display:block;padding-left:56px;padding-right:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sl .kn{position:absolute;left:6px;top:6px;width:50px;height:50px;border-radius:50%;background:#FFFFFF;color:#C4410C;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.sl.g .kn{color:#15803D}.sl.off .kn{color:#A8988C}
+.hint{text-align:center;font-size:13px;color:#6B5E55}
+.alt{display:flex;gap:8px}
+.alt button{flex:1 1 0;height:44px;border-radius:12px;border:1px solid #F1E4DA;background:#FFFFFF;color:#6B5E55;font-size:14px;font-weight:700;cursor:pointer}
+.alt button.mal{color:#B42318;border-color:#F4C7C3}
+.err{padding:10px 12px;border-radius:12px;background:#FDE8E8;color:#9B1C1C;font-size:14px;font-weight:600}
+`;
+  const KEYS=new WeakMap();
+  let cur=null;
+
+  function head(s,i,open){
+    const cls=s.state==='done'?'d':s.state==='active'?'a':'l';
+    const sub=s.state==='locked'?s.locked:(s.state==='done'&&!open?s.sum:'');
+    return `<div class="card ${cls}${open?' open':''}" data-i="${i}"><button type="button" class="head" data-toggle="${i}" aria-expanded="${open}"><span class="dot">${s.state==='done'?I.check:(i+1)}</span><span class="hx"><span class="ht">${E(s.title)}</span>${sub?`<span class="hs">${E(sub)}</span>`:''}</span>${s.state==='locked'?I.lock:I.chev}</button>${open&&s.state!=='locked'?`<div class="body">${s.body||''}</div>`:''}</div>`;
+  }
+
+  function render(){
+    if(!cur)return;
+    let m;try{m=cur.model()}catch(e){console.warn('Pasos:',e);m=null}
+    if(!m){close();return}
+    cur.m=m;
+    const ai=m.steps.findIndex(s=>s.state==='active');
+    const key=ai+'|'+JSON.stringify([m.title,m.chip,m.steps.map(s=>[s.state,s.title,s.sum,s.body]),m.cta&&[m.cta.label,m.cta.off,m.cta.green,m.cta.hint],m.fin,m.alt&&m.alt.map(a=>a.label),m.err,cur.open]);
+    if(key===cur.key)return;
+    const act=cur.root.activeElement;
+    if(act&&act.tagName==='INPUT'&&cur.lastActive===ai)return;
+    cur.key=key;
+    if(cur.lastActive!==ai){cur.open={};if(ai>=0)cur.open[ai]=true;cur.lastActive=ai}
+    const list=cur.root.querySelector('.list');const sc=list?list.scrollTop:0;
+    const n=m.steps.length;
+    const bars=m.steps.map(s=>`<i class="${s.state==='done'?'d':s.state==='active'?'a':''}"></i>`).join('');
+    const cards=m.steps.map((s,i)=>head(s,i,!!cur.open[i])).join('');
+    const fin=m.fin?`<div class="fin${m.fin.mal?' mal':''}"><span class="ic">${m.fin.mal?'<svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>':I.big}</span><div class="t">${E(m.fin.title)}</div>${m.fin.text?`<div class="s">${E(m.fin.text)}</div>`:''}${(m.fin.lines||[]).map(l=>`<div class="li2">${I.ok}<span>${l}</span></div>`).join('')}</div>`:'';
+    const cta=m.cta?`<button type="button" class="sl${m.cta.green?' g':''}${m.cta.off?' off':''}" aria-label="${E(m.cta.label)}"${m.cta.off?' aria-disabled="true"':''}><span class="fill"></span><span class="lb">${E(m.cta.label)}</span><span class="kn">${I.arrow}</span></button><div class="hint">${E(m.cta.hint||(m.cta.off?'':'Desliza hacia la derecha para avanzar'))}</div>`:'';
+    const alt=m.alt&&m.alt.length?`<div class="alt">${m.alt.map((a,i)=>`<button type="button" data-alt="${i}" class="${a.mal?'mal':''}">${E(a.label)}</button>`).join('')}</div>`:'';
+    cur.root.innerHTML=`<style>${CSS}</style><div class="app" role="dialog" aria-modal="true" aria-label="${E(m.title)}">
+      <div class="top"><div class="row"><button type="button" class="back" aria-label="Volver">${I.back}</button><div class="ttl"><div class="kick">${E(m.kicker)}</div><div class="h1">${E(m.title)}</div></div>${m.chip?`<span class="chip ${m.chipCls||''}">${E(m.chip)}</span>`:''}</div>
+      <div class="bars" style="grid-template-columns:repeat(${n},minmax(0,1fr))">${bars}</div></div>
+      <div class="list">${m.err?`<div class="err">${E(m.err)}</div>`:''}${cards}${fin}</div>
+      ${cta||alt?`<div class="foot">${cta}${alt}</div>`:''}</div>`;
+    const nl=cur.root.querySelector('.list');if(nl)nl.scrollTop=sc;
+    if(m.mounted)try{m.mounted(cur.root)}catch(e){}
+    wire();
+  }
+
+  function wire(){
+    const r=cur.root,m=cur.m;
+    r.querySelector('.back').onclick=()=>close();
+    r.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>{const i=+b.dataset.toggle;const s=m.steps[i];if(!s||s.state==='locked')return;cur.open[i]=!cur.open[i];cur.key=null;render()});
+    r.querySelectorAll('[data-alt]').forEach(b=>b.onclick=()=>{const a=m.alt[+b.dataset.alt];if(a&&a.run)a.run()});
+    r.querySelectorAll('[data-act]').forEach(b=>{const f=m.acts&&m.acts[b.dataset.act];if(!f)return;const ev=b.tagName==='INPUT'?'input':'click';b.addEventListener(ev,e=>f(b,e))});
+    const sl=r.querySelector('.sl');if(!sl||!m.cta)return;
+    const kn=sl.querySelector('.kn'),fill=sl.querySelector('.fill'),lb=sl.querySelector('.lb');
+    let x0=null,dx=0,busy=false;
+    const max=()=>sl.clientWidth-kn.offsetWidth-12;
+    const set=v=>{kn.style.transform=`translateX(${v}px)`;fill.style.width=v>0?(v+57)+'px':'0';lb.style.opacity=Math.max(0,1-v/180)};
+    const reset=()=>{kn.style.transition=fill.style.transition='transform .25s,width .25s';set(0);setTimeout(()=>{kn.style.transition=fill.style.transition=''},260)};
+    const go=async()=>{if(busy||m.cta.off)return;busy=true;set(max());lb.style.opacity=1;lb.textContent=m.cta.busy||'Procesando…';
+      try{await m.cta.run()}catch(e){console.warn(e)}
+      busy=false;cur&&(cur.key=null);if(cur)render();else return;const s2=cur.root.querySelector('.sl');if(s2===sl){lb.textContent=m.cta.label;reset()}};
+    sl.addEventListener('pointerdown',e=>{if(busy||m.cta.off)return;x0=e.clientX;dx=0;try{sl.setPointerCapture(e.pointerId)}catch(_){}kn.style.transition=fill.style.transition=''});
+    sl.addEventListener('pointermove',e=>{if(x0===null)return;dx=Math.max(0,Math.min(max(),e.clientX-x0));set(dx)});
+    const up=()=>{if(x0===null)return;x0=null;if(dx>=max()*0.8)go();else reset()};
+    sl.addEventListener('pointerup',up);sl.addEventListener('pointercancel',up);
+    sl.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}});
+  }
+
+  /* Botón «atrás» del celular: si la app ya tiene su manejador (pidemas-boton-atras), este detecta
+     la vista como ventana abierta y manda Escape; si no, la vista maneja su propio historial. */
+  const propio=()=>!window.__pdAtras;
+  function onPop(){if(!cur)return;if(history.state&&history.state.pdPasos)return;close(true)}
+  function onKey(e){if(e.key==='Escape'&&cur){const d=[...document.querySelectorAll('[role="dialog"],dialog')].some(x=>x.getClientRects().length&&!x.closest('pd-pasos-pedido'));if(!d)close()}}
+  /* Barras de abajo de la app (menú inferior) que quedan por encima: se ocultan mientras la vista está abierta */
+  function taparBarras(c){
+    const H=innerHeight;
+    document.querySelectorAll('body > *').forEach(el=>{
+      if(el===c.host||c.ocultas.includes(el))return;
+      const cs=getComputedStyle(el);if(cs.position!=='fixed'||cs.visibility==='hidden'||cs.display==='none')return;
+      const z=parseInt(cs.zIndex,10);if(!(z>2147483000))return;
+      const r=el.getBoundingClientRect();if(!(r.height>0&&r.height<220&&r.top>H*0.55))return;
+      if(el.matches('[role="dialog"],[aria-modal="true"],dialog'))return;
+      c.ocultas.push(el);el.style.setProperty('visibility','hidden','important');
+    });
+  }
+  function close(fromPop){
+    if(!cur)return;const c=cur;cur=null;clearInterval(c.t);
+    c.ocultas.forEach(el=>el.style.removeProperty('visibility'));window.removeEventListener('popstate',onPop);document.removeEventListener('keydown',onKey);
+    c.host.remove();document.documentElement.style.overflow=c.ov||'';
+    if(c.propio&&!fromPop&&history.state&&history.state.pdPasos)try{history.back()}catch(e){}
+    if(c.onClose)try{c.onClose()}catch(e){}
+  }
+  function open(model,opts){
+    if(cur)close(true);
+    const host=document.createElement('pd-pasos-pedido');
+    host.setAttribute('data-pd-aislado','1');
+    const root=host.attachShadow({mode:'open'});
+    document.body.appendChild(host);
+    cur={host,root,model,ocultas:[],open:{},key:null,lastActive:-2,onClose:opts&&opts.onClose,ov:document.documentElement.style.overflow};
+    document.documentElement.style.overflow='hidden';
+    cur.propio=propio();
+    if(cur.propio){try{history.pushState({pdPasos:1},'')}catch(e){}window.addEventListener('popstate',onPop)}
+    document.addEventListener('keydown',onKey);
+    taparBarras(cur);render();
+    cur.t=setInterval(()=>{if(cur){taparBarras(cur);render()}},800);
+  }
+  const util={
+    E,I,
+    money:n=>'S/ '+(Number(n)||0).toFixed(2),
+    ref:id=>'#'+String(id||'').replace(/-/g,'').slice(0,8).toUpperCase(),
+    hora:d=>{if(!d)return '';const x=new Date(d);return isNaN(x)?'':x.toLocaleTimeString('es-PE',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Lima'}).replace(/\s?a\.?\s?m\.?/i,' am').replace(/\s?p\.?\s?m\.?/i,' pm')},
+    tel:t=>{const d=String(t||'').replace(/\D/g,'');if(!d)return '';return d.startsWith('51')&&d.length>9?d:(d.length===9?'51'+d:d)},
+    maps:(lat,lng,txt,url)=>{if(lat!=null&&lng!=null&&lat!==''&&lng!=='')return 'https://www.google.com/maps/dir/?api=1&destination='+lat+','+lng;if(url)return url;return txt?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(txt):''},
+    ini:t=>String(t||'?').trim().charAt(0)||'?',
+    who:(nombre,sub,foto,redondo)=>`<div class="who"><span class="av${redondo?' r':''}"${foto?` style="background-image:url('${E(foto)}')"`:''}>${foto?'':E(String(nombre||'?').trim().charAt(0))}</span><div style="min-width:0"><div class="wn">${E(nombre||'—')}</div><div class="ws">${sub||''}</div></div></div>`,
+    addr:(t,r)=>t?`<div class="addr">${I.pin}<div><div class="at">${E(t)}</div>${r?`<div class="ar">Ref.: ${E(r)}</div>`:''}</div></div>`:'',
+    contact:(mapUrl,phone,waText,cols)=>{const t=util.tel(phone);const b=[];
+      if(mapUrl!==null)b.push(`<a class="b o" ${mapUrl?`href="${E(mapUrl)}" target="_blank" rel="noopener"`:'aria-disabled="true" style="opacity:.45;pointer-events:none"'}>${I.nav}Ir</a>`);
+      b.push(`<a class="b" ${t?`href="tel:+${t}"`:'aria-disabled="true" style="opacity:.45;pointer-events:none"'}>${I.phone}Llamar</a>`);
+      b.push(`<a class="b g" ${t?`href="https://wa.me/${t}${waText?'?text='+encodeURIComponent(waText):''}" target="_blank" rel="noopener"`:'aria-disabled="true" style="opacity:.45;pointer-events:none"'}>${I.wa}WhatsApp</a>`);
+      return `<div class="btns${b.length===2?' b2':''}">${b.join('')}</div>`},
+    st:(txt,tipo)=>`<div class="st ${tipo||''}">${tipo==='ok'?I.ok:tipo==='mal'?'':'<span class="pt"></span>'}<span>${txt}</span></div>`,
+    note:t=>`<div class="note">${I.info}<span>${t}</span></div>`,
+    items:(titulo,det,precios)=>{const L=(det||[]).map(d=>`<div class="li"><span>${E(d.cantidad||1)} × ${E(d.nombre_producto||'Producto')}</span>${precios?`<b>${util.money(d.subtotal!=null?d.subtotal:(Number(d.precio_unitario)||0)*(Number(d.cantidad)||1))}</b>`:''}</div>`).join('');return L?`<div class="box"><div class="k">${E(titulo)}</div>${L}</div>`:''},
+    code:(k,n,s)=>`<div class="code"><div class="k">${E(k)}</div><div class="n">${E(n)}</div>${s?`<div class="s">${E(s)}</div>`:''}</div>`
+  };
+  window.PdPasos={open,close,render:()=>{if(cur){cur.key=null;render()}},isOpen:()=>!!cur,util};
+})();
+
+</script>
+<script id="pd-pasos-admin">
+/* ===== Pidemás · Admin · pedido por pasos =====
+   Al tocar un pedido de negocio se abre esta vista. Los pasos avanzan solos según lo que hacen
+   el negocio y el motorizado; el admin solo asigna el motorizado y marca el delivery cobrado. */
+(function(){
+  if(window.__pdPasosAdm||!window.PdPasos)return;window.__pdPasosAdm=1;
+  const U=PdPasos.util,E=U.E,M=U.money;
+  const L=()=>{try{return Array.isArray(allOrders)?allOrders:[]}catch(e){return window.allOrders||[]}};
+  const MOTOS=()=>{try{return Array.isArray(allMotos)?allMotos:[]}catch(e){return []}};
+  const D=()=>{try{return db}catch(e){return window.db}};
+  const NEG=id=>{try{const m=window.adminRestaurantsById;return (m&&m.get&&(m.get(String(id))||m.get(id)))||{}}catch(e){return {}}};
+  const svc=o=>{const t=String(o?.tipo_servicio||'').toLowerCase();return t.includes('encomienda')?'enc':t.includes('compra')?'compra':t.includes('recojo')?'recojo':'pedido'};
+  const esNegocio=o=>!!o&&svc(o)==='pedido'&&!!o.negocio_id;
+  const st=o=>String(o?.estado||'').toLowerCase();
+  const elegido={};let abierto=null,error='';
+  const km=(a,b,c,d)=>{if([a,b,c,d].some(v=>v==null||v===''||isNaN(v)))return null;const R=6371,r=x=>x*Math.PI/180,dl=r(c-a),dn=r(d-b);const h=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
+  function etapa(o){
+    const s=st(o);
+    if(s==='cancelado')return -1;if(s==='entregado')return 4;
+    if(s==='pendiente')return 0;
+    if(s==='confirmado'&&!o.motorizado_id)return 1;
+    if(['asignado','aceptado','pedido_aceptado','camino_recojo','confirmado'].includes(s))return 2;
+    if(['en_camino','en_entrega','camino_entrega','confirmando_pago'].includes(s))return 3;
+    return 0;
+  }
+  function moto(o){return MOTOS().find(m=>String(m.id)===String(o.motorizado_id))||o.motorizados||{}}
+  async function asignar(id){
+    error='';const mid=elegido[id];if(!mid){error='Elige un motorizado.';return}
+    if(typeof window.assignOrder!=='function'&&typeof assignOrder!=='function'){error='No se encontró la acción de asignar. Actualiza la app.';return}
+    const box=document.getElementById('ordersMsg'),antes=box?box.textContent:'';
+    try{await (window.assignOrder||assignOrder)(id,mid)}catch(e){error=String(e?.message||e)}
+    const ahora=box?String(box.textContent||'').trim():'';
+    if(!error&&ahora&&ahora!==antes&&/no se|primero|error/i.test(ahora))error=ahora;
+  }
+  async function deliveryCobrado(o){
+    error='';
+    if(typeof window.pdConfirmar==='function'&&!(await window.pdConfirmar('¿El negocio ya te pagó el delivery de '+M(o.costo_delivery)+'?')))return;
+    const now=new Date().toISOString();const {error:e}=await D().from('pedidos').update({delivery_negocio_cobrado_en:now}).eq('id',o.id);
+    if(e){error='No se pudo guardar: '+e.message;return}o.delivery_negocio_cobrado_en=now;
+  }
+
+  function modelo(){
+    const o=L().find(x=>String(x.id)===String(abierto));if(!o)return null;
+    const id=String(o.id),e=etapa(o),n=NEG(o.negocio_id),pa=String(o.pago_acordado||'').toLowerCase();
+    const negNom=n.nombre||'Negocio',cli=o.nombre_cliente||'Cliente',mo=moto(o),mn=o.motorizado_nombre||mo.nombre_completo||'El motorizado';
+    const yape=String(o.metodo_pago||'').toLowerCase()==='yape';
+    const metodo=pa==='yape_negocio'?'Yape del negocio':pa==='solo_delivery'?'Solo delivery':pa==='pagado'?'Todo pagado':yape?'Yape':'Efectivo';
+    const cobra=pa==='pagado'?0:pa==='solo_delivery'?Number(o.costo_delivery||0):Number(o.total||0);
+    const steps=['Negocio confirma','Asignar motorizado','Recojo en el local','Entrega y cobro','Cierre y pagos'].map((t,i)=>({title:t,state:e===-1?'locked':i<e?'done':i===e?'active':'locked'}));
+    const finCerrado=e===4&&!((pa==='yape_negocio'||pa==='pagado')&&!o.delivery_negocio_cobrado_en);
+    if(finCerrado)steps[4].state='done';
+    const resumen=`<div class="box"><div class="k">Resumen</div><div class="li"><span>Cliente</span><b>${E(cli)}</b></div><div class="li"><span>Productos</span><b>${M(o.subtotal)}</b></div><div class="li"><span>Delivery</span><b>${M(o.costo_delivery)}</b></div><div class="li"><span>Total · ${E(yape?'Yape':'Efectivo')}</span><b>${M(o.total)}</b></div></div>`;
+    /* 1 */
+    {const s=steps[0];s.sum=negNom+' aceptó'+(o.tiempo_preparacion_min?' · listo en '+o.tiempo_preparacion_min+' min':'');
+      s.body=U.who(negNom,'Negocio'+(n.direccion?' · '+E(n.direccion):''),n.logo_url||n.imagen_url||'')+resumen+
+        (st(o)==='pendiente'?U.st('Esperando que el negocio acepte y coordine el pago'):U.st('El negocio aceptó'+(o.tiempo_preparacion_min?' · listo en '+o.tiempo_preparacion_min+' min':'')+(pa?' · '+E(metodo):''),'ok'))+
+        U.contact(null,n.telefono,'Hola, te escribimos de Pidemás por el pedido '+U.ref(id)+'.');}
+    /* 2 */
+    {const s=steps[1];s.locked='Se muestra cuando el negocio confirme';s.sum='Asignado a '+mn;
+      if(e===1){
+        const libres=MOTOS().filter(m=>m.activo!==false&&!m.en_descanso).map(m=>({m,d:km(n.latitud,n.longitud,m.latitud,m.longitud)}))
+          .sort((a,b)=>(b.m.disponible===true)-(a.m.disponible===true)||((a.d??1e9)-(b.d??1e9))).slice(0,8);
+        s.body=`<div><div class="lbl">Motorizados sugeridos (más cerca y libres)</div><div class="opts" data-act="moto">${libres.map(x=>`<button type="button" class="opt${elegido[id]===String(x.m.id)?' on':''}" data-m="${E(x.m.id)}" style="flex-direction:row;align-items:center;gap:12px"><span class="av r" style="flex:0 0 40px;width:40px;height:40px;font-size:16px">${E(U.ini(x.m.nombre_completo))}</span><span style="flex:1;min-width:0;display:flex;flex-direction:column"><b>${E(x.m.nombre_completo||'Motorizado')}</b><span>${x.m.disponible===true?'Libre':'Ocupado'}${x.m.placa?' · '+E(x.m.placa):''}</span></span><b style="font-size:14px;white-space:nowrap">${x.d!=null?x.d.toFixed(1)+' km':''}</b></button>`).join('')||'<div class="note">No hay motorizados activos.</div>'}</div></div>`;
+      }else s.body=U.who(mn,'Motorizado asignado'+(o.asignado_en?' · '+U.hora(o.asignado_en):''),mo.foto_url||'',true)+U.contact(null,mo.telefono,'');}
+    /* 3 */
+    {const s=steps[2];s.locked='Se muestra al asignar el motorizado';s.sum=mn+' recogió el pedido'+(o.en_camino_en?' · '+U.hora(o.en_camino_en):'');
+      const ss=st(o);
+      s.body=(ss==='asignado'?U.st('Esperando que '+E(mn)+' acepte el pedido'):o.en_local_en?U.st(E(mn)+' llegó al local · '+U.hora(o.en_local_en),'ok'):U.st(E(mn)+' va camino al local'))+
+        (o.listo_para_recojo?U.st('El negocio marcó el pedido listo','ok'):'')+
+        (o.codigo_recojo?U.code('Código de recojo',o.codigo_recojo,'El negocio lo compara antes de entregar'):'')+
+        U.contact(null,mo.telefono,'')+U.note('Si el motorizado tarda más de 10 min en el local, te avisamos.');}
+    /* 4 */
+    {const s=steps[3];s.locked='Se muestra cuando recoja el pedido';s.sum=cobra>0?'Cobrado '+M(cobra)+' · '+metodo:'Sin cobro al cliente';
+      const qn=pa==='yape_negocio';
+      s.body=(o.en_entrega_en?U.st(E(mn)+' llegó donde '+E(cli)+' · '+U.hora(o.en_entrega_en),'ok'):U.st(E(mn)+' va camino donde '+E(cli)))+
+        (cobra>0?`<div class="amt"><div class="k">Cobro al cliente</div><div class="n">${M(cobra)}</div><div class="pill">${E(metodo)}</div></div>`:U.st('El cliente ya pagó: no se cobra nada','ok'))+
+        (qn?`<div class="qr" style="cursor:default"><span class="im"${n.yape_qr_url?` style="background-image:url('${E(n.yape_qr_url)}')"`:''}>${n.yape_qr_url?'':'QR'}</span><span class="t"><span class="k">Yape del negocio</span><span class="a">${E(n.yape_titular||negNom)}</span><span class="b2">${E(n.yape_numero||'')}</span></span></div>`+
+          (o.yape_negocio_estado==='esperando'?U.st('Esperando que el negocio confirme el Yape'):o.yape_negocio_estado==='llego'?U.st('El negocio confirmó el Yape','ok'):o.yape_negocio_estado==='no_llego'?U.st('Al negocio no le llegó el Yape','mal'):''):'')+
+        (o.pago_confirmado===true&&cobra>0?U.st('El motorizado confirmó el cobro','ok'):'')+
+        U.addr(o.direccion_entrega,o.referencia_entrega)+U.contact(null,o.telefono_cliente,'');}
+    /* 5 */
+    {const s=steps[4];s.locked='Se muestra cuando el pedido se entregue';
+      const sub=Number(o.subtotal)||0,del=Number(o.costo_delivery)||0;
+      let cuentas,sum;
+      if(pa==='yape_negocio'||pa==='pagado'){cuentas=[[negNom+' le debe a Pidemás (delivery)',M(del)],['Pidemás le debe al negocio',M(0)]];sum=o.delivery_negocio_cobrado_en?'Delivery cobrado al negocio · '+M(del):'Cobrar '+M(del)+' de delivery al negocio'}
+      else if(pa==='solo_delivery'){cuentas=[['Pidemás le debe al negocio',M(0)],[negNom+' le debe a Pidemás',M(0)]];sum='Sin cuentas pendientes'}
+      else{cuentas=[['Pidemás le debe al negocio (productos)',M(sub)],[negNom+' le debe a Pidemás',M(0)]];sum=o.negocio_pagado_en?'Negocio pagado · '+M(sub):'Pagar '+M(sub)+' al negocio'}
+      s.sum=sum;
+      s.body=U.st('Pedido entregado'+(o.entrega_verificada?' · '+(o.entrega_verificada==='foto'?'con foto':'código del cliente verificado'):''),'ok')+
+        `<div class="box"><div class="k">Cuentas</div>${cuentas.map(c=>`<div class="li"><span>${E(c[0])}</span><b>${c[1]}</b></div>`).join('')}</div>`+
+        ((pa==='yape_negocio'||pa==='pagado')?(o.delivery_negocio_cobrado_en?U.st('Delivery cobrado al negocio · '+U.hora(o.delivery_negocio_cobrado_en),'ok'):U.note('El negocio ya recibió todo. Marca cuando te pague el delivery; lo ve en «Mis pagos».'))
+          :pa==='solo_delivery'?U.note('El negocio cobró los productos y el motorizado cobró el delivery.')
+          :U.note(o.negocio_pagado_en?'Ya le pagaste al negocio.':'Está en «Por pagar a negocios».'));}
+
+    const m={kicker:'Admin · Pedido '+U.ref(id),steps,err:error,acts:{}};
+    if(e===-1){m.title='Pedido cancelado';m.chip='Cancelado';m.chipCls='mal';m.fin={mal:true,title:'Pedido cancelado',text:(o.cancelado_por?'Lo canceló '+o.cancelado_por+'. ':'')+(o.motivo_cancelacion||'')};return m}
+    const titles=['Esperando al negocio','Asigna un motorizado',st(o)==='asignado'?'Esperando al motorizado':'Recojo en curso','Entrega y cobro','Cierra el pedido'];
+    m.title=finCerrado?'Pedido cerrado':titles[e];m.chip=finCerrado?'Listo':'Paso '+(e+1)+' de 5';if(finCerrado)m.chipCls='ok';
+    if(finCerrado)m.fin={title:'Pedido cerrado',text:'Entregado'+(o.entregado_en?' a las '+U.hora(o.entregado_en):'')+'.',lines:[E(steps[3].sum),E(steps[4].sum)]};
+    if(e===1){const mm=MOTOS().find(x=>String(x.id)===elegido[id]);m.cta={label:mm?'Asignar a '+String(mm.nombre_completo||'').split(' ')[0]:'Asignar',off:!mm,hint:mm?'':'Elige un motorizado de la lista',busy:'Asignando…',run:()=>asignar(id)}}
+    else if(e===4&&!finCerrado)m.cta={label:'Delivery cobrado al negocio',green:true,busy:'Guardando…',run:()=>deliveryCobrado(o)};
+    else if(e===2&&st(o)==='asignado')m.alt=[{label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}}];
+    m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()}};
+    return m;
+  }
+  function abrir(id){abierto=String(id);error='';PdPasos.open(modelo,{onClose:()=>{abierto=null}})}
+  window.pdAbrirPasosAdmin=abrir;
+  /* Tocar la tarjeta de un pedido de negocio abre esta vista (los demás servicios siguen igual) */
+  window.addEventListener('click',ev=>{
+    const card=ev.target.closest&&ev.target.closest('#orderList .adminOrderCard[data-order-id]');if(!card)return;
+    /* abre con un toque en la tarjeta o en su botón principal; los demás botones (Seguimiento, Ver más…) siguen igual */
+    const btn=ev.target.closest('button,a,input,select,textarea,label,summary');
+    if(btn&&!btn.matches('.pdList,.pdbTog,[data-acc="tog"]'))return;
+    if(card.classList.contains('is-expanded'))return;
+    const o=L().find(x=>String(x.id)===String(card.dataset.orderId));if(!esNegocio(o))return;
+    ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();abrir(o.id);
+  },true);
+})();
+
+</script>
 </body>
 
 </html>
