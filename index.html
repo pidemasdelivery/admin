@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611181820">
+<meta name="pd-version" content="202611181925">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -18179,7 +18179,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
   };
 
   /* Filas que se deslizan de lado (chips, categorías): sin barra de scroll y con una flecha que avanza */
-  const FL_CSS='.pdfW{position:relative}.pdfW>.pdfS{scrollbar-width:none;padding-right:52px!important}.pdfW>.pdfS::-webkit-scrollbar{display:none}.pdfA{position:absolute;right:0;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;border:1px solid #F1E4DA;background:#FFFFFF;color:#C4410C;display:flex;align-items:center;justify-content:center;box-shadow:-14px 0 14px rgba(255,249,245,.95),0 2px 6px rgba(31,26,23,.12);cursor:pointer;z-index:2;padding:0;margin:0}.pdfA svg{width:20px;height:20px;transition:transform .2s}.pdfA.fin svg{transform:rotate(180deg)}.pdfA[hidden]{display:none!important}';
+  const FL_CSS='.pdfW{position:relative}.pdfW>.pdfS{scrollbar-width:none}.pdfW>.pdfS::-webkit-scrollbar{display:none}.pdfA{position:absolute;right:0;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;border:1px solid #F1E4DA;background:#FFFFFF;color:#C4410C;display:flex;align-items:center;justify-content:center;box-shadow:-14px 0 14px rgba(255,249,245,.95),0 2px 6px rgba(31,26,23,.12);cursor:pointer;z-index:2;padding:0;margin:0}.pdfA svg{width:20px;height:20px;transition:transform .2s}.pdfA.fin svg{transform:rotate(180deg)}.pdfA[hidden]{display:none!important}';
   const FL_SEL='.chips,.cats,.chs,.dias,.qChips,.tCats';
   function flechas(root){
     if(!root||root.__pdf)return;root.__pdf=1;
@@ -18191,9 +18191,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
         if(el.closest('.chW')||(el.parentElement&&el.parentElement.classList.contains('pdfW')))return;
         const cs=getComputedStyle(el);if(cs.flexWrap==='wrap'||!/auto|scroll/.test(cs.overflowX))return;
         const w=document.createElement('div');w.className='pdfW';el.parentNode.insertBefore(w,el);w.appendChild(el);el.classList.add('pdfS');
-        const b=document.createElement('button');b.type='button';b.className='pdfA';b.setAttribute('aria-label','Ver más');b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';w.appendChild(b);
-        b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();el.scrollTo({left:fin(el)?0:el.scrollLeft+Math.max(160,el.clientWidth*.6),behavior:'smooth'})});
-        el.addEventListener('scroll',()=>ver(el,b),{passive:true});ver(el,b);
+
       });
       root.querySelectorAll('.pdfW').forEach(w=>{const el=w.querySelector('.pdfS'),b=w.querySelector('.pdfA');if(el&&b)ver(el,b)});
     };
@@ -18668,7 +18666,7 @@ input.cod{text-align:center;font-size:30px;letter-spacing:.4em;height:64px}
 :host(.solo) .app{background:transparent}
 .sel{flex:0 0 26px;width:26px;height:26px;border-radius:8px;border:2px solid #E3CFC2;background:#FFFFFF;display:flex;align-items:center;justify-content:center;color:#FFFFFF}
 .sel.on{background:#C4410C;border-color:#C4410C}
-.chW{position:relative}.chW .chips{scrollbar-width:none;padding-right:52px}.chW .chips::-webkit-scrollbar{display:none}
+.chW{position:relative}.chW .chips{scrollbar-width:none}.chW .chips::-webkit-scrollbar{display:none}
 .chA{position:absolute;right:0;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:1px solid #F1E4DA;background:#FFFFFF;color:#C4410C;display:flex;align-items:center;justify-content:center;box-shadow:-14px 0 14px #FFF9F5,0 2px 6px rgba(31,26,23,.12);cursor:pointer}.chA svg{width:22px;height:22px;transition:transform .2s}.chA.fin svg{transform:rotate(180deg)}.sel svg{width:16px;height:16px}
 .oc.sl2{border:1.5px solid #C4410C;background:#FFF4EC}
 .pl.r{background:#FDE8E8;color:#9B1C1C}.pl.m{background:#FFF4EC;color:#9A330A}
@@ -18762,7 +18760,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const ql=q.trim().toLowerCase();const fil=todos.filter((CH.find(c=>c[0]===chip)||CH[0])[2]).filter(o=>!ql||[o.id,ref(o.id),o.nombre_cliente,o.telefono_cliente,o.nombre_remitente,NEG(o.negocio_id).nombre].join(' ').toLowerCase().includes(ql));
     let h=`<div class="cols2"><button type="button" class="mt" data-t="sueldo"><span>Sueldos</span><b>${E(kp[1]||'—')}</b></button><button type="button" class="mt" data-t="caja"><span>Cajas</span><b>${E(kp[2]||'—')}</b></button></div>`;
     h+=`<div class="fld"><label for="aQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar pedido</label><input id="aQ" type="search" placeholder="N.º de pedido, cliente o teléfono" value="${E(q)}" data-in="q"></div>`;
-    h+=`<div class="chW"><div class="chips">${CH.map((c,i)=>`<button type="button" data-c="${c[0]}" class="${chip===c[0]?'on':''}">${c[1]}${cnt[i]?' · '+cnt[i]:''}</button>`).join('')}</div><button type="button" class="chA" data-chmas aria-label="Ver más filtros"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button></div>`;
+    h+=`<div class="chW"><div class="chips">${CH.map((c,i)=>`<button type="button" data-c="${c[0]}" class="${chip===c[0]?'on':''}">${c[1]}${cnt[i]?' · '+cnt[i]:''}</button>`).join('')}</div></div>`;
     h+=`<div class="row" style="justify-content:space-between"><div class="lbl" style="margin:0">${fil.length} pedido${fil.length===1?'':'s'}</div><button type="button" class="b" style="height:40px;padding:0 14px" data-a="selmodo">${selModo?'Listo':'Seleccionar'}</button></div>`;
     h+=`<div id="aLista" style="display:flex;flex-direction:column;gap:10px">${lista(fil)}</div>`;
     const nb=Number((($('pdaBell')||{}).querySelector?.('.pdaBadge,.badge,b,span')||{}).textContent)||0;
