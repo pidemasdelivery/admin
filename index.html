@@ -18895,6 +18895,97 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     try{window.loadClientes&&window.loadClientes()}catch(_){}C2.cli&&(C2.cli.t=0);datosCli(true);CL.sel=null;volverSub()}
   function volverSub(){sub=null;key='';pintar();if(history.state?.pdApp){ignorarPop=true;history.back()}}
 
+  /* =============== SECCIONES DEL MENÚ REHECHAS (registro) =============== */
+  /* Cada sección: titulo, grupo y una función que devuelve {body,foot}. Las que no están aquí abren la página de siempre. */
+  const SEC={};let secK=null;const SF={};
+  const r2=n=>Math.round((Number(n)||0)*100)/100;
+  const fch=v=>{try{return new Date(v).toLocaleDateString('es-PE',{timeZone:'America/Lima',day:'2-digit',month:'short'}).replace('.','')}catch(e){return ''}};
+  const telW=t=>{const d=dig(t);return d?(d.startsWith('51')?d:d.length===9?'51'+d:d):''};
+  const conf=t=>window.pdConfirmar?pdConfirmar(t):Promise.resolve(confirm(t));
+  const ok=t=>(window.pdExito||window.pdAviso||alert)(t);
+  const mal=t=>(window.pdAviso||alert)(t);
+  async function baseCtl(){const [m,n]=await Promise.all([D().from('motorizados').select('id,nombre_completo,telefono,activo,usuario_id').order('nombre_completo'),D().from('negocios').select('id,nombre,telefono')]);return {motos:m.data||[],negs:n.data||[]}}
+  const mN=(b,id)=>(b.motos.find(m=>String(m.id)===String(id))||{}).nombre_completo||'Motorizado';
+  const fila=(t,s,der)=>`<div class="mv"><span class="tx"><b>${t}</b><span>${s}</span></span>${der||''}</div>`;
+  const vacio=t=>`<div class="vac">${E(t)}</div>`;
+  const cargando=c=>c.err?`<div class="err">${E(c.err)}</div>`:'<div class="load">Cargando…</div>';
+  function abrirSec(k){secK=k;SF[k]=SF[k]||{};if(C2['s:'+k])C2['s:'+k].t=0;sub='sec';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}
+  function secVista(){const S=SEC[secK];if(!S)return {head:top3('Administración','Sección'),body:''};const v=S.v();return {head:top3(S.g,S.t,S.rf?`<button type="button" class="ib" data-a="sec:rf" aria-label="Actualizar">${IC.refresh}</button>`:''),body:v.body,foot:v.foot}}
+  const datos=(k,fn)=>cargar('s:'+k,fn);
+  const recargar=k=>{if(C2['s:'+k])C2['s:'+k].t=0;cargar('s:'+k,SEC[k].load,true)};
+
+  /* --- Yape por confirmar --- */
+  SEC['yape por confirmar']={g:'Control de caja y sueldos',t:'Yape por confirmar',rf:1,
+    load:async()=>{const b=await baseCtl();const {data,error}=await D().from('cobros').select('id,pedido_id,motorizado_id,monto,confirmado_en,yape_recibido_en').eq('metodo_pago','yape').eq('confirmado',true).is('yape_recibido_en',null).gte('confirmado_en',new Date(Date.now()-45*864e5).toISOString()).order('confirmado_en',{ascending:false}).limit(300);if(error)throw error;
+      const ids=[...new Set((data||[]).map(c=>c.pedido_id).filter(Boolean))];const peds={};if(ids.length){const r=await D().from('pedidos').select('id,nombre_cliente,total,estado').in('id',ids);(r.data||[]).forEach(p=>peds[p.id]=p)}
+      return {b,peds,L:(data||[]).filter(c=>{const p=peds[c.pedido_id];return !p||!['cancelado','rechazado'].includes(est(p))})}},
+    v(){const c=datos('yape por confirmar',this.load);if(!c.data)return {body:cargando(c)};const {b,peds,L}=c.data;const tot=L.reduce((s,x)=>s+(Number(x.monto)||0),0);
+      let h=`<div class="amt"><div class="k">Yapes por confirmar</div><div class="n">${M(tot)}</div><div class="pill">${L.length} cobro${L.length===1?'':'s'}</div></div>`+U.note('Cobros que el motorizado marcó como pagados por Yape. Confirma cuando el dinero haya llegado al QR de Pidemás.');
+      h+=L.length?`<div class="cd">${L.map(x=>{const p=peds[x.pedido_id]||{};return fila(M(x.monto)+' · '+E(p.nombre_cliente||'Cliente'),E(ref(x.pedido_id))+' · '+E(mN(b,x.motorizado_id))+' · '+E(fch(x.confirmado_en)),`<button type="button" class="b" style="height:40px;padding:0 12px;color:#0F5E2E;border-color:#CFEBDA" data-sa="yok:${E(x.id)}">${IC.check}Recibido</button>`)}).join('')}</div>`:vacio('No hay Yapes pendientes de confirmar.');
+      return {body:h,foot:L.length>1?`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="yall">Marcar todos como recibidos</button>`:''}},
+    async a(x){const c=C2['s:yape por confirmar'];const ids=x==='yall'?c.data.L.map(y=>y.id):[x.split(':')[1]];if(x==='yall'&&!(await conf('¿Marcar '+ids.length+' Yapes como recibidos?')))return;
+      const u=(await D().auth.getUser()).data.user;const q=await D().from('cobros').update({yape_recibido_en:new Date().toISOString(),yape_recibido_por:u&&u.id}).in('id',ids);if(q.error){mal('No se pudo guardar: '+q.error.message);return}
+      ok(ids.length===1?'Yape confirmado':'Yapes confirmados');recargar('yape por confirmar');try{window.pdCtl&&pdCtl.contar()}catch(_){}}};
+
+  /* --- Por cobrar a negocios --- */
+  SEC['por cobrar a negocios']={g:'Control de caja y sueldos',t:'Por cobrar a negocios',rf:1,
+    load:async()=>{const b=await baseCtl();const {data,error}=await D().from('pedidos').select('id,negocio_id,costo_delivery,nombre_cliente,entregado_en,creado_en').in('pago_acordado',['pagado','yape_negocio']).eq('estado','entregado').is('delivery_negocio_cobrado_en',null).order('creado_en',{ascending:true}).limit(1000);if(error)throw error;return {b,P:data||[]}},
+    v(){const c=datos('por cobrar a negocios',this.load);if(!c.data)return {body:cargando(c)};const {b,P}=c.data,f=SF['por cobrar a negocios'];f.off=f.off||{};f.quien=f.quien||{};
+      const g=new Map();P.forEach(p=>{const k=String(p.negocio_id||'');if(!g.has(k))g.set(k,[]);g.get(k).push(p)});const tot=P.reduce((s,p)=>s+(Number(p.costo_delivery)||0),0);
+      let h=`<div class="amt"><div class="k">Total por cobrar</div><div class="n">${M(tot)}</div><div class="pill">${g.size} negocio${g.size===1?'':'s'}</div></div>`+U.note('Pedidos donde el cliente pagó todo al negocio: el negocio le debe el delivery a Pidemás.');
+      if(!g.size)return {body:h+vacio('Ningún negocio te debe delivery.')};
+      h+=[...g.entries()].map(([nid,L])=>{const n=b.negs.find(x=>String(x.id)===nid)||{};const t=L.reduce((s,p)=>s+(Number(p.costo_delivery)||0),0);
+        const msg=['Hola, '+(n.nombre||'')+' 👋','Te escribimos de *Pidemás Delivery*.','Tienes pendiente el pago del delivery de '+L.length+' pedido'+(L.length===1?'':'s')+':',...L.map(p=>'• '+ref(p.id)+' · '+fch(p.entregado_en||p.creado_en)+' · '+M(p.costo_delivery)),'','*Total: '+M(t)+'*','¿Nos confirmas cuándo lo cancelas? ¡Gracias!'].join('\n');const w=telW(n.telefono);
+        const q=f.quien[nid]||'admin';
+        return `<div class="cd"><div class="row"><div style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:17px">${E(n.nombre||'Negocio')}</b><span style="font-size:13px;color:#6B5E55">${L.length} pedido${L.length===1?'':'s'} · ${M(t)}</span></div>${w?`<a class="b g" style="height:40px;padding:0 12px" target="_blank" rel="noopener" href="https://wa.me/${w}?text=${encodeURIComponent(msg)}">${U.I.wa}Recordar</a>`:''}</div>
+          ${L.map(p=>{const on=!f.off[p.id];return `<button type="button" class="opt${on?' on':''}" style="flex-direction:row;align-items:center;gap:10px" data-sa="tg:${E(p.id)}"><span class="sel${on?' on':''}">${on?IC.check:''}</span><span style="flex:1 1 0%"><b style="font-size:15px">${E(ref(p.id))}</b> <span>· ${E(fch(p.entregado_en||p.creado_en))}</span></span><b>${M(p.costo_delivery)}</b></button>`}).join('')}
+          <div class="lbl" style="margin-top:4px">¿Quién recibió el dinero?</div><div class="opts">${[['admin','Administración','Me pagó directo'],...b.motos.filter(m=>m.activo!==false).map(m=>[m.id,m.nombre_completo,'Va a su caja'])].map(x=>`<button type="button" class="opt${String(q)===String(x[0])?' on':''}" data-sa="qn:${E(nid)}:${E(x[0])}"><b>${E(x[1])}</b><span>${E(x[2])}</span></button>`).join('')}</div>
+          <button type="button" class="b o" data-sa="cob:${E(nid)}">Marcar como cobrado</button></div>`}).join('');
+      return {body:h}},
+    async a(x){const k='por cobrar a negocios',f=SF[k],c=C2['s:'+k],p=x.split(':');
+      if(p[0]==='tg'){f.off[p[1]]=!f.off[p[1]];return}if(p[0]==='qn'){f.quien[p[1]]=p[2];return}
+      if(p[0]==='cob'){const nid=p[1],{b,P}=c.data;const L=P.filter(y=>String(y.negocio_id||'')===nid&&!f.off[y.id]);if(!L.length){mal('Marca al menos un pedido.');return}
+        const quien=f.quien[nid]||'admin',n=b.negs.find(y=>String(y.id)===nid)||{},t=r2(L.reduce((s,y)=>s+(Number(y.costo_delivery)||0),0));
+        if(!(await conf('¿Registrar que '+(n.nombre||'el negocio')+' pagó '+M(t)+'?\n'+(quien==='admin'?'Lo recibiste tú directamente.':'Entra a la caja de '+mN(b,quien)+'.'))))return;
+        const u=await D().from('pedidos').update({delivery_negocio_cobrado_en:new Date().toISOString()}).in('id',L.map(y=>y.id)).select('id');if(u.error){mal('No se pudo registrar: '+u.error.message);return}
+        if(quien!=='admin'){const r=await D().from('movimientos_caja').insert(L.map(y=>({motorizado_id:quien,pedido_id:y.id,tipo:'ingreso',monto:r2(y.costo_delivery),descripcion:'COBRO DE DELIVERY A NEGOCIO · '+(n.nombre||'Negocio')+' · Pedido '+ref(y.id)})));if(r.error){mal('No se pudo registrar en la caja: '+r.error.message);return}}
+        ok('Cobro registrado');recargar(k);try{window.pdCtl&&pdCtl.contar()}catch(_){}}}};
+
+  /* --- Cancelados con cobro --- */
+  SEC['cancelados con cobro']={g:'Control de caja y sueldos',t:'Cancelados con cobro',rf:1,
+    load:async()=>{const b=await baseCtl();const {data,error}=await D().from('pedidos').select('id,nombre_cliente,total,estado,observaciones,motorizado_id,creado_en').in('estado',['cancelado','rechazado']).gte('creado_en',new Date(Date.now()-60*864e5).toISOString()).limit(500);if(error)throw error;if(!data||!data.length)return {b,L:[]};
+      const r=await D().from('movimientos_caja').select('id,pedido_id,motorizado_id,tipo,monto,descripcion').in('pedido_id',data.map(p=>p.id));const mv=r.data||[];
+      return {b,L:data.filter(p=>!/DEVOLUCION_REVISADA/.test(p.observaciones||'')).map(p=>{const ing=mv.filter(m=>String(m.pedido_id)===String(p.id)&&m.tipo==='ingreso'),dev=mv.some(m=>String(m.pedido_id)===String(p.id)&&m.tipo==='retiro'&&/^DEVOLUCI/i.test(m.descripcion||''));return {p,ing,cob:r2(ing.reduce((s,m)=>s+(Number(m.monto)||0),0)),dev}}).filter(x=>x.cob>0&&!x.dev)}},
+    v(){const c=datos('cancelados con cobro',this.load);if(!c.data)return {body:cargando(c)};const {b,L}=c.data;
+      let h=U.note('Pedidos anulados que ya tenían un cobro en la caja del motorizado. Indica si el dinero se le devolvió al cliente.');
+      h+=L.length?L.map(x=>`<div class="cd"><b style="font-size:16px">${E(ref(x.p.id))} · ${E(x.p.nombre_cliente||'Cliente')}</b><span style="font-size:14px;color:#6B5E55">Cobrado ${M(x.cob)} · caja de ${E(mN(b,x.ing[0].motorizado_id))} · ${E(fch(x.p.creado_en))}</span><div class="btns b2"><button type="button" class="b o" data-sa="dev:si:${E(x.p.id)}">Sí, se devolvió</button><button type="button" class="b" data-sa="dev:no:${E(x.p.id)}">No, se queda</button></div></div>`).join(''):vacio('No hay pedidos anulados con cobro pendiente.');
+      return {body:h}},
+    async a(x){const k='cancelados con cobro',[,si,id]=x.split(':'),c=C2['s:'+k],it=c.data.L.find(y=>String(y.p.id)===id);if(!it)return;
+      if(si==='si'){const r=await D().from('movimientos_caja').insert({motorizado_id:it.ing[0].motorizado_id,pedido_id:id,tipo:'retiro',monto:it.cob,descripcion:'DEVOLUCIÓN AL CLIENTE · Pedido '+ref(id)+' anulado'});if(r.error){mal('No se pudo guardar: '+r.error.message);return}}
+      const obs=String(it.p.observaciones||'');const q=await D().from('pedidos').update({observaciones:(obs?obs+' | ':'')+'DEVOLUCION_REVISADA'+(si==='si'?'':' (sin devolución)')}).eq('id',id);if(q.error){mal('No se pudo guardar: '+q.error.message);return}
+      ok(si==='si'?'Devolución registrada':'Listo: el cobro se queda en su caja');recargar(k);try{window.pdCtl&&pdCtl.contar()}catch(_){}}};
+
+  /* --- Resumen del día --- */
+  const tope=async()=>{try{const {data}=await D().from('ajustes_pidemas').select('valor').eq('clave','caja_alerta').maybeSingle();return Number(data&&data.valor&&data.valor.monto)||0}catch(e){return 0}};
+  SEC['resumen del día']={g:'Control de caja y sueldos',t:'Resumen del día',rf:1,
+    load:async()=>{const b=await baseCtl();const P=CA();const movs=await movsDe();const hoy=diaLima(Date.now()),ini=new Date(hoy+'T00:00:00-05:00').toISOString();const yp=await D().from('cobros').select('motorizado_id,monto').eq('metodo_pago','yape').gte('confirmado_en',ini);const T=await tope();
+      const F=b.motos.map(m=>{const all=movs.filter(x=>String(x.motorizado_id)===String(m.id)),L2=all.filter(x=>diaLima(x.creado_en)===hoy);const s={ef:0,pg:0,ent:0,yape:0};
+        L2.forEach(x=>{const k=P.kind(x),a=P.amount(x);if(x.tipo==='ingreso'){if(k!=='fondo')s.ef+=a}else if(k==='entrega'||k==='liquidacion')s.ent+=(x.recibido!=null?Number(x.recibido):a);else if(k!=='reinicio')s.pg+=a});
+        (yp.data||[]).filter(c=>String(c.motorizado_id)===String(m.id)).forEach(c=>s.yape+=Number(c.monto)||0);return {m,s,bal:P.balance(all),hay:L2.length||s.yape>0}}).filter(f=>f.hay||Math.abs(f.bal)>0.004);return {F,T}},
+    v(){const c=datos('resumen del día',this.load);if(!c.data)return {body:cargando(c)};const {F,T}=c.data,tot=F.reduce((s,f)=>s+f.bal,0);
+      let h=`<div class="amt"><div class="k">Total en cajas</div><div class="n">${M(tot)}</div><div class="pill">${new Date().toLocaleDateString('es-PE',{timeZone:'America/Lima',weekday:'long',day:'2-digit',month:'long'})}</div></div>`;
+      h+=F.length?F.map(f=>`<div class="cd"><div class="row"><b style="flex:1 1 0%;font-size:16px">${E(f.m.nombre_completo)}</b>${T>0&&f.bal>=T?`<span class="pl r">Supera ${M(T)}</span>`:''}</div><div class="li"><span>Saldo en caja</span><b>${M(f.bal)}</b></div><div class="g2"><div class="kp"><span>Efectivo</span><b style="font-size:18px">${M(f.s.ef)}</b></div><div class="kp"><span>Yape</span><b style="font-size:18px">${M(f.s.yape)}</b></div><div class="kp"><span>Pagos y gastos</span><b style="font-size:18px">${M(f.s.pg)}</b></div><div class="kp"><span>Entregó</span><b style="font-size:18px">${M(f.s.ent)}</b></div></div></div>`).join(''):vacio('Hoy todavía no hay movimientos.');
+      const txt=['*Resumen del día · Pidemás Delivery*',new Date().toLocaleDateString('es-PE',{timeZone:'America/Lima',weekday:'long',day:'2-digit',month:'long'}),'',...F.map(f=>'*'+f.m.nombre_completo+'*\nEfectivo '+M(f.s.ef)+' · Yape '+M(f.s.yape)+' · Pagos/gastos '+M(f.s.pg)+' · Entregó '+M(f.s.ent)+'\nSaldo en caja: '+M(f.bal)),'','*Total en cajas: '+M(tot)+'*'].join('\n');
+      return {body:h,foot:`<a class="b g" style="height:54px;font-size:16px" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">${U.I.wa}Compartir por WhatsApp</a>`}}};
+
+  /* --- Alerta de caja alta --- */
+  SEC['alerta de caja alta']={g:'Control de caja y sueldos',t:'Alerta de caja alta',
+    load:async()=>({T:await tope()}),
+    v(){const c=datos('alerta de caja alta',this.load);if(!c.data)return {body:cargando(c)};const f=SF['alerta de caja alta'];if(f.v==null)f.v=c.data.T?String(c.data.T):'';
+      return {body:U.note('Cuando la caja de un motorizado llegue a este monto, verá un aviso para entregarte el efectivo, y en el Resumen del día saldrá en rojo. Deja 0 para desactivar.')+`<div class="cd"><div class="fld"><label for="alT">Monto máximo en caja (S/)</label><input id="alT" inputmode="decimal" value="${E(f.v)}" data-in="sf:v" placeholder="0"></div></div>`,
+        foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="guardar">Guardar</button>`}},
+    async a(){const f=SF['alerta de caja alta'];const v=Math.max(0,r2(String(f.v).replace(',','.')));const q=await D().from('ajustes_pidemas').upsert({clave:'caja_alerta',valor:{monto:v},actualizado_en:new Date().toISOString()});if(q.error){mal('No se pudo guardar: '+q.error.message);return}ok(v?'Alerta guardada en '+M(v):'Alerta desactivada');volverSub()}};
+
   /* =============== PÁGINAS DE SIEMPRE (marco) =============== */
   const DLG='#pdDlg,#pdpeVelo,#pfSheet,#pdYNOv,#pdmmVelo,#pdsmVelo,pd-ventana';
   function paginaVieja(){
@@ -18953,7 +19044,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     return false;
   }
   function visible(){const av=$('appView'),lg=$('loginView');if(!av||av.classList.contains('hidden')||(lg&&!lg.classList.contains('hidden')))return false;return !tapada()}
-  function vista(){if(sub==='cajamoto')return cajaMoto();if(sub==='sueldomoto')return sueldoMoto();if(sub==='cliente')return cliente();if(sub==='clienteform')return clienteForm();return tab==='menu'?menu():tab==='caja'?caja():tab==='sueldo'?sueldos():tab==='clientes'?clientes():inicio()}
+  function vista(){if(sub==='cajamoto')return cajaMoto();if(sub==='sueldomoto')return sueldoMoto();if(sub==='cliente')return cliente();if(sub==='sec')return secVista();if(sub==='clienteform')return clienteForm();return tab==='menu'?menu():tab==='caja'?caja():tab==='sueldo'?sueldos():tab==='clientes'?clientes():inicio()}
   function pintar(){
     const H=document.documentElement;
     if(!visible()){if(host&&host.style.display!=='none'){host.style.display='none';H.classList.remove('pdaApp','pdaPag');H.style.overflow='';if(topH)topH.style.display='none'}return}
@@ -19007,6 +19098,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(k==='slm'){SL.monto=el.value.replace(/[^\d.,]/g,'');vivo();return}
     if(k==='sln'){SL.nota=el.value;return}
     if(k==='clq'){CL.q=el.value;CL.lim=60;const b=root.getElementById('clL');if(b)b.innerHTML=clFilas();return}
+    if(k.startsWith('sf:')){SF[secK][k.slice(3)]=el.value;return}
     if(k.startsWith('cf:')){CL.f[k.slice(3)]=el.value;return}
     if(k==='mq'){mq=el.value;const g=root.getElementById('mG');if(g)g.innerHTML=grupos()}}
   async function clic(e){
@@ -19018,13 +19110,14 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const sm=e.target.closest('[data-sm]');if(sm){const c=C2.sueldo;const m=c&&c.data&&c.data.motos.find(x=>String(x.id)===sm.dataset.sm);if(m){Object.assign(SL,{moto:m,per:'',monto:'',nota:'',msg:'',ok:''});sub='sueldomoto';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}return}
     const sp=e.target.closest('[data-sp]');if(sp){SL.per=sp.dataset.sp;const r=calcS(SL.moto);const p=r&&(r.periods||[]).find(x=>x.key===SL.per);if(p)SL.monto=Math.max(0,p.balance).toFixed(2);key='';pintar();return}
     const cli=e.target.closest('[data-cli]');if(cli){const x=(C2.cli&&C2.cli.data||[]).find(y=>String(y.id)===cli.dataset.cli);if(x){CL.sel=x;sub='cliente';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}return}
+    const sa=e.target.closest('[data-sa]');if(sa&&SEC[secK]){e.preventDefault();if(sa.disabled)return;sa.disabled=true;try{await SEC[secK].a(sa.dataset.sa)}catch(err){mal(String(err&&err.message||err))}finally{sa.disabled=false;key='';pintar()}return}
     const cp=e.target.closest('[data-cp]');if(cp){CJ.pane=cp.dataset.cp;CJ.msg='';CJ.ok='';key='';pintar();return}
     const mot=e.target.closest('[data-mot]');if(mot){CJ.darMot=mot.dataset.mot;key='';pintar();return}
     const cl=e.target.closest('[data-cl]');if(cl){const i=+cl.dataset.cl;CJ.abierta=CJ.abierta===i?null:i;key='';pintar();return}
     const dl=e.target.closest('[data-del]');if(dl){await cajaBorrar(dl.dataset.del);key='';pintar();return}
     const rv=e.target.closest('[data-rv]');if(rv){e.preventDefault();await cajaRevision(rv.dataset.rv);key='';pintar();return}
     const g=e.target.closest('[data-g]');if(g){abiertoGr=abiertoGr===g.dataset.g?null:g.dataset.g;key='';pintar();return}
-    const it=e.target.closest('[data-it]');if(it){const b=document.querySelector(`#pdMenu .m3It[data-txt="${CSS.escape(it.dataset.it)}"]`);if(b){marca='menu';kick=it.dataset.gk||'Administración';ultimo=((it.querySelector('span')||{}).textContent||'').trim();if(movido)volverLista();b.click();key='';setTimeout(pintar,80)}return}
+    const it=e.target.closest('[data-it]');if(it&&SEC[it.dataset.it]){abrirSec(it.dataset.it);return}if(it){const b=document.querySelector(`#pdMenu .m3It[data-txt="${CSS.escape(it.dataset.it)}"]`);if(b){marca='menu';kick=it.dataset.gk||'Administración';ultimo=((it.querySelector('span')||{}).textContent||'').trim();if(movido)volverLista();b.click();key='';setTimeout(pintar,80)}return}
     const a=e.target.closest('[data-a]');if(!a)return;
     switch(a.dataset.a){
       case 'act':{a.classList.add('spin');const r=$('refreshOrders');if(r)r.click();else try{await window.loadOrders()}catch(_){}setTimeout(()=>{key='';pintar()},800);break}
@@ -19042,6 +19135,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       case 'cl:guardar':{if(a.disabled)break;a.disabled=true;try{await cliGuardar()}finally{key='';pintar()}break}
       case 'cl:borrar':await cliBorrar();break;
       case 'cl:mas':CL.lim+=60;{const b=root.getElementById('clL');if(b)b.innerHTML=clFilas()}break;
+      case 'sec:rf':recargar(secK);key='';pintar();break;
       case 'sl:cfg':sueldoViejo();break;
       case 'sl:pagar':{if(a.disabled)break;a.disabled=true;try{await sueldoPagar()}finally{key='';pintar()}break}
       case 'cj:mas':CJ.lim+=40;key='';pintar();break;
