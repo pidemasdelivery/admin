@@ -18102,7 +18102,8 @@ new MutationObserver(function(ms){for(var i=0;i<ms.length;i++){var m=ms[i];var t
 :host{all:initial;position:fixed;inset:0;z-index:2147483000;display:block;font-family:PdInter,Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#1F1A17;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
 *,*::before,*::after{box-sizing:border-box}
 button{font-family:inherit;-webkit-tap-highlight-color:transparent}
-.app{position:absolute;inset:0;display:flex;flex-direction:column;background:#FFF9F5;overflow:hidden;animation:entra .22s ease-out}
+.app{position:absolute;inset:0;display:flex;flex-direction:column;background:#FFF9F5;overflow:hidden}
+.app.nuevo{animation:entra .22s ease-out}
 @keyframes entra{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
 .top{background:#FFFFFF;border-bottom:1px solid #F1E4DA;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 12px;display:flex;flex-direction:column;gap:10px;flex:0 0 auto}
 .row{display:flex;align-items:center;gap:12px}
@@ -18219,11 +18220,12 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
     const fin=m.fin?`<div class="fin${m.fin.mal?' mal':''}"><span class="ic">${m.fin.mal?'<svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>':I.big}</span><div class="t">${E(m.fin.title)}</div>${m.fin.text?`<div class="s">${E(m.fin.text)}</div>`:''}${(m.fin.lines||[]).map(l=>`<div class="li2">${I.ok}<span>${l}</span></div>`).join('')}</div>`:'';
     const cta=m.cta?`<button type="button" class="sl${m.cta.green?' g':''}${m.cta.off?' off':''}" aria-label="${E(m.cta.label)}"${m.cta.off?' aria-disabled="true"':''}><span class="fill"></span><span class="lb">${E(m.cta.label)}</span><span class="kn">${I.arrow}</span></button><div class="hint">${E(m.cta.hint||(m.cta.off?'':'Desliza hacia la derecha para avanzar'))}</div>`:'';
     const alt=m.alt&&m.alt.length?`<div class="alt">${m.alt.map((a,i)=>`<button type="button" data-alt="${i}" class="${a.mal?'mal':''}">${E(a.label)}</button>`).join('')}</div>`:'';
-    cur.root.innerHTML=`<style>${CSS}</style><div class="app" role="dialog" aria-modal="true" aria-label="${E(m.title)}">
+    cur.root.innerHTML=`<style>${CSS}</style><div class="app${cur.pintada?'':' nuevo'}" role="dialog" aria-modal="true" aria-label="${E(m.title)}">
       <div class="top"><div class="row"><button type="button" class="back" aria-label="Volver">${I.back}</button><div class="ttl"><div class="kick">${E(m.kicker)}</div><div class="h1">${E(m.title)}</div></div>${m.chip?`<span class="chip ${m.chipCls||''}">${E(m.chip)}</span>`:''}</div>
       <div class="bars" style="grid-template-columns:repeat(${n},minmax(0,1fr))">${bars}</div></div>
       <div class="list">${m.err?`<div class="err">${E(m.err)}</div>`:''}${cards}${fin}</div>
       ${cta||alt?`<div class="foot">${cta}${alt}</div>`:''}</div>`;
+    cur.pintada=true;
     const nl=cur.root.querySelector('.list');if(nl)nl.scrollTop=sc;
     if(m.mounted)try{m.mounted(cur.root)}catch(e){}
     wire();
