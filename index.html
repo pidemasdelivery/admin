@@ -18834,7 +18834,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     slx(true);await esperaS('slx:'+id);key='';pintar()}
   async function insS(row){const q=await D().from('control_sueldos').insert(row);if(q.error)throw q.error}
   async function delS(tabla,id){const q=await D().from(tabla).delete().eq('id',id);if(q.error)throw new Error(q.error.message+'. Revisa el permiso de borrar.')}
-  function abrirV(v){SL.vista=v;SL.msg='';try{history.pushState({pdApp:1,slv:1},'')}catch(_){}}
+  function abrirV(v){SL.vista=v;SL.msg='';SL.ok='';try{history.pushState({pdApp:1,slv:1},'')}catch(_){}}
   function cerrarV(){SL.vista=null;if(history.state&&history.state.slv){ignorarPop=true;history.back()}}
 
   function sueldoMoto(){
@@ -18884,7 +18884,9 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const days=P.days||[],reales=days.filter(d=>!d.adjDay),off=reales[0]?(S2.parse(reales[0].date).getDay()+6)%7:0;
     const cal='<div class="slc">'+['L','M','M','J','V','S','D'].map(y=>`<small aria-hidden="true">${y}</small>`).join('')+'<span></span>'.repeat(off)+days.map(d=>{const n=d.adjDay||S2.parse(d.date).getDate();const s=d.adel?'Adelant.':(d.status==='descanso'&&d.holiday?'Feriado':SUB[d.status]||'');const v=!d.adjDay&&adv.get(d.date);const no=d.adjDay||d.status==='dia31';
       return `<button type="button" class="${E(d.status)}${d.adel?' adel':''}"${no?' disabled':` data-sx="dia:${d.date}"`} aria-label="${E((d.label||'')+' '+n+(s?': '+s:'')+(v?', adelanto '+M(v):''))}"><b>${n}</b><small>${E(s)}</small>${v?`<em>${M(v).replace('S/ ','S/')}</em>`:''}</button>`}).join('')+'</div>';
-    let h=`<div class="cd"><div class="lbl">${E(capS(P.label))}</div>${cal}<div class="ley"><span><b style="color:#0F5E2E">■</b> Trabajó</span><span><b style="color:#E8A27A">■</b> Descanso pagado</span><span><b style="color:#B42318">■</b> Falta</span></div><div style="font-size:14px;color:#6B5E55">Toca un día para registrar o quitar una falta, adelantar el día trabajado o darle un adelanto de sueldo.</div></div>`;
+    let h=`<div class="cd"><div class="lbl">${E(capS(P.label))}</div>${cal}<div class="ley"><span><b style="color:#0F5E2E">■</b> Trabajó</span><span><b style="color:#E8A27A">■</b> Descanso pagado</span><span><b style="color:#B42318">■</b> Falta</span></div><div style="font-size:14px;color:#6B5E55">Toca un día para ver su detalle, quitar una falta o adelantar el día trabajado.</div></div>`;
+    if(!f.ff)f.ff=S2.todayIso();
+    h+=`<div class="cd"><div class="lbl">Registrar falta</div><div class="fld"><label for="slFf">Día</label><input id="slFf" type="date" value="${E(f.ff)}" min="${E(P.start)}" max="${E(P.end)}" data-in="sx:ff"></div><div class="fld"><label for="slDf">Motivo (opcional)</label><input id="slDf" maxlength="200" value="${E(f.dmot||'')}" data-in="sx:dmot" placeholder="Ej. No se presentó"></div><div style="font-size:14px;color:#6B5E55">Ese día no se pagará. Para quitar una falta, toca el día en el calendario.</div><button type="button" class="b rojo" data-sx="falta">Registrar falta</button></div>`;
     h+=`<div class="cd"><div class="lbl">Días sin pago (vacaciones o permisos)</div><div class="two"><div class="fld"><label for="slOa">Desde</label><input id="slOa" type="date" value="${E(f.oa||'')}" data-in="sx:oa"></div><div class="fld"><label for="slOb">Hasta</label><input id="slOb" type="date" value="${E(f.ob||'')}" data-in="sx:ob"></div></div><div class="fld"><label for="slOw">Motivo</label><input id="slOw" maxlength="200" value="${E(f.ow||'')}" data-in="sx:ow" placeholder="Ej. Vacaciones"></div><div id="slOi" style="font-size:14px;color:#6B5E55">${E(offInfo())}</div><div class="btns b2"><button type="button" class="b o" data-sx="offsi">Registrar</button><button type="button" class="b" data-sx="offno">Quitar</button></div></div>`;
     if(x){const cfg=r.cfg,start=cfg.times.start,end=cfg.times.end,t=x.tard;const g=new Map(x.gps.map(y=>[String(y.fecha).slice(0,10),y])),rv=new Map(x.rev.map(y=>[String(y.fecha).slice(0,10),y]));
       const dl=days.filter(d=>!d.adjDay&&d.work&&(d.status==='trabajado'||d.status==='hoy')).reverse();
@@ -18956,15 +18958,13 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(SL.vista==='dia'){const d=r&&r.ok&&(r.current.days||[]).find(y=>y.date===SL.dia&&!y.adjDay);if(!d){SL.vista=null;return null}
       const titulo=capS(S2.parse(d.date).toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long'}));
       const base=M(S2.baseFor(m)+(d.work&&d.dow!=='domingo'?S2.GAS:0));
-      const advs=slRows().filter(y=>tipoS(y)==='pago'&&String(y.fecha).slice(0,10)===d.date&&/^adelanto/i.test(String(y.descripcion||'')));
-      const puedeFalta=!!((d.work||d.rest)&&!['antes','libre','falta'].includes(d.status)),puedeAdel=!!((d.work||d.rest)&&(d.status==='hoy'||d.status==='futuro'));
+            const puedeAdel=!!((d.work||d.rest)&&(d.status==='hoy'||d.status==='futuro'));
       const EST={trabajado:'Trabajado',descanso:d.holiday?'Feriado pagado':'Descanso pagado',falta:'Falta',hoy:'Hoy · se suma '+r.endAt,futuro:d.work?'Día laborable':d.rest?'Descanso':'Libre',libre:'Libre (no se paga)',antes:'Antes de su ingreso'};
       let h=avisos()+`<div class="cd"><div class="lbl">Estado del día</div><div style="font-size:18px;font-weight:800">${E(d.adel?'Adelantado · cuenta como trabajado':EST[d.status]||'—')}</div>${d.gas?`<div style="font-size:14px;color:#6B5E55">Incluye gasolina ${M(d.gas)}</div>`:''}</div>`;
       if(d.status==='falta')h+=`<div class="cd"><div class="lbl">Falta registrada</div><div style="font-size:15px">${E(d.falta&&d.falta.descripcion||'Falta')}</div><button type="button" class="b" data-sx="dquitar">Quitar falta</button></div>`;
       if(d.adel)h+=`<div class="cd"><div class="lbl">Día adelantado</div><div style="font-size:14px;color:#6B5E55">Ya se cuenta como trabajado (${E(base)}).</div><button type="button" class="b" data-sx="ddesadel">Quitar adelanto del día</button></div>`;
       else if(puedeAdel)h+=`<div class="cd"><div class="lbl">Adelantar día trabajado</div><div style="font-size:14px;color:#6B5E55">Se cuenta como trabajado desde ahora y se suma a la ${E(S2.periodOf(d.date).label)} (${E(base)}).</div><button type="button" class="b o" data-sx="dadel">Adelantar día trabajado</button></div>`;
-      if(puedeFalta)h+=`<div class="cd"><div class="lbl">Registrar falta</div><div style="font-size:14px;color:#6B5E55">Ese día no se pagará (${E(base)}).</div><div class="fld"><label for="slDf">Motivo (opcional)</label><input id="slDf" maxlength="200" value="${E(f.dmot||'')}" data-in="sx:dmot" placeholder="Ej. No se presentó"></div><button type="button" class="b rojo" data-sx="dfalta">Registrar falta</button></div>`;
-      h+=`<div class="cd"><div class="lbl">Adelanto de sueldo este día</div><div style="font-size:14px;color:#6B5E55">Se descuenta de la ${E(S2.periodOf(d.date).label)}.</div>${advs.map(y=>`<div class="mv"><span class="tx" style="flex:1 1 0%;min-width:0"><b>${M(y.monto)}</b><span>${E(y.descripcion||'Adelanto de sueldo')}</span></span><button type="button" class="ib" data-sx="delpago:${E(y.id)}" aria-label="Anular adelanto">${IC.trash}</button></div>`).join('')}<div class="two"><div class="fld"><label for="slDa">Monto (S/)</label><input id="slDa" inputmode="decimal" value="${E(f.dam||'')}" data-in="sx:dam" placeholder="0.00"></div><div class="fld"><label for="slDd">Detalle</label><input id="slDd" maxlength="200" value="${E(f.dde||'')}" data-in="sx:dde" placeholder="Ej. Yape"></div></div><button type="button" class="b o" data-sx="dadv">Registrar adelanto</button></div>`;
+      if(d.status!=='falta'&&!d.adel&&!puedeAdel)h+=U.note('Para registrar una falta ve a «Asistencia»; para dar un adelanto de sueldo, a «Pagos».');
       return {head:hd(titulo),body:h};
     }
     if(SL.vista==='boleta'){const q=x&&x.cierres.find(c=>c.periodo===SL.bol);if(!q){SL.vista=null;return null}const d=q.detalle||{};
@@ -19002,7 +19002,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       case 'tipo':SL.cfg.tipo=arg;return;
       case 'cfgdia':{const s=SL.cfg.days,j=s.indexOf(arg);j<0?s.push(arg):s.splice(j,1);return}
       case 'dt':f.dt=arg;return;
-      case 'dia':SL.dia=arg;f.dmot='';f.dam='';f.dde='';abrirV('dia');return;
+      case 'dia':SL.dia=arg;abrirV('dia');return;
       case 'boleta':SL.bol=arg;abrirV('boleta');return;
       case 'hist':{SL.hist=null;abrirV('hist');D().from('control_sueldos_historial').select('*').eq('motorizado_id',id).order('creado_en',{ascending:false}).limit(80).then(q=>{SL.hist=q.error?q.error.message:(q.data||[]);key='';pintar()},e=>{SL.hist=String(e&&e.message||e);key='';pintar()});return}
       case 'vtard':{const t=(slx().data||{}).tard||{tolerancia:10,cada:15,monto:2};f.t1=String(t.tolerancia);f.t2=String(t.cada);f.t3=String(t.monto);abrirV('tard');return}
@@ -19052,6 +19052,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         if(q.error){if(/tipo_sueldo/.test(q.error.message||''))throw new Error('falta la columna tipo_sueldo en motorizados.');throw q.error}if(!q.data)throw new Error('No se actualizó el motorizado (revisa permisos).');
         Object.assign(m,q.data);SL.cfg=null;await fin('Configuración guardada.');const r=calcS(SL.moto);if(r&&r.ok)SL.pest='resumen';return}
       const d=SL.vista==='dia'&&calcS(m)?.current?.days?.find(y=>y.date===SL.dia&&!y.adjDay);
+      if(a==='falta'){const fe=f.ff,r=calcS(m),dd=r&&r.ok&&(r.periods||[]).flatMap(y=>y.days||[]).find(y=>y.date===fe&&!y.adjDay);
+        if(!fe){SL.msg='Elige el día de la falta.';return}if(!dd||!(dd.work||dd.rest)||['antes','libre','dia31'].includes(dd.status)){SL.msg='Ese día no es un día pagado para '+nom+'.';return}if(dd.status==='falta'){SL.msg='Ese día ya tiene una falta registrada.';return}
+        if(!(await confS('¿Registrar falta a '+nom+' el '+fDs(fe)+'?')))return;
+        await insS({motorizado_id:id,fecha:fe,tipo:'falta',monto:0,descripcion:String(f.dmot||'').trim()||'Falta',periodo:S2.periodOf(fe).key});f.dmot='';return fin('Falta registrada el '+fDs(fe)+'.')}
       if(a==='dquitar'&&d&&d.falta){await delS('control_sueldos',d.falta.id);return fin('Falta eliminada.')}
       if(a==='ddesadel'&&d&&d.adel){await delS('control_sueldos',d.adel.id);return fin('Se quitó el adelanto del día.')}
       if(a==='dadel'&&d){await insS({motorizado_id:id,fecha:d.date,tipo:'jornada',monto:0,descripcion:'Día adelantado',periodo:S2.periodOf(d.date).key});return fin('Día adelantado: ya cuenta como trabajado.')}
