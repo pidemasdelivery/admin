@@ -19069,6 +19069,84 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       return {body:h,foot:`<a class="b" style="height:50px" download="pedidos-${f.d}d.csv" href="data:text/csv;charset=utf-8,${encodeURIComponent('﻿'+csv)}">${IC.list}Descargar Excel (CSV)</a>`}},
     async a(x){SF['reportes de pedidos'].d=+x.split(':')[1];recargar('reportes de pedidos')}};
 
+  /* --- Asignación automática --- */
+  SEC['asignación automática']={g:'Control de pedidos',t:'Asignación automática',
+    load:async()=>{const r=await D().from('ajustes').select('valor').eq('clave','auto_asignar').maybeSingle();return Object.assign({on:false,min:3},(r.data&&r.data.valor)||{})},
+    v(){const c=datos('asignación automática',this.load);if(!c.data)return {body:cargando(c)};const a=c.data;
+      return {body:U.note('Si un pedido listo para asignar se queda sin motorizado, el sistema lo asigna solo al sugerido: el más cercano y con menos pedidos. No se asigna a quien está en descanso.')+
+        `<div class="cd"><div class="row"><div style="flex:1 1 0%"><b style="display:block;font-size:16px">${a.on?'Activada':'Desactivada'}</b><span style="font-size:13px;color:#6B5E55">${a.on?'Asigna después de '+a.min+' min sin motorizado':'Tú asignas todos los pedidos'}</span></div><button type="button" class="sw${a.on?' on':''}" role="switch" aria-checked="${a.on}" aria-label="Asignación automática" data-sa="on" style="position:relative;flex:0 0 52px;width:52px;height:32px;border-radius:999px;border:0;background:${a.on?'#C4410C':'#EADFD6'};cursor:pointer"><span style="position:absolute;top:3px;left:${a.on?23:3}px;width:26px;height:26px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(31,26,23,.25)"></span></button></div></div>`+
+        `<div class="lbl">Esperar antes de asignar</div><div class="grid4" style="grid-template-columns:repeat(5,minmax(0,1fr))">${[1,2,3,5,10].map(m=>`<button type="button" class="${m===a.min?'on':''}" data-sa="min:${m}">${m} min</button>`).join('')}</div>`+U.note('Funciona mientras tengas este panel abierto en algún teléfono o computadora.')}},
+    async a(x){const c=C2['s:asignación automática'],v=Object.assign({},c.data);if(x==='on')v.on=!v.on;else v.min=+x.split(':')[1];
+      const q=await D().from('ajustes').upsert({clave:'auto_asignar',valor:v,actualizado_en:new Date().toISOString()});if(q.error){mal(/relation|column|schema/i.test(q.error.message)?'Falta aplicar un cambio en la base de datos (tabla ajustes).':'No se pudo guardar: '+q.error.message);return}c.data=v}};
+
+  /* --- Ranking --- */
+  SEC['ranking de negocios y motorizados']={g:'Control de pedidos',t:'Ranking',rf:1,
+    load:async()=>{const dias=SF['ranking de negocios y motorizados'].d||30,desde=new Date(Date.now()-dias*864e5).toISOString();
+      let r=await D().from('pedidos').select('id,estado,negocio_id,motorizado_id,subtotal,total,creado_en,negocio_aceptado_en,asignado_en,aceptado_en,listo_para_recojo_en,en_camino_en,entregado_en,tiempo_preparacion_min,cancelado_por,no_entregado').gte('creado_en',desde).limit(8000);
+      if(r.error)r=await D().from('pedidos').select('id,estado,negocio_id,motorizado_id,subtotal,total,creado_en,negocio_aceptado_en,asignado_en,aceptado_en,listo_para_recojo_en,en_camino_en,entregado_en,tiempo_preparacion_min').gte('creado_en',desde).limit(8000);if(r.error)throw r.error;
+      const [b,cal]=await Promise.all([baseCtl(),D().from('calificaciones').select('negocio_id,motorizado_id,estrellas_negocio,estrellas_motorizado').gte('creado_en',desde)]);return {P:r.data||[],b,cal:cal.data||[],dias}},
+    v(){const f=SF['ranking de negocios y motorizados'];f.d=f.d||30;const c=datos('ranking de negocios y motorizados',this.load);
+      let h=`<div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[7,30,90].map(d=>`<button type="button" class="${f.d===d?'on':''}" data-sa="d:${d}">${d} días</button>`).join('')}</div>`;
+      if(!c.data||c.data.dias!==f.d)return {body:h+cargando(c)};const {P,b,cal}=c.data;
+      const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:null,mi=(a,z)=>a&&z?(T(z)-T(a))/60000:null,okk=x=>x!=null&&x>=0&&x<300;
+      const agr=k=>{const g=new Map();P.forEach(p=>{const id=p[k];if(!id)return;const x=g.get(String(id))||{id:String(id),P:[]};x.P.push(p);g.set(String(id),x)});return [...g.values()]};
+      const es=(k,id)=>avg(cal.filter(x=>String(x[k+'_id'])===id&&Number(x['estrellas_'+k])>0).map(x=>Number(x['estrellas_'+k])));
+      const fm=v=>v==null?'—':Math.round(v)+' min',fs=v=>v==null?'—':'★ '+v.toFixed(1);
+      const ng=agr('negocio_id').map(x=>{const e=x.P.filter(p=>est(p)==='entregado');return {n:(b.negs.find(n=>String(n.id)===x.id)||{}).nombre||'Negocio',ped:x.P.length,venta:e.reduce((s,p)=>s+(Number(p.subtotal)||0),0),acep:avg(x.P.map(p=>mi(p.creado_en,p.negocio_aceptado_en)).filter(okk)),prep:avg(x.P.map(p=>mi(p.negocio_aceptado_en,p.listo_para_recojo_en)).filter(okk)),anul:x.P.filter(p=>est(p)==='cancelado'&&p.cancelado_por==='negocio').length,est:es('negocio',x.id)}}).sort((a,z)=>z.venta-a.venta);
+      const mo=agr('motorizado_id').map(x=>{const e=x.P.filter(p=>est(p)==='entregado');return {n:mN(b,x.id),ent:e.length,acep:avg(x.P.map(p=>mi(p.asignado_en,p.aceptado_en)).filter(okk)),viaje:avg(e.map(p=>mi(p.en_camino_en,p.entregado_en)).filter(okk)),noE:x.P.filter(p=>p.no_entregado).length,est:es('motorizado',x.id)}}).sort((a,z)=>z.ent-a.ent);
+      const pos=(i)=>`<span style="flex:0 0 30px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;background:${i<3?'#C4410C':'#F6EFE9'};color:${i<3?'#FFFFFF':'#6B5E55'}">${i+1}</span>`;
+      h+=`<div class="cd"><div class="lbl">Negocios · por ventas</div>${ng.length?ng.map((x,i)=>`<div class="mv">${pos(i)}<span class="tx"><b>${E(x.n)}</b><span>${x.ped} pedidos · acepta en ${fm(x.acep)} · prepara en ${fm(x.prep)} · anuló ${x.anul} · ${fs(x.est)}</span></span><span class="am">${M(x.venta)}</span></div>`).join(''):'<div style="color:#6B5E55">Sin datos.</div>'}</div>`;
+      h+=`<div class="cd"><div class="lbl">Motorizados · por entregas</div>${mo.length?mo.map((x,i)=>`<div class="mv">${pos(i)}<span class="tx"><b>${E(x.n)}</b><span>acepta en ${fm(x.acep)} · viaje ${fm(x.viaje)} · no entregados ${x.noE} · ${fs(x.est)}</span></span><span class="am">${x.ent}</span></div>`).join(''):'<div style="color:#6B5E55">Sin datos.</div>'}</div>`;
+      return {body:h+U.note('«Acepta en» cuenta desde que llega el pedido (negocio) o desde que se le asigna (motorizado).')}},
+    async a(x){SF['ranking de negocios y motorizados'].d=+x.split(':')[1];recargar('ranking de negocios y motorizados')}};
+
+  /* --- Lista negra --- */
+  const d9=v=>dig(v).slice(-9);
+  SEC['lista negra']={g:'Clientes',t:'Lista negra',rf:1,
+    load:async()=>{const r=await D().from('clientes_bloqueados').select('*').order('creado_en',{ascending:false});if(r.error)throw r.error;return r.data||[]},
+    v(){const k='lista negra',c=datos(k,this.load),f=SF[k];f.tel=f.tel||'';f.mot=f.mot||'';
+      let h=U.note('Los números de esta lista no pueden hacer pedidos desde la tienda. Tú sí puedes crearles pedidos desde el panel.');
+      h+=`<div class="cd"><div class="fld"><label for="lnT">Número</label><input id="lnT" type="tel" inputmode="numeric" maxlength="12" placeholder="9 dígitos" value="${E(f.tel)}" data-in="sf:tel"></div><div class="fld"><label for="lnM">Motivo</label><input id="lnM" maxlength="120" placeholder="Por qué lo bloqueas" value="${E(f.mot)}" data-in="sf:mot"></div><button type="button" class="b o" data-sa="add">${IC.x}Bloquear número</button></div>`;
+      if(!c.data)return {body:h+cargando(c)};
+      h+=c.data.length?`<div class="cd"><div class="lbl">Números bloqueados</div>${c.data.map(x=>fila(E(x.telefono)+(x.nombre?' · '+E(x.nombre):''),E(x.motivo||'Sin motivo')+' · '+E(fecha(x.creado_en)),`<button type="button" class="b" style="height:38px;padding:0 12px" data-sa="del:${E(x.telefono)}">Quitar</button>`)).join('')}</div>`:vacio('No hay números bloqueados.');
+      return {body:h}},
+    async a(x){const k='lista negra',f=SF[k];
+      if(x==='add'){const t=d9(f.tel);if(t.length!==9){mal('Escribe un número de 9 dígitos.');return}const cl=(C2.cli&&C2.cli.data||[]).find(c=>d9(cliT(c))===t);
+        const q=await D().from('clientes_bloqueados').upsert({telefono:t,motivo:f.mot.trim()||null,nombre:cl?cliN(cl):null});if(q.error){mal(q.error.message);return}ok('Número bloqueado');f.tel='';f.mot='';recargar(k);return}
+      const t=x.split(':')[1];if(!(await conf('¿Quitar '+t+' de la lista negra?')))return;const q=await D().from('clientes_bloqueados').delete().eq('telefono',t);if(q.error){mal(q.error.message);return}recargar(k)}};
+
+  /* --- Registro de acciones --- */
+  SEC['registro de acciones']={g:'Clientes',t:'Registro de acciones',rf:1,
+    load:async()=>{const [a,c,pf]=await Promise.all([D().from('acciones_admin').select('*').order('creado_en',{ascending:false}).limit(300),D().from('pedidos_cambios').select('*').in('rol',['administrador','admin']).order('creado_en',{ascending:false}).limit(300),D().from('perfiles').select('id,nombre_completo').eq('rol','administrador')]);
+      const qn=id=>((pf.data||[]).find(p=>String(p.id)===String(id))||{}).nombre_completo||'Administrador';
+      const TB={movimientos_caja:'Caja',negocios:'Negocio',motorizados:'Motorizado',clientes_bloqueados:'Lista negra',ajustes:'Ajustes',productos_negocio:'Producto'},AC={insert:'creó',update:'editó',delete:'borró'};
+      return (a.data||[]).map(x=>({t:x.creado_en,u:qn(x.usuario_id),txt:(TB[x.tabla]||x.tabla)+' · '+(AC[x.accion]||x.accion),det:x.detalle||''})).concat((c.data||[]).map(x=>({t:x.creado_en,u:qn(x.usuario_id),txt:'Pedido '+ref(x.pedido_id)+' · '+x.campo,det:(x.antes||'—')+' → '+(x.despues||'—')}))).sort((p,q)=>T(q.t)-T(p.t))},
+    v(){const k='registro de acciones',c=datos(k,this.load),f=SF[k];f.q=f.q||'';
+      let h=U.note('Todo lo que hace cada administrador en pedidos, caja, negocios, motorizados, productos y lista negra.')+`<div class="fld"><label for="rgQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar</label><input id="rgQ" type="search" placeholder="Buscar pedido, negocio o administrador" value="${E(f.q)}" data-in="sf:q" data-vivo="rgL"></div>`;
+      if(!c.data)return {body:h+cargando(c)};
+      return {body:h+`<div id="rgL">${this.lista()}</div>`}},
+    lista(){const f=SF['registro de acciones'],c=C2['s:registro de acciones'];const q=(f.q||'').trim().toLowerCase();const L2=(c&&c.data||[]).filter(r=>!q||(r.txt+' '+r.det+' '+r.u).toLowerCase().includes(q));
+      return L2.length?`<div class="cd">${L2.slice(0,200).map(r=>fila(E(r.txt),E(r.u)+' · '+E(fecha(r.t))+(r.det?' · '+E(r.det.slice(0,180)):''))).join('')}</div>`:vacio('Sin acciones registradas todavía.')}};
+
+  /* --- Mensajes masivos --- */
+  const KENV='pidemas-admin-masivo-enviados';
+  SEC['mensajes masivos por whatsapp']={g:'Clientes',t:'Mensajes masivos',rf:1,
+    load:async()=>{const [r,bl,cl]=await Promise.all([D().from('pedidos').select('telefono_cliente,nombre_cliente,creado_en,estado').gte('creado_en',new Date(Date.now()-180*864e5).toISOString()).limit(8000),D().from('clientes_bloqueados').select('telefono'),D().from('clientes').select('*')]);
+      const ult=new Map(),cu=new Map();(r.data||[]).forEach(p=>{const t=d9(p.telefono_cliente);if(t.length!==9)return;const ts=T(p.creado_en);if(ts>(ult.get(t)||0))ult.set(t,ts);if(est(p)==='entregado')cu.set(t,(cu.get(t)||0)+1)});
+      const B=new Set((bl.data||[]).map(x=>x.telefono)),base=new Map();(cl.data||[]).filter(c=>c.activo!==false).forEach(c=>{const t=d9(cliT(c));if(t.length===9&&!B.has(t))base.set(t,{t,n:cliN(c)})});
+      (r.data||[]).forEach(p=>{const t=d9(p.telefono_cliente);if(t.length===9&&!B.has(t)&&!base.has(t))base.set(t,{t,n:p.nombre_cliente||''})});return {ult,cu,base:[...base.values()]}},
+    v(){const k='mensajes masivos por whatsapp',c=datos(k,this.load),f=SF[k];if(f.msg==null)f.msg='Hola {nombre} 👋, te escribimos de *Pidemás Delivery*. ';f.fl=f.fl||'todos';
+      let h=U.note('Escribe el mensaje, elige a quiénes y toca «Enviar» en cada cliente: se abre WhatsApp con el mensaje listo. {nombre} se cambia por el nombre del cliente.');
+      h+=`<div class="fld"><label for="mvT">Mensaje</label><textarea id="mvT" rows="4" maxlength="900" data-in="sf:msg" data-vivo="mvL" style="width:100%;min-height:110px;border-radius:14px;border:1.5px solid #F1E4DA;padding:12px 16px;font:500 16px PdInter,Inter,system-ui,sans-serif;color:#1F1A17;box-sizing:border-box;outline:none;resize:vertical">${E(f.msg)}</textarea></div>`;
+      h+=`<div class="chips" style="flex-wrap:wrap">${[['todos','Todos'],['recientes','Pidieron en 30 días'],['inactivos','Sin pedir 30+ días'],['fieles','5+ pedidos']].map(x=>`<button type="button" class="${f.fl===x[0]?'on':''}" data-sa="fl:${x[0]}">${x[1]}</button>`).join('')}</div>`;
+      if(!c.data)return {body:h+cargando(c)};
+      return {body:h+`<div id="mvL">${this.lista()}</div>`,foot:`<button type="button" class="b" style="height:48px" data-sa="reset">Empezar nueva campaña (borrar marcas de enviado)</button>`}},
+    lista(){const k='mensajes masivos por whatsapp',f=SF[k],c=C2['s:'+k];if(!c||!c.data)return '';const {ult,cu,base}=c.data,now=Date.now();let env=new Set();try{env=new Set(JSON.parse(localStorage.getItem(KENV)||'[]'))}catch(e){}
+      const L2=base.filter(x=>{const u=ult.get(x.t)||0;if(f.fl==='recientes')return u&&now-u<=30*864e5;if(f.fl==='inactivos')return !u||now-u>30*864e5;if(f.fl==='fieles')return (cu.get(x.t)||0)>=5;return true}).sort((a,z)=>(ult.get(z.t)||0)-(ult.get(a.t)||0));
+      return `<div class="lbl">${L2.length} cliente${L2.length===1?'':'s'} · enviados ${L2.filter(x=>env.has(x.t)).length}</div><div class="cd">${L2.slice(0,300).map(x=>{const txt=f.msg.replace(/\{nombre\}/g,String(x.n||'').split(' ')[0]||'').replace(/\s+,/g,',');const sent=env.has(x.t);
+        return fila(E(x.n||'Cliente'),E(x.t)+(ult.get(x.t)?' · último pedido '+E(fecha(ult.get(x.t))):''),`<a class="b${sent?'':' g'}" style="height:38px;padding:0 12px" target="_blank" rel="noopener" data-env="${x.t}" href="https://wa.me/51${x.t}?text=${encodeURIComponent(txt)}">${sent?IC.check+'Enviado':'Enviar'}</a>`)}).join('')||'<div style="color:#6B5E55">No hay clientes en este grupo.</div>'}</div>`},
+    async a(x){const f=SF['mensajes masivos por whatsapp'];if(x==='reset'){try{localStorage.setItem(KENV,'[]')}catch(_){}return}f.fl=x.split(':')[1]}};
+
   /* =============== PÁGINAS DE SIEMPRE (marco) =============== */
   const DLG='#pdDlg,#pdpeVelo,#pfSheet,#pdYNOv,#pdmmVelo,#pdsmVelo,pd-ventana';
   function paginaVieja(){
@@ -19146,7 +19224,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(pv){H.classList.add('pdaPag');host.classList.add('solo');pintarTop(pv)}
     else{H.classList.remove('pdaPag');host.classList.remove('solo');if(topH)topH.style.display='none';keyTop=''}
     if(tocando)return;
-    const act=root.activeElement;if(act&&act.tagName==='INPUT')return;
+    const act=root.activeElement;if(act&&(act.tagName==='INPUT'||act.tagName==='TEXTAREA'||act.tagName==='SELECT'))return;
     const v=pv?{head:'',body:'',foot:''}:vista();const pag=pv?'vieja':(sub||tab);
     const k=pag+'|'+v.head+v.body+(v.foot||'')+nav();
     if(k===key)return;key=k;
@@ -19181,7 +19259,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(k==='slm'){SL.monto=el.value.replace(/[^\d.,]/g,'');vivo();return}
     if(k==='sln'){SL.nota=el.value;return}
     if(k==='clq'){CL.q=el.value;CL.lim=60;const b=root.getElementById('clL');if(b)b.innerHTML=clFilas();return}
-    if(k.startsWith('sf:')){SF[secK][k.slice(3)]=el.value;return}
+    if(k.startsWith('sf:')){SF[secK][k.slice(3)]=el.value;const vv=el.dataset.vivo;if(vv&&SEC[secK].lista){clearTimeout(entrada.t);entrada.t=setTimeout(()=>{const b=root.getElementById(vv);if(b)b.innerHTML=SEC[secK].lista()},250)}return}
     if(k.startsWith('cf:')){CL.f[k.slice(3)]=el.value;return}
     if(k==='mq'){mq=el.value;const g=root.getElementById('mG');if(g)g.innerHTML=grupos()}}
   async function clic(e){
@@ -19193,6 +19271,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const sm=e.target.closest('[data-sm]');if(sm){const c=C2.sueldo;const m=c&&c.data&&c.data.motos.find(x=>String(x.id)===sm.dataset.sm);if(m){Object.assign(SL,{moto:m,per:'',monto:'',nota:'',msg:'',ok:''});sub='sueldomoto';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}return}
     const sp=e.target.closest('[data-sp]');if(sp){SL.per=sp.dataset.sp;const r=calcS(SL.moto);const p=r&&(r.periods||[]).find(x=>x.key===SL.per);if(p)SL.monto=Math.max(0,p.balance).toFixed(2);key='';pintar();return}
     const cli=e.target.closest('[data-cli]');if(cli){const x=(C2.cli&&C2.cli.data||[]).find(y=>String(y.id)===cli.dataset.cli);if(x){CL.sel=x;sub='cliente';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}return}
+    const en=e.target.closest('[data-env]');if(en){let s2=[];try{s2=JSON.parse(localStorage.getItem('pidemas-admin-masivo-enviados')||'[]')}catch(_){}if(!s2.includes(en.dataset.env)){s2.push(en.dataset.env);try{localStorage.setItem('pidemas-admin-masivo-enviados',JSON.stringify(s2))}catch(_){}}setTimeout(()=>{const b=root.getElementById('mvL');if(b&&SEC[secK]&&SEC[secK].lista)b.innerHTML=SEC[secK].lista()},300);return}
     const sa=e.target.closest('[data-sa]');if(sa&&SEC[secK]){e.preventDefault();if(sa.disabled)return;sa.disabled=true;try{await SEC[secK].a(sa.dataset.sa)}catch(err){mal(String(err&&err.message||err))}finally{sa.disabled=false;key='';pintar()}return}
     const cp=e.target.closest('[data-cp]');if(cp){CJ.pane=cp.dataset.cp;CJ.msg='';CJ.ok='';key='';pintar();return}
     const mot=e.target.closest('[data-mot]');if(mot){CJ.darMot=mot.dataset.mot;key='';pintar();return}
