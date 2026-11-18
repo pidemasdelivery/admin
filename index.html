@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611181712">
+<meta name="pd-version" content="202611181725">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -19259,6 +19259,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
 
   /* =============== EDITAR PEDIDO =============== */
   const PE={f:null};
+  const conTiempo=(p,ms)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error('No hubo respuesta del servidor. Revisa tu internet y vuelve a intentar.')),ms||20000))]);
   /* --- servicios: mismos campos y mismo orden que el formulario con el que se crean --- */
   const segs=t=>String(t||'').split(/\s*\|\s*/).map(x=>x.trim()).filter(Boolean);
   const tagDe=(obs,...ls)=>{for(const x of segs(obs))for(const l of ls){const m=x.match(new RegExp('^'+l.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*:\\s*(.*)$','i'));if(m)return m[1].trim()}return ''};
@@ -19403,21 +19404,20 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function peVivo(){const f=PE.f;if(!f)return;const a=root.getElementById('peSu'),b=root.getElementById('peTo'),g=root.querySelector('[data-a="pe:guardar"]');if(a)a.textContent=M(peSub(f));if(b)b.textContent=M(peTot(f));if(g)g.textContent='Guardar cambios · '+M(peTot(f))}
   async function pedidoGuardar(){
     const f=PE.f;f.msg='';const o=L().find(x=>String(x.id)===String(f.id));if(!o){f.msg='No se encontró el pedido.';return}
-    if(f.tipo){const conf=window.pdConfirmar?await pdConfirmar('¿Guardar los cambios del pedido '+ref(f.id)+'?'):confirm('¿Guardar?');if(!conf)return;
-      try{if(!(await svcGuardar(f,o)))return;try{if(typeof notifyMotoOrderChange==='function')await notifyMotoOrderChange(o,'Pedido actualizado por Pidemás',`El pedido ${ref(o.id)} fue corregido. Revisa los datos antes de seguir.`)}catch(_){}
-        try{await window.loadOrders()}catch(_){}(window.pdExito||window.pdAviso||alert)('Pedido actualizado');PE.f=null;volverSub()}catch(err){f.msg='No se pudo guardar: '+(err?.message||err)}return}
+    if(f.tipo){
+      try{if(!(await conTiempo(svcGuardar(f,o))))return;try{if(typeof notifyMotoOrderChange==='function')notifyMotoOrderChange(o,'Pedido actualizado por Pidemás',`El pedido ${ref(o.id)} fue corregido. Revisa los datos antes de seguir.`).catch(()=>{})}catch(_){}
+        try{window.loadOrders().catch(()=>{})}catch(_){}(window.pdExito||window.pdAviso||alert)('Pedido actualizado');PE.f=null;volverSub()}catch(err){f.msg='No se pudo guardar: '+(err?.message||err)}return}
     if(!f.nombre.trim()||!f.dir.trim()){f.msg='Completa el nombre y la dirección de entrega.';return}
     if(f.items&&f.items.some(x=>!(n2(x.q)>0)||n2(x.p)<0)){f.msg='Revisa las cantidades y precios.';return}
     const subT=peSub(f),del=n2(f.del),tot=peTot(f);if(tot<0){f.msg='El total no puede ser negativo.';return}
-    const conf=window.pdConfirmar?await pdConfirmar('¿Guardar los cambios del pedido '+ref(f.id)+'?\nTotal: '+M(tot)):confirm('¿Guardar?');if(!conf)return;
     const patch={nombre_cliente:f.nombre.trim(),telefono_cliente:f.tel.trim(),direccion_entrega:f.dir.trim(),referencia_entrega:f.ref.trim(),subtotal:subT,costo_delivery:del,total:tot,metodo_pago:f.metodo,observaciones:f.obs.trim()};
     if(f.sv){patch.nombre_remitente=f.rnom.trim();patch.telefono_remitente=f.rtel.trim();patch.direccion_recojo=f.rdir.trim()}
     try{
       if(f.items){for(const x of f.items){const q=Math.round(n2(x.q)),p=Math.round(n2(x.p)*100)/100;const r=await D().from('detalle_pedidos').update({cantidad:q,precio_unitario:p,subtotal:Math.round(q*p*100)/100}).eq('id',x.id);if(r.error)throw r.error}
         for(const id of f.quitar){const r=await D().from('detalle_pedidos').delete().eq('id',id);if(r.error)throw r.error}}
-      const r=await D().from('pedidos').update(patch).eq('id',o.id).select('id').maybeSingle();if(r.error)throw r.error;if(!r.data)throw new Error('Supabase no guardó el cambio. Revisa los permisos.');
-      try{if(typeof notifyMotoOrderChange==='function')await notifyMotoOrderChange(o,'Pedido actualizado por Pidemás',`El pedido ${ref(o.id)} fue corregido. Revisa los datos antes de seguir.`)}catch(_){}
-      Object.assign(o,patch);try{await window.loadOrders()}catch(_){}
+      const r=await conTiempo(D().from('pedidos').update(patch).eq('id',o.id).select('id').maybeSingle());if(r.error)throw r.error;if(!r.data)throw new Error('Supabase no guardó el cambio. Revisa los permisos.');
+      try{if(typeof notifyMotoOrderChange==='function')notifyMotoOrderChange(o,'Pedido actualizado por Pidemás',`El pedido ${ref(o.id)} fue corregido. Revisa los datos antes de seguir.`).catch(()=>{})}catch(_){}
+      Object.assign(o,patch);try{window.loadOrders().catch(()=>{})}catch(_){}
       (window.pdExito||window.pdAviso||alert)('Pedido actualizado');PE.f=null;volverSub();
     }catch(err){f.msg='No se pudo guardar: '+(err?.message||err)}
   }
@@ -20051,7 +20051,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       case 'cl:editar':{const x=CL.sel;CL.f={id:x.id,nombre:cliN(x),tel:cliT(x),dni:x.documento||x.dni||'',dir:x.direccion||'',ubi:cliU(x),msg:''};sub='clienteform';key='';pintar();break}
       case 'cl:guardar':{if(a.disabled)break;a.disabled=true;try{await cliGuardar()}finally{key='';pintar()}break}
       case 'cl:borrar':await cliBorrar();break;
-      case 'pe:guardar':{if(a.disabled)break;a.disabled=true;try{await pedidoGuardar()}finally{if(PE.f){key='';pintar()}}break}
+      case 'pe:guardar':{if(a.disabled)break;a.disabled=true;a.textContent='Guardando…';try{await pedidoGuardar()}catch(err){if(PE.f)PE.f.msg='No se pudo guardar: '+(err?.message||err)}finally{if(PE.f){key='';pintar();if(PE.f.msg){(window.pdAviso||alert)(PE.f.msg);const er=root.querySelector('.err');if(er)er.scrollIntoView({block:'center'})}}}break}
       case 'cl:mas':CL.lim+=60;{const b=root.getElementById('clL');if(b)b.innerHTML=clFilas()}break;
       case 'sec:rf':recargar(secK);key='';pintar();break;
       case 'cj:mas':CJ.lim+=40;key='';pintar();break;
