@@ -18311,7 +18311,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
     items:(titulo,det,precios)=>{const L=(det||[]).map(d=>`<div class="li"><span>${E(d.cantidad||1)} × ${E(d.nombre_producto||'Producto')}</span>${precios?`<b>${util.money(d.subtotal!=null?d.subtotal:(Number(d.precio_unitario)||0)*(Number(d.cantidad)||1))}</b>`:''}</div>`).join('');return L?`<div class="box"><div class="k">${E(titulo)}</div>${L}</div>`:''},
     code:(k,n,s)=>`<div class="code"><div class="k">${E(k)}</div><div class="n">${E(n)}</div>${s?`<div class="s">${E(s)}</div>`:''}</div>`
   };
-  window.PdPasos={open,close,render:()=>{if(cur){cur.key=null;render()}},isOpen:()=>!!cur,util};
+  window.PdPasos={open,close,render:()=>{if(cur){cur.key=null;render()}},isOpen:()=>!!cur,util,css:CSS};
 })();
 
 </script>
