@@ -19192,6 +19192,71 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       let n=0;for(const s of L2){const b={usuario_id:s.m.usuario_id,titulo:'Activa tu GPS',mensaje:'Administración te pide activar el GPS de tu teléfono y mantener este panel abierto para poder ubicarte.',leida:false};let r=await D().from('notificaciones').insert(Object.assign({tipo:'aviso_gps'},b));if(r.error)r=await D().from('notificaciones').insert(b);if(!r.error)n++}
       ok(n+' aviso'+(n===1?'':'s')+' enviado'+(n===1?'':'s'))}};
 
+  /* --- configuración compartida (QR Yape y WhatsApp de administración): archivo config/yape.json --- */
+  const stR=()=>D().storage.from('restaurantes');
+  async function leerCfg(){try{const u=stR().getPublicUrl('config/yape.json').data.publicUrl+'?t='+Date.now();const r=await fetch(u,{cache:'no-store'});if(r.ok)return await r.json();if(r.status===400||r.status===404)return {};return null}catch(e){return null}}
+  async function guardarCfg(c){const r=await stR().upload('config/yape.json',new Blob([JSON.stringify(c)],{type:'application/json'}),{upsert:true,contentType:'application/json',cacheControl:'0'});if(r.error)throw r.error}
+
+  /* --- QR Yape --- */
+  SEC['qr yape']={g:'Más',t:'QR Yape',
+    load:async()=>Object.assign({url:'',numero:'986233533',titular:'Grupo Pidemás EIRL',whatsapp_admin:'986233533'},(await leerCfg())||{}),
+    v(){const k='qr yape',c=datos(k,this.load),f=SF[k];if(!c.data)return {body:cargando(c)};if(f.num==null){f.num=c.data.numero||'';f.tit=c.data.titular||''}
+      const u=f.prev||c.data.url;
+      return {body:U.note('Es el QR que el motorizado le muestra al cliente para que pague por Yape a Pidemás.')+`<div class="qrbox" style="display:flex;align-items:center;justify-content:center;min-height:220px;border-radius:18px;background:#FFFFFF;border:1px dashed #E3CFC2;color:#6B5E55;font-size:15px;text-align:center;padding:12px">${u?`<img src="${E(u)}" alt="QR de Yape" style="max-width:220px;max-height:220px">`:'Usando el QR actual del sistema<br>(Grupo Pidemás EIRL)'}</div>
+        <label class="b" style="cursor:pointer">${IC.plus}${u?'Cambiar imagen del QR':'Subir imagen del QR'}<input type="file" accept="image/png,image/jpeg,image/webp" data-in="qrfile" style="display:none"></label>
+        <div class="cd"><div class="fld"><label for="qN">Número de Yape</label><input id="qN" type="tel" inputmode="numeric" maxlength="15" value="${E(f.num)}" data-in="sf:num"></div><div class="fld"><label for="qT">Titular</label><input id="qT" maxlength="60" value="${E(f.tit)}" data-in="sf:tit"></div></div>${f.msg?`<div class="err">${E(f.msg)}</div>`:''}`,
+        foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="guardar">Guardar</button>`}},
+    async a(){const k='qr yape',f=SF[k],c=C2['s:'+k];f.msg='';const num=String(f.num||'').replace(/\D/g,''),tit=String(f.tit||'').trim();
+      if(num&&num.length!==9){f.msg='El número de Yape debe tener 9 dígitos.';return}
+      const cur=(await leerCfg())||c.data;let url=cur.url||c.data.url;
+      if(f.file){const ext=(f.file.type.split('/')[1]||'jpg').replace('jpeg','jpg'),path='config/yape-qr-'+Date.now()+'.'+ext;const up=await stR().upload(path,f.file,{upsert:true,contentType:f.file.type,cacheControl:'31536000'});if(up.error){f.msg='No se pudo subir la imagen: '+up.error.message;return}url=stR().getPublicUrl(path).data.publicUrl}
+      const old=c.data.url;const d=Object.assign({},cur,{url,numero:num,titular:tit,actualizado_en:new Date().toISOString()});
+      try{await guardarCfg(d)}catch(e){f.msg='No se pudo guardar: '+(e.message||e);return}
+      if(f.file&&old&&old!==url){const p=old.split('/restaurantes/')[1];if(p)stR().remove([decodeURIComponent(p.split('?')[0])]).catch(()=>{})}
+      c.data=d;f.file=null;f.prev='';ok('Listo: los motorizados ya ven este QR')}};
+
+  /* --- Horario de Pidemás --- */
+  const ORD=['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
+  const h12=t=>{const m=String(t||'').match(/^(\d{1,2}):(\d{2})/);if(!m)return t||'';const h=+m[1];return (h%12||12)+(m[2]!=='00'?':'+m[2]:'')+' '+(h>=12?'p. m.':'a. m.')};
+  SEC['horario']={g:'Más',t:'Horario de Pidemás',
+    load:async()=>{try{return await pdHorario.cargar()}catch(e){return pdHorario.config}},
+    v(){const k='horario',c=datos(k,this.load),f=SF[k];if(!c.data)return {body:cargando(c)};if(!f.C)f.C=JSON.parse(JSON.stringify(c.data));const C=f.C,NOM=(window.pdHorario&&pdHorario.NOM)||{};
+      let h=U.note('El horario en que la tienda recibe pedidos. Fuera de él, los clientes ven la tienda cerrada.');
+      h+=`<div class="cd">${ORD.map(d=>{const x=C.dias[d]||{};const on=x.activo!==false;return `<div class="swr" style="display:flex;align-items:center;gap:12px"><span style="flex:1 1 0%"><b style="display:block;font-size:15px">${E(NOM[d]||d)}</b><span style="font-size:13px;color:#6B5E55">${on?'Pedidos de '+h12(x.abre)+' a '+h12(x.ultimo):'No atendemos'}</span></span><button type="button" role="switch" aria-checked="${on}" aria-label="Atiende el ${E(NOM[d]||d)}" data-sa="dia:${d}" style="position:relative;flex:0 0 52px;width:52px;height:32px;border-radius:999px;border:0;background:${on?'#C4410C':'#EADFD6'};cursor:pointer"><span style="position:absolute;top:3px;left:${on?23:3}px;width:26px;height:26px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(31,26,23,.25)"></span></button></div>${on?`<div class="g2"><div class="fld"><label>Abre</label><input type="time" value="${E(x.abre)}" data-in="hr:${d}:abre"></div><div class="fld"><label>Último pedido</label><input type="time" value="${E(x.ultimo)}" data-in="hr:${d}:ultimo"></div></div>`:''}`}).join('<div style="height:1px;background:#F1E4DA"></div>')}</div>`;
+      h+=`<button type="button" class="b" data-sa="copiar">Copiar el lunes a los demás días</button>`;
+      h+=`<div class="cd"><div class="lbl">Días cerrados especiales</div><span style="font-size:13px;color:#6B5E55">Feriados u otros días en que Pidemás no atiende.</span>${(C.cerrados||[]).slice().sort().map(x=>`<div class="mv"><span class="tx"><b>${E(new Date(x+'T12:00:00').toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long',year:'numeric'}))}</b></span><button type="button" class="ib" style="width:36px;height:36px;flex:0 0 36px;color:#B42318" data-sa="fdel:${E(x)}" aria-label="Quitar">${IC.x}</button></div>`).join('')}<div class="g2"><div class="fld"><input type="date" value="${E(f.fecha||'')}" data-in="sf:fecha" aria-label="Fecha"></div><button type="button" class="b" style="height:54px" data-sa="fadd">${IC.plus}Agregar</button></div></div>`;
+      h+=`<div class="cd"><div class="lbl">Aviso de último pedido</div><div class="seg" style="grid-template-columns:repeat(4,minmax(0,1fr))">${[15,30,45,60].map(v=>`<button type="button" class="${Number(C.aviso_min)===v?'on':''}" data-sa="av:${v}">${v} min</button>`).join('')}</div><span style="font-size:13px;color:#6B5E55">La tienda muestra «Último pedido» este tiempo antes del cierre.</span></div>`;
+      if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
+      return {body:h,foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="guardar">Guardar horario</button>`}},
+    async a(x){const f=SF['horario'],C=f.C,p=x.split(':');f.msg='';
+      if(p[0]==='dia'){const d=C.dias[p[1]];d.activo=d.activo===false;return}
+      if(p[0]==='copiar'){const l=C.dias.lunes;ORD.forEach(k=>{if(k!=='lunes'&&C.dias[k].activo!==false){C.dias[k].abre=l.abre;C.dias[k].ultimo=l.ultimo}});return}
+      if(p[0]==='fadd'){if(!f.fecha)return;C.cerrados=C.cerrados||[];if(!C.cerrados.includes(f.fecha))C.cerrados.push(f.fecha);f.fecha='';return}
+      if(p[0]==='fdel'){C.cerrados=(C.cerrados||[]).filter(y=>y!==p.slice(1).join(':'));return}
+      if(p[0]==='av'){C.aviso_min=+p[1];return}
+      if(p[0]==='guardar'){const m=ORD.find(k=>{const d=C.dias[k];return d.activo!==false&&!(d.abre&&d.ultimo&&d.ultimo>d.abre)});if(m){f.msg='Revisa el '+((pdHorario.NOM||{})[m]||m)+': el último pedido debe ser después de la apertura.';return}
+        try{await pdHorario.guardar(C);ok('Horario guardado. La tienda ya lo usa.');f.C=null;recargar('horario')}catch(e){f.msg='No se pudo guardar: '+(e.message||e)}}}};
+
+  /* --- Mi perfil --- */
+  SEC['__perfil']={g:'Mi cuenta',t:'Mi perfil',
+    load:async()=>{const {data:{session}}=await D().auth.getSession();const uid=session&&session.user&&session.user.id;let p={};if(uid){const r=await D().from('perfiles').select('*').eq('id',uid).maybeSingle();p=r.data||{}}const cfg=await leerCfg();return {uid,email:session&&session.user&&session.user.email,p,wa:(cfg&&cfg.whatsapp_admin)||'986233533'}},
+    v(){const k='__perfil',c=datos(k,this.load),f=SF[k];if(!c.data)return {body:cargando(c)};const d=c.data;if(f.nom==null){f.nom=d.p.nombre_completo||d.p.nombre||'';f.wa=d.wa;f.p1='';f.p2=''}
+      const foto=f.prev||d.p.foto_url||window.__pdAdminFoto||'';
+      let h=`<div class="ph"><span class="ava"${foto?` style="background-image:url('${E(foto)}')"`:''}>${foto?'':E(String(f.nom||'A').charAt(0).toUpperCase())}</span><div style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:20px">${E(f.nom||'Administrador')}</b><span style="font-size:13px;color:#6B5E55">Administrador · ${E(d.email||'')}</span></div><label class="b" style="height:44px;cursor:pointer">${IC.plus}Foto<input type="file" accept="image/jpeg,image/png,image/webp" data-in="pfoto" style="display:none"></label></div>`;
+      h+=`<div class="cd"><div class="lbl">Tus datos</div><div class="fld"><label for="pfN">Tu nombre</label><input id="pfN" maxlength="40" value="${E(f.nom)}" data-in="sf:nom"></div><div class="fld"><label for="pfW">WhatsApp de administración</label><input id="pfW" type="tel" inputmode="numeric" maxlength="15" value="${E(f.wa)}" data-in="sf:wa"></div><span style="font-size:13px;color:#6B5E55">A este número los motorizados envían la guía y clave de las encomiendas y los avisos de problemas.</span><button type="button" class="b o" data-sa="guardar">Guardar cambios</button></div>`;
+      h+=`<div class="cd"><div class="lbl">Seguridad</div><div class="fld"><label for="pfP1">Nueva contraseña</label><input id="pfP1" type="password" autocomplete="new-password" value="${E(f.p1)}" data-in="sf:p1" placeholder="Mínimo 6 caracteres"></div><div class="fld"><label for="pfP2">Repite la contraseña</label><input id="pfP2" type="password" autocomplete="new-password" value="${E(f.p2)}" data-in="sf:p2"></div><button type="button" class="b" data-sa="clave">${IC.lock||''}Cambiar contraseña</button></div>`;
+      if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
+      h+=`<button type="button" class="b" style="color:#B42318;border-color:#F4C7C3" data-a="salir">${IC.logout}Cerrar sesión</button>`;
+      return {body:h}},
+    async a(x){const k='__perfil',f=SF[k],d=C2['s:'+k].data;f.msg='';
+      if(x==='guardar'){const n=String(f.nom||'').trim();if(!n){f.msg='Escribe tu nombre.';return}const w=String(f.wa||'').replace(/\D/g,'');if(w&&w.length!==9&&w.length!==11){f.msg='El WhatsApp de administración debe tener 9 dígitos.';return}
+        if(d.uid){const q=await D().from('perfiles').update({nombre_completo:n}).eq('id',d.uid).select('id').maybeSingle();if(q.error){f.msg='No se pudo guardar: '+q.error.message;return}}
+        try{localStorage.setItem('pd_admin_name',n)}catch(_){}window.__pdAdminNombre=n;
+        const cfg=await leerCfg();if(cfg&&(cfg.whatsapp_admin||'')!==w){cfg.whatsapp_admin=w;cfg.actualizado_en=new Date().toISOString();try{await guardarCfg(cfg)}catch(e){f.msg='Se guardó tu nombre, pero no el WhatsApp: '+(e.message||e);return}}
+        ok('Cambios guardados');recargar(k);f.nom=null;return}
+      if(x==='clave'){if(String(f.p1).length<6){f.msg='La contraseña debe tener al menos 6 caracteres.';return}if(f.p1!==f.p2){f.msg='Las dos contraseñas no coinciden.';return}
+        const q=await D().auth.updateUser({password:f.p1});if(q.error){f.msg='No se pudo cambiar: '+q.error.message;return}f.p1='';f.p2='';ok('Contraseña actualizada')}}};
+
   /* =============== PÁGINAS DE SIEMPRE (marco) =============== */
   const DLG='#pdDlg,#pdpeVelo,#pfSheet,#pdYNOv,#pdmmVelo,#pdsmVelo,pd-ventana';
   function paginaVieja(){
@@ -19305,6 +19370,9 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(k==='sln'){SL.nota=el.value;return}
     if(k==='clq'){CL.q=el.value;CL.lim=60;const b=root.getElementById('clL');if(b)b.innerHTML=clFilas();return}
     if(k.startsWith('sf:')){SF[secK][k.slice(3)]=el.value;const vv=el.dataset.vivo;if(vv&&SEC[secK].lista){clearTimeout(entrada.t);entrada.t=setTimeout(()=>{const b=root.getElementById(vv);if(b)b.innerHTML=SEC[secK].lista()},250)}return}
+    if(k==='qrfile'){const fl=el.files&&el.files[0];el.value='';if(!fl)return;if(!/^image\//.test(fl.type)||fl.size>5*1024*1024){mal('Elige una imagen (PNG o JPG) de menos de 5 MB.');return}SF['qr yape'].file=fl;SF['qr yape'].prev=URL.createObjectURL(fl);key='';pintar();return}
+    if(k==='pfoto'){const fl=el.files&&el.files[0];el.value='';const i=$('pdhFotoFile');if(!fl||!i)return;try{const dt=new DataTransfer();dt.items.add(fl);i.files=dt.files;i.dispatchEvent(new Event('change',{bubbles:true}))}catch(_){}SF['__perfil'].prev=URL.createObjectURL(fl);key='';pintar();return}
+    if(k.startsWith('hr:')){const [,d,c]=k.split(':');SF['horario'].C.dias[d][c]=el.value;return}
     if(k.startsWith('cf:')){CL.f[k.slice(3)]=el.value;return}
     if(k==='mq'){mq=el.value;const g=root.getElementById('mG');if(g)g.innerHTML=grupos()}}
   async function clic(e){
@@ -19347,7 +19415,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       case 'sl:pagar':{if(a.disabled)break;a.disabled=true;try{await sueldoPagar()}finally{key='';pintar()}break}
       case 'cj:mas':CJ.lim+=40;key='';pintar();break;
       case 'cj:recibir':case 'cj:dif':case 'cj:dar':{if(a.disabled)break;a.disabled=true;try{await cajaAccion(a.dataset.a,a)}finally{key='';pintar()}break}
-      case 'perfil':{ultimo='Mi perfil';marca='menu';kick='Mi cuenta';const b=document.querySelector('#pdMenu .m3Top');if(b)b.click();setTimeout(()=>{key='';pintar()},120);break}
+      case 'perfil':{abrirSec('__perfil');break;ultimo='Mi perfil';marca='menu';kick='Mi cuenta';const b=document.querySelector('#pdMenu .m3Top');if(b)b.click();setTimeout(()=>{key='';pintar()},120);break}
       case 'salir':{const b=document.querySelector('#pdMenu .m3Out');if(b)b.click();break}
     }
   }
