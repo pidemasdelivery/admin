@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611181950">
+<meta name="pd-version" content="202611181955">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -19340,6 +19340,21 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     document.body.appendChild(w);setTimeout(()=>{const x=w.querySelector('[data-r="1"]');x&&x.focus()},30);
   })}
   window.pdAdmPregunta=pregunta;
+
+  /* Si el pedido ya fue cobrado y se corrige el método de pago, se corrige también la caja del motorizado */
+  async function cajaPorCambioPago(o,antes,despues){
+    try{
+      const a=String(antes||'').toLowerCase(),d=String(despues||'').toLowerCase();if(a===d||!o.motorizado_id)return;
+      if(!(o.pago_confirmado===true&&Number(o.monto_recibido)>0))return;
+      const tot=Math.round((Number(o.total)||0)*100)/100;if(!(tot>0))return;
+      const {data:mv}=await D().from('movimientos_caja').select('id,tipo,monto,descripcion').eq('pedido_id',o.id).eq('motorizado_id',o.motorizado_id);
+      const L=mv||[],cobro=L.filter(x=>x.tipo==='ingreso'&&!/^INGRESO MANUAL/i.test(String(x.descripcion||''))).reduce((a,x)=>a+Number(x.monto||0),0),corr=L.filter(x=>/Corrección de pago/i.test(String(x.descripcion||''))).reduce((a,x)=>a+(x.tipo==='ingreso'?1:-1)*Number(x.monto||0),0);
+      const enCaja=Math.round((cobro+(corr<0?corr:0))*100)/100;
+      if(d==='efectivo'&&enCaja<0.005)await D().from('movimientos_caja').insert({motorizado_id:o.motorizado_id,pedido_id:o.id,tipo:'ingreso',monto:tot,descripcion:'Cobro de pedido · Corrección de pago: Yape → Efectivo (administración) · total S/ '+tot.toFixed(2)});
+      else if(d!=='efectivo'&&enCaja>0.004)await D().from('movimientos_caja').insert({motorizado_id:o.motorizado_id,pedido_id:o.id,tipo:'retiro',monto:enCaja,descripcion:'Corrección de pago: Efectivo → Yape (administración) · ese cobro no fue en efectivo'});
+      try{C2.caja&&(C2.caja.t=0)}catch(_){}
+    }catch(e){console.warn('[caja] corrección de pago',e)}
+  }
   const PE={f:null};
   const conTiempo=(p,ms)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error('No hubo respuesta del servidor. Revisa tu internet y vuelve a intentar.')),ms||20000))]);
   /* --- servicios: mismos campos y mismo orden que el formulario con el que se crean --- */
@@ -19443,7 +19458,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     let r=await D().from('pedidos').update(p).eq('id',o.id).select('id').maybeSingle();
     if(r.error&&/column|schema cache|PGRST204|42703/i.test(String(r.error.message)+String(r.error.code))){['referencia_recojo','ubicacion_recojo','ubicacion_entrega','que_se_lleva','quien_paga','tipo_comprobante','documento_comprobante','tipo_encomienda'].forEach(k=>delete p[k]);r=await D().from('pedidos').update(p).eq('id',o.id).select('id').maybeSingle()}
     if(r.error)throw r.error;if(!r.data)throw new Error('Supabase no guardó el cambio. Revisa los permisos.');
-    Object.assign(o,p);return true;
+    const metAntes=o.metodo_pago;Object.assign(o,p);await cajaPorCambioPago(o,metAntes,p.metodo_pago);return true;
   }
 
   const n2=v=>{const x=Number(String(v??'').replace(',','.'));return Number.isFinite(x)?x:0};
@@ -19499,7 +19514,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         for(const id of f.quitar){const r=await D().from('detalle_pedidos').delete().eq('id',id);if(r.error)throw r.error}}
       const r=await conTiempo(D().from('pedidos').update(patch).eq('id',o.id).select('id').maybeSingle());if(r.error)throw r.error;if(!r.data)throw new Error('Supabase no guardó el cambio. Revisa los permisos.');
       try{if(typeof notifyMotoOrderChange==='function')notifyMotoOrderChange(o,'Pedido actualizado por Pidemás',`El pedido ${ref(o.id)} fue corregido. Revisa los datos antes de seguir.`).catch(()=>{})}catch(_){}
-      Object.assign(o,patch);try{window.loadOrders().catch(()=>{})}catch(_){}
+      {const metAntes=o.metodo_pago;Object.assign(o,patch);await cajaPorCambioPago(o,metAntes,patch.metodo_pago)}try{window.loadOrders().catch(()=>{})}catch(_){}
       (window.pdExito||window.pdAviso||alert)('Pedido actualizado');PE.f=null;volverSub();
     }catch(err){f.msg='No se pudo guardar: '+(err?.message||err)}
   }
