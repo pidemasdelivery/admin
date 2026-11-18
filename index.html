@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611181740">
+<meta name="pd-version" content="202611181800">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -18137,7 +18137,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
     if(cur)close(true);
     const host=document.createElement('pd-pasos-pedido');
     host.setAttribute('data-pd-aislado','1');
-    const root=host.attachShadow({mode:'open'});
+    const root=host.attachShadow({mode:'open'});try{flechas(root)}catch(_){}
     document.body.appendChild(host);
     /* en el motorizado el menú de abajo queda visible también en el detalle */
     try{const nh=(()=>{const A=window.pdAppMoto||window.pdAppNeg||window.pdAppAdm;return A&&A.navH?A.navH():0})();if(nh>0)host.style.bottom=nh+'px'}catch(_){}
@@ -18177,7 +18177,30 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
     items:(titulo,det,precios)=>{const L=(det||[]).map(d=>`<div class="li"><span>${E(d.cantidad||1)} × ${E(d.nombre_producto||'Producto')}</span>${precios?`<b>${util.money(d.subtotal!=null?d.subtotal:(Number(d.precio_unitario)||0)*(Number(d.cantidad)||1))}</b>`:''}</div>`).join('');return L?`<div class="box"><div class="k">${E(titulo)}</div>${L}</div>`:''},
     code:(k,n,s)=>`<div class="code"><div class="k">${E(k)}</div><div class="n">${E(n)}</div>${s?`<div class="s">${E(s)}</div>`:''}</div>`
   };
-  window.PdPasos={open,close,render:()=>{if(cur){cur.key=null;render()}},isOpen:()=>!!cur,util,css:CSS};
+
+  /* Filas que se deslizan de lado (chips, categorías): sin barra de scroll y con una flecha que avanza */
+  const FL_CSS='.pdfW{position:relative}.pdfW>.pdfS{scrollbar-width:none;padding-right:52px!important}.pdfW>.pdfS::-webkit-scrollbar{display:none}.pdfA{position:absolute;right:0;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;border:1px solid #F1E4DA;background:#FFFFFF;color:#C4410C;display:flex;align-items:center;justify-content:center;box-shadow:-14px 0 14px rgba(255,249,245,.95),0 2px 6px rgba(31,26,23,.12);cursor:pointer;z-index:2;padding:0;margin:0}.pdfA svg{width:20px;height:20px;transition:transform .2s}.pdfA.fin svg{transform:rotate(180deg)}.pdfA[hidden]{display:none!important}';
+  const FL_SEL='.chips,.cats,.chs,.dias,.qChips,.tCats';
+  function flechas(root){
+    if(!root||root.__pdf)return;root.__pdf=1;
+    const fin=el=>el.scrollLeft+el.clientWidth>=el.scrollWidth-4;
+    const ver=(el,b)=>{const h=el.scrollWidth<=el.clientWidth+4;if(b.hidden!==h)b.hidden=h;b.classList.toggle('fin',!h&&fin(el))};
+    const apply=()=>{
+      if(!root.querySelector('style[data-pdf]')){const st=document.createElement('style');st.setAttribute('data-pdf','');st.textContent=FL_CSS;(root.head||root).appendChild(st)}
+      root.querySelectorAll(FL_SEL).forEach(el=>{
+        if(el.closest('.chW')||(el.parentElement&&el.parentElement.classList.contains('pdfW')))return;
+        const cs=getComputedStyle(el);if(cs.flexWrap==='wrap'||!/auto|scroll/.test(cs.overflowX))return;
+        const w=document.createElement('div');w.className='pdfW';el.parentNode.insertBefore(w,el);w.appendChild(el);el.classList.add('pdfS');
+        const b=document.createElement('button');b.type='button';b.className='pdfA';b.setAttribute('aria-label','Ver más');b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';w.appendChild(b);
+        b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();el.scrollTo({left:fin(el)?0:el.scrollLeft+Math.max(160,el.clientWidth*.6),behavior:'smooth'})});
+        el.addEventListener('scroll',()=>ver(el,b),{passive:true});ver(el,b);
+      });
+      root.querySelectorAll('.pdfW').forEach(w=>{const el=w.querySelector('.pdfS'),b=w.querySelector('.pdfA');if(el&&b)ver(el,b)});
+    };
+    let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(apply,40)}).observe(root,{childList:true,subtree:true});
+    addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(apply,80)});apply();
+  }
+  window.PdPasos={open,close,flechas,render:()=>{if(cur){cur.key=null;render()}},isOpen:()=>!!cur,util,css:CSS};
 })();
 
 </script>
@@ -19965,7 +19988,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(!host){
       host=document.createElement('pd-app-adm');
       const wrap=document.createElement('header');wrap.id='pdAppShell';wrap.style.cssText='display:contents';wrap.appendChild(host);document.body.appendChild(wrap);
-      root=host.attachShadow({mode:'open'});
+      root=host.attachShadow({mode:'open'});try{PdPasos.flechas(root)}catch(_){}
       root.addEventListener('click',clic);root.addEventListener('input',entrada);
       root.addEventListener('pointerdown',()=>{tocando=true});root.addEventListener('click',()=>setTimeout(()=>{tocando=false},60),true);root.addEventListener('pointercancel',()=>{tocando=false});
     }
