@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611181800">
+<meta name="pd-version" content="202611181745">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -19988,7 +19988,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(!host){
       host=document.createElement('pd-app-adm');
       const wrap=document.createElement('header');wrap.id='pdAppShell';wrap.style.cssText='display:contents';wrap.appendChild(host);document.body.appendChild(wrap);
-      root=host.attachShadow({mode:'open'});try{PdPasos.flechas(root)}catch(_){}
+      root=host.attachShadow({mode:'open'});{const ocultarViejo=()=>{const t=document.getElementById('pdInicioTop');if(t&&t.style.getPropertyValue('display')!=='none')t.style.setProperty('display','none','important')};ocultarViejo();setInterval(ocultarViejo,1500)}try{PdPasos.flechas(root)}catch(_){}
       root.addEventListener('click',clic);root.addEventListener('input',entrada);
       root.addEventListener('pointerdown',()=>{tocando=true});root.addEventListener('click',()=>setTimeout(()=>{tocando=false},60),true);root.addEventListener('pointercancel',()=>{tocando=false});
     }
