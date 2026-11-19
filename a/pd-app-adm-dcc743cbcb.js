@@ -1605,7 +1605,7 @@ button:active .pi{transform:scale(.92)}
     const lst=root.querySelector('.list');if(lst&&root.__pag)scrollMem[root.__pag]=lst.scrollTop;
     root.innerHTML=`<style>${ESTILO}</style><div class="app">${pv?'':v.head+`<div class="list">${v.body}</div>`+(v.foot?`<div class="foot">${v.foot}</div>`:'')}${nav()}</div>`;
     const nl=root.querySelector('.list');if(nl)nl.scrollTop=root.__pag===pag?(scrollMem[pag]||0):0;root.__pag=pag;
-    try{pegarEn(root)}catch(_){}
+    if(sub==='pedidoform'&&PE.f&&PE.f.sv)try{pegarEn(root)}catch(_){}
     if(!pv&&H.style.overflow!=='hidden')H.style.overflow='hidden';
   }
   function abrirSeccion(k,m,kk){ultimo='';if(window.PdPasos&&PdPasos.isOpen())PdPasos.close();marca=m;kick=kk||'Administración';if(movido)volverLista();try{window.__pdmOpen&&window.__pdmOpen(k)}catch(e){console.warn(e)}key='';setTimeout(pintar,60)}
