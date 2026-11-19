@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611182000">
+<meta name="pd-version" content="202611182010">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -17932,38 +17932,6 @@ new MutationObserver(function(ms){for(var i=0;i<ms.length;i++){var m=ms[i];var t
   document.head.appendChild(st);
 })();
 </script>
-<script id="pd-pegar-campos">
-/* Pidemás · botón «Pegar» al costado de todos los campos de Recojo y entrega, Compra y Encomienda */
-(function(){
-  if(window.__pdPegar)return;window.__pdPegar=1;
-  const CAJAS=['recojoAdminBox','compraAdminBox','encomiendaAdminBox'];
-  const fire=(el,...ev)=>ev.forEach(t=>el.dispatchEvent(new Event(t,{bubbles:true})));
-  function poner(box){
-    box.querySelectorAll('input,textarea').forEach(inp=>{
-      const t=(inp.type||'text').toLowerCase();
-      if(inp.tagName==='INPUT'&&!['text','tel','number','search','email','url',''].includes(t))return;
-      if(inp.hidden||!inp.parentElement)return;
-      let w=inp.parentElement.classList.contains('pdsWithBtn')?inp.parentElement:null;
-      if(w&&w.querySelector(':scope>.pdsMini'))return;
-      if(!w){w=document.createElement('div');w.className='pdsWithBtn';inp.before(w);w.appendChild(inp)}
-      if(inp.tagName==='TEXTAREA')w.style.alignItems='start';
-      const pr=w.closest('.pdsPair');if(pr){pr.style.setProperty('display','flex','important');pr.style.setProperty('flex-direction','column','important');pr.style.setProperty('gap','14px','important');pr.querySelectorAll(':scope>.field').forEach(f=>f.style.setProperty('width','100%','important'))}
-      const b=document.createElement('button');b.type='button';b.className='pdsMini';b.textContent='Pegar';w.appendChild(b);
-      b.addEventListener('click',async()=>{
-        try{let x=String(await navigator.clipboard.readText()||'').trim();if(!x){inp.focus();return}
-          if(t==='number'){const m=x.replace(',','.').match(/-?\d+(?:\.\d+)?/);if(!m){inp.focus();return}x=m[0]}
-          if(t==='tel'){const d=x.replace(/[^\d+]/g,'');if(d)x=d}
-          inp.value=x;fire(inp,'input','change');inp.focus();
-        }catch(e){inp.focus();if(window.pdAviso)pdAviso('Tu celular no dejó leer lo copiado. Mantén presionado el campo y elige «Pegar».')}
-      });
-    });
-  }
-  function revisar(){CAJAS.forEach(id=>{const b=document.getElementById(id);if(b)poner(b)})}
-  let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(revisar,120)}).observe(document.body,{childList:true,subtree:true});
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',revisar,{once:true});else revisar();
-})();
-
-</script>
 <script id="pd-pasos-motor">
 /* ===== Pidemás · Pedido por pasos (motor común de admin, motorizado y negocio) =====
    Se dibuja dentro de una caja aislada (Shadow DOM): ningún CSS ni script viejo de la página
@@ -18194,14 +18162,15 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
     money:n=>'S/ '+(Number(n)||0).toFixed(2),
     ref:id=>'#'+String(id||'').replace(/-/g,'').slice(0,8).toUpperCase(),
     hora:d=>{if(!d)return '';const x=new Date(d);return isNaN(x)?'':x.toLocaleTimeString('es-PE',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Lima'}).replace(/\s?a\.?\s?m\.?/i,' am').replace(/\s?p\.?\s?m\.?/i,' pm')},
-    tel:t=>{const d=String(t||'').replace(/\D/g,'');if(!d)return '';return d.startsWith('51')&&d.length>9?d:(d.length===9?'51'+d:d)},
+    usuario:t=>{const m=/^\s*@([a-z0-9._]{3,35})\s*$/i.exec(String(t||''))||(/[a-z]/i.test(String(t||''))&&/^\s*([a-z0-9._]{3,35})\s*$/i.exec(String(t||'')));return m?m[1].toLowerCase():''},
+    tel:t=>{const us=util.usuario(t);if(us)return us;const d=String(t||'').replace(/\D/g,'');if(!d)return '';return d.startsWith('51')&&d.length>9?d:(d.length===9?'51'+d:d)},
     maps:(lat,lng,txt,url)=>{if(lat!=null&&lng!=null&&lat!==''&&lng!=='')return 'https://www.google.com/maps/dir/?api=1&destination='+lat+','+lng;if(url)return url;return txt?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(txt):''},
     ini:t=>String(t||'?').trim().charAt(0)||'?',
     who:(nombre,sub,foto,redondo)=>`<div class="who"><span class="av${redondo?' r':''}"${foto?` style="background-image:url('${E(foto)}')"`:''}>${foto?'':E(String(nombre||'?').trim().charAt(0))}</span><div style="min-width:0"><div class="wn">${E(nombre||'—')}</div><div class="ws">${sub||''}</div></div></div>`,
     addr:(t,r)=>t?`<div class="addr">${I.pin}<div><div class="at">${E(t)}</div>${r?`<div class="ar">Ref.: ${E(r)}</div>`:''}</div></div>`:'',
     contact:(mapUrl,phone,waText,cols)=>{const t=util.tel(phone);const b=[];
       if(mapUrl!==null)b.push(`<a class="b o" ${mapUrl?`href="${E(mapUrl)}" target="_blank" rel="noopener"`:'aria-disabled="true" style="opacity:.45;pointer-events:none"'}>${I.nav}Ir</a>`);
-      b.push(`<a class="b" ${t?`href="tel:+${t}"`:'aria-disabled="true" style="opacity:.45;pointer-events:none"'}>${I.phone}Llamar</a>`);
+      b.push(`<a class="b" ${t?`href="${util.usuario(phone)?'https://wa.me/'+t:'tel:+'+t}"${util.usuario(phone)?' target="_blank" rel="noopener"':''}`:'aria-disabled="true" style="opacity:.45;pointer-events:none"'}>${I.phone}Llamar</a>`);
       b.push(`<a class="b g" ${t?`href="https://wa.me/${t}${waText?'?text='+encodeURIComponent(waText):''}" target="_blank" rel="noopener"`:'aria-disabled="true" style="opacity:.45;pointer-events:none"'}>${I.wa}WhatsApp</a>`);
       return `<div class="btns${b.length===2?' b2':''}">${b.join('')}</div>`},
     st:(txt,tipo)=>`<div class="st ${tipo||''}">${tipo==='ok'?I.ok:tipo==='mal'?'':'<span class="pt"></span>'}<span>${txt}</span></div>`,
@@ -19274,7 +19243,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   const cliT=c=>String(c.telefono||c.numero||c.celular||'');
   const cliU=c=>c.referencia||c.ubicacion_recojo_url||c.ubicacion_url||'';
   const dig=v=>String(v||'').replace(/\D/g,'');
-  const waL=t=>{const d=dig(t);return d?'https://wa.me/'+(d.startsWith('51')?d:d.length===9?'51'+d:d):''};
+  const waL=t=>{const us=U.usuario&&U.usuario(t);if(us)return 'https://wa.me/'+us;const d=dig(t);return d?'https://wa.me/'+(d.startsWith('51')?d:d.length===9?'51'+d:d):''};
   const pedCli=c=>{const t=dig(cliT(c)).slice(-9);return t?L().filter(o=>dig(o.telefono_cliente||o.telefono_remitente).slice(-9)===t):[]};
   function clientes(){
     const c=datosCli();const head=top2('Clientes','Clientes',`<button type="button" class="ib" data-a="cl:nuevo" aria-label="Nuevo cliente">${IC.plus}</button>`);
@@ -19293,7 +19262,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const x=CL.sel;if(!x)return {head:top3('Clientes','Cliente'),body:''};
     const ps=pedCli(x),u=cliU(x),map=x.latitud&&x.longitud?`https://www.google.com/maps?q=${x.latitud},${x.longitud}`:/^https?:/i.test(u)?u:'';
     let h=`<div class="ph"><span class="ava">${iniN(cliN(x))}</span><div style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:20px;overflow-wrap:anywhere">${E(cliN(x)||'Sin nombre')}</b><span style="font-size:14px;color:#6B5E55">${ps.length} pedido${ps.length===1?'':'s'}</span></div></div>`;
-    h+=`<div class="btns b2">${cliT(x)?`<a class="b g" href="${E(waL(cliT(x)))}" target="_blank" rel="noopener">${U.I.wa}WhatsApp</a><a class="b" href="tel:${E(dig(cliT(x)))}">${U.I.phone}Llamar</a>`:''}</div>`;
+    h+=`<div class="btns b2">${cliT(x)?`<a class="b g" href="${E(waL(cliT(x)))}" target="_blank" rel="noopener">${U.I.wa}WhatsApp</a><a class="b" href="${U.usuario&&U.usuario(cliT(x))?E(waL(cliT(x))):'tel:'+E(dig(cliT(x)))}">${U.I.phone}Llamar</a>`:''}</div>`;
     h+=`<div class="cd"><div class="li"><span>Teléfono</span><b>${E(cliT(x)||'—')}</b></div><div class="li"><span>DNI</span><b>${E(x.documento||x.dni||'—')}</b></div><div class="li" style="align-items:flex-start"><span>Dirección</span><b style="white-space:normal;text-align:right">${E(x.direccion||'—')}</b></div>${u&&!/^https?:/i.test(u)?`<div class="li" style="align-items:flex-start"><span>Referencia</span><b style="white-space:normal;text-align:right">${E(u)}</b></div>`:''}</div>`;
     if(map)h+=`<a class="b" href="${E(map)}" target="_blank" rel="noopener">${IC.pin}Ver ubicación en el mapa</a>`;
     if(ps.length)h+=`<div class="cd"><div class="lbl">Pedidos</div>${ps.slice(0,15).map(o=>`<button type="button" class="mv" style="width:100%;background:transparent;border-left:0;border-right:0;border-top:0;text-align:left;font:inherit;color:inherit;cursor:pointer" data-o="${E(o.id)}"><span class="tx"><b>${E(ref(o.id))} · ${E(fase(o).txt)}</b><span>${E(fecha(o.creado_en))}${NEG(o.negocio_id).nombre?' · '+E(NEG(o.negocio_id).nombre):''}</span></span><span class="am">${M(o.total)}</span></button>`).join('')}</div>`;
@@ -20165,6 +20134,38 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar()}});
   setInterval(pintar,600);
   window.pdAppAdm={pintar,ir,navH:()=>0};
+})();
+
+</script>
+<script id="pd-pegar-campos">
+/* Pidemás · botón «Pegar» al costado de todos los campos de Recojo y entrega, Compra y Encomienda */
+(function(){
+  if(window.__pdPegar)return;window.__pdPegar=1;
+  const CAJAS=['recojoAdminBox','compraAdminBox','encomiendaAdminBox'];
+  const fire=(el,...ev)=>ev.forEach(t=>el.dispatchEvent(new Event(t,{bubbles:true})));
+  function poner(box){
+    box.querySelectorAll('input,textarea').forEach(inp=>{
+      const t=(inp.type||'text').toLowerCase();
+      if(inp.tagName==='INPUT'&&!['text','tel','number','search','email','url',''].includes(t))return;
+      if(inp.hidden||!inp.parentElement)return;
+      let w=inp.parentElement.classList.contains('pdsWithBtn')?inp.parentElement:null;
+      if(w&&w.querySelector(':scope>.pdsMini'))return;
+      if(!w){w=document.createElement('div');w.className='pdsWithBtn';inp.before(w);w.appendChild(inp)}
+      if(inp.tagName==='TEXTAREA')w.style.alignItems='start';
+      const pr=w.closest('.pdsPair');if(pr){pr.style.setProperty('display','flex','important');pr.style.setProperty('flex-direction','column','important');pr.style.setProperty('gap','14px','important');pr.querySelectorAll(':scope>.field').forEach(f=>f.style.setProperty('width','100%','important'))}
+      const b=document.createElement('button');b.type='button';b.className='pdsMini';b.textContent='Pegar';w.appendChild(b);
+      b.addEventListener('click',async()=>{
+        try{let x=String(await navigator.clipboard.readText()||'').trim();if(!x){inp.focus();return}
+          if(t==='number'){const m=x.replace(',','.').match(/-?\d+(?:\.\d+)?/);if(!m){inp.focus();return}x=m[0]}
+          if(t==='tel'){const us=/^@?[a-z0-9._]{3,35}$/i.test(x)&&/[a-z@]/i.test(x)?(x.startsWith('@')?x:'@'+x):'';if(us)x=us;else{const d=x.replace(/[^\d+]/g,'');if(d)x=d}}
+          inp.value=x;fire(inp,'input','change');inp.focus();
+        }catch(e){inp.focus();if(window.pdAviso)pdAviso('Tu celular no dejó leer lo copiado. Mantén presionado el campo y elige «Pegar».')}
+      });
+    });
+  }
+  function revisar(){CAJAS.forEach(id=>{const b=document.getElementById(id);if(b)poner(b)})}
+  let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(revisar,120)}).observe(document.body,{childList:true,subtree:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',revisar,{once:true});else revisar();
 })();
 
 </script>
