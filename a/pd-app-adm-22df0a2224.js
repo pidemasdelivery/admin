@@ -1755,6 +1755,32 @@ button:active .pi{transform:scale(.92)}
   }
   addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar()}});
   setInterval(pintar,600);
+  /* Aviso cuando un pedido se entrega: dice si el motorizado quedó libre */
+  {const FIN=/^(entregado|completado|finalizado)$/,CERR=/^(entregado|completado|finalizado|cancelad[oa]|anulado|rechazado|no_entregado)$/;let prev=null;let th=null,tr=null,tq=0;
+    function tostada(t,s2,id){
+      if(!th){th=document.createElement('pd-aviso-entrega');th.setAttribute('data-pd-aislado','1');tr=th.attachShadow({mode:'open'});
+        tr.innerHTML=`<style>:host{all:initial;position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:2147483600;display:none;font-family:PdInter,Inter,system-ui,sans-serif}
+.t{max-width:520px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px;border-radius:18px;background:#FFFFFF;border:1px solid #CDEBD8;box-shadow:0 12px 30px rgba(31,26,23,.16);cursor:pointer;animation:a .2s ease-out}
+@keyframes a{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}
+.i{flex:0 0 42px;width:42px;height:42px;border-radius:50%;background:#E9F6EE;color:#15803D;display:flex;align-items:center;justify-content:center}
+.x{flex:1 1 0%;min-width:0;display:flex;flex-direction:column}.x b{font-size:15.5px;color:#1F1A17}.x span{font-size:13.5px;color:#0F5E2E;font-weight:700}
+.c{all:unset;cursor:pointer;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#6B5E55;font-size:20px}</style>
+<div class="t" role="status"><span class="i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="x"><b></b><span></span></span><button type="button" class="c" aria-label="Cerrar">×</button></div>`;
+        tr.querySelector('.c').addEventListener('click',e=>{e.stopPropagation();th.style.display='none'});
+        tr.querySelector('.t').addEventListener('click',()=>{th.style.display='none';const i=th.dataset.id;if(i)try{abrirPedido(i)}catch(_){}});
+        document.body.appendChild(th)}
+      tr.querySelector('.x b').textContent=t;tr.querySelector('.x span').textContent=s2;th.dataset.id=id||'';th.style.display='block';
+      clearTimeout(tq);tq=setTimeout(()=>{th.style.display='none'},9000);
+      try{const C=window.AudioContext||window.webkitAudioContext;const c=new C();[0,.16].forEach((d,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=i?1046:784;g.gain.setValueAtTime(.16,c.currentTime+d);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d+.28);o.connect(g).connect(c.destination);o.start(c.currentTime+d);o.stop(c.currentTime+d+.3)});navigator.vibrate&&navigator.vibrate([120,60,120])}catch(_){}
+    }
+    setInterval(()=>{const L2=L();if(!L2.length)return;
+      if(!prev){prev=new Map(L2.map(o=>[String(o.id),est(o)]));return}
+      for(const o of L2){const id=String(o.id),e=est(o),a=prev.get(id);prev.set(id,e);
+        if(a&&a!==e&&FIN.test(e)){
+          const mid=o.motorizado_id,m=MOTOS().find(x=>String(x.id)===String(mid)),nom=(m&&m.nombre_completo)||o.motorizado_nombre||'El motorizado';
+          const quedan=mid?L2.filter(x=>String(x.motorizado_id)===String(mid)&&String(x.id)!==id&&!CERR.test(est(x))).length:-1;
+          tostada('Pedido '+ref(id)+' entregado',quedan<0?'Pedido cerrado':quedan===0?nom+' ya está libre':nom+' sigue con '+quedan+' pedido'+(quedan===1?'':'s'),id)}}
+    },2000);}
   window.pdAppAdm={pintar,ir,navH:()=>navH&&navH.style.display!=='none'?navH.getBoundingClientRect().height:0};
 })();
 
