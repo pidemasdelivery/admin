@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611182100">
+<meta name="pd-version" content="202611182110">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -20278,7 +20278,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   document.addEventListener('input',e=>{
     const t=e.target;if(!t||!t.id||!e.isTrusted)return;const gc=grupoDe(t.id);if(!gc)return;
     const [g,campo]=gc;
-    if(campo==='tel'){const k=clave(t.value);const c=porClave(k);if(c&&!val(g.nom)){llenar(g,c);cerrar();return}}
+    if(campo==='tel'){const k=clave(t.value);const c=porClave(k);if(c&&!val(g.nom)&&CL.filter(x=>clave(cT(x))===k).length===1){llenar(g,c);cerrar();return}}
     if(!CL.length&&!cargado){cargar().then(()=>{if(document.activeElement===t)mostrar(t,g,campo)});return}
     mostrar(t,g,campo);
   },true);
@@ -20292,7 +20292,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const k=clave(x.tel);if(!k||!x.nom||x.nom.length<2)return;
     await cargar();
     const telGuardar=k.startsWith('@')?k:x.tel.replace(/\D/g,'').slice(-9);
-    const c=porClave(k);
+    const nx=sinTilde(x.nom).replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+    /* Un mismo número puede ser de varias personas (por ejemplo, el número del local): se compara también el nombre */
+    const mismos=CL.filter(c=>clave(cT(c))===k);
+    const c=mismos.find(c=>{const n=sinTilde(cN(c)).replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();return !n||n===nx||n.startsWith(nx+' ')||nx.startsWith(n+' ')});
     try{
       if(c){
         const up={};
