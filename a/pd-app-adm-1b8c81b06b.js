@@ -906,7 +906,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const obs=o.observaciones||'',pagado=String(o.pago_servicio_momento||'').toLowerCase()==='pagado'||/Servicio marcado como PAGADO/i.test(obs);
     const met=pagado?'pagado':String(o.metodo_pago||'efectivo').toLowerCase();
     const b={id:o.id,sv,tipo:sv==='Recojo y entrega'?'recojo':sv==='Compra'?'compra':'enc',msg:'',costo:String(Number(sv==='Compra'?o.costo_delivery:o.total)||0)};
-    if(b.tipo==='recojo')Object.assign(b,{rnom:o.nombre_remitente||o.nombre_cliente||'',rtel:o.telefono_remitente||o.telefono_cliente||'',rdir:o.direccion_recojo||'',rref:o.referencia_recojo||tagDe(obs,'Referencia de recojo'),rubi:o.ubicacion_recojo||tagDe(obs,'Ubicación de recojo','Ubicacion de recojo'),
+    if(b.tipo==='recojo')Object.assign(b,{anom:o.recojo_a_nombre||tagDe(obs,'Pedido a nombre de'),rnom:o.nombre_remitente||o.nombre_cliente||'',rtel:o.telefono_remitente||o.telefono_cliente||'',rdir:o.direccion_recojo||'',rref:o.referencia_recojo||tagDe(obs,'Referencia de recojo'),rubi:o.ubicacion_recojo||tagDe(obs,'Ubicación de recojo','Ubicacion de recojo'),
       enom:o.nombre_receptor||'',etel:o.telefono_receptor||'',edir:o.direccion_entrega||'',eref:o.referencia_entrega||'',eubi:o.ubicacion_entrega||tagDe(obs,'Ubicación de entrega','Ubicacion de entrega'),lleva:o.que_se_lleva||tagDe(obs,'Qué se lleva'),
       pago:met,quien:o.quien_paga||(/^recojo_/.test(String(o.pago_servicio_momento||''))?'envia':'recibe')});
     else if(b.tipo==='compra')Object.assign(b,{nom:o.nombre_cliente||'',tel:o.telefono_cliente||'',dir:o.direccion_entrega||'',ref:o.referencia_entrega||'',ubi:o.ubicacion_entrega||tagDe(obs,'Ubicación','Ubicación del cliente'),
@@ -931,7 +931,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       (f.tipo==='recojo'&&f.pago!=='pagado'?sg('¿Quién paga el servicio?','quien',[['envia','Quien envía'],['recibe','Quien recibe']]):''));
     let h='';
     if(f.tipo==='recojo'){
-      h+=card('Información de quien envía',fl('peRn','Nombre y apellido','rnom','')+fl('peRt','Teléfono','rtel','',tel)+fl('peRd','Dirección','rdir','')+fl('peRr','Referencia','rref','Ej. frente al parque, portón negro')+fl('peRu','Ubicación (Google Maps)','rubi','Pega el enlace de Google Maps'));
+      h+=card('Información de quien envía',fl('peRn','Nombre y apellido','rnom','')+fl('peRt','Teléfono','rtel','',tel)+fl('peRd','Dirección','rdir','')+fl('peRr','Referencia','rref','Ej. frente al parque, portón negro')+fl('peRa','¿A nombre de quién está el pedido?','anom','Ej. Juan Pérez · si es distinto de quien entrega')+fl('peRu','Ubicación (Google Maps)','rubi','Pega el enlace de Google Maps'));
       h+=card('Información de quien recibe',fl('peEn','Nombre y apellido','enom','')+fl('peEt','Teléfono','etel','',tel)+fl('peEd','Dirección','edir','')+fl('peEr','Referencia','eref','Ej. edificio azul, dpto. 302')+fl('peEu','Ubicación (Google Maps)','eubi','Pega el enlace de Google Maps')+fl('peQl','¿Qué se lleva?','lleva','Ej. sobre con documentos, caja pequeña'));
       h+=costo;
     }else if(f.tipo==='compra'){
@@ -959,10 +959,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(f.tipo==='recojo'){
       if(!f.rnom.trim()){f.msg='Escribe el nombre de quien envía.';return false}
       const mom=pagado?'pagado':(f.quien==='envia'?(f.pago==='yape'?'recojo_yape':'recojo_efectivo'):null);
-      p={nombre_cliente:f.rnom.trim(),telefono_cliente:f.rtel.trim(),nombre_remitente:f.rnom.trim(),telefono_remitente:f.rtel.trim(),direccion_recojo:f.rdir.trim(),referencia_recojo:f.rref.trim()||null,ubicacion_recojo:f.rubi.trim()||null,
+      p={nombre_cliente:f.rnom.trim(),telefono_cliente:f.rtel.trim(),nombre_remitente:f.rnom.trim(),telefono_remitente:f.rtel.trim(),direccion_recojo:f.rdir.trim(),referencia_recojo:f.rref.trim()||null,recojo_a_nombre:String(f.anom||'').trim()||null,ubicacion_recojo:f.rubi.trim()||null,
         nombre_receptor:f.enom.trim(),telefono_receptor:f.etel.trim(),direccion_entrega:f.edir.trim(),referencia_entrega:f.eref.trim()||null,ubicacion_entrega:f.eubi.trim()||null,que_se_lleva:f.lleva.trim()||null,
         costo_delivery:costo,subtotal:0,total:costo,metodo_pago:pagado?'efectivo':f.pago,pago_servicio_momento:mom,quien_paga:pagado?null:f.quien};
-      obs=rehacerObs(obs,{'Ubicación de recojo':f.rubi,'Ubicación de entrega':f.eubi,'Referencia de recojo':f.rref,'Qué se lleva':f.lleva});
+      obs=rehacerObs(obs,{'Ubicación de recojo':f.rubi,'Ubicación de entrega':f.eubi,'Referencia de recojo':f.rref,'Pedido a nombre de':f.anom,'Qué se lleva':f.lleva});
       obs=[pagado?'Servicio marcado como PAGADO; no cobrar monto al cliente':(f.pago==='efectivo'?'Pago en efectivo: S/ '+costo.toFixed(2):'Pago por Yape: pendiente de captura y confirmación del administrador'),pagado?'':(f.quien==='envia'?'Paga quien envía, al recoger':'Paga quien recibe, al entregar')].filter(Boolean).concat(segs(obs)).join(' | ');
       const cr=coordsDe(f.rubi),ce=coordsDe(f.eubi);if(cr){p.latitud_recojo=cr.lat;p.longitud_recojo=cr.lng}if(ce){p.latitud_entrega=ce.lat;p.longitud_entrega=ce.lng}
     }else if(f.tipo==='compra'){
@@ -987,7 +987,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(!yaCobro)p.pago_confirmado=pagado;
     p.observaciones=obs;
     let r=await D().from('pedidos').update(p).eq('id',o.id).select('id').maybeSingle();
-    if(r.error&&/column|schema cache|PGRST204|42703/i.test(String(r.error.message)+String(r.error.code))){['referencia_recojo','ubicacion_recojo','ubicacion_entrega','que_se_lleva','quien_paga','tipo_comprobante','documento_comprobante','tipo_encomienda'].forEach(k=>delete p[k]);r=await D().from('pedidos').update(p).eq('id',o.id).select('id').maybeSingle()}
+    if(r.error&&/column|schema cache|PGRST204|42703/i.test(String(r.error.message)+String(r.error.code))){['referencia_recojo','recojo_a_nombre','ubicacion_recojo','ubicacion_entrega','que_se_lleva','quien_paga','tipo_comprobante','documento_comprobante','tipo_encomienda'].forEach(k=>delete p[k]);r=await D().from('pedidos').update(p).eq('id',o.id).select('id').maybeSingle()}
     if(r.error)throw r.error;if(!r.data)throw new Error('Supabase no guardó el cambio. Revisa los permisos.');
     const metAntes=o.metodo_pago;Object.assign(o,p);await cajaPorCambioPago(o,metAntes,p.metodo_pago);return true;
   }

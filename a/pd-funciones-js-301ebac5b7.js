@@ -2420,6 +2420,7 @@ if (!Array.isArray(adminServiceMotos) || !adminServiceMotos.some(m => String(m.i
 const moto = adminServiceMotos.find(m => String(m.id) === motoId);
 const locationNotes = [
 'Ubicación de recojo: ' + get('admRecojoUbicacion'),
+get('admRecojoANombre') ? 'Pedido a nombre de: ' + get('admRecojoANombre') : '',
 'Ubicación de entrega: ' + get('admRecojoUbicacionEntrega'),
 method === 'pagado' ? 'Servicio marcado como PAGADO; no cobrar monto al cliente' : (method === 'efectivo' ? 'Pago en efectivo: S/ ' + total.toFixed(2) : 'Pago por Yape: pendiente de captura y confirmación del administrador'),
 method !== 'pagado' ? (window.__pdRecojoQuien === 'envia' ? 'Paga quien envía, al recoger' : 'Paga quien recibe, al entregar') : '',

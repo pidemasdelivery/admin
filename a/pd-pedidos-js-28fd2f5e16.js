@@ -1072,6 +1072,7 @@ a.classList.remove('is-expanded');
 });
 var NUEVOS=[
 {id:'admRecojoRefRecojo',after:'admRecojoDireccion',label:'Referencia',ph:'Ej. frente al parque, portón negro'},
+{id:'admRecojoANombre',after:'admRecojoRefRecojo',label:'¿A nombre de quién está el pedido?',ph:'Ej. Juan Pérez · si es distinto de quien entrega'},
 {id:'admRecojoRefEntrega',after:'admRecojoEntrega',label:'Referencia',ph:'Ej. edificio azul, dpto. 302'},
 {id:'admRecojoQueLleva',after:'admRecojoUbicacionEntrega',label:'¿Qué se lleva?',ph:'Ej. sobre con documentos, caja pequeña'},
 {id:'admCompraRef',after:'admCompraDireccion',label:'Referencia',ph:'Ej. frente a la bodega, casa verde'},
@@ -1129,10 +1130,10 @@ anotar(base,rr?'Referencia de recojo: '+rr:'');anotar(base,ql?'Qué se lleva: '+
 var cr=coords(val('admRecojoUbicacion')),ce=coords(val('admRecojoUbicacionEntrega'));
 if(cr&&base.latitud_recojo==null){base.latitud_recojo=cr.lat;base.longitud_recojo=cr.lng}
 if(ce&&base.latitud_entrega==null){base.latitud_entrega=ce.lat;base.longitud_entrega=ce.lng}
-extra.referencia_recojo=rr||null;extra.que_se_lleva=ql||null;
+extra.referencia_recojo=rr||null;extra.que_se_lleva=ql||null;extra.recojo_a_nombre=val('admRecojoANombre')||null;
 extra.quien_paga=p.pago_servicio_momento==='pagado'?null:(window.__pdRecojoQuien==='envia'?'envia':'recibe');
 extra.ubicacion_recojo=val('admRecojoUbicacion')||null;extra.ubicacion_entrega=val('admRecojoUbicacionEntrega')||null;
-limpiar=['admRecojoRefRecojo','admRecojoRefEntrega','admRecojoQueLleva'];
+limpiar=['admRecojoRefRecojo','admRecojoANombre','admRecojoRefEntrega','admRecojoQueLleva'];
 }else if(tipo==='compra'){
 var rc=val('admCompraRef');if(rc)base.referencia_entrega=rc;
 var cc=coords(val('admCompraUbicacion'));if(cc&&base.latitud_entrega==null){base.latitud_entrega=cc.lat;base.longitud_entrega=cc.lng}
