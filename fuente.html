@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611191110">
+<meta name="pd-version" content="202611191140">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -15204,12 +15204,17 @@ try{
         +(dir?F('Dirección del local','cnxDir',r[dir]):'')
         +((lat&&lng&&window.pdMapa)?'<input type="hidden" id="cnxLat" value="'+E(r[lat]??'')+'"><input type="hidden" id="cnxLng" value="'+E(r[lng]??'')+'">'+(gm?'<input type="hidden" id="cnxGm" value="'+E(r[gm]??'')+'">':'')
           :(gm?F('Enlace de Google Maps','cnxGm',r[gm],'type="url"'):'')+((lat&&lng)?'<div class="nxGrid2">'+F('Latitud','cnxLat',r[lat],'inputmode="decimal"')+F('Longitud','cnxLng',r[lng],'inputmode="decimal"')+'</div>':''))
-      +'</div></section>'
+      +'</div>'+(has(r,'ubicacion_publica')?'<div class="nxPubRow" style="display:flex;align-items:center;gap:12px;margin-top:12px"><span style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:15px">Mostrar la dirección a los clientes</b><small class="nxMuted" id="cnxPubTx" style="display:block">'+(r.ubicacion_publica!==false?'Los clientes ven la dirección en la tienda.':'Privada: solo se usa para el delivery. En la tienda sale «Solo delivery».')+'</small></span><button type="button" class="nxSw'+(r.ubicacion_publica!==false?' on':'')+'" id="cnxPub" data-a="nx-pub" role="switch" aria-checked="'+(r.ubicacion_publica!==false)+'" aria-label="Mostrar la dirección a los clientes"><i></i></button></div>':'')+'</section>'
       +(has(r,'tiempo_estimado')?'<section class="nxCard"><div class="nxH"><strong>En la tienda</strong></div><div class="cnxF"><label>Tiempo de entrega</label><div class="nxPills" id="nxTiempo" role="radiogroup">'+TOPC.map(t=>'<button type="button" role="radio" data-a="nx-t" data-v="'+t+'" class="'+(t===ts?'on':'')+'" aria-checked="'+(t===ts)+'">'+t.replace(' min','')+'<small>min</small></button>').join('')+'</div></div></section>':'')
       +(has(r,'horario')?'<section class="nxCard"><div class="nxH"><strong>Horario de atención</strong><span class="nxPill '+(n&&ab?'ok':'off')+'">'+(n&&ab?'● Abierto':'Cerrado')+'</span></div>'
         +'<div class="nxMuted">'+(n?n+' día'+(n===1?'':'s')+' de atención a la semana.':'No tiene días de atención.')+'</div><div id="nxHor">'
         +DIAS.map(([k,nm])=>{const d=H[k];return '<div class="nxHr'+(d?' on':'')+(k===hoy?' today':'')+'" data-d="'+k+'"><button type="button" class="nxDay" data-a="nx-day" aria-pressed="'+(!!d)+'" aria-label="'+nm+'">'+DIAS_C[k]+'</button><input type="time" class="ha" value="'+E(d?d.abre:'09:00')+'" aria-label="Abre el '+nm+'"><span class="nxSep">a</span><input type="time" class="hc" value="'+E(d?d.cierra:'22:00')+'" aria-label="Cierra el '+nm+'"><span class="nxOff">Cerrado</span></div>'}).join('')
         +'</div><div class="nxGrid2"><button type="button" class="nxBtn light sm" data-a="nx-hcopy">Igual todos los días</button><button type="button" class="nxBtn light sm" data-a="nx-hall">Abrir toda la semana</button></div><p class="nxMuted">Toca un día para abrirlo o cerrarlo. Los cambios se guardan con «Guardar cambios».</p></section>':'')
+      +(has(r,'pausado_hasta')?(()=>{const pz=r.pausado_hasta&&new Date(r.pausado_hasta).getTime()>Date.now()?new Date(r.pausado_hasta):null;const hh=pz?pz.toLocaleTimeString('es-PE',{hour:'numeric',minute:'2-digit',timeZone:'America/Lima'}):'';
+        return '<section class="nxCard"><div class="nxH"><strong>Pausar pedidos</strong><span class="nxPill '+(pz?'off':'ok')+'">'+(pz?'En pausa':'Recibiendo')+'</span></div><div class="nxMuted">'+(pz?'No recibe pedidos nuevos hasta las '+E(hh)+'.':'Si el negocio está lleno, pausa los pedidos nuevos por un rato.')+'</div><div class="nxGrid2" style="margin-top:10px">'+[[15,'15 min'],[30,'30 min'],[60,'1 hora'],[120,'2 horas']].map(x=>'<button type="button" class="nxBtn light sm" data-a="nx-pz" data-v="'+x[0]+'">'+(pz?'+ ':'')+x[1]+'</button>').join('')+'</div>'+(pz?'<button type="button" class="nxBtn sm" style="margin-top:10px" data-a="nx-pz" data-v="0">Reanudar ahora</button>':'')+'</section>'})():'')
+      +(has(r,'yape_qr_url')?'<section class="nxCard"><div class="nxH"><strong>Yape del negocio</strong>'+(r.yape_qr_url?'<span class="nxPill ok">Listo</span>':'<span class="nxPill off">Falta</span>')+'</div><div class="nxMuted">Se envía al cliente cuando paga con Yape al negocio.</div>'
+        +'<div class="cnxLogoRow" data-k="Yape"><div class="cnxLogoTh">'+(r.yape_qr_url?'<img src="'+E(r.yape_qr_url)+'" alt="">':'<span>Sin QR</span>')+'</div><div class="cnxLogoTx"><b>QR de Yape</b><small>Imagen del QR tal como sale en su Yape.</small><div class="cnxLogoBt"><label class="cnxBtnSoft" for="cnxYapeF">'+(r.yape_qr_url?'Cambiar':'Subir')+' QR</label>'+(r.yape_qr_url?'<button type="button" class="cnxBtnGhost" data-a="img-del" data-k="Yape">Quitar</button>':'')+'</div><input type="file" id="cnxYapeF" accept="image/png,image/jpeg,image/webp" hidden></div></div>'
+        +'<div class="nxGrid2">'+F('Número de Yape','cnxYNum',r.yape_numero||'','type="tel" inputmode="numeric" maxlength="9" placeholder="9 dígitos"')+F('Titular','cnxYTit',r.yape_titular||'','placeholder="Como sale en Yape"')+'</div></section>':'')
       +(url?'<section class="nxCard"><div class="nxH"><span><span class="nxKick">Comparte</span><strong>Enlace de carta</strong></span></div><div class="nxShare"><input class="nxIn" id="nxUrl" value="'+E(url)+'" readonly><button type="button" class="nxBtn light" data-a="nx-copy">Copiar</button></div><div class="nxGrid2"><button type="button" class="nxBtn wa sm" data-a="nx-wa">WhatsApp</button><a class="nxBtn light sm" href="'+E(url)+'" target="_blank" rel="noopener">Ver la tienda</a></div></section>':'')
       +'<button type="button" class="nxBtn" data-a="perf-save">Guardar cambios</button></div>';
     p._cols={tel,cat,logo,port,dir,lat,lng,gm};
@@ -15226,7 +15231,9 @@ try{
     if(c.dir&&g('cnxDir'))pl[c.dir]=g('cnxDir').value.trim()||null;
     if(c.gm&&g('cnxGm'))pl[c.gm]=g('cnxGm').value.trim()||null;
     if(c.lat&&c.lng&&g('cnxLat')&&g('cnxLng')){const a=g('cnxLat').value.trim(),b=g('cnxLng').value.trim();const la=a===''?null:Number(a),ln=b===''?null:Number(b);if((a!==''&&!isFinite(la))||(b!==''&&!isFinite(ln))){msg('La ubicación no es válida.',true);return}pl[c.lat]=la;pl[c.lng]=ln}
-    const tb=document.querySelector('#nxTiempo button.on');if(g('nxTiempo'))pl.tiempo_estimado=tb?tb.dataset.v:(cur.tiempo_estimado||null);
+    const tb=document.querySelector('#nxTiempo button.on');if(g('nxTiempo')&&g('nxTiempo').dataset.tocado)pl.tiempo_estimado=tb?tb.dataset.v:(cur.tiempo_estimado||null);
+    if(g('cnxPub'))pl.ubicacion_publica=g('cnxPub').classList.contains('on');
+    if(g('cnxYNum')){const yn=g('cnxYNum').value.replace(/\D/g,''),yt=g('cnxYTit').value.trim();if(yn&&yn.length!==9){msg('El número de Yape debe tener 9 dígitos.',true);return}pl.yape_numero=yn||null;pl.yape_titular=yt||null}
     if(g('nxHor')){const parts=[];for(const r of document.querySelectorAll('#nxHor .nxHr')){if(!r.classList.contains('on'))continue;const a=r.querySelector('.ha').value,z=r.querySelector('.hc').value;const nm=r.querySelector('.nxDay').getAttribute('aria-label');if(!a||!z){msg(nm+': completa la hora de apertura y cierre.',true);return}if(a===z){msg(nm+': la hora de apertura y la de cierre no pueden ser iguales.',true);return}parts.push(r.dataset.d+'='+a+'-'+z)}pl.horario=parts.join('|')||null}
     if(btn){btn.disabled=true;btn.textContent='Guardando…'}
     try{await guardarNegocio(pl,'Cambios guardados');pPerfil(p)}
@@ -15284,7 +15291,14 @@ try{
   /* ---------- eventos ---------- */
   $('cnxNegocio').addEventListener('change',e=>{tab='perfil';nxQ='';nxCatOpen=false;elegir(e.target.value)});
   $('cnxPane').addEventListener('change',async e=>{
-    const t=e.target;if(!t||!/^cnx(Logo|Port)F$/.test(t.id)||!t.files||!t.files[0])return;
+    const t=e.target;
+    if(t&&t.id==='cnxYapeF'&&t.files&&t.files[0]){const f=t.files[0];t.value='';if(!/^image\/(jpeg|png|webp)$/i.test(f.type)||f.size>5*1024*1024){msg('La imagen debe ser JPG, PNG o WEBP y pesar máximo 5 MB.',true);return}
+      const th=t.closest('.cnxLogoRow').querySelector('.cnxLogoTh');th.innerHTML='<img src="'+URL.createObjectURL(f)+'" alt="">';
+      try{const ex=f.type==='image/png'?'png':f.type==='image/webp'?'webp':'jpg';const path='yape/'+cur.id+'/qr-'+Date.now()+'.'+ex;const st=db.storage.from('restaurantes');const up=await st.upload(path,f,{upsert:true,contentType:f.type,cacheControl:'31536000'});if(up.error)throw up.error;
+        const old=cur.yape_qr_url;await guardarNegocio({yape_qr_url:st.getPublicUrl(path).data.publicUrl},'QR de Yape guardado.');
+        if(old){const mk='/storage/v1/object/public/restaurantes/',i=old.indexOf(mk);if(i>=0)st.remove([decodeURIComponent(old.slice(i+mk.length).split('?')[0])]).catch(()=>{})}pintar()}
+      catch(err){msg('No se pudo subir el QR: '+(err.message||err),true);pintar()}return}
+    if(!t||!/^cnx(Logo|Port)F$/.test(t.id)||!t.files||!t.files[0])return;
     const k=t.id==='cnxLogoF'?'logo':'portada',col=k==='logo'?pick(cur,LOGO):pick(cur,PORT);if(!col)return;
     const f=t.files[0];if(!/^image\/(jpeg|png|webp)$/i.test(f.type)||f.size>5*1024*1024){msg('La imagen debe ser JPG, PNG o WEBP y pesar máximo 5 MB.',true);t.value='';return}
     const th=t.closest('.cnxLogoRow').querySelector('.cnxLogoTh');th.innerHTML='<img src="'+URL.createObjectURL(f)+'" alt="">';th.classList.add('sub');
@@ -15300,7 +15314,9 @@ try{
   $('cnxPane').addEventListener('click',e=>{
     const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=(b.closest('[data-id]')||{dataset:{}}).dataset.id;
     if(a==='perf-save')return savePerfil(b);
-    if(a==='nx-t'){b.parentElement.querySelectorAll('button').forEach(q=>{const on=q===b;q.classList.toggle('on',on);q.setAttribute('aria-checked',String(on))});return}
+    if(a==='nx-pub'){const on=!b.classList.contains('on');b.classList.toggle('on',on);b.setAttribute('aria-checked',String(on));const t=$('cnxPubTx');if(t)t.textContent=on?'Los clientes ven la dirección en la tienda.':'Privada: solo se usa para el delivery. En la tienda sale «Solo delivery».';return}
+    if(a==='nx-pz'){const m=Number(b.dataset.v)||0;(async()=>{const base=cur.pausado_hasta&&new Date(cur.pausado_hasta).getTime()>Date.now()?new Date(cur.pausado_hasta).getTime():Date.now();const hasta=m?new Date(base+m*60000).toISOString():null;try{await guardarNegocio({pausado_hasta:hasta},m?'Pedidos en pausa.':'El negocio ya recibe pedidos.');pintar()}catch(e){msg('No se pudo guardar: '+(e.message||e),true)}})();return}
+    if(a==='nx-t'){b.parentElement.dataset.tocado='1';b.parentElement.querySelectorAll('button').forEach(q=>{const on=q===b;q.classList.toggle('on',on);q.setAttribute('aria-checked',String(on))});return}
     if(a==='nx-day'){const r=b.closest('.nxHr');const on=!r.classList.contains('on');r.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));return}
     if(a==='nx-hcopy'){const rows=[...document.querySelectorAll('#nxHor .nxHr')];const f=rows.find(r=>r.classList.contains('on'));if(!f){msg('Primero abre al menos un día.',true);return}const A=f.querySelector('.ha').value,C=f.querySelector('.hc').value;rows.forEach(r=>{if(r.classList.contains('on')){r.querySelector('.ha').value=A;r.querySelector('.hc').value=C}});return}
     if(a==='nx-hall'){document.querySelectorAll('#nxHor .nxHr').forEach(r=>{r.classList.add('on');r.querySelector('.nxDay').setAttribute('aria-pressed','true')});return}
@@ -15320,6 +15336,7 @@ try{
     if(a==='hor-copy'){const rows=[...document.querySelectorAll('#cnxPane .cnxDia')];const f=rows.find(r=>r.querySelector('.ha-on').checked);if(!f){msg('Activa primero un día.',true);return}const A=f.querySelector('.ha').value,C=f.querySelector('.hc').value;rows.forEach(r=>{r.querySelector('.ha-on').checked=true;r.querySelector('.ha').value=A;r.querySelector('.hc').value=C;r.dispatchEvent(new Event('change'))});msg('Horario copiado. Toca «Guardar horario».');return}
     if(a==='pw-eye'){const i=b.parentElement.querySelector('input');i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'Ver':'Ocultar';return}
     if(a==='pw-save')return savePw(b.closest('.cnxAcc'));
+    if(a==='img-del'&&b.dataset.k==='Yape'){(async()=>{if(window.pdConfirmar&&!(await pdConfirmar('¿Quitar el QR de Yape del negocio?')))return;try{await guardarNegocio({yape_qr_url:null},'QR de Yape quitado.');pintar()}catch(e){msg('No se pudo quitar: '+(e.message||e),true)}})();return}
     if(a==='img-del'){const k=b.dataset.k,col=k==='Logo'?pick(cur,LOGO):pick(cur,PORT);if(!col)return;(async()=>{if(window.pdConfirmar&&!(await pdConfirmar('¿Quitar '+(k==='Logo'?'el logo':'la portada')+' del negocio?')))return;try{await guardarNegocio({[col]:null},(k==='Logo'?'Logo':'Portada')+' quitado.');pintar()}catch(e){msg('No se pudo quitar: '+(e.message||e),true)}})();return}
     if(a.startsWith('cat-'))return catAction(a,id);
     if(a==='p-new'){edit={prod:null};const pn=$('nxCatPanel');if(pn)nxCatOpen=false;return pintar()}
