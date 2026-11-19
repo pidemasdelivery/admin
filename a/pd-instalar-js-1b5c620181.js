@@ -9,10 +9,10 @@
   const iOS=/iphone|ipad|ipod/i.test(ua)||(/macintosh/i.test(ua)&&navigator.maxTouchPoints>1);
   const android=/android/i.test(ua)&&!/wv\)|; wv/i.test(ua);
   const iOSSafari=iOS&&/safari/i.test(ua)&&!/crios|fxios|edgios|opios|gsa\//i.test(ua);
-  const NO='pdInstalarNo:'+location.pathname.replace(/[^/]*$/,''),DIAS=14; /* cada app guarda su propia respuesta */
+  const NO='pdInstalarNo:'+location.pathname.replace(/[^/]*$/,''),DIAS=1; /* cada app guarda su propia respuesta */
   const descartado=()=>{const t=Number(ls.get(NO)||0);return t&&Date.now()-t<DIAS*864e5};
   function hayVentana(){const W=innerWidth,H=innerHeight;
-    for(const el of document.querySelectorAll('body > *')){if(el.id==='pdInstalar'||el.matches('header,script,style'))continue;
+    for(const el of document.querySelectorAll('body > *')){if(el.id==='pdInstalar'||el.matches('header,script,style'))continue;if(/^PD-(VENTANA|APP-|TIENDA)/.test(el.tagName)&&!(el.shadowRoot&&el.shadowRoot.querySelector('[role=dialog],#dl > *')))continue;
       const cs=getComputedStyle(el);if(cs.position!=='fixed'||cs.display==='none'||cs.visibility==='hidden'||el.hidden)continue;
       const r=el.getBoundingClientRect();if(r.width*r.height>W*H*0.45)return true}return false}
   let aviso=null,card=null,intentos=0;
