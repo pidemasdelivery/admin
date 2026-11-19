@@ -1646,7 +1646,7 @@ button:active .pi{transform:scale(.92)}
     if(pv){cls(H,'pdaPag',1);cls(host,'solo',1);pintarTop(pv)}
     else if(Date.now()<pagHasta){return}
     else{cls(H,'pdaPag',0);cls(host,'solo',0);if(topH&&topH.style.display!=='none')topH.style.display='none';keyTop=''}
-    {const vv=pv?null:vista();pintarNav(!(vv&&vv.foot)&&!(window.PdPasos&&PdPasos.isOpen()));}
+    {const vv=pv?null:vista();pintarNav(!(vv&&vv.foot)||!!(window.PdPasos&&PdPasos.isOpen()));}
     if(tocando)return;
     const act=root.activeElement;if(act&&(act.tagName==='INPUT'||act.tagName==='TEXTAREA'||act.tagName==='SELECT'))return;
     const v=pv?{head:'',body:'',foot:''}:vista();const pag=pv?'vieja':sub==='sueldomoto'?'sl:'+SL.pest+':'+(SL.vista||''):(sub||tab);
@@ -1754,6 +1754,6 @@ button:active .pi{transform:scale(.92)}
   }
   addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar()}});
   setInterval(pintar,600);
-  window.pdAppAdm={pintar,ir,navEnDetalle:false,navH:()=>navH&&navH.style.display!=='none'?navH.getBoundingClientRect().height:0};
+  window.pdAppAdm={pintar,ir,navH:()=>navH&&navH.style.display!=='none'?navH.getBoundingClientRect().height:0};
 })();
 
