@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611191545">
+<meta name="pd-version" content="202611191600">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -19711,7 +19711,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     try{if(!nom||!tel){const r=neg?await D().from('negocios').select('nombre,telefono').eq('id',o.id).maybeSingle():await D().from('motorizados').select('nombre_completo,telefono').eq('id',o.id).maybeSingle();const d=r&&r.data||{};nom=nom||d.nombre||d.nombre_completo||'';tel=tel||d.telefono||''}}catch(_){}
     const link=neg?'https://pidemasdelivery.github.io/negocio/':'https://pidemasdelivery.github.io/motorizado/';
     const txt=neg
-      ?`¡Hola${nom?', '+nom:''}! 🎉\n\nTu negocio fue *aprobado* en *Pidemás Delivery*. Ya creamos tu cuenta de acceso a tu panel:\n\n👤 *Usuario (correo):* ${o.email}\n🔑 *Contraseña:* ${o.password}\n\n👉 Ingresa aquí: ${link}\n\n🔒 *Por tu seguridad, cambia tu contraseña* apenas ingreses: Perfil › Contraseña. No la compartas con nadie.\n\n📍 *Muy importante: configura bien tu ubicación.* Entra a Perfil › Ubicación y marca en el mapa el punto exacto de tu local. Con ese punto tus clientes ven al instante cuánto cuesta el delivery desde tu negocio hasta su casa, y el motorizado llega directo a recoger. Si la ubicación está mal, el costo del delivery saldrá mal.\n\nDesde tu panel recibes tus pedidos, subes tus productos y configuras tu horario. Cualquier duda, escríbenos por aquí. ¡Bienvenido a Pidemás! 🧡`
+      ?`¡Hola${nom?', '+nom:''}! 🎉\n\nTu negocio fue *aprobado* en *Pidemás Delivery*. Ya creamos tu cuenta de acceso a tu panel:\n\n👤 *Usuario (correo):* ${o.email}\n🔑 *Contraseña:* ${o.password}\n\n👉 Ingresa aquí: ${link}\n\n🔒 *Por tu seguridad, cambia tu contraseña* apenas ingreses: Perfil › Contraseña. No la compartas con nadie.\n\n📍 *Muy importante: configura bien tu ubicación.* Entra a Perfil › Ubicación y marca en el mapa el punto exacto de tu local. Con ese punto tus clientes ven al instante cuánto cuesta el delivery desde tu negocio hasta su casa, y el motorizado llega directo a recoger. Si la ubicación está mal, el costo del delivery saldrá mal.\n\n📖 *Guía paso a paso* (cómo armar tu carta, recibir pedidos, cobrar y entregar al motorizado): https://pidemasdelivery.github.io/demo/guia/\n\nDesde tu panel recibes tus pedidos, subes tus productos y configuras tu horario. Cualquier duda, escríbenos por aquí. ¡Bienvenido a Pidemás! 🧡`
       :`¡Hola${nom?', '+nom.split(' ')[0]:''}! 🎉\n\nTu registro como *motorizado* fue *aprobado* en *Pidemás Delivery*. Ya creamos tu cuenta de acceso a la app:\n\n👤 *Usuario (correo):* ${o.email}\n🔑 *Contraseña:* ${o.password}\n\n👉 Ingresa aquí: ${link}\n\n🔒 *Por tu seguridad, cambia tu contraseña* apenas ingreses. No la compartas con nadie.\n\nAhí verás los pedidos que te asignemos. Cualquier duda, escríbenos por aquí. ¡Bienvenido al equipo! 🧡`;
     const dig=String(tel).replace(/\D/g,''),wa=dig?(dig.length===9?'51'+dig:dig):'';
     const Es=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
