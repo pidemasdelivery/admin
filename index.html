@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611182240">
+<meta name="pd-version" content="202611191015">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -3122,6 +3122,8 @@ html body #estadoNegociosAdminBox .notice{margin:10px 0 0!important;border-radiu
 :root{--pd-font-family:"PdInter",Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;--pd-font-main:var(--pd-font-family);--pd-font:var(--pd-font-family)}
 #configNegociosAdminBox{font-family: var(--font);color:var(--fr-ink)}
 #configNegociosAdminBox .cnxOff{display:none!important}
+#configNegociosAdminBox .nxCatHd{display:flex;align-items:center;gap:0;background:#fff;padding-right:12px}#configNegociosAdminBox .nxCatHd .nxCatBtn{flex:1 1 0%!important;min-width:0!important;width:auto!important}#configNegociosAdminBox .nxCatDel{flex:0 0 44px;width:44px;min-height:44px;border-radius:12px;border:1px solid #F5C9C2;background:#fff;color:#B42318;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;align-self:center}
+
 #configNegociosAdminBox .cnxPick{background:#fff;border:1px solid var(--fr-line);border-radius: var(--r-lg);padding:14px;margin-bottom:12px}
 #configNegociosAdminBox .cnxPick label{display:block;font-size: var(--fs-base);font-weight:800;color:var(--fr-muted);margin:0 0 6px}
 #configNegociosAdminBox .cnxMuted{color:var(--fr-muted);font-size: var(--fs-md);line-height: var(--lh-normal)}
@@ -14995,7 +14997,7 @@ try{
         const {error}=await db.from('categorias_negocio').update({activo:c.activo===false}).eq('id',c.id).eq('negocio_id',cur.id);if(error)throw error;
         msg(c.activo===false?'Categoría visible en la tienda.':'Categoría oculta en la tienda.');
       }else if(a==='cat-del'&&c){
-        if(!(await pdConfirmar('¿Eliminar la categoría «'+(c.nombre||'')+'»? Sus productos quedarán sin categoría.')))return;
+        if(!(await (window.pdAdmPregunta||pdConfirmar)('¿Eliminar la categoría «'+(c.nombre||'')+'»? Sus productos quedarán sin categoría.')))return;
         const u=await db.from('productos_negocio').update({categoria_id:null}).eq('categoria_id',c.id).eq('negocio_id',cur.id);if(u.error)throw u.error;
         const {error}=await db.from('categorias_negocio').delete().eq('id',c.id).eq('negocio_id',cur.id);if(error)throw error;
         msg('Categoría eliminada.');
@@ -15248,7 +15250,7 @@ try{
       const z=g.list.filter(x=>{const v=stockDe(x);return v!==null&&v<=0}).length,hid=g.list.filter(x=>x.disponible===false).length;
       const sub=[g.list.length+' producto'+(g.list.length===1?'':'s'),z?z+' sin stock':'',hid?hid+' oculto'+(hid===1?'':'s'):'',c&&!on?'Oculta en la tienda':''].filter(Boolean).join(' · ');
       const more=c&&nxMore.has(cid)?'<div class="nxCatMore"><button type="button" data-a="c-vis">'+(on?'Ocultar en la tienda':'Mostrar en la tienda')+'</button><button type="button" data-a="c-ren">Renombrar</button><button type="button" data-a="c-up"'+(gi===0?' disabled':'')+'>↑ Subir</button><button type="button" data-a="c-down"'+(gi>=cats.length-1?' disabled':'')+'>↓ Bajar</button><button type="button" data-a="c-del" class="red">Eliminar</button></div>':'';
-      return '<section class="nxCat'+(open?' open':'')+(on?'':' off')+'" data-cat="'+E(cid)+'"><button type="button" class="nxCatBtn" data-a="c-tog" aria-expanded="'+open+'"><span><strong>'+(c?E(c.nombre):'Sin categoría')+'</strong><small>'+E(sub)+'</small></span>'+CHEV+'</button>'
+      return '<section class="nxCat'+(open?' open':'')+(on?'':' off')+'" data-cat="'+E(cid)+'"><div class="nxCatHd"><button type="button" class="nxCatBtn" data-a="c-tog" aria-expanded="'+open+'"><span><strong>'+(c?E(c.nombre):'Sin categoría')+'</strong><small>'+E(sub)+'</small></span>'+CHEV+'</button>'+(c?'<button type="button" class="nxCatDel" data-a="c-del" aria-label="Eliminar la categoría '+E(c.nombre)+'"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>':'')+'</div>'
         +(open?'<div class="nxCatBody">'+(shown.map(nxRow).join('')||'<p class="nxCatEmpty">Sin productos todavía.</p>')+'<div class="nxCatFoot"><button type="button" class="nxAddIn" data-a="c-add">+ Producto'+(c?' en '+E(c.nombre):'')+'</button>'+(c?'<button type="button" class="nxMoreBtn'+(nxMore.has(cid)?' act':'')+'" data-a="c-more" aria-label="Opciones de la categoría">⋯</button>':'')+'</div>'+more+'</div>':'')+'</section>';
     }).join('')||'<div class="nxEmpty">No hay productos con ese nombre.</div>';
   }
@@ -15271,7 +15273,7 @@ try{
       else if(a==='c-vis'&&c){const {error}=await db.from('categorias_negocio').update({activo:c.activo===false}).eq('id',c.id).eq('negocio_id',cur.id);if(error)throw error;msg(c.activo===false?'Categoría visible en la tienda.':'Categoría oculta en la tienda.')}
       else if(a==='c-ren'&&c){const n=window.pdPedir?await pdPedir('Nuevo nombre de la categoría:',c.nombre||''):null;if(!n||!String(n).trim())return;const {error}=await db.from('categorias_negocio').update({nombre:String(n).trim()}).eq('id',c.id).eq('negocio_id',cur.id);if(error)throw error;msg('Categoría guardada.')}
       else if((a==='c-up'||a==='c-down')&&c){const l=cats.slice(),i=l.indexOf(c),j=i+(a==='c-up'?-1:1);if(j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];for(let k=0;k<l.length;k++){if(Number(l[k].orden)===k+1)continue;const {error}=await db.from('categorias_negocio').update({orden:k+1}).eq('id',l[k].id).eq('negocio_id',cur.id);if(error)throw new Error(error.message+' (falta la columna «orden» en categorias_negocio)')}}
-      else if(a==='c-del'&&c){const n=prods.filter(x=>String(x.categoria_id)===String(c.id)).length;if(!(await pdConfirmar(n?'Esta categoría tiene '+n+' producto'+(n===1?'':'s')+'. Quedarán en «Sin categoría». ¿Continuar?':'¿Eliminar la categoría «'+(c.nombre||'')+'»?')))return;
+      else if(a==='c-del'&&c){const n=prods.filter(x=>String(x.categoria_id)===String(c.id)).length;if(!(await (window.pdAdmPregunta||pdConfirmar)(n?'Esta categoría tiene '+n+' producto'+(n===1?'':'s')+'. Quedarán en «Sin categoría». ¿Continuar?':'¿Eliminar la categoría «'+(c.nombre||'')+'»?')))return;
         const u=await db.from('productos_negocio').update({categoria_id:null}).eq('categoria_id',c.id).eq('negocio_id',cur.id);if(u.error)throw u.error;
         const {error}=await db.from('categorias_negocio').delete().eq('id',c.id).eq('negocio_id',cur.id);if(error)throw error;nxMore.delete(String(c.id));msg('Categoría eliminada.')}
       else return;
