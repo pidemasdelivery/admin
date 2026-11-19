@@ -840,9 +840,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   /* Eliminar una categoría: el usuario elige si borra también sus productos */
   window.pdElegirBorrarCat=function(nombre,n){
     const Es=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    if(window.pdVentana)return window.pdVentana({ic:'mal',titulo:'Eliminar «'+nombre+'»',
-      html:`<p>${n?`Esta categoría tiene <b style="color:#1F1A17">${n} producto${n===1?'':'s'}</b>. ¿Qué quieres hacer con ${n===1?'él':'ellos'}?`:'Esta categoría no tiene productos.'}</p>`,
-      botones:n?[{k:'todo',t:n===1?'Borrar la categoría y su producto':'Borrar la categoría y sus '+n+' productos',c:'r'},{k:'solo',t:'Borrar solo la categoría',sub:'Los productos se quedan, sin categoría'}]:[{k:'solo',t:'Sí, eliminar',c:'r'}]});
+    if(window.pdVentana)return window.pdVentana({ic:'mal',titulo:'¿Eliminar la categoría «'+nombre+'»?',
+      html:n?`<p>Tiene <b style="color:#1F1A17">${n} producto${n===1?'':'s'}</b>. Si no marcas la casilla, ${n===1?'se queda':'se quedan'} en tu carta sin categoría.</p><label style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid #F1E4DA;cursor:pointer;font-size:15px;font-weight:700"><input type="checkbox" id="pdCatTodo" style="width:22px;height:22px;accent-color:#B42318;flex:0 0 auto;margin:0">Borrar también ${n===1?'su producto':'sus '+n+' productos'}</label>`:'',
+      botones:[{k:'',t:'Cancelar'},{k:'si',t:'Sí, continuar',c:'r'}],cancelar:false,
+      valor:(k,r)=>k==='si'?(r.getElementById('pdCatTodo')&&r.getElementById('pdCatTodo').checked?'todo':'solo'):null});
     return Promise.resolve(confirm('¿Eliminar la categoría «'+nombre+'»?')?'solo':null)};
   window.pdElegirBorrarCatViejo=function(nombre,n){return new Promise(res=>{
     const Es=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

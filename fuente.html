@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611191200">
+<meta name="pd-version" content="202611191205">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -15259,7 +15259,7 @@ try{
       const z=g.list.filter(x=>{const v=stockDe(x);return v!==null&&v<=0}).length,hid=g.list.filter(x=>x.disponible===false).length;
       const sub=[g.list.length+' producto'+(g.list.length===1?'':'s'),z?z+' sin stock':'',hid?hid+' oculto'+(hid===1?'':'s'):'',c&&!on?'Oculta en la tienda':''].filter(Boolean).join(' · ');
       const more=c&&nxMore.has(cid)?'<div class="nxCatMore"><button type="button" data-a="c-vis">'+(on?'Ocultar en la tienda':'Mostrar en la tienda')+'</button><button type="button" data-a="c-ren">Renombrar</button><button type="button" data-a="c-up"'+(gi===0?' disabled':'')+'>↑ Subir</button><button type="button" data-a="c-down"'+(gi>=cats.length-1?' disabled':'')+'>↓ Bajar</button><button type="button" data-a="c-del" class="red">Eliminar</button></div>':'';
-      return '<section class="nxCat'+(open?' open':'')+(on?'':' off')+'" data-cat="'+E(cid)+'"><div class="nxCatHd"><button type="button" class="nxCatBtn" data-a="c-tog" aria-expanded="'+open+'"><span><strong>'+(c?E(c.nombre):'Sin categoría')+'</strong><small>'+E(sub)+'</small></span>'+CHEV+'</button>'+(c?'<button type="button" class="nxCatDel" data-a="c-del" aria-label="Eliminar la categoría '+E(c.nombre)+'"><span class="nxTr" aria-hidden="true"></span></button>':'')+'</div>'
+      return '<section class="nxCat'+(open?' open':'')+(on?'':' off')+'" data-cat="'+E(cid)+'"><div class="nxCatHd"><button type="button" class="nxCatBtn" data-a="c-tog" aria-expanded="'+open+'"><span><strong>'+(c?E(c.nombre):'Sin categoría')+'</strong><small>'+E(sub)+'</small></span>'+CHEV+'</button>'+'</div>'
         +(open?'<div class="nxCatBody">'+(shown.map(nxRow).join('')||'<p class="nxCatEmpty">Sin productos todavía.</p>')+'<div class="nxCatFoot"><button type="button" class="nxAddIn" data-a="c-add">+ Producto'+(c?' en '+E(c.nombre):'')+'</button>'+(c?'<button type="button" class="nxMoreBtn'+(nxMore.has(cid)?' act':'')+'" data-a="c-more" aria-label="Opciones de la categoría">⋯</button>':'')+'</div>'+more+'</div>':'')+'</section>';
     }).join('')||'<div class="nxEmpty">No hay productos con ese nombre.</div>';
   }
@@ -18775,8 +18775,8 @@ input.cod{text-align:center;font-size:30px;letter-spacing:.4em;height:64px}
       <div class="tapa" data-k=""></div><div class="cd" role="dialog" aria-modal="true" aria-label="${E(o.titulo||'')}" style="--abajo:${ab}px"><div class="hd"><span class="ic ${o.ic||''}">${IC[o.ic==='mal'?'mal':o.ic==='ok'?'ok':'q']}</span><div class="tt"><b>${E(o.titulo||'')}</b></div></div>${o.html||''}
       <div class="bs${dos?' dos':''}">${bs.map(b=>`<button type="button" class="b ${b.c||''}${b.sub?' s':''}" data-k="${E(b.k)}">${E(b.t)}${b.sub?`<small>${E(b.sub)}</small>`:''}</button>`).join('')}${o.cancelar===false?'':`<button type="button" class="b x2" data-k="">${E(o.cancelar||'Cancelar')}</button>`}</div></div>`;
     const fin=v=>{h.remove();res(v||null)};
-    r.addEventListener('click',e=>{const x=e.target.closest('[data-k]');if(!x)return;const k=x.dataset.k;const b=bs.find(y=>String(y.k)===k);if(b&&b.queda){try{o.alTocar&&o.alTocar(k,r,x)}catch(_){}return}fin(k)});
-    document.body.appendChild(h);setTimeout(()=>{const x=r.querySelector('.b.o,.b.r,.b.g');x&&x.focus()},40);
+    r.addEventListener('click',e=>{const x=e.target.closest('[data-k]');if(!x)return;const k=x.dataset.k;const b=bs.find(y=>String(y.k)===k);if(b&&b.queda){try{o.alTocar&&o.alTocar(k,r,x)}catch(_){}return}let v=k;try{if(o.valor)v=o.valor(k,r)}catch(_){}fin(v)});
+    document.body.appendChild(h);
   })};
   let pend=0;const tick=()=>{pend=0;try{sinVelo();pintarDlg();pintarToasts()}catch(e){console.warn('Ventanas:',e)}};
   new MutationObserver(()=>{if(!pend)pend=requestAnimationFrame(tick)}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','class','disabled','data-pdm-velo','data-pd-sin-velo'],characterData:true});
@@ -19626,9 +19626,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   /* Eliminar una categoría: el usuario elige si borra también sus productos */
   window.pdElegirBorrarCat=function(nombre,n){
     const Es=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    if(window.pdVentana)return window.pdVentana({ic:'mal',titulo:'Eliminar «'+nombre+'»',
-      html:`<p>${n?`Esta categoría tiene <b style="color:#1F1A17">${n} producto${n===1?'':'s'}</b>. ¿Qué quieres hacer con ${n===1?'él':'ellos'}?`:'Esta categoría no tiene productos.'}</p>`,
-      botones:n?[{k:'todo',t:n===1?'Borrar la categoría y su producto':'Borrar la categoría y sus '+n+' productos',c:'r'},{k:'solo',t:'Borrar solo la categoría',sub:'Los productos se quedan, sin categoría'}]:[{k:'solo',t:'Sí, eliminar',c:'r'}]});
+    if(window.pdVentana)return window.pdVentana({ic:'mal',titulo:'¿Eliminar la categoría «'+nombre+'»?',
+      html:n?`<p>Tiene <b style="color:#1F1A17">${n} producto${n===1?'':'s'}</b>. Si no marcas la casilla, ${n===1?'se queda':'se quedan'} en tu carta sin categoría.</p><label style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid #F1E4DA;cursor:pointer;font-size:15px;font-weight:700"><input type="checkbox" id="pdCatTodo" style="width:22px;height:22px;accent-color:#B42318;flex:0 0 auto;margin:0">Borrar también ${n===1?'su producto':'sus '+n+' productos'}</label>`:'',
+      botones:[{k:'',t:'Cancelar'},{k:'si',t:'Sí, continuar',c:'r'}],cancelar:false,
+      valor:(k,r)=>k==='si'?(r.getElementById('pdCatTodo')&&r.getElementById('pdCatTodo').checked?'todo':'solo'):null});
     return Promise.resolve(confirm('¿Eliminar la categoría «'+nombre+'»?')?'solo':null)};
   window.pdElegirBorrarCatViejo=function(nombre,n){return new Promise(res=>{
     const Es=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

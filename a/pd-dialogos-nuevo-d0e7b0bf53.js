@@ -149,8 +149,8 @@ input.cod{text-align:center;font-size:30px;letter-spacing:.4em;height:64px}
       <div class="tapa" data-k=""></div><div class="cd" role="dialog" aria-modal="true" aria-label="${E(o.titulo||'')}" style="--abajo:${ab}px"><div class="hd"><span class="ic ${o.ic||''}">${IC[o.ic==='mal'?'mal':o.ic==='ok'?'ok':'q']}</span><div class="tt"><b>${E(o.titulo||'')}</b></div></div>${o.html||''}
       <div class="bs${dos?' dos':''}">${bs.map(b=>`<button type="button" class="b ${b.c||''}${b.sub?' s':''}" data-k="${E(b.k)}">${E(b.t)}${b.sub?`<small>${E(b.sub)}</small>`:''}</button>`).join('')}${o.cancelar===false?'':`<button type="button" class="b x2" data-k="">${E(o.cancelar||'Cancelar')}</button>`}</div></div>`;
     const fin=v=>{h.remove();res(v||null)};
-    r.addEventListener('click',e=>{const x=e.target.closest('[data-k]');if(!x)return;const k=x.dataset.k;const b=bs.find(y=>String(y.k)===k);if(b&&b.queda){try{o.alTocar&&o.alTocar(k,r,x)}catch(_){}return}fin(k)});
-    document.body.appendChild(h);setTimeout(()=>{const x=r.querySelector('.b.o,.b.r,.b.g');x&&x.focus()},40);
+    r.addEventListener('click',e=>{const x=e.target.closest('[data-k]');if(!x)return;const k=x.dataset.k;const b=bs.find(y=>String(y.k)===k);if(b&&b.queda){try{o.alTocar&&o.alTocar(k,r,x)}catch(_){}return}let v=k;try{if(o.valor)v=o.valor(k,r)}catch(_){}fin(v)});
+    document.body.appendChild(h);
   })};
   let pend=0;const tick=()=>{pend=0;try{sinVelo();pintarDlg();pintarToasts()}catch(e){console.warn('Ventanas:',e)}};
   new MutationObserver(()=>{if(!pend)pend=requestAnimationFrame(tick)}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','class','disabled','data-pdm-velo','data-pd-sin-velo'],characterData:true});
