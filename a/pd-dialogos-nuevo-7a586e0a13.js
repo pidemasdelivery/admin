@@ -139,6 +139,19 @@ input.cod{text-align:center;font-size:30px;letter-spacing:.4em;height:64px}
       if(!v.children.length)v.style.setProperty('pointer-events','none','important');
     });
   }
+  /* Ventana propia con el mismo diseño (para elegir entre varias opciones o mostrar un mensaje para copiar).
+     pdVentana({ic:'mal'|'ok'|'q', titulo, html, botones:[{k,t,c:'o'|'r'|'g'|'',sub,queda}], alTocar(k,raiz)}) → Promise(k|null) */
+  window.pdVentana=function(o){return new Promise(res=>{
+    const h=document.createElement('pd-ventana');h.setAttribute('data-pd-aislado','1');const r=h.attachShadow({mode:'open'});
+    const ab=abajo();
+    const bs=(o.botones||[]);const dos=bs.length===2&&bs.every(b=>!b.sub&&String(b.t).length<16);
+    r.innerHTML=`<style>${CSS}:host{z-index:2147483647}.b small{display:block;font-size:13px;font-weight:600;opacity:.8;margin-top:2px}.b.s{height:auto;min-height:54px;padding:8px 12px}.b.x2{border:0;background:transparent;color:#6B5E55;font-weight:700;height:46px}.b:focus{outline:none}.b:focus-visible{outline:2px solid #F6CDB3;outline-offset:2px}textarea{font-family:inherit;height:auto;min-height:200px;padding:12px 14px;font-size:15px;font-weight:500;line-height:1.45;resize:vertical;background:#FFF9F5}</style>
+      <div class="tapa" data-k=""></div><div class="cd" role="dialog" aria-modal="true" aria-label="${E(o.titulo||'')}" style="--abajo:${ab}px"><div class="hd"><span class="ic ${o.ic||''}">${IC[o.ic==='mal'?'mal':o.ic==='ok'?'ok':'q']}</span><div class="tt"><b>${E(o.titulo||'')}</b></div></div>${o.html||''}
+      <div class="bs${dos?' dos':''}">${bs.map(b=>`<button type="button" class="b ${b.c||''}${b.sub?' s':''}" data-k="${E(b.k)}">${E(b.t)}${b.sub?`<small>${E(b.sub)}</small>`:''}</button>`).join('')}${o.cancelar===false?'':`<button type="button" class="b x2" data-k="">${E(o.cancelar||'Cancelar')}</button>`}</div></div>`;
+    const fin=v=>{h.remove();res(v||null)};
+    r.addEventListener('click',e=>{const x=e.target.closest('[data-k]');if(!x)return;const k=x.dataset.k;const b=bs.find(y=>String(y.k)===k);if(b&&b.queda){try{o.alTocar&&o.alTocar(k,r,x)}catch(_){}return}fin(k)});
+    document.body.appendChild(h);setTimeout(()=>{const x=r.querySelector('.b.o,.b.r,.b.g');x&&x.focus()},40);
+  })};
   let pend=0;const tick=()=>{pend=0;try{sinVelo();pintarDlg();pintarToasts()}catch(e){console.warn('Ventanas:',e)}};
   new MutationObserver(()=>{if(!pend)pend=requestAnimationFrame(tick)}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','class','disabled','data-pdm-velo','data-pd-sin-velo'],characterData:true});
   setInterval(tick,1000);

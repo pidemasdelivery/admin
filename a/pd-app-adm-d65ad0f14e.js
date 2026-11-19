@@ -807,7 +807,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   /* =============== EDITAR PEDIDO =============== */
 
   /* Confirmación propia de la app (siempre visible, nunca se queda esperando detrás de otra ventana) */
-  function pregunta(t){return new Promise(res=>{
+  function pregunta(t){if(window.pdVentana){const [a,...b]=String(t||'').split('\n');return window.pdVentana({ic:'q',titulo:a,html:b.length?'<p style="white-space:pre-line">'+E(b.join('\n'))+'</p>':'',botones:[{k:'0',t:'Cancelar'},{k:'1',t:'Aceptar',c:'o'}],cancelar:false}).then(v=>v==='1')}return new Promise(res=>{
     const [a,...b]=String(t||'').split('\n');const w=document.createElement('div');w.className='pdfxPregunta';w.setAttribute('data-pd-aislado','1');
     w.setAttribute('style','position:fixed;inset:0;z-index:2147483647;display:flex;align-items:flex-end;justify-content:center;background:rgba(31,26,23,.28);font-family:Inter,system-ui,sans-serif');
     w.innerHTML=`<div role="dialog" aria-modal="true" style="width:100%;max-width:560px;margin:12px;background:#fff;border-radius:22px;padding:20px 18px 16px;box-shadow:0 14px 40px rgba(31,26,23,.25);display:flex;flex-direction:column;gap:12px"><b style="font-size:19px;line-height:1.3;color:#1F1A17">${E(a)}</b>${b.length?`<div style="font-size:15px;line-height:1.5;color:#6B5E55;white-space:pre-line">${E(b.join('\n'))}</div>`:''}<div style="display:flex;gap:10px;margin-top:4px"><button type="button" data-r="0" style="flex:1;height:52px;border-radius:14px;border:1px solid #F1E4DA;background:#fff;font:700 16px Inter,system-ui,sans-serif;color:#1F1A17">Cancelar</button><button type="button" data-r="1" style="flex:1;height:52px;border-radius:14px;border:0;background:#C4410C;color:#fff;font:800 16px Inter,system-ui,sans-serif">Aceptar</button></div></div>`;
@@ -826,28 +826,25 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       :`¡Hola${nom?', '+nom.split(' ')[0]:''}! 🎉\n\nTu registro como *motorizado* fue *aprobado* en *Pidemás Delivery*. Ya creamos tu cuenta de acceso a la app:\n\n👤 *Usuario (correo):* ${o.email}\n🔑 *Contraseña:* ${o.password}\n\n👉 Ingresa aquí: ${link}\n\n🔒 *Por tu seguridad, cambia tu contraseña* apenas ingreses. No la compartas con nadie.\n\nAhí verás los pedidos que te asignemos. Cualquier duda, escríbenos por aquí. ¡Bienvenido al equipo! 🧡`;
     const dig=String(tel).replace(/\D/g,''),wa=dig?(dig.length===9?'51'+dig:dig):'';
     const Es=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const w=document.createElement('div');w.className='pdfxPregunta';w.setAttribute('data-pd-aislado','1');
-    w.setAttribute('style','position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:rgba(31,26,23,.4);padding:16px;box-sizing:border-box;font-family:Inter,system-ui,sans-serif');
-    const bt='width:100%;min-height:52px;border-radius:14px;font:800 16px Inter,system-ui,sans-serif;padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;';
-    w.innerHTML=`<div role="dialog" aria-modal="true" aria-label="Mensaje de acceso" style="width:100%;max-width:460px;max-height:100%;overflow:auto;background:#fff;border-radius:22px;padding:20px 16px 14px;box-shadow:0 14px 40px rgba(31,26,23,.25);display:flex;flex-direction:column;gap:10px;box-sizing:border-box">
-      <span style="width:52px;height:52px;border-radius:50%;background:#E9F6EE;color:#15803D;display:flex;align-items:center;justify-content:center;margin:0 auto"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
-      <b style="font-size:19px;line-height:1.3;color:#1F1A17;text-align:center">Cuenta creada</b>
-      <div style="font-size:14.5px;line-height:1.45;color:#6B5E55;text-align:center">Envíale este mensaje ${neg?'al negocio':'al motorizado'}${wa?' por WhatsApp':''}. Puedes editarlo antes de enviarlo.</div>
-      <label for="pdMaTx" style="position:absolute;width:1px;height:1px;overflow:hidden">Mensaje</label>
-      <textarea id="pdMaTx" rows="12" style="width:100%;box-sizing:border-box;border:1.5px solid #F1E4DA;border-radius:14px;padding:12px 14px;font:500 15px/1.45 Inter,system-ui,sans-serif;color:#1F1A17;background:#FFF9F5;resize:vertical">${Es(txt)}</textarea>
-      ${wa?`<button type="button" data-r="wa" style="${bt}border:0;background:#1F9D55;color:#fff">Enviar por WhatsApp${tel?' · '+Es(tel):''}</button>`:''}
-      <button type="button" data-r="copiar" style="${bt}border:${wa?'1px solid #F1E4DA;background:#fff;color:#1F1A17':'0;background:#C4410C;color:#fff'}">Copiar mensaje</button>
-      <button type="button" data-r="x" style="${bt}border:0;background:transparent;color:#6B5E55;font-weight:700">Cerrar</button></div>`;
-    const ta=()=>w.querySelector('#pdMaTx').value;
-    w.addEventListener('click',async e=>{const x=e.target.closest('[data-r]');if(!x)return;const r=x.dataset.r;
-      if(r==='wa'){window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(ta()),'_blank','noopener');return}
-      if(r==='copiar'){try{await navigator.clipboard.writeText(ta());x.textContent='¡Copiado!'}catch(_){const t=w.querySelector('#pdMaTx');t.select();try{document.execCommand('copy');x.textContent='¡Copiado!'}catch(__){}}setTimeout(()=>{x.textContent='Copiar mensaje'},1800);return}
-      w.remove()});
-    document.body.appendChild(w);
+    const bs=[];if(wa)bs.push({k:'wa',t:'Enviar por WhatsApp',sub:tel?'Al '+tel:'',c:'g',queda:true});bs.push({k:'copiar',t:'Copiar mensaje',c:wa?'':'o',queda:true});
+    if(!window.pdVentana){try{await navigator.clipboard.writeText(txt)}catch(_){}(window.pdAviso||alert)('Cuenta creada. Copiamos el mensaje para enviarlo.');return}
+    window.pdVentana({ic:'ok',titulo:'Cuenta creada',cancelar:'Cerrar',
+      html:`<p>Envíale este mensaje ${neg?'al negocio':'al motorizado'}. Puedes editarlo antes de enviarlo.</p><label for="pdMaTx" style="position:absolute;width:1px;height:1px;overflow:hidden">Mensaje</label><textarea id="pdMaTx" rows="11">${Es(txt)}</textarea>`,
+      botones:bs,
+      alTocar:async(k,r,x)=>{const t=r.getElementById('pdMaTx').value;
+        if(k==='wa'){window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(t),'_blank','noopener');return}
+        try{await navigator.clipboard.writeText(t)}catch(_){const a=r.getElementById('pdMaTx');a.select();try{document.execCommand('copy')}catch(__){}}
+        const o2=x.innerHTML;x.textContent='¡Copiado!';setTimeout(()=>{x.innerHTML=o2},1800)}});
   };
 
   /* Eliminar una categoría: el usuario elige si borra también sus productos */
-  window.pdElegirBorrarCat=function(nombre,n){return new Promise(res=>{
+  window.pdElegirBorrarCat=function(nombre,n){
+    const Es=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    if(window.pdVentana)return window.pdVentana({ic:'mal',titulo:'Eliminar «'+nombre+'»',
+      html:`<p>${n?`Esta categoría tiene <b style="color:#1F1A17">${n} producto${n===1?'':'s'}</b>. ¿Qué quieres hacer con ${n===1?'él':'ellos'}?`:'Esta categoría no tiene productos.'}</p>`,
+      botones:n?[{k:'todo',t:n===1?'Borrar la categoría y su producto':'Borrar la categoría y sus '+n+' productos',c:'r'},{k:'solo',t:'Borrar solo la categoría',sub:'Los productos se quedan, sin categoría'}]:[{k:'solo',t:'Sí, eliminar',c:'r'}]});
+    return Promise.resolve(confirm('¿Eliminar la categoría «'+nombre+'»?')?'solo':null)};
+  window.pdElegirBorrarCatViejo=function(nombre,n){return new Promise(res=>{
     const Es=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const w=document.createElement('div');w.className='pdfxPregunta';w.setAttribute('data-pd-aislado','1');
     w.setAttribute('style','position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:rgba(31,26,23,.4);padding:16px;box-sizing:border-box;font-family:Inter,system-ui,sans-serif');
@@ -1732,6 +1729,6 @@ button:active .pi{transform:scale(.92)}
   }
   addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar()}});
   setInterval(pintar,600);
-  window.pdAppAdm={pintar,ir,navH:()=>0};
+  window.pdAppAdm={pintar,ir,navH:()=>navH&&navH.style.display!=='none'?navH.getBoundingClientRect().height:0};
 })();
 
