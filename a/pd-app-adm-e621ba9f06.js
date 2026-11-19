@@ -227,6 +227,7 @@ html.pdaPag #nav,html.pdaApp #nav{visibility:hidden!important}
 html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer-events:none!important}
 }`;
   /* ---------- estado ---------- */
+  window.pdEnPagina=()=>{try{return !!sub||tab!=='inicio'||!!paginaVieja()||!!(window.PdPasos&&PdPasos.isOpen())}catch(e){return false}};
   let host=null,root=null,topH=null,topR=null,tab='inicio',key='',keyTop='',scrollMem={},tocando=false;
   let ultimo='',marca='inicio',kick='Administración',chip='',q='',selModo=false,limite=40,abiertoGr=null,mq='',movido=null;
   const SEL=()=>{try{return selectedOrders}catch(e){return null}};

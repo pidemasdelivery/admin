@@ -22,6 +22,7 @@
     var a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return true;
     var hs=document.querySelectorAll('[data-pdm-hoja],.pdnSh,.pdsmHoja,.pdPwHoja,[role=dialog],dialog[open]');
     for(var i=0;i<hs.length;i++){if(hs[i].getClientRects().length&&hs[i].id!=='pdInstalar')return true}
+    try{if(window.pdEnPagina&&window.pdEnPagina())return true}catch(e){}
     return Date.now()-toque<20000;
   }
   function recargar(){var fin=function(){location.reload()};
