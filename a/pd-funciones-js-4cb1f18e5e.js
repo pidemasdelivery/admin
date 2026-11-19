@@ -2783,6 +2783,7 @@ try{
 const {data,error}=await db.functions.invoke("crear-acceso-negocio",{body:{negocio_id,email,password}});
 if(error) throw error;
 if(data?.error) throw new Error(data.error);
+try{window.pdMensajeAcceso&&window.pdMensajeAcceso({tipo:"negocio",id:negocio_id,email,password})}catch(_){}
 msg($("accesoNegocioMsg"),"Cuenta creada y vinculada correctamente. Entrega las credenciales al propietario de forma privada.");
 $("accesoNegocioEmail").value="";$("accesoNegocioPassword").value="";
 }catch(e){
@@ -2883,6 +2884,7 @@ try{
 const {data,error}=await db.functions.invoke("crear-acceso-motorizado",{body:{motorizado_id,email,password}});
 if(error) throw error;
 if(data?.error) throw new Error(data.error);
+try{window.pdMensajeAcceso&&window.pdMensajeAcceso({tipo:"motorizado",id:motorizado_id,email,password})}catch(_){}
 msg($("accesoMotorizadoMsg"),"Cuenta creada y vinculada correctamente. Entrega las credenciales al motorizado de forma privada.");
 $("accesoMotorizadoEmail").value="";$("accesoMotorizadoPassword").value="";
 }catch(e){

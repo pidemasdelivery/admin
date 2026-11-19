@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611191140">
+<meta name="pd-version" content="202611191150">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -8036,6 +8036,7 @@ try{
 const {data,error}=await db.functions.invoke("crear-acceso-negocio",{body:{negocio_id,email,password}});
 if(error) throw error;
 if(data?.error) throw new Error(data.error);
+try{window.pdMensajeAcceso&&window.pdMensajeAcceso({tipo:"negocio",id:negocio_id,email,password})}catch(_){}
 msg($("accesoNegocioMsg"),"Cuenta creada y vinculada correctamente. Entrega las credenciales al propietario de forma privada.");
 $("accesoNegocioEmail").value="";$("accesoNegocioPassword").value="";
 }catch(e){
@@ -8136,6 +8137,7 @@ try{
 const {data,error}=await db.functions.invoke("crear-acceso-motorizado",{body:{motorizado_id,email,password}});
 if(error) throw error;
 if(data?.error) throw new Error(data.error);
+try{window.pdMensajeAcceso&&window.pdMensajeAcceso({tipo:"motorizado",id:motorizado_id,email,password})}catch(_){}
 msg($("accesoMotorizadoMsg"),"Cuenta creada y vinculada correctamente. Entrega las credenciales al motorizado de forma privada.");
 $("accesoMotorizadoEmail").value="";$("accesoMotorizadoPassword").value="";
 }catch(e){
@@ -19586,6 +19588,36 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     document.body.appendChild(w);setTimeout(()=>{const x=w.querySelector('[data-r="1"]');x&&x.focus()},30);
   })}
   window.pdAdmPregunta=pregunta;
+
+  /* Mensaje listo para enviar al crear una cuenta de acceso (negocio o motorizado) */
+  window.pdMensajeAcceso=async function(o){
+    const neg=o.tipo!=='motorizado';let nom=o.nombre||'',tel=o.telefono||'';
+    try{if(!nom||!tel){const r=neg?await D().from('negocios').select('nombre,telefono').eq('id',o.id).maybeSingle():await D().from('motorizados').select('nombre_completo,telefono').eq('id',o.id).maybeSingle();const d=r&&r.data||{};nom=nom||d.nombre||d.nombre_completo||'';tel=tel||d.telefono||''}}catch(_){}
+    const link=neg?'https://pidemasdelivery.github.io/negocio/':'https://pidemasdelivery.github.io/motorizado/';
+    const txt=neg
+      ?`¡Hola${nom?', '+nom:''}! 🎉\n\nTu negocio fue *aprobado* en *Pidemás Delivery*. Ya creamos tu cuenta de acceso a tu panel:\n\n👤 *Usuario (correo):* ${o.email}\n🔑 *Contraseña:* ${o.password}\n\n👉 Ingresa aquí: ${link}\n\n🔒 *Por tu seguridad, cambia tu contraseña* apenas ingreses: Perfil › Contraseña. No la compartas con nadie.\n\nDesde tu panel recibes tus pedidos, subes tus productos y configuras tu horario. Cualquier duda, escríbenos por aquí. ¡Bienvenido a Pidemás! 🧡`
+      :`¡Hola${nom?', '+nom.split(' ')[0]:''}! 🎉\n\nTu registro como *motorizado* fue *aprobado* en *Pidemás Delivery*. Ya creamos tu cuenta de acceso a la app:\n\n👤 *Usuario (correo):* ${o.email}\n🔑 *Contraseña:* ${o.password}\n\n👉 Ingresa aquí: ${link}\n\n🔒 *Por tu seguridad, cambia tu contraseña* apenas ingreses. No la compartas con nadie.\n\nAhí verás los pedidos que te asignemos. Cualquier duda, escríbenos por aquí. ¡Bienvenido al equipo! 🧡`;
+    const dig=String(tel).replace(/\D/g,''),wa=dig?(dig.length===9?'51'+dig:dig):'';
+    const Es=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const w=document.createElement('div');w.className='pdfxPregunta';w.setAttribute('data-pd-aislado','1');
+    w.setAttribute('style','position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:rgba(31,26,23,.4);padding:16px;box-sizing:border-box;font-family:Inter,system-ui,sans-serif');
+    const bt='width:100%;min-height:52px;border-radius:14px;font:800 16px Inter,system-ui,sans-serif;padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;';
+    w.innerHTML=`<div role="dialog" aria-modal="true" aria-label="Mensaje de acceso" style="width:100%;max-width:460px;max-height:100%;overflow:auto;background:#fff;border-radius:22px;padding:20px 16px 14px;box-shadow:0 14px 40px rgba(31,26,23,.25);display:flex;flex-direction:column;gap:10px;box-sizing:border-box">
+      <span style="width:52px;height:52px;border-radius:50%;background:#E9F6EE;color:#15803D;display:flex;align-items:center;justify-content:center;margin:0 auto"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+      <b style="font-size:19px;line-height:1.3;color:#1F1A17;text-align:center">Cuenta creada</b>
+      <div style="font-size:14.5px;line-height:1.45;color:#6B5E55;text-align:center">Envíale este mensaje ${neg?'al negocio':'al motorizado'}${wa?' por WhatsApp':''}. Puedes editarlo antes de enviarlo.</div>
+      <label for="pdMaTx" style="position:absolute;width:1px;height:1px;overflow:hidden">Mensaje</label>
+      <textarea id="pdMaTx" rows="12" style="width:100%;box-sizing:border-box;border:1.5px solid #F1E4DA;border-radius:14px;padding:12px 14px;font:500 15px/1.45 Inter,system-ui,sans-serif;color:#1F1A17;background:#FFF9F5;resize:vertical">${Es(txt)}</textarea>
+      ${wa?`<button type="button" data-r="wa" style="${bt}border:0;background:#1F9D55;color:#fff">Enviar por WhatsApp${tel?' · '+Es(tel):''}</button>`:''}
+      <button type="button" data-r="copiar" style="${bt}border:${wa?'1px solid #F1E4DA;background:#fff;color:#1F1A17':'0;background:#C4410C;color:#fff'}">Copiar mensaje</button>
+      <button type="button" data-r="x" style="${bt}border:0;background:transparent;color:#6B5E55;font-weight:700">Cerrar</button></div>`;
+    const ta=()=>w.querySelector('#pdMaTx').value;
+    w.addEventListener('click',async e=>{const x=e.target.closest('[data-r]');if(!x)return;const r=x.dataset.r;
+      if(r==='wa'){window.open('https://wa.me/'+wa+'?text='+encodeURIComponent(ta()),'_blank','noopener');return}
+      if(r==='copiar'){try{await navigator.clipboard.writeText(ta());x.textContent='¡Copiado!'}catch(_){const t=w.querySelector('#pdMaTx');t.select();try{document.execCommand('copy');x.textContent='¡Copiado!'}catch(__){}}setTimeout(()=>{x.textContent='Copiar mensaje'},1800);return}
+      w.remove()});
+    document.body.appendChild(w);
+  };
 
   /* Eliminar una categoría: el usuario elige si borra también sus productos */
   window.pdElegirBorrarCat=function(nombre,n){return new Promise(res=>{
