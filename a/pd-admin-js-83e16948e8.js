@@ -3933,8 +3933,10 @@ try{
       +TOG('cnxDsOn',on,sb?'Cobrar bolsa':'Cobrar descartables',sb?'Actívalo para sumar el precio de la bolsa a los pedidos.':'Actívalo para sumar el precio de los descartables a los pedidos.')
       +'<div class="cnxDsBox" id="cnxDsBox"'+(on?'':' hidden')+'><div class="cnxDsBoxH"><b>Precio por unidad</b><small>Vacío = no lo ofreces · 0 = gratis</small></div>'
       +DSK.filter(([k])=>PF.keys.includes(k)).map(([k,n,ic,sub,ph])=>'<label class="cnxDsRow" for="cnxDs_'+k+'"><span><b>'+n+'</b><small>'+sub+'</small></span><em>S/</em><input id="cnxDs_'+k+'" inputmode="decimal" maxlength="6" placeholder="'+ph+'" value="'+E(dsTxt(c[k]))+'" autocomplete="off"></label>').join('')
+      +'<div class="cnxDsBoxH" style="margin-top:12px"><b>Otros descartables</b><small>Por ejemplo caja, sobre o bandeja. Se eligen en cada producto.</small></div><div id="cnxDxList">'+(Array.isArray(c.extras)?c.extras:[]).map(x=>dxRow(x)).join('')+'</div><button type="button" class="nxBtn light sm" data-a="dx-add">+ Agregar otro descartable</button>'
       +'<p class="cnxDsNota">Si entregas bolsa de plástico, por ley se cobra además el impuesto ICBPER de S/ 0.50 por bolsa: inclúyelo en el precio.</p><button type="button" class="btn" data-a="ds-save">'+(sb?'Guardar precio':'Guardar precios')+'</button></div></div>';
   }
+  function dxRow(x){x=x||{};return '<div class="cnxDxRow" data-id="'+E(x.id||'')+'" style="display:grid!important;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) 46px!important;gap:8px!important;align-items:center!important;margin:6px 0!important"><input class="nxIn dxN" style="width:100%!important;min-width:0!important;box-sizing:border-box!important" maxlength="30" placeholder="Ej. Caja" value="'+E(x.n||'')+'" aria-label="Nombre del descartable" autocomplete="off"><input class="nxIn dxP" style="width:100%!important;min-width:0!important;box-sizing:border-box!important" inputmode="decimal" maxlength="6" placeholder="S/ 0.50" value="'+E(x.p==null?'':dsTxt(x.p))+'" aria-label="Precio" autocomplete="off"><button type="button" style="width:46px!important;min-width:46px!important;height:46px!important;padding:0!important;border-radius:12px!important;border:1px solid #F4C7C3!important;background:#FFFFFF!important;color:#B42318!important;font-size:22px!important;line-height:1!important" data-a="dx-del" aria-label="Quitar">×</button></div>'}
   async function dsToggle(inp){
     const nuevo=inp.checked;inp.disabled=true;
     try{await guardarNegocio({descartables_activo:nuevo},'Cambios guardados');const bx=$('cnxDsBox');if(bx)bx.hidden=!nuevo}
@@ -3948,25 +3950,28 @@ try{
       if(raw===''){cfg[k]=null;continue}
       const v=Number(raw);if(!isFinite(v)||v<0||v>50){msg(n+': escribe un precio válido, por ejemplo 0.50.',true);return}
       cfg[k]=Math.round(v*100)/100}
-    const pr=dsCfg().prod;if(pr&&typeof pr==='object'&&PF.tipo==='comida')cfg.prod=pr;
+    const ex=[];for(const row of document.querySelectorAll('#cnxDxList .cnxDxRow')){const n=row.querySelector('.dxN').value.trim(),raw=row.querySelector('.dxP').value.trim().replace(',','.');if(!n&&!raw)continue;if(!n){msg('Escribe el nombre de cada descartable.',true);return}const v=Number(raw);if(raw===''||!isFinite(v)||v<0||v>50){msg(n+': escribe un precio válido, por ejemplo 0.50.',true);return}ex.push({id:row.dataset.id||('x'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)),n,p:Math.round(v*100)/100})}
+    cfg.extras=ex;const ids=new Set(ex.map(x=>x.id));
+    let pr=dsCfg().prod;if(pr&&typeof pr==='object'){pr=JSON.parse(JSON.stringify(pr));for(const k in pr){const m=pr[k];if(Array.isArray(m.ex)){m.ex=m.ex.filter(i=>ids.has(String(i)));if(!m.ex.length)delete m.ex}if(PF.tipo!=='comida'){delete m.taper;delete m.vaso}if(!Object.keys(m).length)delete pr[k]}cfg.prod=pr}
     const t0=btn.textContent;btn.disabled=true;btn.textContent='Guardando…';
     try{await guardarNegocio({descartables_config:cfg},'Cambios guardados')}
     catch(e){msg(dsErr(e),true)}
     finally{btn.disabled=false;btn.textContent=t0}
   }
   function dsProdHTML(x){
-    if(dsPerfil(cur).tipo!=='comida'||cur.descartables_activo!==true)return '';
-    const c=dsCfg(),pc=(x&&x.id&&c.prod&&c.prod[String(x.id)])||{};
-    edit.ds={taper:pc.taper==='p'||pc.taper==='g'?pc.taper:'',vaso:pc.vaso==='p'||pc.vaso==='g'?pc.vaso:''};
+    const c=dsCfg(),EX=(Array.isArray(c.extras)?c.extras:[]).filter(e=>e&&e.id&&e.n),comida=dsPerfil(cur).tipo==='comida';
+    if(cur.descartables_activo!==true||(!comida&&!EX.length))return '';
+    const pc=(x&&x.id&&c.prod&&c.prod[String(x.id)])||{};
+    edit.ds={taper:pc.taper==='p'||pc.taper==='g'?pc.taper:'',vaso:pc.vaso==='p'||pc.vaso==='g'?pc.vaso:'',ex:(Array.isArray(pc.ex)?pc.ex:[]).map(String)};
     const hay=['taper_p','taper_g','vaso_p','vaso_g'].some(k=>dsP(c[k])!==null);
     const fila=(t,nom)=>{const op=(k,lab)=>{const pr=k?dsP(c[t+'_'+k]):0,off=k&&pr===null;return '<button type="button" data-a="dsp" data-dt="'+t+'" data-dk="'+k+'"'+(off?' disabled':'')+' aria-pressed="'+(edit.ds[t]===k)+'">'+lab+(k?(off?' · sin precio':' · '+money(pr)):'')+'</button>'};
       return '<div class="cnxDsPRow"><b>'+nom+'</b><div class="cnxDsSeg">'+op('','No lleva')+op('p','Pequeño')+op('g','Grande')+'</div></div>'};
-    return '<div class="nxSub">'+SEC('DESCARTABLES','Descartables de este producto')+'<p class="cnxMuted">'+(hay?'Lo que elijas se agrega solo cuando el cliente pide este producto, y su precio se suma al del producto.':'Primero escribe los precios de taper y vaso en Carta → Configurar descartables.')+'</p>'+fila('taper','Taper')+fila('vaso','Vaso')+'</div>';
+    return '<div class="nxSub">'+SEC('DESCARTABLES','Descartables de este producto')+'<p class="cnxMuted">'+(hay?'Lo que elijas se agrega solo cuando el cliente pide este producto, y su precio se suma al del producto.':'Primero escribe los precios de taper y vaso en Carta → Configurar descartables.')+'</p>'+(comida?fila('taper','Taper')+fila('vaso','Vaso'):'')+EX.map(e=>{const on=edit.ds.ex.includes(String(e.id));return '<div class="cnxDsPRow"><b>'+E(e.n)+'</b><div class="cnxDsSeg"><button type="button" data-a="dsx" data-x="'+E(e.id)+'" data-v="0" aria-pressed="'+(!on)+'">No lleva</button><button type="button" data-a="dsx" data-x="'+E(e.id)+'" data-v="1" aria-pressed="'+on+'">Lleva · '+money(dsP(e.p)||0)+'</button></div></div>'}).join('')+'</div>';
   }
   async function dsProdSave(id,ds){
     if(!ds||!id)return '';
     const c=Object.assign({},dsCfg()),prod=Object.assign({},c.prod||{}),k=String(id);
-    const nuevo={};if(ds.taper)nuevo.taper=ds.taper;if(ds.vaso)nuevo.vaso=ds.vaso;
+    const nuevo={};if(ds.taper)nuevo.taper=ds.taper;if(ds.vaso)nuevo.vaso=ds.vaso;if(ds.ex&&ds.ex.length)nuevo.ex=ds.ex.slice();
     if(JSON.stringify(nuevo)===JSON.stringify(prod[k]||{}))return '';
     if(Object.keys(nuevo).length)prod[k]=nuevo;else delete prod[k];
     c.prod=prod;
@@ -4222,6 +4227,9 @@ try{
     if(a==='ds-open'){dsOpen=!dsOpen;const pn=$('cnxDsPanel');if(pn){pn.hidden=!dsOpen;if(dsOpen)setTimeout(()=>{try{pn.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}},60)}return}
     if(a==='ds-close'){dsOpen=false;const pn=$('cnxDsPanel');if(pn)pn.hidden=true;return}
     if(a==='ds-save')return dsSave(b);
+    if(a==='dx-add'){const l=$('cnxDxList');if(l){l.insertAdjacentHTML('beforeend',dxRow({}));const i=l.lastElementChild&&l.lastElementChild.querySelector('.dxN');i&&i.focus()}return}
+    if(a==='dx-del'){const r=b.closest('.cnxDxRow');if(r)r.remove();return}
+    if(a==='dsx'){if(!edit||!edit.ds)return;const id=b.dataset.x;const L=edit.ds.ex||(edit.ds.ex=[]);const i=L.indexOf(id);if(b.dataset.v==='1'){if(i<0)L.push(id)}else if(i>=0)L.splice(i,1);b.parentElement.querySelectorAll('button').forEach(q=>q.setAttribute('aria-pressed',String((q.dataset.v==='1')===L.includes(id))));return}
     if(a==='dsp'){if(b.disabled||!edit||!edit.ds)return;const t=b.dataset.dt;edit.ds[t]=b.dataset.dk;b.parentElement.querySelectorAll('button').forEach(q=>q.setAttribute('aria-pressed',String(q.dataset.dk===edit.ds[t])));return}
     if(a==='p-save')return saveProd();
     if(a==='feat-add'){$('cnxFeat').insertAdjacentHTML('beforeend',featRow('',''));return}

@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611191515">
+<meta name="pd-version" content="202611191545">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -15068,8 +15068,10 @@ try{
       +TOG('cnxDsOn',on,sb?'Cobrar bolsa':'Cobrar descartables',sb?'Actívalo para sumar el precio de la bolsa a los pedidos.':'Actívalo para sumar el precio de los descartables a los pedidos.')
       +'<div class="cnxDsBox" id="cnxDsBox"'+(on?'':' hidden')+'><div class="cnxDsBoxH"><b>Precio por unidad</b><small>Vacío = no lo ofreces · 0 = gratis</small></div>'
       +DSK.filter(([k])=>PF.keys.includes(k)).map(([k,n,ic,sub,ph])=>'<label class="cnxDsRow" for="cnxDs_'+k+'"><span><b>'+n+'</b><small>'+sub+'</small></span><em>S/</em><input id="cnxDs_'+k+'" inputmode="decimal" maxlength="6" placeholder="'+ph+'" value="'+E(dsTxt(c[k]))+'" autocomplete="off"></label>').join('')
+      +'<div class="cnxDsBoxH" style="margin-top:12px"><b>Otros descartables</b><small>Por ejemplo caja, sobre o bandeja. Se eligen en cada producto.</small></div><div id="cnxDxList">'+(Array.isArray(c.extras)?c.extras:[]).map(x=>dxRow(x)).join('')+'</div><button type="button" class="nxBtn light sm" data-a="dx-add">+ Agregar otro descartable</button>'
       +'<p class="cnxDsNota">Si entregas bolsa de plástico, por ley se cobra además el impuesto ICBPER de S/ 0.50 por bolsa: inclúyelo en el precio.</p><button type="button" class="btn" data-a="ds-save">'+(sb?'Guardar precio':'Guardar precios')+'</button></div></div>';
   }
+  function dxRow(x){x=x||{};return '<div class="cnxDxRow" data-id="'+E(x.id||'')+'" style="display:grid!important;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) 46px!important;gap:8px!important;align-items:center!important;margin:6px 0!important"><input class="nxIn dxN" style="width:100%!important;min-width:0!important;box-sizing:border-box!important" maxlength="30" placeholder="Ej. Caja" value="'+E(x.n||'')+'" aria-label="Nombre del descartable" autocomplete="off"><input class="nxIn dxP" style="width:100%!important;min-width:0!important;box-sizing:border-box!important" inputmode="decimal" maxlength="6" placeholder="S/ 0.50" value="'+E(x.p==null?'':dsTxt(x.p))+'" aria-label="Precio" autocomplete="off"><button type="button" style="width:46px!important;min-width:46px!important;height:46px!important;padding:0!important;border-radius:12px!important;border:1px solid #F4C7C3!important;background:#FFFFFF!important;color:#B42318!important;font-size:22px!important;line-height:1!important" data-a="dx-del" aria-label="Quitar">×</button></div>'}
   async function dsToggle(inp){
     const nuevo=inp.checked;inp.disabled=true;
     try{await guardarNegocio({descartables_activo:nuevo},'Cambios guardados');const bx=$('cnxDsBox');if(bx)bx.hidden=!nuevo}
@@ -15083,25 +15085,28 @@ try{
       if(raw===''){cfg[k]=null;continue}
       const v=Number(raw);if(!isFinite(v)||v<0||v>50){msg(n+': escribe un precio válido, por ejemplo 0.50.',true);return}
       cfg[k]=Math.round(v*100)/100}
-    const pr=dsCfg().prod;if(pr&&typeof pr==='object'&&PF.tipo==='comida')cfg.prod=pr;
+    const ex=[];for(const row of document.querySelectorAll('#cnxDxList .cnxDxRow')){const n=row.querySelector('.dxN').value.trim(),raw=row.querySelector('.dxP').value.trim().replace(',','.');if(!n&&!raw)continue;if(!n){msg('Escribe el nombre de cada descartable.',true);return}const v=Number(raw);if(raw===''||!isFinite(v)||v<0||v>50){msg(n+': escribe un precio válido, por ejemplo 0.50.',true);return}ex.push({id:row.dataset.id||('x'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)),n,p:Math.round(v*100)/100})}
+    cfg.extras=ex;const ids=new Set(ex.map(x=>x.id));
+    let pr=dsCfg().prod;if(pr&&typeof pr==='object'){pr=JSON.parse(JSON.stringify(pr));for(const k in pr){const m=pr[k];if(Array.isArray(m.ex)){m.ex=m.ex.filter(i=>ids.has(String(i)));if(!m.ex.length)delete m.ex}if(PF.tipo!=='comida'){delete m.taper;delete m.vaso}if(!Object.keys(m).length)delete pr[k]}cfg.prod=pr}
     const t0=btn.textContent;btn.disabled=true;btn.textContent='Guardando…';
     try{await guardarNegocio({descartables_config:cfg},'Cambios guardados')}
     catch(e){msg(dsErr(e),true)}
     finally{btn.disabled=false;btn.textContent=t0}
   }
   function dsProdHTML(x){
-    if(dsPerfil(cur).tipo!=='comida'||cur.descartables_activo!==true)return '';
-    const c=dsCfg(),pc=(x&&x.id&&c.prod&&c.prod[String(x.id)])||{};
-    edit.ds={taper:pc.taper==='p'||pc.taper==='g'?pc.taper:'',vaso:pc.vaso==='p'||pc.vaso==='g'?pc.vaso:''};
+    const c=dsCfg(),EX=(Array.isArray(c.extras)?c.extras:[]).filter(e=>e&&e.id&&e.n),comida=dsPerfil(cur).tipo==='comida';
+    if(cur.descartables_activo!==true||(!comida&&!EX.length))return '';
+    const pc=(x&&x.id&&c.prod&&c.prod[String(x.id)])||{};
+    edit.ds={taper:pc.taper==='p'||pc.taper==='g'?pc.taper:'',vaso:pc.vaso==='p'||pc.vaso==='g'?pc.vaso:'',ex:(Array.isArray(pc.ex)?pc.ex:[]).map(String)};
     const hay=['taper_p','taper_g','vaso_p','vaso_g'].some(k=>dsP(c[k])!==null);
     const fila=(t,nom)=>{const op=(k,lab)=>{const pr=k?dsP(c[t+'_'+k]):0,off=k&&pr===null;return '<button type="button" data-a="dsp" data-dt="'+t+'" data-dk="'+k+'"'+(off?' disabled':'')+' aria-pressed="'+(edit.ds[t]===k)+'">'+lab+(k?(off?' · sin precio':' · '+money(pr)):'')+'</button>'};
       return '<div class="cnxDsPRow"><b>'+nom+'</b><div class="cnxDsSeg">'+op('','No lleva')+op('p','Pequeño')+op('g','Grande')+'</div></div>'};
-    return '<div class="nxSub">'+SEC('DESCARTABLES','Descartables de este producto')+'<p class="cnxMuted">'+(hay?'Lo que elijas se agrega solo cuando el cliente pide este producto, y su precio se suma al del producto.':'Primero escribe los precios de taper y vaso en Carta → Configurar descartables.')+'</p>'+fila('taper','Taper')+fila('vaso','Vaso')+'</div>';
+    return '<div class="nxSub">'+SEC('DESCARTABLES','Descartables de este producto')+'<p class="cnxMuted">'+(hay?'Lo que elijas se agrega solo cuando el cliente pide este producto, y su precio se suma al del producto.':'Primero escribe los precios de taper y vaso en Carta → Configurar descartables.')+'</p>'+(comida?fila('taper','Taper')+fila('vaso','Vaso'):'')+EX.map(e=>{const on=edit.ds.ex.includes(String(e.id));return '<div class="cnxDsPRow"><b>'+E(e.n)+'</b><div class="cnxDsSeg"><button type="button" data-a="dsx" data-x="'+E(e.id)+'" data-v="0" aria-pressed="'+(!on)+'">No lleva</button><button type="button" data-a="dsx" data-x="'+E(e.id)+'" data-v="1" aria-pressed="'+on+'">Lleva · '+money(dsP(e.p)||0)+'</button></div></div>'}).join('')+'</div>';
   }
   async function dsProdSave(id,ds){
     if(!ds||!id)return '';
     const c=Object.assign({},dsCfg()),prod=Object.assign({},c.prod||{}),k=String(id);
-    const nuevo={};if(ds.taper)nuevo.taper=ds.taper;if(ds.vaso)nuevo.vaso=ds.vaso;
+    const nuevo={};if(ds.taper)nuevo.taper=ds.taper;if(ds.vaso)nuevo.vaso=ds.vaso;if(ds.ex&&ds.ex.length)nuevo.ex=ds.ex.slice();
     if(JSON.stringify(nuevo)===JSON.stringify(prod[k]||{}))return '';
     if(Object.keys(nuevo).length)prod[k]=nuevo;else delete prod[k];
     c.prod=prod;
@@ -15357,6 +15362,9 @@ try{
     if(a==='ds-open'){dsOpen=!dsOpen;const pn=$('cnxDsPanel');if(pn){pn.hidden=!dsOpen;if(dsOpen)setTimeout(()=>{try{pn.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}},60)}return}
     if(a==='ds-close'){dsOpen=false;const pn=$('cnxDsPanel');if(pn)pn.hidden=true;return}
     if(a==='ds-save')return dsSave(b);
+    if(a==='dx-add'){const l=$('cnxDxList');if(l){l.insertAdjacentHTML('beforeend',dxRow({}));const i=l.lastElementChild&&l.lastElementChild.querySelector('.dxN');i&&i.focus()}return}
+    if(a==='dx-del'){const r=b.closest('.cnxDxRow');if(r)r.remove();return}
+    if(a==='dsx'){if(!edit||!edit.ds)return;const id=b.dataset.x;const L=edit.ds.ex||(edit.ds.ex=[]);const i=L.indexOf(id);if(b.dataset.v==='1'){if(i<0)L.push(id)}else if(i>=0)L.splice(i,1);b.parentElement.querySelectorAll('button').forEach(q=>q.setAttribute('aria-pressed',String((q.dataset.v==='1')===L.includes(id))));return}
     if(a==='dsp'){if(b.disabled||!edit||!edit.ds)return;const t=b.dataset.dt;edit.ds[t]=b.dataset.dk;b.parentElement.querySelectorAll('button').forEach(q=>q.setAttribute('aria-pressed',String(q.dataset.dk===edit.ds[t])));return}
     if(a==='p-save')return saveProd();
     if(a==='feat-add'){$('cnxFeat').insertAdjacentHTML('beforeend',featRow('',''));return}
@@ -18171,6 +18179,81 @@ new MutationObserver(function(ms){for(var i=0;i<ms.length;i++){var m=ms[i];var t
 })();
 
 </script>
+<script id="pd-minusculas">
+/* Pidemás · sugerencia de mayúsculas: si escriben o pegan una palabra TODA EN MAYÚSCULAS, se sugiere
+   cambiarla (solo la primera letra en mayúscula, o mayúscula al iniciar cada palabra). Nada se cambia solo.
+   No sugiere en correos, contraseñas, enlaces, números, códigos, placas, DNI/RUC ni buscadores. */
+(function(){
+  if(window.__pdMinusculas)return;window.__pdMinusculas=1;
+  const NO=/correo|e-?mail|clave|contrase|password|url|enlace|link|maps|ubicaci|c[oó]digo|cup[oó]n|placa|ruc|dni|documento|usuario|gu[ií]a|token|buscar|search/i;
+  function sirve(el){
+    if(!el||el.readOnly||el.disabled)return false;
+    if(el.closest&&el.closest('[data-pd-mayus]'))return false;
+    if(el.tagName==='INPUT'){if(!['','text'].includes((el.getAttribute('type')||'').toLowerCase()))return false}
+    else if(el.tagName!=='TEXTAREA')return false;
+    const im=(el.getAttribute('inputmode')||'').toLowerCase();if(/numeric|decimal|tel|email|url/.test(im))return false;
+    const ac=(el.getAttribute('autocomplete')||'').toLowerCase();if(/email|username|password|url|one-time/.test(ac))return false;
+    const pista=[el.id,el.name,el.placeholder,el.getAttribute('aria-label'),el.dataset&&el.dataset.in,el.dataset&&el.dataset.hin,(el.labels&&el.labels[0]&&el.labels[0].textContent)||''].join(' ');
+    return !NO.test(pista);
+  }
+  const L='a-záéíóúñü',U='A-ZÁÉÍÓÚÑÜ';
+  const hayGritos=v=>new RegExp('(^|[^'+L+U+'])['+U+']{3,}(?=$|[^'+L+U+'])').test(String(v||''));
+  const lower=s=>s.toLocaleLowerCase('es'),upper=s=>s.toLocaleUpperCase('es');
+  function oracion(v){const s=lower(String(v));const i=s.search(new RegExp('['+L+']'));return i<0?s:s.slice(0,i)+upper(s.charAt(i))+s.slice(i+1)}
+  function titulo(v){return lower(String(v)).replace(new RegExp('(^|[^'+L+'])(['+L+'])','g'),(m,a,b)=>a+upper(b))}
+
+  let host=null,root=null,campo=null,tOcultar=0;
+  function capa(){
+    if(host&&host.isConnected)return;
+    host=document.createElement('pd-sugerencia');host.setAttribute('data-pd-aislado','1');root=host.attachShadow({mode:'open'});
+    root.innerHTML=`<style>:host{all:initial;position:fixed;z-index:2147483647;left:12px;right:12px;top:0;display:none;font-family:PdInter,Inter,system-ui,sans-serif}
+.c{background:#FFFFFF;border:1px solid #F1E4DA;border-radius:16px;box-shadow:0 10px 28px rgba(31,26,23,.16);padding:10px 12px;display:flex;flex-direction:column;gap:8px;max-width:520px;margin:0 auto;animation:a .16s ease-out}
+@keyframes a{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.h{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#6B5E55}.h span{flex:1 1 0%}
+.x{all:unset;cursor:pointer;width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#6B5E55;font-size:20px}
+.o{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:1px;padding:9px 12px;border-radius:12px;border:1px solid #F1E4DA;background:#FFF9F5;color:#1F1A17;font-size:15px;font-weight:700;overflow:hidden}
+.o small{font-size:12px;font-weight:600;color:#9A330A}.o b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.o:active{background:#FDEBDF}
+</style><div class="c" role="dialog" aria-label="Sugerencia de mayúsculas"><div class="h"><span>¿Lo escribimos así?</span><button type="button" class="x" data-k="x" aria-label="Dejar como está">×</button></div><div id="op" style="display:flex;flex-direction:column;gap:6px"></div></div>`;
+    root.addEventListener('pointerdown',e=>e.preventDefault());
+    root.addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;const k=b.dataset.k;
+      if(k!=='x'&&campo){const v=k==='o'?oracion(campo.value):titulo(campo.value);campo.value=v;campo.dispatchEvent(new Event('input',{bubbles:true,composed:true}));campo.dispatchEvent(new Event('change',{bubbles:true,composed:true}))}
+      ocultar()});
+    document.body.appendChild(host);
+  }
+  function ocultar(){if(host)host.style.display='none';campo=null;clearTimeout(tOcultar)}
+  function sugerir(el){
+    if(!sirve(el)||!hayGritos(el.value)){if(campo===el)ocultar();return}
+    const a=oracion(el.value),b=titulo(el.value);
+    capa();campo=el;
+    const ops=[['o',a,'Solo la primera letra en mayúscula']];if(b!==a)ops.push(['t',b,'Mayúscula al iniciar cada palabra']);
+    const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    root.getElementById('op').innerHTML=ops.map(o=>`<button type="button" class="o" data-k="${o[0]}"><small>${o[2]}</small><b>${E(o[1].length>60?o[1].slice(0,60)+'…':o[1])}</b></button>`).join('');
+    const r=el.getBoundingClientRect();host.style.display='block';
+    const h=root.querySelector('.c').getBoundingClientRect().height||130;
+    let top=r.bottom+6;if(top+h>innerHeight-80)top=Math.max(8,r.top-h-6);
+    host.style.top=top+'px';
+    clearTimeout(tOcultar);tOcultar=setTimeout(ocultar,12000);
+  }
+  const real=e=>(e.composedPath&&e.composedPath()[0])||e.target;
+  const vistos=new WeakSet();
+  function escuchar(r){if(!r||vistos.has(r))return;vistos.add(r);
+    /* al salir del campo, la sugerencia se va (no tapa el siguiente campo) */
+    r.addEventListener('focusout',e=>{const el=real(e);if(campo===el)setTimeout(()=>{if(campo===el)ocultar()},150)},true)}
+  /* mientras escribe o al pegar: la sugerencia sale debajo del mismo campo */
+  let tEsc=0;
+  document.addEventListener('input',e=>{if(!e.isTrusted)return;const el=real(e);clearTimeout(tEsc);if(campo&&campo!==el)ocultar();
+    if(campo===el&&!hayGritos(el.value)){ocultar();return}
+    tEsc=setTimeout(()=>{const a=el.getRootNode&&el.getRootNode().activeElement;if(a===el||document.activeElement===el)sugerir(el)},e.inputType==='insertFromPaste'?50:700)},true);
+  escuchar(document);
+  const orig=Element.prototype.attachShadow;
+  Element.prototype.attachShadow=function(o){const r=orig.call(this,o);try{escuchar(r)}catch(_){}return r};
+  const barrer=()=>{for(const el of document.querySelectorAll('body *')){if(el.shadowRoot)escuchar(el.shadowRoot)}};
+  barrer();setTimeout(barrer,1500);setTimeout(barrer,5000);
+  addEventListener('scroll',()=>{if(campo)ocultar()},true);
+})();
+
+</script>
 <script id="pd-pasos-motor">
 /* ===== Pidemás · Pedido por pasos (motor común de admin, motorizado y negocio) =====
    Se dibuja dentro de una caja aislada (Shadow DOM): ningún CSS ni script viejo de la página
@@ -19628,7 +19711,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     try{if(!nom||!tel){const r=neg?await D().from('negocios').select('nombre,telefono').eq('id',o.id).maybeSingle():await D().from('motorizados').select('nombre_completo,telefono').eq('id',o.id).maybeSingle();const d=r&&r.data||{};nom=nom||d.nombre||d.nombre_completo||'';tel=tel||d.telefono||''}}catch(_){}
     const link=neg?'https://pidemasdelivery.github.io/negocio/':'https://pidemasdelivery.github.io/motorizado/';
     const txt=neg
-      ?`¡Hola${nom?', '+nom:''}! 🎉\n\nTu negocio fue *aprobado* en *Pidemás Delivery*. Ya creamos tu cuenta de acceso a tu panel:\n\n👤 *Usuario (correo):* ${o.email}\n🔑 *Contraseña:* ${o.password}\n\n👉 Ingresa aquí: ${link}\n\n🔒 *Por tu seguridad, cambia tu contraseña* apenas ingreses: Perfil › Contraseña. No la compartas con nadie.\n\nDesde tu panel recibes tus pedidos, subes tus productos y configuras tu horario. Cualquier duda, escríbenos por aquí. ¡Bienvenido a Pidemás! 🧡`
+      ?`¡Hola${nom?', '+nom:''}! 🎉\n\nTu negocio fue *aprobado* en *Pidemás Delivery*. Ya creamos tu cuenta de acceso a tu panel:\n\n👤 *Usuario (correo):* ${o.email}\n🔑 *Contraseña:* ${o.password}\n\n👉 Ingresa aquí: ${link}\n\n🔒 *Por tu seguridad, cambia tu contraseña* apenas ingreses: Perfil › Contraseña. No la compartas con nadie.\n\n📍 *Muy importante: configura bien tu ubicación.* Entra a Perfil › Ubicación y marca en el mapa el punto exacto de tu local. Con ese punto tus clientes ven al instante cuánto cuesta el delivery desde tu negocio hasta su casa, y el motorizado llega directo a recoger. Si la ubicación está mal, el costo del delivery saldrá mal.\n\nDesde tu panel recibes tus pedidos, subes tus productos y configuras tu horario. Cualquier duda, escríbenos por aquí. ¡Bienvenido a Pidemás! 🧡`
       :`¡Hola${nom?', '+nom.split(' ')[0]:''}! 🎉\n\nTu registro como *motorizado* fue *aprobado* en *Pidemás Delivery*. Ya creamos tu cuenta de acceso a la app:\n\n👤 *Usuario (correo):* ${o.email}\n🔑 *Contraseña:* ${o.password}\n\n👉 Ingresa aquí: ${link}\n\n🔒 *Por tu seguridad, cambia tu contraseña* apenas ingreses. No la compartas con nadie.\n\nAhí verás los pedidos que te asignemos. Cualquier duda, escríbenos por aquí. ¡Bienvenido al equipo! 🧡`;
     const dig=String(tel).replace(/\D/g,''),wa=dig?(dig.length===9?'51'+dig:dig):'';
     const Es=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -20554,81 +20637,6 @@ button:active .pi{transform:scale(.92)}
   addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar()}});
   setInterval(pintar,600);
   window.pdAppAdm={pintar,ir,navH:()=>navH&&navH.style.display!=='none'?navH.getBoundingClientRect().height:0};
-})();
-
-</script>
-<script id="pd-minusculas">
-/* Pidemás · sugerencia de mayúsculas: si escriben o pegan una palabra TODA EN MAYÚSCULAS, se sugiere
-   cambiarla (solo la primera letra en mayúscula, o mayúscula al iniciar cada palabra). Nada se cambia solo.
-   No sugiere en correos, contraseñas, enlaces, números, códigos, placas, DNI/RUC ni buscadores. */
-(function(){
-  if(window.__pdMinusculas)return;window.__pdMinusculas=1;
-  const NO=/correo|e-?mail|clave|contrase|password|url|enlace|link|maps|ubicaci|c[oó]digo|cup[oó]n|placa|ruc|dni|documento|usuario|gu[ií]a|token|buscar|search/i;
-  function sirve(el){
-    if(!el||el.readOnly||el.disabled)return false;
-    if(el.closest&&el.closest('[data-pd-mayus]'))return false;
-    if(el.tagName==='INPUT'){if(!['','text'].includes((el.getAttribute('type')||'').toLowerCase()))return false}
-    else if(el.tagName!=='TEXTAREA')return false;
-    const im=(el.getAttribute('inputmode')||'').toLowerCase();if(/numeric|decimal|tel|email|url/.test(im))return false;
-    const ac=(el.getAttribute('autocomplete')||'').toLowerCase();if(/email|username|password|url|one-time/.test(ac))return false;
-    const pista=[el.id,el.name,el.placeholder,el.getAttribute('aria-label'),el.dataset&&el.dataset.in,el.dataset&&el.dataset.hin,(el.labels&&el.labels[0]&&el.labels[0].textContent)||''].join(' ');
-    return !NO.test(pista);
-  }
-  const L='a-záéíóúñü',U='A-ZÁÉÍÓÚÑÜ';
-  const hayGritos=v=>new RegExp('(^|[^'+L+U+'])['+U+']{3,}(?=$|[^'+L+U+'])').test(String(v||''));
-  const lower=s=>s.toLocaleLowerCase('es'),upper=s=>s.toLocaleUpperCase('es');
-  function oracion(v){const s=lower(String(v));const i=s.search(new RegExp('['+L+']'));return i<0?s:s.slice(0,i)+upper(s.charAt(i))+s.slice(i+1)}
-  function titulo(v){return lower(String(v)).replace(new RegExp('(^|[^'+L+'])(['+L+'])','g'),(m,a,b)=>a+upper(b))}
-
-  let host=null,root=null,campo=null,tOcultar=0;
-  function capa(){
-    if(host&&host.isConnected)return;
-    host=document.createElement('pd-sugerencia');host.setAttribute('data-pd-aislado','1');root=host.attachShadow({mode:'open'});
-    root.innerHTML=`<style>:host{all:initial;position:fixed;z-index:2147483647;left:12px;right:12px;top:0;display:none;font-family:PdInter,Inter,system-ui,sans-serif}
-.c{background:#FFFFFF;border:1px solid #F1E4DA;border-radius:16px;box-shadow:0 10px 28px rgba(31,26,23,.16);padding:10px 12px;display:flex;flex-direction:column;gap:8px;max-width:520px;margin:0 auto;animation:a .16s ease-out}
-@keyframes a{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-.h{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#6B5E55}.h span{flex:1 1 0%}
-.x{all:unset;cursor:pointer;width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#6B5E55;font-size:20px}
-.o{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:1px;padding:9px 12px;border-radius:12px;border:1px solid #F1E4DA;background:#FFF9F5;color:#1F1A17;font-size:15px;font-weight:700;overflow:hidden}
-.o small{font-size:12px;font-weight:600;color:#9A330A}.o b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.o:active{background:#FDEBDF}
-</style><div class="c" role="dialog" aria-label="Sugerencia de mayúsculas"><div class="h"><span>¿Lo escribimos así?</span><button type="button" class="x" data-k="x" aria-label="Dejar como está">×</button></div><div id="op" style="display:flex;flex-direction:column;gap:6px"></div></div>`;
-    root.addEventListener('pointerdown',e=>e.preventDefault());
-    root.addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;const k=b.dataset.k;
-      if(k!=='x'&&campo){const v=k==='o'?oracion(campo.value):titulo(campo.value);campo.value=v;campo.dispatchEvent(new Event('input',{bubbles:true,composed:true}));campo.dispatchEvent(new Event('change',{bubbles:true,composed:true}))}
-      ocultar()});
-    document.body.appendChild(host);
-  }
-  function ocultar(){if(host)host.style.display='none';campo=null;clearTimeout(tOcultar)}
-  function sugerir(el){
-    if(!sirve(el)||!hayGritos(el.value)){if(campo===el)ocultar();return}
-    const a=oracion(el.value),b=titulo(el.value);
-    capa();campo=el;
-    const ops=[['o',a,'Solo la primera letra en mayúscula']];if(b!==a)ops.push(['t',b,'Mayúscula al iniciar cada palabra']);
-    const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-    root.getElementById('op').innerHTML=ops.map(o=>`<button type="button" class="o" data-k="${o[0]}"><small>${o[2]}</small><b>${E(o[1].length>60?o[1].slice(0,60)+'…':o[1])}</b></button>`).join('');
-    const r=el.getBoundingClientRect();host.style.display='block';
-    const h=root.querySelector('.c').getBoundingClientRect().height||130;
-    let top=r.bottom+6;if(top+h>innerHeight-80)top=Math.max(8,r.top-h-6);
-    host.style.top=top+'px';
-    clearTimeout(tOcultar);tOcultar=setTimeout(ocultar,12000);
-  }
-  const real=e=>(e.composedPath&&e.composedPath()[0])||e.target;
-  const vistos=new WeakSet();
-  function escuchar(r){if(!r||vistos.has(r))return;vistos.add(r);
-    /* al salir del campo, la sugerencia se va (no tapa el siguiente campo) */
-    r.addEventListener('focusout',e=>{const el=real(e);if(campo===el)setTimeout(()=>{if(campo===el)ocultar()},150)},true)}
-  /* mientras escribe o al pegar: la sugerencia sale debajo del mismo campo */
-  let tEsc=0;
-  document.addEventListener('input',e=>{if(!e.isTrusted)return;const el=real(e);clearTimeout(tEsc);if(campo&&campo!==el)ocultar();
-    if(campo===el&&!hayGritos(el.value)){ocultar();return}
-    tEsc=setTimeout(()=>{const a=el.getRootNode&&el.getRootNode().activeElement;if(a===el||document.activeElement===el)sugerir(el)},e.inputType==='insertFromPaste'?50:700)},true);
-  escuchar(document);
-  const orig=Element.prototype.attachShadow;
-  Element.prototype.attachShadow=function(o){const r=orig.call(this,o);try{escuchar(r)}catch(_){}return r};
-  const barrer=()=>{for(const el of document.querySelectorAll('body *')){if(el.shadowRoot)escuchar(el.shadowRoot)}};
-  barrer();setTimeout(barrer,1500);setTimeout(barrer,5000);
-  addEventListener('scroll',()=>{if(campo)ocultar()},true);
 })();
 
 </script>
