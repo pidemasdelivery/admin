@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611191400">
+<meta name="pd-version" content="202611191415">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -18379,7 +18379,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
     const root=host.attachShadow({mode:'open'});try{flechas(root)}catch(_){}
     document.body.appendChild(host);
     /* en el motorizado el menú de abajo queda visible también en el detalle */
-    try{const nh=(()=>{const A=window.pdAppMoto||window.pdAppNeg||window.pdAppAdm;return A&&A.navH?A.navH():0})();if(nh>0)host.style.bottom=nh+'px'}catch(_){}
+    try{const nh=(()=>{const A=window.pdAppMoto||window.pdAppNeg||window.pdAppAdm;return A&&A.navH&&A.navEnDetalle!==false?A.navH():0})();if(nh>0)host.style.bottom=nh+'px'}catch(_){}
     cur={host,root,model,ocultas:[],open:{},key:null,lastActive:-2,onClose:opts&&opts.onClose,ov:document.documentElement.style.overflow};
     document.documentElement.style.overflow='hidden';
     cur.propio=propio();
@@ -20551,7 +20551,7 @@ button:active .pi{transform:scale(.92)}
   }
   addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar()}});
   setInterval(pintar,600);
-  window.pdAppAdm={pintar,ir,navH:()=>navH&&navH.style.display!=='none'?navH.getBoundingClientRect().height:0};
+  window.pdAppAdm={pintar,ir,navEnDetalle:false,navH:()=>navH&&navH.style.display!=='none'?navH.getBoundingClientRect().height:0};
 })();
 
 </script>

@@ -1754,6 +1754,6 @@ button:active .pi{transform:scale(.92)}
   }
   addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar()}});
   setInterval(pintar,600);
-  window.pdAppAdm={pintar,ir,navH:()=>navH&&navH.style.display!=='none'?navH.getBoundingClientRect().height:0};
+  window.pdAppAdm={pintar,ir,navEnDetalle:false,navH:()=>navH&&navH.style.display!=='none'?navH.getBoundingClientRect().height:0};
 })();
 

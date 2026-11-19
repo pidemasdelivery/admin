@@ -207,7 +207,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
     const root=host.attachShadow({mode:'open'});try{flechas(root)}catch(_){}
     document.body.appendChild(host);
     /* en el motorizado el menú de abajo queda visible también en el detalle */
-    try{const nh=(()=>{const A=window.pdAppMoto||window.pdAppNeg||window.pdAppAdm;return A&&A.navH?A.navH():0})();if(nh>0)host.style.bottom=nh+'px'}catch(_){}
+    try{const nh=(()=>{const A=window.pdAppMoto||window.pdAppNeg||window.pdAppAdm;return A&&A.navH&&A.navEnDetalle!==false?A.navH():0})();if(nh>0)host.style.bottom=nh+'px'}catch(_){}
     cur={host,root,model,ocultas:[],open:{},key:null,lastActive:-2,onClose:opts&&opts.onClose,ov:document.documentElement.style.overflow};
     document.documentElement.style.overflow='hidden';
     cur.propio=propio();
