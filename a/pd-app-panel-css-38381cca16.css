@@ -1,0 +1,23 @@
+
+/* ===== pd-app-panel · se siente como app: sin zoom, sin recargar al jalar, login fijo y centrado ===== */
+html:root,html:root body{overscroll-behavior:none!important;overscroll-behavior-y:none!important;overflow-x:hidden!important;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+/* el body no corta el scroll de la página (el jalón para recargar lo sigue bloqueando html) */
+html:root body{overscroll-behavior:auto!important;overscroll-behavior-y:auto!important}
+html:root body{touch-action:pan-x pan-y;-webkit-tap-highlight-color:transparent}
+html:root input,html:root select,html:root textarea{font-size:max(16px,1em)}
+/* Login: ocupa exactamente la pantalla, no se mueve y queda centrado */
+html.pdLoginFijo,html.pdLoginFijo body{height:100%!important;overflow:hidden!important}
+html.pdLoginFijo body #loginView#loginView#loginView{position:fixed!important;inset:0!important;z-index:50!important;width:100%!important;max-width:none!important;height:100dvh!important;min-height:0!important;margin:0!important;
+  padding:max(24px,env(safe-area-inset-top,0px)) 20px max(24px,env(safe-area-inset-bottom,0px))!important;box-sizing:border-box!important;
+  display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:stretch!important;
+  overflow-y:auto!important;overscroll-behavior:contain!important;background:var(--fr-surface,#FFF9F5)!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+html.pdLoginFijo body #loginView#loginView#loginView > *{width:100%;max-width:420px;margin-left:auto!important;margin-right:auto!important}
+/* Ventanas que se cierran deslizando hacia abajo */
+/* sin estirar el contenido al jalar (efecto de Android que dejaba la cabecera arriba y un hueco blanco) */
+/* (solo en zonas con scroll real, lo pone el script al tocar: así el scroll pasa bien entre tarjetas) */
+.pdArrastrando{transition:none!important;user-select:none!important}
+.pdArrastrando *{overscroll-behavior:none!important}
+.pdSoltando{transition:translate .28s cubic-bezier(.2,.8,.3,1)!important}
+#pdFondoHoja{position:fixed;inset:0;background:rgba(31,26,23,.45);opacity:0;transition:opacity .2s ease-out;pointer-events:auto;touch-action:none}
+#pdFondoHoja.on{opacity:1}
+#pdFondoHoja[hidden]{display:none!important}

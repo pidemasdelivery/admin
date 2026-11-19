@@ -1,0 +1,51 @@
+
+/* ===== pd-ui-unico · buscadores, avisos, pantalla de carga y selector de fecha y hora con el diseño de Pidemás ===== */
+@layer pdmu{
+/* Buscadores: todos iguales */
+[data-pdm-busca-caja]{display:flex!important;align-items:center!important;gap:10px!important;height:48px!important;min-height:48px!important;max-height:48px!important;padding:0 14px!important;border:1.5px solid #F1E4DA!important;border-radius:14px!important;background:#FFFCFA!important;box-shadow:none!important;box-sizing:border-box!important;outline:0!important}
+[data-pdm-busca-neutro]{border:0!important;background:transparent!important;padding:0!important;box-shadow:none!important;height:auto!important;min-height:0!important;outline:0!important}
+[data-pdm-busca-neutro]::before,[data-pdm-busca-neutro]::after,[data-pdm-busca-caja]::before,[data-pdm-busca-caja]::after{display:none!important}
+[data-pdm-busca-neutro]>input[data-pdm-busca]{flex:1 1 auto!important;width:100%!important}
+[data-pdm-busca-caja]:focus-within{border-color:#C4410C!important}
+[data-pdm-busca-caja]>svg,[data-pdm-busca-caja]>span>svg,[data-pdm-busca-caja]>i>svg{width:20px!important;height:20px!important;flex:0 0 20px!important;color:#C4410C!important}
+input[data-pdm-busca="caja"]{flex:1 1 auto!important;min-width:0!important;width:100%!important;height:100%!important;margin:0!important;border:0!important;background:transparent!important;padding:0!important;font:600 15px var(--font,Inter,system-ui,sans-serif)!important;color:#1F1A17!important;outline:0!important;box-shadow:none!important}
+input[data-pdm-busca="solo"]{box-sizing:border-box!important;height:48px!important;min-height:48px!important;border:1.5px solid #F1E4DA!important;border-radius:14px!important;background:#FFFCFA url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C4410C' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 14px center/20px!important;padding:0 14px 0 44px!important;font:600 15px var(--font,Inter,system-ui,sans-serif)!important;color:#1F1A17!important;box-shadow:none!important;outline:0!important}
+input[data-pdm-busca="solo"]:focus{border-color:#C4410C!important}
+input[data-pdm-busca]::placeholder{color:#9A8B81!important;font-weight:500!important;opacity:1!important}
+/* Mensajes cortos (tienda y demo) con el mismo diseño de los paneles */
+#toast.toast,body>.toast{background:#fff!important;color:#1F1A17!important;border:1px solid #EFE3DA!important;border-left:5px solid #C4410C!important;border-radius:14px!important;padding:12px 14px!important;font:600 14px/1.4 var(--font,Inter,system-ui,sans-serif)!important;box-shadow:0 12px 32px rgba(31,26,23,.16)!important;text-align:left!important}
+body>.toast button{background:#FFF4EC!important;color:#C4410C!important;border:1px solid #F1E4DA!important;border-radius:10px!important}
+/* Pasos: el mismo diseño del formulario de afiliación («Paso 1 de 4» con barra de avance) */
+#ppSlots .lb .pill{display:flex!important;flex-direction:column!important;align-items:flex-end!important;gap:6px!important;background:transparent!important;border:0!important;padding:0!important;color:#6F625A!important;font:700 12.5px/1 var(--font,Inter,sans-serif)!important;letter-spacing:0!important;text-transform:none!important}
+#ppSlots .lb .pill::after{content:""!important;display:block!important;width:72px!important;height:6px!important;border-radius:6px!important;background:linear-gradient(90deg,#C4410C 0 48%,transparent 48% 52%,#F3E6DC 52% 100%)!important}
+#ppSlots .lb:has(+ .horas) .pill::after{background:linear-gradient(90deg,#C4410C 0 48%,transparent 48% 52%,#C4410C 52% 100%)!important}
+/* Selector de fecha y hora */
+#pdFhHoja{position:fixed!important;inset:0!important;z-index:2147483647!important;margin:0!important;border:0!important;padding:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;overflow:hidden!important;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(31,26,23,.52)!important;font-family:var(--font,Inter,system-ui,sans-serif);color:#1F1A17}
+#pdFhHoja[hidden]{display:none!important}
+#pdFhHoja .fhCard{background:#fff;border-radius:24px 24px 0 0;max-height:calc(100dvh - 56px);display:flex;flex-direction:column;width:100%;max-width:560px;margin:0 auto;box-sizing:border-box;animation:pdFhUp .22s cubic-bezier(.2,.8,.2,1);border:1px solid #F1E4DA;border-bottom:0}
+#pdFhHoja .fhGrab{width:40px;height:5px;border-radius:3px;background:#E8D9CE;margin:8px auto 0;flex:0 0 auto}
+#pdFhHoja .fhHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px 12px;flex:0 0 auto;border-bottom:1px solid #F4EAE2}
+#pdFhHoja .fhHead b{font:800 19px/1.25 var(--font,Inter,sans-serif);color:#C4410C}
+#pdFhHoja .fhX{flex:0 0 40px;width:40px;height:40px;border-radius:12px;border:1px solid #F1E4DA;background:#fff;color:#1F1A17;font:600 20px/1 var(--font,Inter,sans-serif);display:flex;align-items:center;justify-content:center;padding:0}
+#pdFhHoja .fhBody{overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:14px;overscroll-behavior:contain}
+#pdFhHoja .fhLbl{font:800 12px/1.2 var(--font,Inter,sans-serif);letter-spacing:.07em;text-transform:uppercase;color:#7A6A60}
+#pdFhHoja .fhMes{display:flex;align-items:center;justify-content:space-between}
+#pdFhHoja .fhMes b{font:800 17px var(--font,Inter,sans-serif);text-transform:capitalize}
+#pdFhHoja .fhMes button{width:40px;height:40px;border-radius:12px;border:1px solid #F1E4DA;background:#fff;color:#C4410C;font:800 18px/1 var(--font,Inter,sans-serif)}
+#pdFhHoja .fhCal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+#pdFhHoja .fhCal span{text-align:center;font:700 12px var(--font,Inter,sans-serif);color:#7A6A60;padding:4px 0}
+#pdFhHoja .fhCal button,#pdFhHoja .fhChips button{height:44px;border-radius:12px;border:1.5px solid #F1E4DA;background:#fff;color:#1F1A17;font:700 15px var(--font,Inter,sans-serif);padding:0}
+#pdFhHoja .fhCal button.hoy{border-color:#E7B9A2}
+#pdFhHoja button.on{background:#C4410C!important;border-color:#C4410C!important;color:#fff!important}
+#pdFhHoja button:disabled{opacity:.35}
+#pdFhHoja .fhChips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+#pdFhHoja .fhSeg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:#FFF4EC}
+#pdFhHoja .fhSeg button{height:40px;border:0;border-radius:11px;background:transparent;color:#7A6A60;font:800 14px var(--font,Inter,sans-serif)}
+#pdFhHoja .fhSeg button.on{background:#fff!important;color:#C4410C!important;border:0!important}
+#pdFhHoja .fhFoot{flex:0 0 auto;display:flex;gap:10px;padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid #F4EAE2;background:#fff}
+#pdFhHoja .fhFoot button{flex:1;height:50px;border-radius:14px;font:800 16px var(--font,Inter,sans-serif)}
+#pdFhHoja .fhNo{background:#fff;border:1.5px solid #F1E4DA;color:#1F1A17}
+#pdFhHoja .fhSi{background:#C4410C;border:0;color:#fff}
+#pdFhHoja .fhSi:disabled{opacity:.45}
+@keyframes pdFhUp{from{transform:translateY(40px);opacity:0}}
+}

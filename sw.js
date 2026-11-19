@@ -43,6 +43,11 @@ self.addEventListener('fetch',e=>{
   if(r.method!=='GET')return;
   const u=new URL(r.url);
   if(u.origin!==self.location.origin)return;
+  /* archivos del panel con huella en el nombre (carpeta a/): no cambian nunca, se sirven guardados al instante */
+  if(/\/a\/[^/]+-[0-9a-f]{10}\.(js|css)$/.test(u.pathname)){
+    e.respondWith(caches.open(PD_CACHE).then(async c=>{const hit=await c.match(r);if(hit)return hit;const res=await fetch(r);if(res&&res.ok)c.put(r,res.clone()).catch(()=>{});return res}));
+    return;
+  }
   e.respondWith((async()=>{
     try{
       /* la página siempre se pide sin caché para ver al momento lo que subes a GitHub */

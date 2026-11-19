@@ -1,0 +1,33 @@
+
+/* ===== pd-modal-unico · todas las ventanas iguales en todas las apps de Pidemás =====
+   Mismo ancho (máx. 560px), misma altura (hasta 56px del borde de arriba), bordes redondeados,
+   el mismo velo detrás y se cierran arrastrando hacia abajo.
+   Va en la primera capa (@layer pdmu) para que ningún estilo anterior lo pise. */
+@layer pdmu{
+:root{--pdmu-top:56px;--pdmu-h:calc(100dvh - var(--pdmu-top));--pdmu-w:560px;--pdmu-r:24px;--pdmu-velo:rgba(31,26,23,.22)}
+[data-pdm-velo]{background:var(--pdmu-velo)!important;background-image:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important;transform:none!important;filter:none!important;perspective:none!important;contain:none!important;will-change:auto!important}
+[data-pdm-velo="caja"]{background:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+#pdFondoHoja,#pdVelo,#pdmuVelo{background:var(--pdmu-velo)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+#pdmuVelo{position:fixed!important;inset:0!important;transition:opacity .2s ease!important}
+dialog[data-pdm-hoja]::backdrop{background:var(--pdmu-velo)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+[data-pdm-hoja]{position:fixed!important;top:auto!important;bottom:0!important;left:0!important;right:0!important;inset:auto 0 0 0!important;
+  width:100%!important;max-width:var(--pdmu-w)!important;min-width:0!important;margin:0 auto!important;box-sizing:border-box!important;
+  max-height:var(--pdmu-h)!important;min-height:0!important;
+  border-radius:var(--pdmu-r) var(--pdmu-r) 0 0!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;
+  background-color:#fff!important;box-shadow:none!important;border:1px solid #F1E4DA!important;border-bottom:0!important;
+  translate:none!important;scale:none!important;}
+[data-pdm-hoja][data-pdm-grip]{padding-top:22px!important}
+[data-pdm-hoja="full"]{height:var(--pdmu-h)!important}
+[data-pdm-hoja="auto"]{height:auto!important}
+[data-pdm-hoja][data-pdm-grip]::before{content:""!important;display:block!important;position:absolute!important;top:8px!important;left:50%!important;width:40px!important;height:5px!important;margin:0 0 0 -20px!important;border-radius:3px!important;background:#E8D9CE!important;z-index:5!important;pointer-events:none!important;opacity:1!important;transform:none!important}
+[data-pdm-oculto]{display:none!important}
+[data-pdm-cab]{position:sticky!important;top:0!important;z-index:4!important;background-color:#fff!important;box-shadow:0 -64px 0 0 #fff!important}
+[data-pdm-grip] > [data-pdm-cab][data-pdm-cab-ancho]::after{content:""!important;display:block!important;position:absolute!important;top:-14px!important;left:50%!important;width:40px!important;height:5px!important;margin:0 0 0 -20px!important;border-radius:3px!important;background:#E8D9CE!important;pointer-events:none!important}
+[data-pdm-cab] [data-pdm-titulo]{margin:0!important;font:800 19px/1.25 var(--font,Inter,system-ui,sans-serif)!important;letter-spacing:-.2px!important;color:#C4410C!important;text-transform:none!important}
+[data-pdm-pie]{position:sticky!important;bottom:0!important;z-index:4!important;background-color:#fff!important}
+/* abrir y cerrar rápido */
+[data-pdm-hoja],[data-pdm-velo]{animation-duration:.18s!important;transition-duration:.18s!important;animation-delay:0s!important;transition-delay:0s!important}
+[data-pdm-hoja].pdmuArrastre{transition:none!important;user-select:none!important}
+[data-pdm-hoja].pdmuVuelve{transition:transform .22s ease!important}
+[data-pdm-hoja].pdmuSale{transition:transform .2s ease-in!important}
+}
