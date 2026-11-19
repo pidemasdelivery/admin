@@ -1076,6 +1076,7 @@ var NUEVOS=[
 {id:'admRecojoRefEntrega',after:'admRecojoEntrega',label:'Referencia',ph:'Ej. edificio azul, dpto. 302'},
 {id:'admRecojoQueLleva',after:'admRecojoUbicacionEntrega',label:'¿Qué se lleva?',ph:'Ej. sobre con documentos, caja pequeña'},
 {id:'admCompraRef',after:'admCompraDireccion',label:'Referencia',ph:'Ej. frente a la bodega, casa verde'},
+{id:'admCompraLugarUrl',after:'admCompraLugar',label:'Ubicación del lugar (Google Maps)',ph:'Pega el enlace de Google Maps'},
 {id:'encRefRecojo',after:'encDireccionRecojo',label:'Referencia',ph:'Ej. casa de dos pisos, reja negra'}
 ];
 function crearCampo(d){
@@ -1083,7 +1084,7 @@ if($(d.id))return;var base=$(d.after);if(!base)return;
 var caja=base.closest('.field')||base.parentElement;if(!caja||!caja.parentElement)return;
 var nuevo=caja.cloneNode(true);
 nuevo.querySelectorAll('[id]').forEach(function(x){x.removeAttribute('id')});
-nuevo.querySelectorAll('datalist,small,.pdsLocBtn,button').forEach(function(x){x.remove()});
+nuevo.querySelectorAll('datalist,small,.pdsLocBtn,button,.pdmpBox').forEach(function(x){x.remove()});
 var inp=nuevo.querySelector('input,textarea');
 if(!inp){inp=document.createElement('input');nuevo.appendChild(inp)}
 if(inp.tagName==='INPUT')inp.type='text';
@@ -1110,7 +1111,15 @@ if(s){var NOM={efectivo:'Efectivo al recoger encomienda',yape:'Yape al recoger e
 Object.keys(NOM).forEach(function(v){var op=s.querySelector('option[value="'+v+'"]');if(op&&op.textContent!==NOM[v])op.textContent=NOM[v];
 var seg=s.parentElement&&s.parentElement.querySelector('.pdsSeg button[data-v="'+v+'"]');if(seg&&seg.textContent!==NOM[v])seg.textContent=NOM[v]})}
 }
-function formularios(){NUEVOS.forEach(crearCampo);unificar()}
+function syncLugar(){
+var n=$('admCompraLugar'),u=$('admCompraLugarUrl');if(!n||!u||u.dataset.sync)return;u.dataset.sync='1';
+var RX=/https?:\/\/\S+/;
+u.addEventListener('input',function(){var url=(u.value.match(RX)||[''])[0];var nom=n.value.replace(/https?:\/\/\S+/g,'').replace(/[\s·–-]+$/,'').trim();
+var nv=nom+(url?(nom?' · ':'')+url:'');if(nv!==n.value){n.value=nv;n.dispatchEvent(new Event('input',{bubbles:true}));n.dispatchEvent(new Event('change',{bubbles:true}))}});
+function espejo(){var url=(n.value.match(RX)||[''])[0];if(url!==((u.value.match(RX)||[''])[0]))u.value=url}
+n.addEventListener('input',espejo);n.addEventListener('change',espejo);espejo();
+}
+function formularios(){NUEVOS.forEach(crearCampo);unificar();syncLugar()}
 function val(id){var e=$(id);return e?String(e.value||'').trim():''}
 function coords(t){
 t=String(t||'');var m=/(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/.exec(decodeURIComponent(t));

@@ -2568,7 +2568,7 @@ let usuarioId=moto?.usuario_id||null;
 if(!usuarioId){const r=await db.from('motorizados').select('usuario_id').eq('id',motoId).maybeSingle();usuarioId=r.data?.usuario_id||null;}
 if(usuarioId){const n=await db.from('notificaciones').insert({usuario_id:usuarioId,pedido_id:data.id,tipo:'pedido_asignado',titulo:'Nueva compra asignada',mensaje:'Tienes una nueva compra asignada.',leida:false});if(n.error)console.warn('No se pudo registrar notificación de compra',n.error);}
 say('Compra enviada correctamente y asignada al motorizado.');
-['admCompraBuscarCliente','admCompraClienteId','admCompraCliente','admCompraTelefono','admCompraDireccion','admCompraUbicacion','admCompraLugar','admCompraDetalle','admCompraDocumento','admCompraObs','admCompraTotal'].forEach(id=>{if($id(id))$id(id).value='';});
+['admCompraBuscarCliente','admCompraClienteId','admCompraCliente','admCompraTelefono','admCompraDireccion','admCompraUbicacion','admCompraLugar','admCompraLugarUrl','admCompraDetalle','admCompraDocumento','admCompraObs','admCompraTotal'].forEach(id=>{if($id(id))$id(id).value='';});
 $id('admCompraComprobante').value='';$id('admCompraPago').value='';$id('admCompraMoto').value='';
 if(typeof loadOrders==='function')await loadOrders();
 }catch(error){if(compraWhatsAppTab&&!compraWhatsAppTab.closed)compraWhatsAppTab.close();console.error('Enviar compra:',error);say('No se pudo enviar la compra: '+(error?.message||String(error)));}
@@ -3135,7 +3135,7 @@ $("admCompraTelefono").value = clienteTelefono(client);
 $("admCompraDireccion").value = clienteDireccion(client);
 $("admCompraUbicacion").value = clienteUbicacion(client);
 $("admCompraDocumento").value = clienteDocumento(client);
-$("admCompraLugar").value = "";
+$("admCompraLugar").value = ""; if($("admCompraLugarUrl"))$("admCompraLugarUrl").value = "";
 $("admCompraDetalle").value = "";
 $("admCompraObs").value = "";
 $("admCompraBuscarCliente")?.focus({preventScroll:true});

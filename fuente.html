@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611191715">
+<meta name="pd-version" content="202611191730">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -7821,7 +7821,7 @@ let usuarioId=moto?.usuario_id||null;
 if(!usuarioId){const r=await db.from('motorizados').select('usuario_id').eq('id',motoId).maybeSingle();usuarioId=r.data?.usuario_id||null;}
 if(usuarioId){const n=await db.from('notificaciones').insert({usuario_id:usuarioId,pedido_id:data.id,tipo:'pedido_asignado',titulo:'Nueva compra asignada',mensaje:'Tienes una nueva compra asignada.',leida:false});if(n.error)console.warn('No se pudo registrar notificación de compra',n.error);}
 say('Compra enviada correctamente y asignada al motorizado.');
-['admCompraBuscarCliente','admCompraClienteId','admCompraCliente','admCompraTelefono','admCompraDireccion','admCompraUbicacion','admCompraLugar','admCompraDetalle','admCompraDocumento','admCompraObs','admCompraTotal'].forEach(id=>{if($id(id))$id(id).value='';});
+['admCompraBuscarCliente','admCompraClienteId','admCompraCliente','admCompraTelefono','admCompraDireccion','admCompraUbicacion','admCompraLugar','admCompraLugarUrl','admCompraDetalle','admCompraDocumento','admCompraObs','admCompraTotal'].forEach(id=>{if($id(id))$id(id).value='';});
 $id('admCompraComprobante').value='';$id('admCompraPago').value='';$id('admCompraMoto').value='';
 if(typeof loadOrders==='function')await loadOrders();
 }catch(error){if(compraWhatsAppTab&&!compraWhatsAppTab.closed)compraWhatsAppTab.close();console.error('Enviar compra:',error);say('No se pudo enviar la compra: '+(error?.message||String(error)));}
@@ -8388,7 +8388,7 @@ $("admCompraTelefono").value = clienteTelefono(client);
 $("admCompraDireccion").value = clienteDireccion(client);
 $("admCompraUbicacion").value = clienteUbicacion(client);
 $("admCompraDocumento").value = clienteDocumento(client);
-$("admCompraLugar").value = "";
+$("admCompraLugar").value = ""; if($("admCompraLugarUrl"))$("admCompraLugarUrl").value = "";
 $("admCompraDetalle").value = "";
 $("admCompraObs").value = "";
 $("admCompraBuscarCliente")?.focus({preventScroll:true});
@@ -10077,6 +10077,7 @@ var NUEVOS=[
 {id:'admRecojoRefEntrega',after:'admRecojoEntrega',label:'Referencia',ph:'Ej. edificio azul, dpto. 302'},
 {id:'admRecojoQueLleva',after:'admRecojoUbicacionEntrega',label:'¿Qué se lleva?',ph:'Ej. sobre con documentos, caja pequeña'},
 {id:'admCompraRef',after:'admCompraDireccion',label:'Referencia',ph:'Ej. frente a la bodega, casa verde'},
+{id:'admCompraLugarUrl',after:'admCompraLugar',label:'Ubicación del lugar (Google Maps)',ph:'Pega el enlace de Google Maps'},
 {id:'encRefRecojo',after:'encDireccionRecojo',label:'Referencia',ph:'Ej. casa de dos pisos, reja negra'}
 ];
 function crearCampo(d){
@@ -10084,7 +10085,7 @@ if($(d.id))return;var base=$(d.after);if(!base)return;
 var caja=base.closest('.field')||base.parentElement;if(!caja||!caja.parentElement)return;
 var nuevo=caja.cloneNode(true);
 nuevo.querySelectorAll('[id]').forEach(function(x){x.removeAttribute('id')});
-nuevo.querySelectorAll('datalist,small,.pdsLocBtn,button').forEach(function(x){x.remove()});
+nuevo.querySelectorAll('datalist,small,.pdsLocBtn,button,.pdmpBox').forEach(function(x){x.remove()});
 var inp=nuevo.querySelector('input,textarea');
 if(!inp){inp=document.createElement('input');nuevo.appendChild(inp)}
 if(inp.tagName==='INPUT')inp.type='text';
@@ -10111,7 +10112,15 @@ if(s){var NOM={efectivo:'Efectivo al recoger encomienda',yape:'Yape al recoger e
 Object.keys(NOM).forEach(function(v){var op=s.querySelector('option[value="'+v+'"]');if(op&&op.textContent!==NOM[v])op.textContent=NOM[v];
 var seg=s.parentElement&&s.parentElement.querySelector('.pdsSeg button[data-v="'+v+'"]');if(seg&&seg.textContent!==NOM[v])seg.textContent=NOM[v]})}
 }
-function formularios(){NUEVOS.forEach(crearCampo);unificar()}
+function syncLugar(){
+var n=$('admCompraLugar'),u=$('admCompraLugarUrl');if(!n||!u||u.dataset.sync)return;u.dataset.sync='1';
+var RX=/https?:\/\/\S+/;
+u.addEventListener('input',function(){var url=(u.value.match(RX)||[''])[0];var nom=n.value.replace(/https?:\/\/\S+/g,'').replace(/[\s·–-]+$/,'').trim();
+var nv=nom+(url?(nom?' · ':'')+url:'');if(nv!==n.value){n.value=nv;n.dispatchEvent(new Event('input',{bubbles:true}));n.dispatchEvent(new Event('change',{bubbles:true}))}});
+function espejo(){var url=(n.value.match(RX)||[''])[0];if(url!==((u.value.match(RX)||[''])[0]))u.value=url}
+n.addEventListener('input',espejo);n.addEventListener('change',espejo);espejo();
+}
+function formularios(){NUEVOS.forEach(crearCampo);unificar();syncLugar()}
 function val(id){var e=$(id);return e?String(e.value||'').trim():''}
 function coords(t){
 t=String(t||'');var m=/(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/.exec(decodeURIComponent(t));
@@ -19795,6 +19804,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       pago:met,quien:o.quien_paga||(/^recojo_/.test(String(o.pago_servicio_momento||''))?'envia':'recibe')});
     else if(b.tipo==='compra')Object.assign(b,{nom:o.nombre_cliente||'',tel:o.telefono_cliente||'',dir:o.direccion_entrega||'',ref:o.referencia_entrega||'',ubi:o.ubicacion_entrega||tagDe(obs,'Ubicación','Ubicación del cliente'),
       lugar:o.direccion_recojo||o.lugar_compra||tagDe(obs,'Lugar de compra'),detalle:o.detalle_compra||tagDe(obs,'Compra solicitada'),obs:libreDe(obs),comp:o.tipo_comprobante||tagDe(obs,'Comprobante').replace(/^No especificado$/i,''),doc:o.documento_comprobante||tagDe(obs,'DNI/RUC'),pago:met});
+    if(b.tipo==='compra'){const mu=String(b.lugar||'').match(/https?:\/\/\S+/);b.lugarUrl=mu?mu[0]:'';b.lugar=String(b.lugar||'').replace(/https?:\/\/\S+/g,'').replace(/[\s·–-]+$/,'').trim()}
     else{const m=String(o.pago_servicio_momento||'').toLowerCase();
       Object.assign(b,{rnom:o.nombre_remitente||o.nombre_cliente||'',rdni:o.dni_remitente||tagDe(obs,'DNI de quien envía'),rtel:o.telefono_remitente||o.telefono_cliente||'',rdir:o.direccion_recojo||'',rref:o.referencia_recojo||tagDe(obs,'Referencia de recojo'),rubi:o.ubicacion_recojo||tagDe(obs,'Ubicación de recojo'),
       enom:o.nombre_receptor||'',edni:o.dni_receptor||tagDe(obs,'DNI de quien recibe'),etel:o.telefono_receptor||'',tenv:o.tipo_encomienda||tagDe(obs,'Tipo de encomienda'),obs:libreDe(obs),
@@ -19820,7 +19830,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       h+=costo;
     }else if(f.tipo==='compra'){
       h+=card('Información del cliente',fl('peN','Nombre y apellido','nom','')+fl('peT','Teléfono','tel','',tel)+fl('peD','Dirección','dir','')+fl('peR','Referencia','ref','Ej. frente a la bodega, casa verde')+fl('peU','Ubicación (Google Maps)','ubi','Pega el enlace de Google Maps'));
-      h+=card('Información de la compra',fl('peLg','¿De dónde desea la compra?','lugar','')+ta('peDt','¿Qué desea que compremos?','detalle','')+ta('peOb','Observaciones','obs',''));
+      h+=card('Información de la compra',fl('peLg','¿De dónde desea la compra?','lugar','')+fl('peLu','Ubicación del lugar (Google Maps)','lugarUrl','Pega el enlace de Google Maps')+ta('peDt','¿Qué desea que compremos?','detalle','')+ta('peOb','Observaciones','obs',''));
       const oc=optsDe('admCompraComprobante');
       h+=card('Información del comprobante',sl('peCp','Boleta o factura','comp',oc.length?oc:[['Boleta','Boleta'],['Factura','Factura']],'No especificado')+fl('peDc','DNI / RUC','doc','',' inputmode="numeric" maxlength="11"'));
       h+=costo;
@@ -19852,7 +19862,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     }else if(f.tipo==='compra'){
       if(!f.nom.trim()){f.msg='Escribe el nombre del cliente.';return false}
       p={nombre_cliente:f.nom.trim(),telefono_cliente:f.tel.trim(),nombre_remitente:f.nom.trim(),telefono_remitente:f.tel.trim(),direccion_entrega:f.dir.trim(),referencia_entrega:f.ref.trim()||null,ubicacion_entrega:f.ubi.trim()||null,
-        direccion_recojo:f.lugar.trim(),tipo_comprobante:f.comp||null,documento_comprobante:f.doc.trim()||null,costo_delivery:costo,total:Math.round((n(o.subtotal)+costo)*100)/100,metodo_pago:pagado?'efectivo':f.pago};
+        direccion_recojo:[f.lugar.trim(),String(f.lugarUrl||'').trim()].filter(Boolean).join(' · '),tipo_comprobante:f.comp||null,documento_comprobante:f.doc.trim()||null,costo_delivery:costo,total:Math.round((n(o.subtotal)+costo)*100)/100,metodo_pago:pagado?'efectivo':f.pago};
       obs=rehacerObs(obs,{'Ubicación':f.ubi,'Compra solicitada':f.detalle,'Comprobante':f.comp||'No especificado','DNI/RUC':f.doc},f.obs);
       if(pagado)obs='Servicio marcado como PAGADO; no cobrar monto al cliente | '+obs;
       const ce=coordsDe(f.ubi);if(ce){p.latitud_entrega=ce.lat;p.longitud_entrega=ce.lng}
