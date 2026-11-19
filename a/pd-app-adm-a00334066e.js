@@ -127,6 +127,7 @@
 .pgb:active{transform:scale(.96);background:#FFF4EC}
 
 :host{z-index:2147482000}
+.pwz{gap:6px}.pbar{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;margin-top:8px}.pbar i{height:6px;border-radius:3px;background:#F1E4DA}.pbar i.on{background:#C4410C}
 .hkp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .hkp>div{background:#FFFFFF;border:1px solid #F1E4DA;border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .hkp span{font-size:13px;font-weight:700;color:#6B5E55}.hkp b{font-size:21px;font-weight:800;color:#1F1A17;white-space:nowrap}.hkp b.o{color:#C4410C}
@@ -779,14 +780,19 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function clienteForm(){
     const f=CL.f;if(!f)return {head:top3('Clientes','Cliente'),body:''};
     const fl=(id,l,k,ph,o)=>`<div class="fld"><label for="${id}">${l}</label><input id="${id}" value="${E(f[k])}" data-in="cf:${k}"${ph?` placeholder="${E(ph)}"`:''}${o||''}></div>`;
-    let h=`<div class="cd">${fl('cfN','Nombre y apellido','nombre','Ej. Ana Ruiz',' maxlength="80" autocomplete="off"')}${fl('cfT','Número','tel','9 dígitos',' type="tel" inputmode="numeric" maxlength="15"')}${fl('cfD','DNI (opcional)','dni','8 dígitos',' inputmode="numeric" maxlength="12"')}</div>`;
-    h+=`<div class="cd">${fl('cfA','Dirección','dir','Calle, número, urbanización',' maxlength="160"')}${fl('cfU','Ubicación o referencia','ubi','Pega el enlace de Google Maps o una referencia',' maxlength="300"')}<span style="font-size:13px;color:#6B5E55">Si pegas el enlace de Google Maps, el motorizado podrá abrir la ruta.</span></div>`;
+    try{datosCli()}catch(_){}
+    const pa=f.paso||0,LC=(C2.cli&&C2.cli.data)||null;
+    let h=`<div class="g2"><div class="kp"><span>Clientes</span><b>${LC?LC.length:'–'}</b></div><div class="kp"><span>Con ubicación</span><b>${LC?LC.filter(c=>c.latitud!=null||/maps|goo\.gl|-?\d+\.\d+\s*,\s*-?\d+\.\d+/i.test(String(cliU(c)||''))).length:'–'}</b></div></div>`;
+    h+=`<div class="cd pwz"><div class="kick" style="color:#6B5E55">Paso ${pa+1} de 2</div><b style="font-size:20px">${pa?'Dirección y ubicación':'Datos del cliente'}</b><div class="pbar"><i class="on"></i><i class="${pa?'on':''}"></i></div></div>`;
+    if(!pa)h+=`<div class="cd"><span style="font-size:14px;color:#6B5E55">Nombre y número con los que lo encontrarás al crear un pedido.</span>${fl('cfN','Nombre y apellido','nombre','Ej. Ana Ruiz',' maxlength="80" autocomplete="off"')}${fl('cfT','Número','tel','9 dígitos',' type="tel" inputmode="numeric" maxlength="15"')}${fl('cfD','DNI (opcional)','dni','8 dígitos',' inputmode="numeric" maxlength="12"')}</div>`;
+    else h+=`<div class="cd"><span style="font-size:14px;color:#6B5E55">Dónde se le entrega. Con el enlace de Google Maps, el motorizado podrá abrir la ruta.</span>${fl('cfA','Dirección','dir','Calle, número, urbanización',' maxlength="160"')}${fl('cfU','Ubicación o referencia','ubi','Pega el enlace de Google Maps o una referencia',' maxlength="300"')}</div>`;
     if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
-    return {head:top3('Clientes',f.id?'Editar cliente':'Nuevo cliente'),body:h,foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-a="cl:guardar">${f.id?'Guardar cambios':'Guardar cliente'}</button>`};
+    const foot=!pa?`<button type="button" class="b o" style="height:54px;font-size:16px" data-a="cl:sig">Siguiente</button>`:`<div style="display:flex;gap:10px"><button type="button" class="b" style="flex:1 1 0;height:54px;font-size:16px" data-a="cl:atras">Atrás</button><button type="button" class="b o" style="flex:1.6 1 0;height:54px;font-size:16px" data-a="cl:guardar">${f.id?'Guardar cambios':'Guardar cliente'}</button></div>`;
+    return {head:top3('Clientes',f.id?'Editar cliente':'Nuevo cliente'),body:h,foot};
   }
   async function cliGuardar(){
     const f=CL.f;f.msg='';const nombre=f.nombre.trim(),tel=f.tel.trim(),dir=f.dir.trim(),ubi=f.ubi.trim();
-    if(!nombre||!tel||!dir){f.msg='Completa nombre, número y dirección.';return}
+    if(!nombre||!tel){f.paso=0;f.msg='Completa el nombre y el número.';return}if(!dir){f.msg='Escribe la dirección del cliente.';return}
     const base={nombre_completo:nombre,telefono:tel,direccion:dir,referencia:ubi||null,activo:true};
     const co=typeof extraerCoordsCliente==='function'?extraerCoordsCliente(ubi):null;if(co){base.latitud=co.lat;base.longitud=co.lng}else if(!f.id||ubi){base.latitud=null;base.longitud=null}
     const probe=await D().from('clientes').select('documento').limit(1);if(!probe.error)base.documento=f.dni.trim()||null;
@@ -1733,6 +1739,8 @@ button:active .pi{transform:scale(.92)}
       case 'sl:act':if(C2.sueldo)C2.sueldo.t=0;datosSueldo(true);key='';pintar();break;
       case 'cl:nuevo':CL.f={id:'',nombre:'',tel:'',dni:'',dir:'',ubi:'',msg:''};{const q=CL.q.trim();if(q){if(/^\d[\d\s]{5,}$/.test(q))CL.f.tel=q.replace(/\s/g,'');else CL.f.nombre=q}}if(!sub)try{history.pushState({pdApp:1},'')}catch(_){}sub='clienteform';key='';pintar();break;
       case 'cl:editar':{const x=CL.sel;CL.f={id:x.id,nombre:cliN(x),tel:cliT(x),dni:x.documento||x.dni||'',dir:x.direccion||'',ubi:cliU(x),msg:''};sub='clienteform';key='';pintar();break}
+      case 'cl:sig':{const f=CL.f;if(!f)break;f.msg=!f.nombre.trim()?'Escribe el nombre del cliente.':!f.tel.trim()?'Escribe el número del cliente.':'';if(!f.msg)f.paso=1;key='';pintar();break}
+      case 'cl:atras':if(CL.f){CL.f.paso=0;CL.f.msg=''}key='';pintar();break;
       case 'cl:guardar':{if(a.disabled)break;a.disabled=true;try{await cliGuardar()}finally{key='';pintar()}break}
       case 'cl:borrar':await cliBorrar();break;
       case 'pe:guardar':{if(a.disabled)break;a.disabled=true;a.textContent='Guardando…';try{await pedidoGuardar()}catch(err){if(PE.f)PE.f.msg='No se pudo guardar: '+(err?.message||err)}finally{if(PE.f){key='';pintar();if(PE.f.msg){(window.pdAviso||alert)(PE.f.msg);const er=root.querySelector('.err');if(er)er.scrollIntoView({block:'center'})}}}break}

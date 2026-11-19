@@ -3091,6 +3091,10 @@ function wizard(cfg){
  <div class="pdwFoot"><p class="pdwMsg" role="status" hidden></p><button type="button" class="pdwBack">Atrás</button><button type="button" class="pdwNext">Siguiente</button></div></div>
  <div class="pdwAcc" hidden></div><div class="pdwHold"></div>`;
  const q=c=>w.querySelector(c);if(cfg.noSeg)q('.pdwSeg').remove();
+ /* cajitas de resumen arriba (como en Agencias) */
+ if(cfg.stats){const sb=document.createElement('div');sb.className='pdgStats pdwStats';sb.setAttribute('style','display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 12px');w.prepend(sb);
+  const upd=()=>{let L=[];try{L=cfg.stats()||[]}catch(e){}const h=L.map(x=>'<div><span>'+E(x[0])+'</span><strong>'+E(x[1]==null||x[1]===''?'–':String(x[1]))+'</strong></div>').join('');if(sb.innerHTML!==h){sb.style.gridTemplateColumns='repeat('+Math.max(1,L.length)+',minmax(0,1fr))';sb.innerHTML=h}};
+  w.statsUpd=upd;upd();setInterval(()=>{if(w.isConnected&&w.getClientRects().length)upd()},1500)}
  const steps=cfg.steps.map(st=>{const d=document.createElement('div');d.className='pdwStep';d.hidden=true;st.nodes().filter(Boolean).forEach(n=>d.appendChild(n));q('.pdwSteps').appendChild(d);return Object.assign({el:d},st)});
  let i=0,busy=false;const st={};
  const msg=t=>{const m=q('.pdwMsg');m.textContent=t||'';m.hidden=!t};
@@ -3149,6 +3153,7 @@ function alAbrir(box,fn){
  const editando=()=>!$('cancelRestaurant')?.classList.contains('hidden');
  const pass=$('accesoNegocioPassword');
  const W=wizard({yaKick:'Negocio ya registrado',seg:'Nuevo negocio',again:'Crear otro negocio',
+  stats:()=>{const o=[...($('accesoNegocioId')?.options||[])].filter(x=>x.value).length;const c=($('pdaCount')?.textContent||'').trim();return [['Negocios creados',o||'–'],['Cuentas de acceso',/^\d+$/.test(c)?c:'–']]},
   steps:[
    {title:'Datos del negocio',nodes:()=>[sec('datos')],check:()=>($('rNombre')?.value||'').trim()?'':'Escribe el nombre del negocio.'},
    {title:'Ubicación',nodes:()=>[sec('ubicacion')]},
@@ -3207,6 +3212,7 @@ function alAbrir(box,fn){
  const load=()=>typeof window.__pidemasLoadToolData==='function'?window.__pidemasLoadToolData('acceso-motorizado'):null;
  const pass=$('accesoMotorizadoPassword');
  const W=wizard({yaKick:'Motorizado ya registrado',seg:'Nuevo motorizado',again:'Crear otro motorizado',
+  stats:()=>{const o=[...($('accesoMotorizadoId')?.options||[])].filter(x=>x.value).length;const L=$('accesosMotorizadoList');const n=L?L.querySelectorAll(':scope > .row').length:0;return [['Motorizados',o||'–'],['Cuentas de acceso',n||(L&&/no devolvi/i.test(L.textContent)?0:'–')]]},
   steps:[
    {title:'Datos del motorizado',nodes:()=>[card('','Nombre y número con los que lo verás en los pedidos.',[F('nuevoMotoNombre'),F('nuevoMotoTelefono'),F('nuevoMotoActivo')])],next:'Guardar motorizado',
     run:async st=>{
@@ -3400,6 +3406,10 @@ function servicio(boxId,btnId,msgId,cfg){
  const req=sec=>{const f=[...sec.querySelectorAll('input[id]')].filter(i=>i.type!=='hidden'&&i.getClientRects().length);const nom=f.find(i=>/nombre|remitente|cliente$/i.test(i.id)&&!/buscar/i.test(i.id)),tel=f.find(i=>/tel/i.test(i.id));
   if(nom&&!nom.value.trim())return 'Escribe el nombre y apellido.';if(tel&&!tel.value.trim())return 'Escribe el número de teléfono.';return ''};
  const W=wizard({noSeg:true,again:cfg.again,
+  stats:()=>{let L=[];try{L=Array.isArray(allOrders)?allOrders:[]}catch(e){}const k=cfg.tipo;const mine=L.filter(o=>String(o.tipo_servicio||'').toLowerCase().includes(k));
+   const hoy=new Date().toLocaleDateString('en-CA',{timeZone:'America/Lima'});const dia=o=>o.creado_en||o.created_at?new Date(o.creado_en||o.created_at).toLocaleDateString('en-CA',{timeZone:'America/Lima'}):'';
+   const curso=mine.filter(o=>!/entregad|cancel|anulad|rechaz/i.test(String(o.estado||''))).length;
+   return [[(cfg.plural||'Pedidos')+' hoy',mine.filter(o=>dia(o)===hoy).length],['En curso',curso]]},
   steps:secs.map((sec,k)=>{
    const st={title:tit(sec),nodes:()=>[k===0&&busca?card('','',[busca]):null,sec].concat(extra.filter(e=>e.paso(sec)).map(e=>e.el))};
    if(k===0)st.check=()=>req(sec);
@@ -3423,10 +3433,10 @@ function servicio(boxId,btnId,msgId,cfg){
  box.prepend(W);box.classList.add('pdwServ');
  alAbrir(box,()=>W.open());
 }
-servicio('recojoAdminBox','admEnviarRecojoBtn','admRecojoMsg',{again:'Registrar otro recojo',enviar:'Enviar recojo y entrega',ok:'Recojo y entrega enviado',
+servicio('recojoAdminBox','admEnviarRecojoBtn','admRecojoMsg',{tipo:'recojo',plural:'Recojos',again:'Registrar otro recojo',enviar:'Enviar recojo y entrega',ok:'Recojo y entrega enviado',
  extra:()=>[{el:$('admRecojoYapeInfo'),paso:sec=>!!sec.querySelector('#admRecojoPago')}].filter(e=>e.el)});
-servicio('compraAdminBox','admEnviarCompraBtn','admCompraMsg',{again:'Registrar otra compra',enviar:'Enviar compra',ok:'Compra enviada'});
-servicio('encomiendaAdminBox','encEnviar','encMsg',{again:'Registrar otra encomienda',enviar:'Enviar encomienda',ok:'Encomienda enviada'});
+servicio('compraAdminBox','admEnviarCompraBtn','admCompraMsg',{tipo:'compra',plural:'Compras',again:'Registrar otra compra',enviar:'Enviar compra',ok:'Compra enviada'});
+servicio('encomiendaAdminBox','encEnviar','encMsg',{tipo:'encomienda',plural:'Encomiendas',again:'Registrar otra encomienda',enviar:'Enviar encomienda',ok:'Encomienda enviada'});
 
 /* ---------------- AGENCIAS ---------------- */
 (function(){
