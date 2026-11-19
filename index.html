@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611182010">
+<meta name="pd-version" content="202611182045">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -17932,6 +17932,38 @@ new MutationObserver(function(ms){for(var i=0;i<ms.length;i++){var m=ms[i];var t
   document.head.appendChild(st);
 })();
 </script>
+<script id="pd-pegar-campos">
+/* Pidemás · botón «Pegar» al costado de todos los campos de Recojo y entrega, Compra y Encomienda */
+(function(){
+  if(window.__pdPegar)return;window.__pdPegar=1;
+  const CAJAS=['recojoAdminBox','compraAdminBox','encomiendaAdminBox'];
+  const fire=(el,...ev)=>ev.forEach(t=>el.dispatchEvent(new Event(t,{bubbles:true})));
+  function poner(box){
+    box.querySelectorAll('input,textarea').forEach(inp=>{
+      const t=(inp.type||'text').toLowerCase();
+      if(inp.tagName==='INPUT'&&!['text','tel','number','search','email','url',''].includes(t))return;
+      if(inp.hidden||!inp.parentElement)return;
+      let w=inp.parentElement.classList.contains('pdsWithBtn')?inp.parentElement:null;
+      if(w&&w.querySelector(':scope>.pdsMini'))return;
+      if(!w){w=document.createElement('div');w.className='pdsWithBtn';inp.before(w);w.appendChild(inp)}
+      if(inp.tagName==='TEXTAREA')w.style.alignItems='start';
+      const pr=w.closest('.pdsPair');if(pr){pr.style.setProperty('display','flex','important');pr.style.setProperty('flex-direction','column','important');pr.style.setProperty('gap','14px','important');pr.querySelectorAll(':scope>.field').forEach(f=>f.style.setProperty('width','100%','important'))}
+      const b=document.createElement('button');b.type='button';b.className='pdsMini';b.textContent='Pegar';w.appendChild(b);
+      b.addEventListener('click',async()=>{
+        try{let x=String(await navigator.clipboard.readText()||'').trim();if(!x){inp.focus();return}
+          if(t==='number'){const m=x.replace(',','.').match(/-?\d+(?:\.\d+)?/);if(!m){inp.focus();return}x=m[0]}
+          if(t==='tel'){const us=/^@?[a-z0-9._]{3,35}$/i.test(x)&&/[a-z@]/i.test(x)?(x.startsWith('@')?x:'@'+x):'';if(us)x=us;else{const d=x.replace(/[^\d+]/g,'');if(d)x=d}}
+          inp.value=x;fire(inp,'input','change');inp.focus();
+        }catch(e){inp.focus();if(window.pdAviso)pdAviso('Tu celular no dejó leer lo copiado. Mantén presionado el campo y elige «Pegar».')}
+      });
+    });
+  }
+  function revisar(){CAJAS.forEach(id=>{const b=document.getElementById(id);if(b)poner(b)})}
+  let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(revisar,120)}).observe(document.body,{childList:true,subtree:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',revisar,{once:true});else revisar();
+})();
+
+</script>
 <script id="pd-pasos-motor">
 /* ===== Pidemás · Pedido por pasos (motor común de admin, motorizado y negocio) =====
    Se dibuja dentro de una caja aislada (Shadow DOM): ningún CSS ni script viejo de la página
@@ -18018,6 +18050,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .qr .a{font-size:16px;font-weight:800}.qr .b2{font-size:15px;font-weight:600}.qr .c{font-size:12px;color:#6B5E55}
 .inp{width:100%;height:54px;border-radius:14px;border:1.5px solid #F1E4DA;background:#FFFFFF;padding:0 16px;font:700 20px PdInter,Inter,system-ui,sans-serif;color:#1F1A17;outline:none}
 .inp:focus{border-color:#C4410C}
+.rap{display:flex;flex-direction:column;gap:8px}.rap .rt{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6B5E55}.rap .rl{display:flex;flex-direction:column;gap:6px}.rap a{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:14px;border:1px solid #F1E4DA;background:#FFFFFF;color:#1F1A17;text-decoration:none;font-size:14.5px;font-weight:600;line-height:1.3}.rap a svg{flex:0 0 18px;width:18px;height:18px;color:#15803D}.rap a:active{background:#FFF4EC}
 .quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .quick button{height:42px;border-radius:12px;border:1px solid #F1E4DA;background:#FFFFFF;font-size:14px;font-weight:700;color:#1F1A17;cursor:pointer}
 .quick button.on{border:0;background:#C4410C;color:#FFFFFF}
@@ -18173,6 +18206,8 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
       b.push(`<a class="b" ${t?`href="${util.usuario(phone)?'https://wa.me/'+t:'tel:+'+t}"${util.usuario(phone)?' target="_blank" rel="noopener"':''}`:'aria-disabled="true" style="opacity:.45;pointer-events:none"'}>${I.phone}Llamar</a>`);
       b.push(`<a class="b g" ${t?`href="https://wa.me/${t}${waText?'?text='+encodeURIComponent(waText):''}" target="_blank" rel="noopener"`:'aria-disabled="true" style="opacity:.45;pointer-events:none"'}>${I.wa}WhatsApp</a>`);
       return `<div class="btns${b.length===2?' b2':''}">${b.join('')}</div>`},
+    rapidos:(phone,lista,titulo)=>{const t=util.tel(phone);if(!t||!lista||!lista.length)return '';
+      return `<div class="rap"><div class="rt">${E(titulo||'Mensajes rápidos al cliente')}</div><div class="rl">${lista.filter(Boolean).map(m=>`<a href="https://wa.me/${t}?text=${encodeURIComponent(m[1])}" target="_blank" rel="noopener">${I.wa}<span>${E(m[0])}</span></a>`).join('')}</div></div>`},
     st:(txt,tipo)=>`<div class="st ${tipo||''}">${tipo==='ok'?I.ok:tipo==='mal'?'':'<span class="pt"></span>'}<span>${txt}</span></div>`,
     note:t=>`<div class="note">${I.info}<span>${t}</span></div>`,
     items:(titulo,det,precios)=>{const L=(det||[]).map(d=>`<div class="li"><span>${E(d.cantidad||1)} × ${E(d.nombre_producto||'Producto')}</span>${precios?`<b>${util.money(d.subtotal!=null?d.subtotal:(Number(d.precio_unitario)||0)*(Number(d.cantidad)||1))}</b>`:''}</div>`).join('');return L?`<div class="box"><div class="k">${E(titulo)}</div>${L}</div>`:''},
@@ -20134,38 +20169,6 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar()}});
   setInterval(pintar,600);
   window.pdAppAdm={pintar,ir,navH:()=>0};
-})();
-
-</script>
-<script id="pd-pegar-campos">
-/* Pidemás · botón «Pegar» al costado de todos los campos de Recojo y entrega, Compra y Encomienda */
-(function(){
-  if(window.__pdPegar)return;window.__pdPegar=1;
-  const CAJAS=['recojoAdminBox','compraAdminBox','encomiendaAdminBox'];
-  const fire=(el,...ev)=>ev.forEach(t=>el.dispatchEvent(new Event(t,{bubbles:true})));
-  function poner(box){
-    box.querySelectorAll('input,textarea').forEach(inp=>{
-      const t=(inp.type||'text').toLowerCase();
-      if(inp.tagName==='INPUT'&&!['text','tel','number','search','email','url',''].includes(t))return;
-      if(inp.hidden||!inp.parentElement)return;
-      let w=inp.parentElement.classList.contains('pdsWithBtn')?inp.parentElement:null;
-      if(w&&w.querySelector(':scope>.pdsMini'))return;
-      if(!w){w=document.createElement('div');w.className='pdsWithBtn';inp.before(w);w.appendChild(inp)}
-      if(inp.tagName==='TEXTAREA')w.style.alignItems='start';
-      const pr=w.closest('.pdsPair');if(pr){pr.style.setProperty('display','flex','important');pr.style.setProperty('flex-direction','column','important');pr.style.setProperty('gap','14px','important');pr.querySelectorAll(':scope>.field').forEach(f=>f.style.setProperty('width','100%','important'))}
-      const b=document.createElement('button');b.type='button';b.className='pdsMini';b.textContent='Pegar';w.appendChild(b);
-      b.addEventListener('click',async()=>{
-        try{let x=String(await navigator.clipboard.readText()||'').trim();if(!x){inp.focus();return}
-          if(t==='number'){const m=x.replace(',','.').match(/-?\d+(?:\.\d+)?/);if(!m){inp.focus();return}x=m[0]}
-          if(t==='tel'){const us=/^@?[a-z0-9._]{3,35}$/i.test(x)&&/[a-z@]/i.test(x)?(x.startsWith('@')?x:'@'+x):'';if(us)x=us;else{const d=x.replace(/[^\d+]/g,'');if(d)x=d}}
-          inp.value=x;fire(inp,'input','change');inp.focus();
-        }catch(e){inp.focus();if(window.pdAviso)pdAviso('Tu celular no dejó leer lo copiado. Mantén presionado el campo y elige «Pegar».')}
-      });
-    });
-  }
-  function revisar(){CAJAS.forEach(id=>{const b=document.getElementById(id);if(b)poner(b)})}
-  let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(revisar,120)}).observe(document.body,{childList:true,subtree:true});
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',revisar,{once:true});else revisar();
 })();
 
 </script>
