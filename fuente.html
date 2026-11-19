@@ -120,7 +120,7 @@ window.pdQuitarCarga=salir;
 }catch(e){h.classList.remove("pdCarga")}})();</script>
 
 <meta name="pd-instalacion" content="1">
-<meta name="pd-version" content="202611191645">
+<meta name="pd-version" content="202611191700">
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -18489,7 +18489,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
     hora:d=>{if(!d)return '';const x=new Date(d);return isNaN(x)?'':x.toLocaleTimeString('es-PE',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Lima'}).replace(/\s?a\.?\s?m\.?/i,' am').replace(/\s?p\.?\s?m\.?/i,' pm')},
     usuario:t=>{const m=/^\s*@([a-z0-9._]{3,35})\s*$/i.exec(String(t||''))||(/[a-z]/i.test(String(t||''))&&/^\s*([a-z0-9._]{3,35})\s*$/i.exec(String(t||'')));return m?m[1].toLowerCase():''},
     tel:t=>{const us=util.usuario(t);if(us)return us;const d=String(t||'').replace(/\D/g,'');if(!d)return '';return d.startsWith('51')&&d.length>9?d:(d.length===9?'51'+d:d)},
-    maps:(lat,lng,txt,url)=>{if(lat!=null&&lng!=null&&lat!==''&&lng!=='')return 'https://www.google.com/maps/dir/?api=1&destination='+lat+','+lng;if(url)return url;return txt?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(txt):''},
+    maps:(lat,lng,txt,url)=>{if(lat!=null&&lng!=null&&lat!==''&&lng!=='')return 'https://www.google.com/maps/search/?api=1&query='+lat+','+lng;if(url)return url;return txt?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(txt):''},
     ini:t=>String(t||'?').trim().charAt(0)||'?',
     who:(nombre,sub,foto,redondo)=>`<div class="who"><span class="av${redondo?' r':''}"${foto?` style="background-image:url('${E(foto)}')"`:''}>${foto?'':E(String(nombre||'?').trim().charAt(0))}</span><div style="min-width:0"><div class="wn">${E(nombre||'—')}</div><div class="ws">${sub||''}</div></div></div>`,
     addr:(t,r)=>t?`<div class="addr">${I.pin}<div><div class="at">${E(t)}</div>${r?`<div class="ar">Ref.: ${E(r)}</div>`:''}</div></div>`:'',
