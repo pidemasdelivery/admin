@@ -3126,10 +3126,11 @@ function wizard(cfg){
  w.querySelectorAll('.pdwSeg > button').forEach(b=>b.addEventListener('click',()=>{
   w.querySelectorAll('.pdwSeg > button').forEach(x=>x.classList.toggle('on',x===b));
   const acc=b.dataset.v==='cuentas';q('.pdwNew').hidden=acc;q('.pdwAcc').hidden=!acc;
+  if(!acc&&st.existente&&b.isConnected&&!w.__abriendoAcceso){for(const k in st)delete st[k];cfg.reset&&cfg.reset(st);go(0)}
   if(acc&&cfg.loadAcc)cfg.loadAcc();
  }));
- w.open=()=>{w.querySelector('.pdwSeg > button[data-v="nuevo"]')?.click();if(!q('.pdwDone').hidden){for(const k in st)delete st[k];cfg.reset&&cfg.reset(st)}go(0)};
- w.acceso=()=>{w.querySelector('.pdwSeg > button[data-v="nuevo"]').click();for(const k in st)delete st[k];cfg.reset&&cfg.reset(st);st.existente=true;go(steps.length-1)};
+ w.open=()=>{w.querySelector('.pdwSeg > button[data-v="nuevo"]')?.click();if(!q('.pdwDone').hidden||st.existente){for(const k in st)delete st[k];cfg.reset&&cfg.reset(st)}go(0)};
+ w.acceso=()=>{w.__abriendoAcceso=1;w.querySelector('.pdwSeg > button[data-v="nuevo"]').click();w.__abriendoAcceso=0;for(const k in st)delete st[k];cfg.reset&&cfg.reset(st);st.existente=true;go(steps.length-1)};
  w.go=k=>{for(const x in st)delete st[x];go(k)};
  w.hold=n=>{if(n)q('.pdwHold').appendChild(n)};w.acc=q('.pdwAcc');w.st=st;
  return w;
