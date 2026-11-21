@@ -1428,6 +1428,63 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         try{const n=await window.pdTarifa.guardar(C);C.actualizado=n.actualizado;C2['s:'+k].data=n;ok('Tarifas guardadas. La tienda ya cobra con estos valores.')}
         catch(e){f.msg='No se pudo guardar: '+(e.message||e)}}}};
 
+
+  /* --- Agencias --- */
+  const agClave=n=>String(n||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+  async function agUbis(){try{const c=D();const u=c.storage.from('restaurantes').getPublicUrl('config/agencias.json').data.publicUrl+'?t='+Date.now();const r=await fetch(u,{cache:'no-store'});if(r.ok){const j=await r.json();return (j&&j.agencias)||j||{}}}catch(_){}return {}}
+  SEC['agencias']={g:'Servicios',t:'Agencias',rf:1,
+    load:async()=>{const [a,d,u]=await Promise.all([D().from('agencias').select('id,nombre,activo').order('nombre'),D().from('agencia_destinos').select('id,agencia_id,destino_final,activo').order('destino_final'),agUbis()]);if(a.error)throw a.error;
+      return {A:(a.data||[]).filter(x=>x.activo!==false),Ds:(d.data||[]).filter(x=>x.activo!==false),U:u}},
+    v(){const k='agencias',c=datos(k,this.load),f=SF[k];f.p=f.p||'lista';f.nd=f.nd||{};if(!f.nuevo)f.nuevo={nombre:'',ds:['']};
+      let h=`<div class="seg" style="grid-template-columns:1fr 1fr">${[['lista','Tus agencias'],['nueva','Nueva agencia']].map(x=>`<button type="button" class="${f.p===x[0]?'on':''}" data-sa="p:${x[0]}">${x[1]}</button>`).join('')}</div>`;
+      if(f.p==='nueva'){const n=f.nuevo;
+        h+=`<div class="cd"><div class="fld"><label>Nombre de la agencia</label><input data-in="ag:n" value="${E(n.nombre)}" placeholder="Ej. Olva Courier o Shalom"></div></div>
+        <div class="cd"><div class="lbl">Destinos que atiende</div>${n.ds.map((d,i)=>`<div class="row"><input style="flex:1 1 0%;min-width:0;height:52px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px" data-in="ag:d:${i}" value="${E(d)}" placeholder="${i?'Otro destino':'Ej. Lima'}">${n.ds.length>1?`<button type="button" class="ib" style="color:#B42318" data-sa="nx:${i}" aria-label="Quitar destino">${IC.trash}</button>`:''}</div>`).join('')}<button type="button" class="b" style="height:46px" data-sa="n+">${IC.plus}Agregar otro destino</button></div>
+        <span style="font-size:13px;color:#6B5E55;margin:0 4px">Después de guardarla podrás marcar su ubicación en el mapa para que el motorizado llegue directo.</span>`;
+        if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
+        return {body:h,foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="crear">Guardar agencia</button>`}}
+      if(!c.data)return {body:h+cargando(c)};const {A,Ds,U}=c.data;
+      h+=A.length?A.map(a=>{const ds=Ds.filter(d=>String(d.agencia_id)===String(a.id)),u=U[agClave(a.nombre)];
+        return `<div class="cd"><div class="row" style="justify-content:space-between;align-items:flex-start"><b style="font-size:17px;overflow-wrap:anywhere">${E(a.nombre)}</b><span style="display:flex;gap:6px;flex:0 0 auto"><button type="button" class="b" style="height:38px;padding:0 12px" data-sa="ed:${E(a.id)}">Editar</button><button type="button" class="b" style="height:38px;padding:0 12px;color:#B42318;border-color:#F4C7C3" data-sa="del:${E(a.id)}">Eliminar</button></span></div>
+          <div class="lbl" style="margin:2px 0 0">Destinos</div><div style="display:flex;flex-wrap:wrap;gap:8px">${ds.length?ds.map(d=>`<span style="display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 6px 0 12px;border-radius:999px;background:#FFF4EC;border:1px solid #F1E4DA;font-size:14px;font-weight:600">${E(d.destino_final)}<button type="button" aria-label="Quitar ${E(d.destino_final)}" data-sa="dd:${E(d.id)}" style="width:26px;height:26px;border-radius:50%;border:0;background:#FFFFFF;color:#B42318;font-size:16px;line-height:1;cursor:pointer">×</button></span>`).join(''):'<span style="font-size:14px;color:#6B5E55">Sin destinos.</span>'}</div>
+          <div class="row"><input style="flex:1 1 0%;min-width:0;height:48px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px" placeholder="Nuevo destino" data-in="ag:nd:${E(a.id)}" value="${E(f.nd[a.id]||'')}"><button type="button" class="b" style="flex:0 0 auto;height:48px;padding:0 14px" data-sa="da:${E(a.id)}">Agregar</button></div>
+          <div class="row" style="align-items:center"><span style="flex:1 1 0%;font-size:14px;color:${u?'#0F5E2E':'#6B5E55'}">${u?'✓ '+E(u.direccion||'Ubicación marcada'):'Sin ubicación: el motorizado no la verá en el mapa.'}</span><button type="button" class="b" style="height:40px;padding:0 12px" data-sa="ub:${E(a.id)}">${u?'Cambiar ubicación':'Marcar en el mapa'}</button></div></div>`}).join(''):vacio('Todavía no hay agencias. Registra la primera en «Nueva agencia».');
+      return {body:h}},
+    async a(x){const k='agencias',f=SF[k],c=C2['s:'+k],[op,arg]=[x.split(':')[0],x.split(':').slice(1).join(':')];f.msg='';
+      if(op==='p'){f.p=arg;return}
+      if(op==='n+'){f.nuevo.ds.push('');return}
+      if(op==='nx'){f.nuevo.ds.splice(+arg,1);return}
+      const A=(c&&c.data&&c.data.A)||[],ag=A.find(a=>String(a.id)===String(arg));
+      if(op==='crear'){const nombre=f.nuevo.nombre.trim(),ds=[...new Set(f.nuevo.ds.map(d=>d.trim()).filter(Boolean))];
+        if(!nombre){f.msg='Escribe el nombre de la agencia.';return}if(!ds.length){f.msg='Agrega al menos un destino.';return}
+        if(A.some(a=>agClave(a.nombre)===agClave(nombre))){f.msg='Esa agencia ya está registrada.';return}
+        const r=await D().from('agencias').insert({nombre,activo:true}).select('id').single();if(r.error){f.msg='No se pudo registrar: '+r.error.message;return}
+        const r2=await D().from('agencia_destinos').insert(ds.map(d=>({agencia_id:r.data.id,destino_final:d,activo:true})));if(r2.error)mal('La agencia se guardó, pero no los destinos: '+r2.error.message);
+        ok('Agencia registrada');f.nuevo=null;f.p='lista';PE.ags=null;recargar(k);return}
+      if(op==='ed'&&ag){const n=await (window.pdPedir?pdPedir('Nuevo nombre de la agencia:',ag.nombre||''):prompt('Nuevo nombre de la agencia:',ag.nombre||''));if(n==null)return;const nn=String(n).trim();if(!nn){mal('El nombre no puede quedar vacío.');return}
+        const q=await D().from('agencias').update({nombre:nn}).eq('id',ag.id);if(q.error){mal('No se pudo editar: '+q.error.message);return}
+        const u=c.data.U[agClave(ag.nombre)];if(u&&agClave(nn)!==agClave(ag.nombre))try{await agGuardarUbi(nn,ag.id,u,agClave(ag.nombre))}catch(_){}
+        ok('Agencia actualizada');PE.ags=null;recargar(k);return}
+      if(op==='del'&&ag){const n=c.data.Ds.filter(d=>String(d.agencia_id)===String(ag.id)).length;if(!(await conf(n?`«${ag.nombre}» tiene ${n} destino${n===1?'':'s'}. ¿Eliminarla de las agencias activas? Sus pedidos se conservan.`:`¿Eliminar la agencia «${ag.nombre}»?`)))return;
+        const q=await D().from('agencias').update({activo:false}).eq('id',ag.id).select('id').maybeSingle();if(q.error||!q.data){mal('No se pudo eliminar'+(q.error?': '+q.error.message:'. Revisa los permisos.'));return}
+        c.data.A=A.filter(a=>a!==ag);PE.ags=null;ok('Agencia eliminada');return}
+      if(op==='dd'){const d=c.data.Ds.find(y=>String(y.id)===String(arg));if(!d||!(await conf(`¿Quitar el destino «${d.destino_final}»?`)))return;
+        const q=await D().from('agencia_destinos').update({activo:false}).eq('id',d.id).select('id').maybeSingle();if(q.error||!q.data){mal('No se pudo quitar'+(q.error?': '+q.error.message:'.'));return}c.data.Ds=c.data.Ds.filter(y=>y!==d);return}
+      if(op==='da'&&ag){const v=String(f.nd[ag.id]||'').trim();if(!v){mal('Escribe el destino.');return}
+        if(c.data.Ds.some(d=>String(d.agencia_id)===String(ag.id)&&agClave(d.destino_final)===agClave(v))){mal('Ese destino ya está.');return}
+        const q=await D().from('agencia_destinos').insert({agencia_id:ag.id,destino_final:v,activo:true}).select('id,agencia_id,destino_final,activo').single();if(q.error){mal('No se pudo agregar: '+q.error.message);return}
+        c.data.Ds.push(q.data);f.nd[ag.id]='';return}
+      if(op==='ub'&&ag){const el2=window.pdMapa&&pdMapa.elegir;if(!el2)return;const u=c.data.U[agClave(ag.nombre)];
+        const r=await el2({titulo:'Ubicación de '+ag.nombre,centro:u?{lat:u.lat,lng:u.lng}:null});if(!r)return;
+        try{c.data.U=await agGuardarUbi(ag.nombre,ag.id,r);ok('Ubicación guardada')}catch(e){mal('No se pudo guardar la ubicación: '+(e.message||e))}}}};
+  /* la ubicación de cada agencia vive en config/agencias.json (la leen el motorizado y la tienda) */
+  async function agGuardarUbi(nombre,id,r,claveVieja){
+    const c=D();let act=await agUbis();if(claveVieja)delete act[claveVieja];
+    act[agClave(nombre)]={nombre,id:id||null,lat:r.lat,lng:r.lng,direccion:r.direccion||[r.linea,r.sub].filter(Boolean).join(', '),actualizado:new Date().toISOString()};
+    const {error}=await c.storage.from('restaurantes').upload('config/agencias.json',new Blob([JSON.stringify({agencias:act},null,2)],{type:'application/json'}),{upsert:true,contentType:'application/json',cacheControl:'0'});
+    if(error)throw error;try{window.pdAgenciasRecargar&&window.pdAgenciasRecargar()}catch(_){}return act;
+  }
+
   /* --- Horario de Pidemás --- */
   const ORD=['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
   const h12=t=>{const m=String(t||'').match(/^(\d{1,2}):(\d{2})/);if(!m)return t||'';const h=+m[1];return (h%12||12)+(m[2]!=='00'?':'+m[2]:'')+' '+(h>=12?'p. m.':'a. m.')};
@@ -1800,6 +1857,7 @@ button:active .pi{transform:scale(.92)}
     if(k.startsWith('sx:')){SL.f[k.slice(3)]=el.value;slVivo(k.slice(3),el);return}
     if(k.startsWith('sc:')){if(SL.cfg)SL.cfg[k.slice(3)]=el.value;return}
     if(k==='clq'){CL.q=el.value;CL.lim=60;const b=root.getElementById('clL');if(b)b.innerHTML=clFilas();return}
+    if(k.startsWith('ag:')&&SF['agencias']){const f=SF['agencias'],p=k.split(':');if(p[1]==='n')f.nuevo.nombre=el.value;else if(p[1]==='d')f.nuevo.ds[+p[2]]=el.value;else if(p[1]==='nd')f.nd[p.slice(2).join(':')]=el.value;return}
     if(k.startsWith('tf:')&&SF['tarifas']&&SF['tarifas'].C){const f=SF['tarifas'],C=f.C,p=k.slice(3).split('.');const v=el.type==='time'?el.value:el.value;
       if(p[0]==='zc'){f.zc[+p[1]]=v;return}
       if(p[0]==='z'){const z=C.zonas[+p[1]];if(z)z[p[2]]=p[2]==='nombre'?v:tNum(v);return}

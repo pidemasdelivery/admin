@@ -1814,251 +1814,6 @@ $("orderSearch").oninput=renderOrders;
 
 
 
-let adminAgencias = [];
-let adminDestinos = [];
-async function loadAdminAgencias(){
-const agenciasRes = await db
-.from("agencias")
-.select("id,nombre,activo,creado_en")
-.order("nombre");
-if(agenciasRes.error){
-adminAgencias=[];
-msgBox($("agMsg"),
-"No se pudieron cargar las agencias: "+agenciasRes.error.message,
-false
-);
-}else{
-adminAgencias=(agenciasRes.data||[]).filter(a=>a.activo!==false);
-}
-const destinosRes = await db
-.from("agencia_destinos")
-.select("id,agencia_id,destino_final,activo,creado_en")
-.order("destino_final");
-if(destinosRes.error){
-adminDestinos=[];
-msgBox($("agMsg"),
-"Agencias cargadas, pero no se pudieron cargar los destinos: "+destinosRes.error.message,
-false
-);
-}else{
-adminDestinos=(destinosRes.data||[]).filter(d=>d.activo!==false);
-}
-const agOptions='<option value="">Seleccionar agencia</option>'+
-adminAgencias.map(a=>`<option value="${a.id}">${esc(a.nombre)}</option>`).join("");
-if($("agDestinoAgencia")) $("agDestinoAgencia").innerHTML=agOptions;
-renderAdminAgencias();
-}
-window.loadAdminAgencias = loadAdminAgencias;
-function renderAdminAgencias(){
-const list=$("agLista");
-if(!adminAgencias.length){
-list.innerHTML='<div class="notice">No hay agencias registradas.</div>';
-return;
-}
-list.innerHTML=adminAgencias.map(a=>{
-const ds=adminDestinos.filter(d=>d.agencia_id===a.id);
-const destinosHtml=ds.length
-? ds.map(d=>`
-          <div class="agencyDestinationRow">
-            <span>${esc(d.destino_final)}</span>
-            <div class="actions">
-              <button type="button" class="btn alt editDestino" data-id="${esc(d.id)}">Editar</button>
-              <button type="button" class="btn alt deleteDestino" data-id="${esc(d.id)}">Eliminar</button>
-            </div>
-          </div>
-        `).join("")
-: '<small>Sin destinos registrados</small>';
-return `<div class="row agencyAdminRow" style="display:block">
-      <div class="agencyHeader">
-        <div>
-          <strong>${esc(a.nombre)}</strong>
-          <small>Agencia registrada</small>
-        </div>
-        <div class="actions">
-          <button type="button" class="btn alt editAgencia" data-id="${esc(a.id)}">Editar agencia</button>
-          <button type="button" class="btn alt deleteAgencia" data-id="${esc(a.id)}">Eliminar agencia</button>
-        </div>
-      </div>
-      <div class="agencyDestinations">
-        <b>Destinos</b>
-        ${destinosHtml}
-      </div>
-    </div>`;
-}).join("");
-list.querySelectorAll(".editAgencia").forEach(btn=>{
-btn.onclick=()=>editAdminAgencia(btn.dataset.id);
-});
-list.querySelectorAll(".deleteAgencia").forEach(btn=>{
-btn.onclick=()=>deleteAdminAgencia(btn.dataset.id);
-});
-list.querySelectorAll(".editDestino").forEach(btn=>{
-btn.onclick=()=>editAdminDestino(btn.dataset.id);
-});
-list.querySelectorAll(".deleteDestino").forEach(btn=>{
-btn.onclick=()=>deleteAdminDestino(btn.dataset.id);
-});
-}
-async function editAdminDestino(id){
-const destino=adminDestinos.find(d=>String(d.id)===String(id));
-if(!destino)return;
-const nuevoDestino=(await pdPedir("Nuevo destino:", destino.destino_final||""));
-if(nuevoDestino===null)return;
-const nombre=nuevoDestino.trim();
-if(!nombre){
-msgBox($("agMsg"),"El destino no puede quedar vacío.");
-return;
-}
-(async()=>{
-const {error}=await db.from("agencia_destinos")
-.update({destino_final:nombre})
-.eq("id",id);
-if(error){
-msgBox($("agMsg"),"No se pudo editar el destino: "+error.message);
-return;
-}
-msgBox($("agMsg"),"Destino actualizado correctamente.");
-await loadAdminAgencias();
-})();
-}
-async function deleteAdminDestino(id){
-const destino=adminDestinos.find(d=>String(d.id)===String(id));
-if(!destino)return;
-if(!(await pdConfirmar(`¿Deseas eliminar el destino "${destino.destino_final}"?`)))return;
-(async()=>{
-const {data,error}=await db.from("agencia_destinos")
-.update({activo:false})
-.eq("id",id)
-.select("id,activo")
-.maybeSingle();
-if(error){
-pdAviso("No se pudo eliminar el destino.\n\n"+error.message);
-return;
-}
-if(!data){
-pdAviso("El destino no fue modificado. Revisa los permisos de Supabase (RLS) para agencia_destinos.");
-return;
-}
-adminDestinos=adminDestinos.filter(d=>String(d.id)!==String(id));
-renderAdminAgencias();
-msgBox($("agMsg"),"Destino eliminado correctamente.",true);
-})();
-}
-async function editAdminAgencia(id){
-const agencia=adminAgencias.find(a=>String(a.id)===String(id));
-if(!agencia)return;
-const nuevoNombre=(await pdPedir("Nuevo nombre de la agencia:", agencia.nombre||""));
-if(nuevoNombre===null)return;
-const nombre=nuevoNombre.trim();
-if(!nombre){
-msgBox($("agMsg"),"El nombre de la agencia no puede quedar vacío.");
-return;
-}
-(async()=>{
-const {error}=await db.from("agencias")
-.update({nombre})
-.eq("id",id);
-if(error){
-msgBox($("agMsg"),"No se pudo editar la agencia: "+error.message);
-return;
-}
-msgBox($("agMsg"),"Agencia actualizada correctamente.");
-await loadAdminAgencias();
-})();
-}
-async function deleteAdminAgencia(id){
-const agencia=adminAgencias.find(a=>String(a.id)===String(id));
-if(!agencia)return;
-const destinos=adminDestinos.filter(d=>String(d.agencia_id)===String(id));
-const aviso=destinos.length
-? `La agencia "${agencia.nombre}" tiene ${destinos.length} destino(s) registrado(s). ¿Deseas eliminarla de las agencias activas? Sus datos históricos se conservarán.`
-: `¿Deseas eliminar la agencia "${agencia.nombre}"?`;
-if(!(await pdConfirmar(aviso)))return;
-(async()=>{
-const {data,error}=await db.from("agencias")
-.update({activo:false})
-.eq("id",id)
-.select("id,activo")
-.maybeSingle();
-if(error){
-pdAviso("No se pudo eliminar la agencia.\n\n"+error.message);
-return;
-}
-if(!data){
-pdAviso("La agencia no fue modificada. Revisa los permisos de Supabase (RLS) para agencias.");
-return;
-}
-adminAgencias=adminAgencias.filter(a=>String(a.id)!==String(id));
-adminDestinos=adminDestinos.filter(d=>String(d.agencia_id)!==String(id));
-renderAdminAgencias();
-const agOptions='<option value="">Seleccionar agencia</option>'+
-adminAgencias.map(a=>`<option value="${a.id}">${esc(a.nombre)}</option>`).join("");
-if($("agDestinoAgencia")) $("agDestinoAgencia").innerHTML=agOptions;
-msgBox($("agMsg"),"Agencia eliminada correctamente.",true);
-})();
-}
-$("refreshAgencias").onclick=async()=>{
-msgBox($("agMsg"),"Actualizando agencias...",true);
-await loadAdminAgencias();
-};
-const agDestinosInputs=$("agDestinosInputs");
-if(agDestinosInputs){
-$("agAgregarDestino").onclick=()=>{
-const count=agDestinosInputs.querySelectorAll(".ag-destino-input").length+1;
-const input=document.createElement("input");
-input.type="text";
-input.className="ag-destino-input";
-input.placeholder=count===2?"Otro destino (ej. Chiclayo)":"Destino "+count;
-input.setAttribute("aria-label","Destino "+count);
-input.autocomplete="off";
-agDestinosInputs.appendChild(input);
-input.focus();
-};
-}
-$("agAgregarOtraAgencia").onclick=()=>{
-$("agNombre").value="";
-agDestinosInputs.innerHTML='<input class="ag-destino-input" type="text" placeholder="Ej. Lima" aria-label="Destino 1" autocomplete="off"/>';
-const aviso=$("agMsg");
-if(aviso){aviso.textContent="";aviso.classList.add("hidden");}
-$("agNombre").scrollIntoView({behavior:"smooth",block:"center"});
-$("agNombre").focus({preventScroll:true});
-};
-$("agGuardar").onclick=async()=>{
-const nombre=$("agNombre").value.trim();
-const destinos=[...document.querySelectorAll("#agDestinosInputs .ag-destino-input")]
-.map(input=>input.value.trim()).filter(Boolean);
-if(!nombre){msgBox($("agMsg"),"Ingresa el nombre de la agencia.");return;}
-if(!destinos.length){msgBox($("agMsg"),"Agrega al menos un destino.");return;}
-const duplicate=adminAgencias.some(a=>String(a.nombre||"").trim().toLowerCase()===nombre.toLowerCase());
-if(duplicate){msgBox($("agMsg"),"Esa agencia ya está registrada.");return;}
-const boton=$("agGuardar");
-boton.disabled=true;
-const textoOriginal=boton.textContent;
-boton.textContent="Registrando...";
-try{
-const {data:nuevaAgencia,error}=await db
-.from("agencias")
-.insert({nombre,activo:true})
-.select("id,nombre,activo,creado_en")
-.single();
-if(error||!nuevaAgencia){msgBox($("agMsg"),"No se pudo registrar la agencia: "+(error?.message||"sin respuesta del servidor"));return;}
-const filasDestinos=destinos.map(destino_final=>({agencia_id:nuevaAgencia.id,destino_final,activo:true}));
-const {error:errorDestinos}=await db.from("agencia_destinos").insert(filasDestinos);
-if(errorDestinos){
-msgBox($("agMsg"),"La agencia se registró, pero hubo un problema al guardar los destinos: "+errorDestinos.message);
-await loadAdminAgencias();
-return;
-}
-$("agNombre").value="";
-agDestinosInputs.innerHTML='<input class="ag-destino-input" type="text" placeholder="Ej. Lima" aria-label="Destino 1"/>';
-msgBox($("agMsg"),"Agencia y destinos registrados correctamente.",true);
-await loadAdminAgencias();
-}catch(e){
-msgBox($("agMsg"),"No se pudo completar el registro: "+(e?.message||e));
-}finally{
-boton.disabled=false;
-boton.textContent=textoOriginal;
-}
-};
 var adminGpsMap=null, adminGpsMarkers={}, adminGpsChannel=null, adminGpsLoaded=false, adminGpsRefreshing=false;
 function adminGpsValue(row, keys){
 for(const k of keys){
@@ -2623,7 +2378,6 @@ document.querySelectorAll("[data-admin-tab]").forEach(btn=>{
 const btnName = btn.dataset.adminTab === "servicios" ? "restaurantes" : btn.dataset.adminTab;
 btn.classList.toggle("active", btnName===name);
 });
-if(name==="agencias" && typeof loadAdminAgencias==="function") loadAdminAgencias();
 if(name==="pedidos" && typeof loadOrders==="function") loadOrders();
 if(name==="clientes" && typeof loadClientes==="function") loadClientes();
 if(name==="caja" && typeof loadAdminCash==="function") loadAdminCash();
@@ -2719,7 +2473,6 @@ b.classList.toggle("active",n===name);
 try{
 if(name==="pedidos" && typeof window.loadOrders==='function') window.loadOrders();
 if(name==="clientes" && typeof window.loadClientes==='function') window.loadClientes();
-if(name==="agencias" && typeof window.loadAdminAgencias==='function') window.loadAdminAgencias();
 if(name==="caja" && typeof window.loadAdminCash==='function') window.loadAdminCash();
 if(name==="menu" && typeof window.loadRestaurants==='function') window.loadRestaurants();
 }catch(e){ console.error("Pidemás navegación:",e); }
@@ -2998,11 +2751,11 @@ gps:['gpsAdminBox','Motorizados / GPS'],'crear-motorizado':['crearMotorizadoAdmi
 'suspender-motorizado':['suspenderMotorizadoAdminBox','Suspender / reactivar cuentas'],
 descuentos:['descuentosAdminBox','Códigos de descuento'],'crear-negocio':['crearNegocioAdminBox','Crear negocio'],'estado-negocios':['estadoNegociosAdminBox','Estado de negocios'],
 'config-negocios':['configNegociosAdminBox','Configurar negocios'],'solicitudes':['solicitudesAdminBox','Solicitudes de afiliación'],
-pedidos:['tab-pedidos','Pedidos'],qryape:['pdQrCfg','QR Yape'],clientes:['tab-clientes','Clientes'],agencias:['tab-agencias','Agencias'],
+pedidos:['tab-pedidos','Pedidos'],qryape:['pdQrCfg','QR Yape'],clientes:['tab-clientes','Clientes'],
 caja:['tab-caja','Cajas'],sueldo:['tab-sueldo','Sueldos']
 };
 let box=null,ph=null,cur=null;
-const RF={pedidos:'refreshOrders',clientes:'refreshClientes',agencias:'refreshAgencias',caja:'pdcjRefresh',sueldo:'pdSalaryRefreshMotos',gps:'gxRef','suspender-motorizado':'spRef','crear-negocio':'pdwRefNeg',solicitudes:'solRefresh','crear-motorizado':'pdwRefMoto'};
+const RF={pedidos:'refreshOrders',clientes:'refreshClientes',caja:'pdcjRefresh',sueldo:'pdSalaryRefreshMotos',gps:'gxRef','suspender-motorizado':'spRef','crear-negocio':'pdwRefNeg',solicitudes:'solRefresh','crear-motorizado':'pdwRefMoto'};
 let rfBtn=null,rfObs=null;
 function hdr(key){
 const head=document.querySelector('#pdmModal .m-head'),x=head&&head.querySelector('.m-x');if(!head||!x)return;
@@ -3024,7 +2777,6 @@ if(key==='estado-negocios')return call('loadVisibilidadNegocios');
 if(key==='config-negocios')return call('cnxLoad');
 if(key==='solicitudes')return call('solLoad');
 if(key==='clientes')return call('loadClientes');
-if(key==='agencias')return call('loadAdminAgencias');
 if(key==='caja')return call('loadAdminCash');
 if(key==='sueldo')return call('pdLoadSalaryMotorizados');
 if(typeof window.__pidemasLoadToolData==='function')await window.__pidemasLoadToolData(key);

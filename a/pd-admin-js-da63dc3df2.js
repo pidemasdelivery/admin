@@ -1020,101 +1020,6 @@ enhance();
 })();
 }catch(e){console.error("[pidemas-acceso-negocio-modelo2]",e)}
 
-/* ===== pidemas-agencias-modelo2 ===== */
-try{
-(function(){
-const tab=document.getElementById('tab-agencias');if(!tab||typeof window.renderAdminAgencias!=='function')return;
-const $=id=>document.getElementById(id);
-const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const REF='<svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg>';
-const EDIT='<svg viewBox="0 0 24 24" stroke-width="2"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
-const DEL='<svg viewBox="0 0 24 24" stroke-width="2"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg>';
-const ui=document.createElement('div');
-ui.innerHTML=`<div class="pdgTop"><span><span class="pdgKick">Encomiendas</span><strong>Agencias y destinos</strong></span><button type="button" class="pdgIcon" id="pdgRefresh" aria-label="Actualizar">${REF}</button></div>
-  <div class="pdgStats"><div><span>Agencias</span><strong id="pdgNA">–</strong></div><div><span>Destinos</span><strong id="pdgND">–</strong></div></div>
-  <div class="pdgCols">
-    <section class="pdgSec new" id="pdgNew"><div class="pdgSecHead"><span class="pdgKick">Nueva</span><strong>Registrar agencia</strong></div></section>
-    <section class="pdgSec" id="pdgList"><div class="pdgSecHead"><span class="pdgKick">Registradas</span><strong>Tus agencias</strong></div><input type="search" id="pdgSearch" placeholder="Buscar agencia o destino" autocomplete="off"></section>
-  </div>`;
-const nw=ui.querySelector('#pdgNew'),ls=ui.querySelector('#pdgList');
-const fNombre=$('agNombre')?.closest('.field'),fDest=$('agDestinosInputs')?.closest('.field');
-if(fNombre)nw.appendChild(fNombre);
-if(fDest){nw.appendChild(fDest);fDest.querySelector('label').textContent='Destinos que atiende'}
-nw.insertAdjacentHTML('beforeend','<button type="button" class="pdgLinkBtn" id="pdgAddDestInput">+ Agregar otro destino</button><p class="pdgHint">Presiona Enter en un destino para escribir el siguiente.</p>');
-const save=$('agGuardar');if(save){save.textContent='Guardar agencia';nw.appendChild(save)}
-const msg=$('agMsg');if(msg)nw.appendChild(msg);
-const list=$('agLista');if(list)ls.appendChild(list);
-[...tab.children].forEach(c=>c.classList.add('pdgHidden'));
-tab.appendChild(ui);ui.style.display='block';
-const box=$('agDestinosInputs');
-function decorate(){
-if(!box)return;
-const act=document.activeElement;
-box.querySelectorAll(':scope>.ag-destino-input').forEach(inp=>{
-const row=document.createElement('div');row.className='pdgDestRow';inp.before(row);row.appendChild(inp);
-row.insertAdjacentHTML('beforeend','<button type="button" class="pdgX" aria-label="Quitar destino">×</button>');
-});
-if(act&&box.contains(act)&&document.activeElement!==act)act.focus();
-const rows=box.querySelectorAll('.pdgDestRow');
-rows.forEach((r,i)=>{r.querySelector('.pdgX').style.visibility=rows.length>1?'visible':'hidden';const inp=r.querySelector('input');if(inp&&!inp.value)inp.placeholder=i===0?'Ej. Lima':'Otro destino'});
-}
-if(box){
-new MutationObserver(decorate).observe(box,{childList:true});
-box.addEventListener('click',e=>{const x=e.target.closest('.pdgX');if(!x)return;x.closest('.pdgDestRow').remove();decorate()});
-box.addEventListener('keydown',e=>{
-if(e.key!=='Enter'||!e.target.classList.contains('ag-destino-input'))return;e.preventDefault();
-const all=[...box.querySelectorAll('.ag-destino-input')];
-if(!e.target.value.trim())return;
-if(e.target===all[all.length-1])$('agAgregarDestino')?.click();else all[all.indexOf(e.target)+1].focus();
-});
-decorate();
-}
-$('agNombre')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();box?.querySelector('.ag-destino-input')?.focus()}});
-$('pdgAddDestInput')?.addEventListener('click',()=>$('agAgregarDestino')?.click());
-window.renderAdminAgencias=function(){
-if(!list)return;
-$('pdgNA').textContent=adminAgencias.length;$('pdgND').textContent=adminDestinos.filter(d=>adminAgencias.some(a=>String(a.id)===String(d.agencia_id))).length;
-if(!adminAgencias.length){list.innerHTML='<div class="pdgEmpty">Todavía no hay agencias. Registra la primera en el formulario.</div>';return}
-const q=($('pdgSearch')?.value||'').trim().toLocaleLowerCase('es');
-const html=adminAgencias.map(a=>{
-const ds=adminDestinos.filter(d=>String(d.agencia_id)===String(a.id));
-if(q&&!String(a.nombre||'').toLocaleLowerCase('es').includes(q)&&!ds.some(d=>String(d.destino_final||'').toLocaleLowerCase('es').includes(q)))return '';
-return `<div class="pdgAg" data-id="${E(a.id)}">
-        <div class="pdgAgHead"><span class="pdgAv">${E(String(a.nombre||'A').charAt(0).toUpperCase())}</span><span><strong>${E(a.nombre)}</strong><small>${ds.length} destino${ds.length===1?'':'s'}</small></span>
-          <button type="button" class="pdgIcon" data-act="editAg" aria-label="Editar nombre">${EDIT}</button><button type="button" class="pdgIcon" data-act="delAg" aria-label="Eliminar agencia">${DEL}</button></div>
-        <div class="pdgChips">${ds.length?ds.map(d=>`<span class="pdgChip">${E(d.destino_final)}<button type="button" data-act="editD" data-d="${E(d.id)}" aria-label="Editar destino">✎</button><button type="button" data-act="delD" data-d="${E(d.id)}" aria-label="Eliminar destino">×</button></span>`).join(''):'<span class="pdgNone">Sin destinos registrados</span>'}</div>
-        <div class="pdgAddDest"><input type="text" placeholder="Agregar destino a ${E(a.nombre)}" autocomplete="off"><button type="button" data-act="addD">Agregar</button></div>
-      </div>`;
-}).join('');
-list.innerHTML=html||'<div class="pdgEmpty">Ninguna agencia coincide con la búsqueda.</div>';
-};
-async function addDest(card){
-const inp=card.querySelector('.pdgAddDest input');const name=(inp?.value||'').trim();const id=card.dataset.id;
-if(!name){inp?.focus();return}
-if(adminDestinos.some(d=>String(d.agencia_id)===String(id)&&String(d.destino_final||'').trim().toLowerCase()===name.toLowerCase())){msgBox($('agMsg'),'Ese destino ya está registrado en esta agencia.');return}
-const btn=card.querySelector('[data-act=addD]');btn.disabled=true;btn.textContent='…';
-const {error}=await db.from('agencia_destinos').insert({agencia_id:id,destino_final:name,activo:true});
-btn.disabled=false;btn.textContent='Agregar';
-if(error){msgBox($('agMsg'),'No se pudo agregar el destino: '+error.message);return}
-await loadAdminAgencias();
-setTimeout(()=>list.querySelector(`.pdgAg[data-id="${CSS.escape(String(id))}"] .pdgAddDest input`)?.focus(),50);
-}
-list?.addEventListener('click',e=>{
-const b=e.target.closest('[data-act]');if(!b)return;const card=b.closest('.pdgAg');const id=card?.dataset.id;
-const a=b.dataset.act;
-if(a==='editAg')return editAdminAgencia(id);
-if(a==='delAg')return deleteAdminAgencia(id);
-if(a==='editD')return editAdminDestino(b.dataset.d);
-if(a==='delD')return deleteAdminDestino(b.dataset.d);
-if(a==='addD')return addDest(card);
-});
-list?.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest('.pdgAddDest')){e.preventDefault();addDest(e.target.closest('.pdgAg'))}});
-$('pdgSearch')?.addEventListener('input',()=>window.renderAdminAgencias());
-$('pdgRefresh')?.addEventListener('click',async()=>{const b=$('pdgRefresh');b.classList.add('spin');try{await loadAdminAgencias()}finally{b.classList.remove('spin')}});
-try{window.renderAdminAgencias()}catch(e){}
-})();
-}catch(e){console.error("[pidemas-agencias-modelo2]",e)}
-
 /* ===== pidemas-clientes-modelo2 ===== */
 try{
 (function(){
@@ -2215,103 +2120,6 @@ setInterval(()=>{try{boton()}catch(e){}},1000);
 })();
 }catch(e){console.error("[pidemas-horario-admin-js]",e)}
 
-/* ===== pidemas-agencias-mapa-js ===== */
-try{
-(function(){
-  const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const RUTA='config/agencias.json',BUCKET='restaurantes';
-  const DB=()=>{try{return db}catch(e){return window.db}};
-  const clave=n=>String(n||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
-  const PIN='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
-  const RUTA_ICO='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg>';
-  let CFG={},cargado=false;
-  window.pdAgenciaUbicacion=n=>CFG[clave(n)]||null;
-  window.pdAgenciasRecargar=()=>cargar();
-  async function cargar(){
-    try{const c=DB();if(!c||!c.storage)return;const u=c.storage.from(BUCKET).getPublicUrl(RUTA).data.publicUrl+'?t='+Date.now();
-      const r=await fetch(u,{cache:'no-store'});if(r.ok){const j=await r.json();if(j&&typeof j==='object')CFG=j.agencias||j}}catch(e){}
-    cargado=true;pronto();
-  }
-  setTimeout(cargar,700);setInterval(cargar,5*60*1000);
-  const mapsLink=u=>'https://www.google.com/maps/search/?api=1&query='+u.lat+','+u.lng;
-  const ruta=u=>mapsLink(u);
-
-   
-  async function guardar(nombre,id,r){
-    const c=DB();if(!c||!c.storage)throw new Error('Sin conexión');
-    let actual={};try{const u=c.storage.from(BUCKET).getPublicUrl(RUTA).data.publicUrl+'?t='+Date.now();const x=await fetch(u,{cache:'no-store'});if(x.ok)actual=(await x.json())||{}}catch(e){}
-    actual=actual.agencias||actual;
-    actual[clave(nombre)]={nombre,id:id||null,lat:r.lat,lng:r.lng,direccion:[r.linea,r.sub].filter(Boolean).join(', '),actualizado:new Date().toISOString()};
-    const {error}=await c.storage.from(BUCKET).upload(RUTA,new Blob([JSON.stringify({agencias:actual},null,2)],{type:'application/json'}),{upsert:true,contentType:'application/json',cacheControl:'0'});
-    if(error)throw error;CFG=actual;pronto();
-  }
-  window.pdMarcarAgencia=async function(nombre,id){
-    if(!nombre||typeof window.pdMapaElegir!=='function')return;
-    const u=CFG[clave(nombre)];
-    const r=await window.pdMapaElegir({titulo:'Ubicación de '+nombre,tip:'Mueve el mapa hasta la puerta de la agencia',centro:u?{lat:u.lat,lng:u.lng}:null});
-    if(!r)return;
-    try{await guardar(nombre,id,r)}catch(e){pdAviso('No se pudo guardar la ubicación de la agencia: '+(e.message||e))}
-  };
-  const agNombre=id=>{try{const a=(adminAgencias||[]).find(x=>String(x.id)===String(id));return a?a.nombre:''}catch(e){return ''}};
-  const ubic=(nombre,id)=>CFG[clave(nombre)]||(id?Object.values(CFG).find(x=>x&&String(x.id)===String(id)):null)||null;
-   
-  function linea(host,nombre,id,despues,pedirNombre){
-    let el=host.querySelector(':scope > .pdAgUb');
-    if(!nombre&&!pedirNombre){el&&(el.hidden=true);return}
-    const u=nombre?ubic(nombre,id):null;const key=(nombre||'')+'|'+(u?u.lat+','+u.lng+u.direccion:'')+'|'+!!pedirNombre;
-    if(!el){el=document.createElement('div');el.className='pdAgUb';despues?despues.after(el):host.appendChild(el)}
-    el.hidden=false;if(el.dataset.k===key)return;el.dataset.k=key;
-    el.classList.toggle('no',!u);
-    el.innerHTML=u?`<span class="ic">${PIN}</span><span class="tx"><b>Ubicación marcada</b><small>${E(u.direccion||'Punto marcado en el mapa')}</small></span><span class="acc"><button type="button" class="bt">Cambiar</button><a class="bt" href="${mapsLink(u)}" target="_blank" rel="noopener">Ver mapa</a></span>`
-      :`<span class="ic">${PIN}</span><span class="tx"><b>Sin ubicación</b><small>${pedirNombre&&!nombre?'Escribe el nombre para agregarla':'Agrégala para el motorizado'}</small></span><span class="acc"><button type="button" class="bt dk">Agregar ubicación en el mapa</button></span>`;
-    el.querySelector('button').onclick=e=>{e.preventDefault();const n=typeof pedirNombre==='function'?pedirNombre():nombre;if(!n){const i=host.querySelector('input');i&&i.focus();return}window.pdMarcarAgencia(n,id)};
-  }
-  function admin(){
-     
-     
-    document.querySelectorAll('#agLista .pdgAg').forEach(card=>{
-      const id=card.dataset.id;const nombre=agNombre(id)||card.querySelector('.pdgAgHead strong')?.textContent.trim();
-      linea(card,nombre,id,card.querySelector('.pdgAgHead'));
-    });
-     
-    const agN=document.getElementById('agNombre');
-    if(agN){const f=agN.closest('.field')||agN.parentElement;linea(f,agN.value.trim(),null,agN,()=>agN.value.trim());
-      if(!agN.dataset.pdAg){agN.dataset.pdAg='1';agN.addEventListener('input',()=>pronto())}
-    }
-     
-  }
-
-
-   
-  const list=()=>{try{return Array.isArray(orders)?orders:[]}catch(e){return []}};
-  function agenciasDe(o){
-    const n=[o.agencia_destino];
-    try{(typeof extractEncomiendaPackages==='function'?extractEncomiendaPackages(o.observaciones):[]).forEach(p=>n.push(p.agencia))}catch(e){}
-    const vistos=new Set();return n.map(x=>String(x||'').trim()).filter(x=>x&&x!=='—'&&!vistos.has(clave(x))&&vistos.add(clave(x)));
-  }
-  function moto(){
-    const modal=document.getElementById('pidemasOrderFullModal');if(!modal)return;
-    const content=modal.querySelector('#pidemasOrderFullModalContent');if(!content)return;
-    const o=list().find(x=>String(x.id)===String(modal.dataset.orderId||''));
-    let card=content.querySelector(':scope > .pdAgCard');
-    const enc=o&&String(o.tipo_servicio||'').toLowerCase().includes('encomienda')&&!['entregado','cancelado','asignado'].includes(String(o.estado||'').toLowerCase());
-    const ags=enc?agenciasDe(o).map(n=>({n,u:CFG[clave(n)]})).filter(x=>x.u):[];
-    if(!ags.length){card&&card.remove();return}
-    const key=ags.map(x=>x.n+x.u.lat+x.u.lng).join('|');
-    if(card&&card.dataset.k===key)return;
-    const w=document.createElement('div');
-    w.innerHTML=`<div class="pdAgCard"><span class="k">${ags.length>1?'Ubicación de las agencias':'Ubicación de la agencia'}</span>${ags.map(x=>`<div class="r"><span><b>${E(x.u.nombre||x.n)}</b>${x.u.direccion?`<small>${E(x.u.direccion)}</small>`:''}</span><a class="go" href="${ruta(x.u)}" target="_blank" rel="noopener">${RUTA_ICO}Ver ubicación</a></div>`).join('')}</div>`;
-    const nb=w.firstElementChild;nb.dataset.k=key;
-    if(card)card.replaceWith(nb);else{const ref=content.querySelector(':scope > .peWrap')||content.querySelector(':scope > .pdMPay');ref?ref.before(nb):content.appendChild(nb)}
-  }
-  const ES_ADMIN=!!document.getElementById('orderList')||!!document.getElementById('agLista');
-  function todo(){if(!cargado)return;try{ES_ADMIN?admin():(document.getElementById('pidemas-moto-encomienda-js')?null:moto())}catch(e){}}
-  let q=false;function pronto(){if(q)return;q=true;setTimeout(()=>{q=false;todo()},400)}
-  new MutationObserver(m=>{if(m.some(x=>!(x.target.closest&&x.target.closest('.pdAgUb,.pdAgCard'))))pronto()}).observe(document.documentElement,{childList:true,subtree:true});
-  setInterval(pronto,1500);
-})();
-}catch(e){console.error("[pidemas-agencias-mapa-js]",e)}
-
 /* ===== pidemas-boton-atras ===== */
 try{
 (function(){
@@ -2507,7 +2315,6 @@ try{
     ['sol','Solicitudes de afiliación',abrir('solicitudes')],
     ['cfg','Configurar negocios',abrir('config-negocios')],
     ['Servicios'],
-    ['age','Agencias',abrir('agencias')],
     ['Motorizados'],
     ['gps','Motorizados / GPS',abrir('gps')],
     ['moto','Crear motorizado',abrir('crear-motorizado')],
@@ -3164,44 +2971,6 @@ function alAbrir(box,fn){
  alAbrir(box,()=>{nuevo();W.open();W.go(0)});
 })();
 
-/* ---------------- AGENCIAS ---------------- */
-(function(){
- const tab=$('tab-agencias'),nueva=$('pdgNew'),lista=$('pdgList');if(!tab||!nueva||!lista||tab.querySelector('.pdw'))return;
- const ubic=n=>{try{return window.pdAgenciaUbicacion?window.pdAgenciaUbicacion(n):null}catch(e){return null}};
- const destF=$('agDestinosInputs')?.closest('.field');
- const estado=document.createElement('div');estado.className='pdwUb';
- const btnUb=document.createElement('button');btnUb.type='button';btnUb.className='pdwUbBtn';
- let W=null;
- const nom=()=>(W&&W.st.nombre)||($('agNombre')?.value||'').trim();
- const pintaUb=()=>{const u=nom()&&ubic(nom());estado.innerHTML=u?'<b>✓ Ubicación marcada</b><small>'+E(u.direccion||'Punto marcado en el mapa')+'</small>':'<b>Sin ubicación todavía</b><small>El motorizado la usará para llegar a la agencia.</small>';btnUb.textContent=u?'Cambiar ubicación':'Marcar en el mapa'};
- btnUb.addEventListener('click',async()=>{if(!nom()||typeof window.pdMarcarAgencia!=='function')return;try{await window.pdMarcarAgencia(nom(),W.st.id)}catch(e){}pintaUb()});
- W=wizard({seg:'Nueva agencia',seg2:'Tus agencias',again:'Registrar otra agencia',
-  steps:[
-   {title:'Nombre de la agencia',nodes:()=>[card('','Por ejemplo Olva Courier o Shalom.',[F('agNombre')])],
-    check:()=>{const n=($('agNombre')?.value||'').trim();if(!n)return 'Escribe el nombre de la agencia.';try{if((adminAgencias||[]).some(a=>String(a.nombre||'').trim().toLowerCase()===n.toLowerCase()))return 'Esa agencia ya está registrada.'}catch(e){}return ''}},
-   {title:'Destinos que atiende',nodes:()=>[card('','Escribe cada ciudad a la que envía. Presiona Enter para agregar otra.',[destF,$('pdgAddDestInput')])],
-    next:'Guardar agencia',
-    run:async st=>{
-     const ds=[...document.querySelectorAll('#agDestinosInputs .ag-destino-input')].map(i=>i.value.trim()).filter(Boolean);
-     if(!ds.length)return{err:'Agrega al menos un destino.'};
-     st.nombre=($('agNombre').value||'').trim();st.n=ds.length;
-     const m=$('agMsg'),b=$('agGuardar');hush(m);const cap=capturar('agencias');let t='';
-     try{b.click();t=await esperar(m,b,45000)}finally{cap.fin()}
-     if(!/correctamente/i.test(t))return{err:t||'No hubo respuesta al guardar.'};
-     st.id=cap.id();pintaUb();return{};
-    }},
-   {title:'Ubicación en el mapa',nodes:()=>[card('','Opcional: marca la puerta de la agencia para que el motorizado llegue directo.',[estado,btnUb])],
-    next:'Terminar',back:()=>'Ahora no',backDone:true}
-  ],
-  done:st=>{const u=ubic(st.nombre);return{t:'Agencia registrada',p:'<b>'+E(st.nombre)+'</b> se guardó con '+st.n+(st.n===1?' destino':' destinos')+'. '+(u?'Su ubicación ya está marcada.':'Puedes marcar su ubicación cuando quieras desde «Tus agencias».')}},
-  reset:()=>{const n=$('agNombre');if(n){n.value='';n.dispatchEvent(new Event('input'))}hush($('agMsg'))},
-  loadAcc:()=>{try{window.loadAdminAgencias&&window.loadAdminAgencias()}catch(e){}}
- });
- W.acc.appendChild(lista);
- [$('agGuardar'),$('agMsg'),nueva.querySelector('.pdgHint')].forEach(W.hold);
- const cols=nueva.parentElement;cols.before(W);cols.classList.add('pdwVacio');
- alAbrir(tab,()=>W.open());
-})();
 })();
 }catch(e){console.error("[pidemas-pasos-js]",e)}
 
@@ -3293,7 +3062,7 @@ if(root && window.MutationObserver){new MutationObserver(()=>clean()).observe(ro
 try{
 (function(){
 if(window.__pdPagesPro)return;window.__pdPagesPro=true;
-var TAB={'tab-pedidos':'Principal','tab-clientes':'Principal','tab-agencias':'Servicios','tab-caja':'Motorizados','tab-sueldo':'Motorizados'};
+var TAB={'tab-pedidos':'Principal','tab-clientes':'Principal','tab-caja':'Motorizados','tab-sueldo':'Motorizados'};
 var TOOL={'Crear negocio':'Negocios','Estado de negocios':'Negocios','Motorizados / GPS':'Motorizados','Crear motorizado':'Motorizados','Suspender / reactivar cuentas':'Motorizados','Códigos de descuento':'Marketing'};
 var QI={'Pedidos':'receipt','Clientes':'users','Caja de motorizados':'wallet','Cajas':'wallet'};
 function kick(h2,txt){
