@@ -131,7 +131,7 @@
     const steps=['Negocio confirma','Asignar motorizado','Recojo en el local','Entrega y cobro','Cierre y pagos'].map((t,i)=>({title:t,state:e===-1?'locked':i<e?'done':i===e?'active':'locked'}));
     const finCerrado=e===4&&!((pa==='yape_negocio'||pa==='pagado')&&!o.delivery_negocio_cobrado_en);
     if(finCerrado)steps[4].state='done';
-    const resumen=`<div class="box"><div class="k">Resumen</div><div class="li"><span>Cliente</span><b>${E(cli)}</b></div><div class="li"><span>Productos</span><b>${M(o.subtotal)}</b></div><div class="li"><span>Delivery</span><b>${M(o.costo_delivery)}</b></div><div class="li"><span>Total · ${E(yape?'Yape':'Efectivo')}</span><b>${M(o.total)}</b></div></div>`;
+    const resumen=`<div class="box"><div class="k">Resumen</div><div class="li"><span>Cliente</span><b>${E(cli)}</b></div><div class="li"><span>Productos</span><b>${M(o.subtotal)}</b></div><div class="li"><span>Delivery</span><b>${M(o.costo_delivery)}</b></div><div class="li t"><span>Total · ${E(yape?'Yape':'Efectivo')}</span><b>${M(o.total)}</b></div></div>`;
     /* 1 */
     {const s=steps[0];s.sum=negNom+' aceptó'+(o.tiempo_preparacion_min?' · listo en '+o.tiempo_preparacion_min+' min':'');
       s.body=U.who(negNom,'Negocio'+(n.direccion?' · '+E(n.direccion):''),n.logo_url||n.imagen_url||'')+resumen+

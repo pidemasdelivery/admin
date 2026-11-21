@@ -80,7 +80,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .amt .k{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#9A330A}
 .amt .n{font-size:44px;font-weight:800;margin-top:4px;letter-spacing:-.02em;line-height:1.1}
 .pill{display:inline-flex;align-items:center;gap:6px;margin-top:8px;height:30px;padding:0 12px;border-radius:999px;background:#FFFFFF;font-size:14px;font-weight:700}
-.sum{padding:12px 14px;border-radius:14px;background:#FFF9F5;font-size:15px;display:flex;flex-direction:column;gap:6px}.sum span{color:#6B5E55}
+.sum{padding:12px;border-radius:14px;border:1px dashed #E3CFC2;background:transparent;font-size:15px;display:flex;flex-direction:column;gap:4px}.sum span{color:#6B5E55}.sum .lbl{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6B5E55;margin:0 0 2px}
 .qr{display:flex;gap:12px;align-items:center;width:100%;padding:12px;border-radius:14px;border:1.5px solid #E4D3F5;background:#FFFFFF;text-align:left;color:#1F1A17;cursor:zoom-in}
 .qr .im{flex:0 0 84px;width:84px;height:84px;border-radius:10px;border:1px solid #F1E4DA;background:#FFFFFF center/contain no-repeat;display:flex;align-items:center;justify-content:center;font-size:11px;color:#6B5E55;text-align:center}
 .qr .t{display:flex;flex-direction:column;gap:3px;min-width:0}
