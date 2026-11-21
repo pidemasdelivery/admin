@@ -42,7 +42,6 @@ await db.auth.signOut({scope:'local'}); msg($("loginMsg"),"Esta cuenta no tiene 
 $("loginView").classList.add("hidden"); $("appView").classList.remove("hidden"); $("adminBottomNav")?.classList.remove("hidden"); $("logout").classList.remove("hidden");
 try{window.pdPedidosCache&&window.pdPedidosCache.pintar(uid)}catch(e){}
 loadOrders();
-await loadRestaurants();
 }
 function setupLoginOptions(){
 const key="pidemas_admin_remember_email";
@@ -100,56 +99,6 @@ checkAdmin().catch(e=>{
 console.error("Error al comprobar la sesión:",e);
 msg($("loginMsg"),"No se pudo comprobar la sesión. Verifica tu conexión e intenta ingresar nuevamente.");
 });
-async function loadRestaurants(){
-const {data,error}=await db.from("negocios").select("*").order("nombre",{ascending:true});
-if(error){console.error("Cargar negocios:",error);msg($("restaurantMsg"),"No se pudieron cargar los negocios.");const vl=$("visibilidadNegociosList");if(vl)vl.innerHTML='<div class="muted">No se pudieron cargar los negocios: '+esc(error.message||"error de conexión")+'. Toca actualizar para reintentar.</div>';return}
-renderVisibilidadNegocios(data||[]);
-}
-async function loadVisibilidadNegocios(){
-const list=$("visibilidadNegociosList"); if(!list) return;
-list.innerHTML='<div class="muted">Cargando negocios…</div>';
-const vm=$("visibilidadNegociosMsg"); if(vm){vm.textContent="";vm.classList.add("hidden");}
-try{
-const {data,error}=await db.from("negocios").select("*").order("nombre",{ascending:true});
-if(error) throw error;
-renderVisibilidadNegocios(data||[]);
-}catch(e){
-console.error("Cargar estado de negocios:",e);
-list.innerHTML='<div class="muted">No se pudieron cargar los negocios ('+esc(String((e&&e.message)||"error de conexión"))+'). Toca actualizar para reintentar.</div>';
-}
-}
-window.loadVisibilidadNegocios=loadVisibilidadNegocios;
-function renderVisibilidadNegocios(data){
-const list=$("visibilidadNegociosList"); if(!list) return;
-const vm=$("visibilidadNegociosMsg");
-const setMsg=(t)=>{ if(!vm) return; vm.textContent=t||""; vm.classList.toggle("hidden",!t); };
-list.innerHTML="";
-if(!data.length){ list.innerHTML='<div class="muted">Aún no hay negocios registrados.</div>'; setMsg(""); return; }
-setMsg(data.some(r=>"visible_admin" in r)?"":"Falta la columna visible_admin en Supabase. Ejecuta el SQL visible_admin.sql y vuelve a abrir esta pantalla.");
-data.slice().sort((a,b)=>String(a.nombre||"").localeCompare(String(b.nombre||""))).forEach(r=>{
-const estado=(on)=>(on?"Visible en la tienda":"Oculto por administración")+(r.activo===false&&on?" · pausado por el negocio":"");
-const on0=r.visible_admin!==false;
-const row=document.createElement("label"); row.className="pdnSwitchRow";
-row.innerHTML=`<span><strong>${esc(r.nombre)}</strong><small>${estado(on0)}</small></span><input type="checkbox" ${on0?"checked":""}><i aria-hidden="true"></i>`;
-const input=row.querySelector("input"), small=row.querySelector("small");
-input.addEventListener("change",async()=>{
-const quiere=input.checked;
-if(!quiere && !(await pdConfirmar(`¿Ocultar "${r.nombre||"este negocio"}" de la tienda? El negocio no podrá volver a activarla: le saldrá un aviso para que se ponga en contacto contigo.`))){ input.checked=true; return; }
-input.disabled=true; setMsg("");
-try{
-const res=await db.from("negocios").update({visible_admin:quiere}).eq("id",r.id).select("id,visible_admin").maybeSingle();
-if(res.error) throw res.error;
-if(!res.data||res.data.visible_admin!==quiere) throw new Error("Supabase no confirmó el cambio.");
-r.visible_admin=quiere; small.textContent=estado(quiere);
-}catch(err){
-console.error("Visibilidad del negocio:",err);
-input.checked=!quiere;
-setMsg(/visible_admin|column/i.test(String(err&&err.message))?"Falta la columna visible_admin en Supabase. Ejecuta el SQL visible_admin.sql.":"No se pudo cambiar la visibilidad de «"+(r.nombre||"negocio")+"». Intenta de nuevo.");
-}finally{ input.disabled=false; }
-});
-list.appendChild(row);
-});
-}
 function restaurantPhoneValue(r){
 if(!r) return "";
 const keys=["telefono_whatsapp","whatsapp","whatsapp_telefono","numero_whatsapp","numero_de_whatsapp","celular_whatsapp","telefono","telefono_contacto","telefono_negocio","telefono_restaurante","numero_telefono","numero","celular","phone","contacto_whatsapp","contacto"];
@@ -1857,7 +1806,7 @@ const MAP={
 gps:['gpsAdminBox','Motorizados / GPS'],
 'suspender-motorizado':['suspenderMotorizadoAdminBox','Suspender / reactivar cuentas'],
 descuentos:['descuentosAdminBox','Códigos de descuento'],'estado-negocios':['estadoNegociosAdminBox','Estado de negocios'],
-'config-negocios':['configNegociosAdminBox','Configurar negocios'],
+
 pedidos:['tab-pedidos','Pedidos'],qryape:['pdQrCfg','QR Yape'],clientes:['tab-clientes','Clientes'],
 caja:['tab-caja','Cajas'],sueldo:['tab-sueldo','Sueldos']
 };
@@ -1880,8 +1829,6 @@ const call=n=>{try{return typeof window[n]==='function'?window[n]():undefined}ca
 async function load(key){
 try{
 if(key==='pedidos'){const r=$('refreshOrders');if(r)r.click();return}
-if(key==='estado-negocios')return call('loadVisibilidadNegocios');
-if(key==='config-negocios')return call('cnxLoad');
 if(key==='clientes')return call('loadClientes');
 if(key==='caja')return call('loadAdminCash');
 if(key==='sueldo')return call('pdLoadSalaryMotorizados');
