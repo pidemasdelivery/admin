@@ -18941,21 +18941,26 @@ input.cod{text-align:center;font-size:30px;letter-spacing:.4em;height:64px}
   Object.assign(IC,{clock:S('<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>'),chart:S('<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>'),star:S('<path d="m12 4 2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z"/>'),alert:S('<path d="M12 4 2.5 20h19z"/><path d="M12 10v4M12 17v.5"/>'),send:S('<path d="M4 12 20 4l-6 16-3-7z"/>'),phone:S('<rect x="6" y="3" width="12" height="18" rx="3"/><path d="M10 17h4"/>'),grid:S('<rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2"/>')});
   /* Menú inferior: 5 pestañas. Cada opción: [clave, nombre, ícono]. Clave «t:» = pantalla nueva, «a:» = acción, otra = opción de siempre */
   const HUBS={
-    'inicio':{t:'Pedidos',ic:'box'},
-    'h:moto':{t:'Motorizados',ic:'moto',k:'Motorizados',sec:[
+    'inicio':{t:'Pedidos',ic:'nvPed'},
+    'h:moto':{t:'Motorizados',ic:'nvMoto',k:'Motorizados',sec:[
       ['Motorizados',[['motorizados / gps','Motorizados y GPS','pin'],['crear motorizado','Crear motorizado','plus'],['suspender / reactivar cuentas','Suspender o reactivar','shield']]],
       ['Caja',[['t:caja','Cajas de motorizados','cash'],['yape por confirmar','Yape por confirmar','phone'],['alerta de caja alta','Alerta de caja alta','alert']]],
       ['Sueldos',[['t:sueldo','Sueldos de motorizados','wallet'],['planilla de sueldos','Planilla de sueldos','list']]]]},
-    'h:neg':{t:'Negocios',ic:'store',k:'Negocios',sec:[
+    'h:neg':{t:'Negocios',ic:'nvNeg',k:'Negocios',sec:[
       ['Negocios',[['configurar negocios','Configurar negocios','store'],['crear negocio','Crear negocio','plus'],['solicitudes de afiliación','Solicitudes de afiliación','tag']]],
       ['Cobros y pagos',[['por cobrar a negocios','Por cobrar a negocios','cash'],['por pagar a negocios','Por pagar a negocios','wallet']]]]},
-    'h:mas':{t:'Más',ic:'grid',k:'Más',sec:[
+    'h:mas':{t:'Más',ic:'nvMas',k:'Más',sec:[
       ['Pedidos',[['asignación automática','Asignación automática','swap'],['calificaciones','Calificaciones','star']]],
       ['Servicios',[['recojo y entrega','Recojo y entrega','swap'],['compra','Compra','cash'],['encomienda','Encomienda','box'],['tarifas','Tarifas','tag'],['agencias','Agencias','pin']]],
       ['Clientes',[['t:clientes','Clientes','group'],['lista negra','Lista negra','x']]],
       ['Configuración',[['horario','Horario de Pidemás','clock'],['qr yape','QR Yape','phone'],['códigos de descuento','Códigos de descuento','tag']]],
       ['Mi cuenta',[['a:perfil','Mi perfil','user']]]]}
   };
+  /* Íconos del menú inferior (elegidos por el administrador) */
+  Object.assign(IC,{nvPed:S('<path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-3-2-2 2-2-2-2 2-2-2-3 2"/><path d="M9 7h6M9 11h6M13 15h2"/>'),
+    nvMoto:S('<circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h2.5"/><path d="M21.12 20.12a3 3 0 1 0-4.24 0c.42.42 1.12 1.05 2.12 1.88 1.05-.89 1.76-1.52 2.12-1.88z"/><path d="M19 18v.01"/>'),
+    nvNeg:S('<path d="M19 3v12h-5c-.02-3.68.18-7.41 5-12zM19 15v6h-1v-3M8 4v17M5 4v3a3 3 0 0 0 6 0V4"/>'),
+    nvMas:S('<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/><path d="M14 7h6M17 4v6"/>')});
   /* Menú inferior: Pedidos · Motorizados · Negocios · Más */
   const NAVK=['inicio','h:moto','h:neg','h:mas'];
   const HUBDE={caja:'h:moto',sueldo:'h:moto',clientes:'h:mas',menu:'h:mas'};
@@ -20404,14 +20409,14 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const h=NAVK.map(k=>{const n=hubBd(k);return `<button type="button" data-n="${k}" class="${navG===k?'on':''}"${navG===k?' aria-current="page"':''}><span class="pi">${IC[HUBS[k].ic]}${n?`<span class="bd">${n>99?'99+':n}</span>`:''}</span><span class="lb">${HUBS[k].t}</span></button>`}).join('');
     if(h===navKey)return;navKey=h;
     navR.innerHTML=`<style>:host{all:initial;position:fixed;left:0;right:0;bottom:0;z-index:2147482700;display:block;font-family:PdInter,Inter,system-ui,sans-serif}
-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));height:70px;padding:0 4px env(safe-area-inset-bottom,0px);background:#FFFFFF;border-top:1px solid #F1E4DA;box-shadow:0 -4px 16px rgba(31,26,23,.05)}
+nav{display:grid;grid-template-columns:repeat(${NAVK.length},minmax(0,1fr));align-items:stretch;height:70px;box-sizing:border-box;padding:0 4px env(safe-area-inset-bottom,0px);background:#FFFFFF;border-top:1px solid #F1E4DA;box-shadow:0 -4px 16px rgba(31,26,23,.05)}
 button{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#6B5E55;font-size:12px;font-weight:700;-webkit-tap-highlight-color:transparent;min-width:0}
 .pi{position:relative;width:58px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;transition:background .18s}
-.pi svg{width:23px;height:23px}
+.pi svg{width:24px;height:24px;display:block;flex:0 0 auto}
 button.on{color:#C4410C;font-weight:800}button.on .pi{background:#FDEBDF}
 button:active .pi{transform:scale(.92)}
 .bd{position:absolute;top:-5px;right:5px;min-width:20px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:999px;background:#C4410C;color:#FFFFFF;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #FFFFFF}
-.lb{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.lb{display:block;text-align:center;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 </style><nav aria-label="Menú del admin">${h}</nav>`;
   }
   function nav(){
