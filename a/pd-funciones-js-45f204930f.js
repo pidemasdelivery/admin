@@ -403,16 +403,6 @@ return;
 allClientes=(data||[]).filter(c=>c.activo!==false);
 allClientes.sort((a,b)=>clienteNombre(a).localeCompare(clienteNombre(b),"es"));
 renderClientes();
-renderClienteDatalist();
-}
-function renderClienteDatalist(){
-const options=allClientes.map(c=>`<option value="${esc(clienteNombre(c))}" label="${esc(clienteTelefono(c))}"></option>`).join("");
-const dl=$("encClientesDatalist");
-if(dl)dl.innerHTML=options;
-const recojoDl=$("admRecojoClientesDatalist");
-if(recojoDl)recojoDl.innerHTML=options;
-const compraDl=$("admCompraClientesDatalist");
-if(compraDl)compraDl.innerHTML=options;
 }
 function renderClientes(){
 const box=$("clientesList");
@@ -569,59 +559,6 @@ await loadClientes();
 }catch(e){
 msg($("clienteMsg"),e.message||"No se pudo borrar el cliente.");
 }
-}
-function aplicarClienteEncomienda(c){
-if(!c)return;
-$("encClienteId").value=c.id||"";
-$("encNombreRemitente").value=clienteNombre(c);
-$("encDniRemitente").value=clienteDocumento(c);
-$("encTelefonoRemitente").value=clienteTelefono(c);
-$("encDireccionRecojo").value=clienteDireccion(c);
-$("encGpsRecojo").value=clienteUbicacion(c);
-$("encClienteHint").textContent="Datos cargados desde Clientes. Puedes modificarlos para este pedido sin cambiar el registro guardado.";
-}
-function encontrarClienteBuscado(valor){
-const q=String(valor||"").trim().toLocaleLowerCase("es");
-if(!q)return null;
-const exact=allClientes.find(c=>clienteNombre(c).trim().toLocaleLowerCase("es")===q || clienteTelefono(c).trim()===String(valor||"").trim());
-if(exact)return exact;
-const matches=allClientes.filter(c=>clienteNombre(c).toLocaleLowerCase("es").includes(q) || clienteTelefono(c).replace(/\s+/g,"").includes(String(valor||"").replace(/\s+/g,"")));
-return matches.length===1?matches[0]:null;
-}
-function buscarClienteParaEncomienda(){
-const input=$("encClienteNombre");
-const valor=input?.value||"";
-const c=encontrarClienteBuscado(valor);
-if(c){aplicarClienteEncomienda(c);return;}
-$("encClienteId").value="";
-$("encClienteHint").textContent=valor.trim()
-?"Busca por nombre o teléfono y selecciona el cliente registrado de la lista."
-:"Al seleccionar un cliente registrado se completarán automáticamente sus datos.";
-}
-function buscarClienteParaRecojo(){
-const input=$("admRecojoClienteNombre");
-if(!input)return;
-const valor=input.value.trim();
-const c=encontrarClienteBuscado(valor);
-if(!c){if(!valor)$ ("admRecojoClienteId").value="";return;}
-$("admRecojoClienteId").value=c.id||"";
-$("admRecojoRemitente").value=clienteNombre(c);
-$("admRecojoTelRemitente").value=clienteTelefono(c);
-$("admRecojoDireccion").value=clienteDireccion(c);
-$("admRecojoUbicacion").value=clienteUbicacion(c);
-}
-function buscarClienteParaCompra(){
-const input=$("admCompraBuscarCliente");
-if(!input)return;
-const valor=input.value.trim();
-const c=encontrarClienteBuscado(valor);
-if(!c){if(!valor)$("admCompraClienteId").value="";return;}
-$("admCompraClienteId").value=c.id||"";
-$("admCompraCliente").value=clienteNombre(c);
-$("admCompraTelefono").value=clienteTelefono(c);
-$("admCompraDireccion").value=clienteDireccion(c);
-$("admCompraUbicacion").value=clienteUbicacion(c);
-$("admCompraDocumento").value=clienteDocumento(c);
 }
 function formatMinutes(sec){
 if(sec==null || !Number.isFinite(sec)) return "—";
@@ -1879,13 +1816,6 @@ $("orderSearch").oninput=renderOrders;
 
 let adminAgencias = [];
 let adminDestinos = [];
-let adminServiceMotos = [];
-function showEncMsg(text, ok=false){
-const el=$("encMsg");
-el.classList.remove("hidden");
-el.textContent=text;
-el.style.borderColor=ok ? "#bbb" : "#bbb";
-}
 async function loadAdminAgencias(){
 const agenciasRes = await db
 .from("agencias")
@@ -1913,30 +1843,10 @@ false
 }else{
 adminDestinos=(destinosRes.data||[]).filter(d=>d.activo!==false);
 }
-const motosRes = await db
-.from("motorizados")
-.select("id,nombre_completo,telefono,usuario_id,activo,disponible")
-.eq("activo",true)
-.order("nombre_completo");
-if(motosRes.error){
-adminServiceMotos=[];
-console.error("No se pudieron cargar los motorizados para los servicios:",motosRes.error);
-}else{
-adminServiceMotos=motosRes.data||[];
-}
-window.adminServiceMotos = adminServiceMotos;
 const agOptions='<option value="">Seleccionar agencia</option>'+
 adminAgencias.map(a=>`<option value="${a.id}">${esc(a.nombre)}</option>`).join("");
 if($("agDestinoAgencia")) $("agDestinoAgencia").innerHTML=agOptions;
-if($("encAgencia")) $("encAgencia").innerHTML=agOptions;
-document.querySelectorAll(".encExtraAgencia").forEach(sel=>{const prev=sel.value;sel.innerHTML=encAgencyOptionsHtml();sel.value=prev;const row=sel.closest(".encPaqueteExtra");if(row)encRefreshExtraDestinos(row);});
-if($("encMoto")){
-$("encMoto").innerHTML=
-'<option value="">Seleccionar motorizado</option>'+
-adminServiceMotos.map(m=>`<option value="${m.id}">${esc(m.nombre_completo)}</option>`).join("");
-}
 renderAdminAgencias();
-updateEncDestinos();
 }
 window.loadAdminAgencias = loadAdminAgencias;
 function renderAdminAgencias(){
@@ -2030,7 +1940,6 @@ return;
 }
 adminDestinos=adminDestinos.filter(d=>String(d.id)!==String(id));
 renderAdminAgencias();
-updateEncDestinos();
 msgBox($("agMsg"),"Destino eliminado correctamente.",true);
 })();
 }
@@ -2084,32 +1993,13 @@ renderAdminAgencias();
 const agOptions='<option value="">Seleccionar agencia</option>'+
 adminAgencias.map(a=>`<option value="${a.id}">${esc(a.nombre)}</option>`).join("");
 if($("agDestinoAgencia")) $("agDestinoAgencia").innerHTML=agOptions;
-if($("encAgencia")) $("encAgencia").innerHTML=agOptions;
-updateEncDestinos();
 msgBox($("agMsg"),"Agencia eliminada correctamente.",true);
 })();
-}
-function renderEncAgenciaOpciones(){  }
-function updateEncDestinos(){
-const agencySelect=$("encAgencia");
-const destinationSelect=$("encDestino");
-if(!agencySelect||!destinationSelect)return;
-renderEncAgenciaOpciones();
-const agencyId=String(agencySelect.value||"");
-const ds=adminDestinos.filter(d=>String(d.agencia_id)===agencyId);
-destinationSelect.innerHTML='<option value="">Seleccionar destino final</option>'+ds.map(d=>`<option value="${d.id}" data-destino="${esc(d.destino_final)}">${esc(d.destino_final)}</option>`).join("");
 }
 $("refreshAgencias").onclick=async()=>{
 msgBox($("agMsg"),"Actualizando agencias...",true);
 await loadAdminAgencias();
 };
-$("encAgencia").onchange=updateEncDestinos;
-let encPaquetesCount=1;
-function encAgencyOptionsHtml(){return '<option value="">Seleccionar agencia registrada</option>'+(adminAgencias||[]).map(a=>`<option value="${esc(a.id)}">${esc(a.nombre)}</option>`).join('');}
-function encDestOptionsFor(agencyId){const ds=(adminDestinos||[]).filter(d=>String(d.agencia_id)===String(agencyId||''));return '<option value="">Seleccionar destino registrado</option>'+ds.map(d=>`<option value="${esc(d.id)}" data-destino="${esc(d.destino_final)}">${esc(d.destino_final)}</option>`).join('');}
-function encRefreshExtraDestinos(row){const ag=row.querySelector('.encExtraAgencia'),dest=row.querySelector('.encExtraDestino');if(!ag||!dest)return;const prev=dest.value;dest.innerHTML=encDestOptionsFor(ag.value);if([...dest.options].some(o=>o.value===prev))dest.value=prev;}
-function encActualizarBotonPaquetes(){const b=$("encAgregarPaquete");if(b){b.disabled=encPaquetesCount>=3;b.style.opacity=b.disabled?'.55':'1';b.textContent=encPaquetesCount>=3?'Máximo 3 paquetes alcanzado':'+ Agregar paquete (máximo 3)';}}
-$("encAgregarPaquete")?.addEventListener('click',()=>{if(encPaquetesCount>=3)return;encPaquetesCount++;const n=encPaquetesCount;const row=document.createElement('div');row.className='encPaqueteCard encPaqueteExtra';row.dataset.paquete=String(n);row.innerHTML=`<strong>Paquete ${n}</strong><div class="field"><label>Agencia</label><select class="encExtraAgencia">${encAgencyOptionsHtml()}</select></div><div class="field"><label>Destino</label><select class="encExtraDestino"><option value="">Seleccionar destino registrado</option></select></div><div class="field"><label>Modalidad de pago de encomienda</label><select class="encExtraTipoPago"><option value="">Seleccionar modalidad</option><option value="pago_en_agencia">Pago en agencia</option><option value="pago_a_destino">Pago a destino</option></select></div><button type="button" class="encPaqueteEliminar">Quitar paquete</button>`;$("encPaquetesExtra").appendChild(row);row.querySelector('.encExtraAgencia').addEventListener('change',()=>encRefreshExtraDestinos(row));try{window.pdsSegment&&window.pdsSegment(row.querySelector('.encExtraTipoPago'))}catch(_){}row.querySelector('.encPaqueteEliminar').addEventListener('click',()=>{row.remove();encPaquetesCount--;[...$("encPaquetesExtra").querySelectorAll('.encPaqueteExtra')].forEach((el,i)=>{el.dataset.paquete=String(i+2);el.querySelector('strong').textContent=`Paquete ${i+2}`});encActualizarBotonPaquetes()});encActualizarBotonPaquetes();});
 const agDestinosInputs=$("agDestinosInputs");
 if(agDestinosInputs){
 $("agAgregarDestino").onclick=()=>{
@@ -2386,215 +2276,6 @@ if(b){b.disabled=false;b.textContent="Crear código";}
 }
 return false;
 };
-(function setupAdminRecojoSubmit(){
-const $id = id => document.getElementById(id);
-const button = $id('admEnviarRecojoBtn');
-const status = $id('admRecojoMsg');
-const get = id => String($id(id)?.value ?? '').trim();
-const say = (text, ok=false) => {
-if (!status) return;
-status.textContent = text;
-status.classList.remove('hidden');
-status.style.borderColor = ok ? '#999' : '#bbb';
-};
-const isUUID = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''));
-if (!button || button.dataset.submitBound === '1') return;
-button.dataset.submitBound = '1';
-button.addEventListener('click', async event => {
-event.preventDefault();
-if (button.disabled) return;
-let recojoWhatsAppTab = null;
-
-const methodRaw = get('admRecojoPago').toLowerCase();
-const method = ['efectivo','yape','pagado'].includes(methodRaw) ? methodRaw : 'efectivo';
-const amountRaw = get('admRecojoTotal');
-const total = amountRaw === '' || !Number.isFinite(Number(amountRaw)) ? 0 : Math.max(0, Number(amountRaw));
-const paid = method === 'efectivo' ? total : null;
-const motoId = get('admRecojoMoto');
-if (!motoId) { say('Selecciona un motorizado para asignar el pedido.'); $id('admRecojoMoto')?.focus(); return; }
-recojoWhatsAppTab = window.open('about:blank', '_blank');
-if (!Array.isArray(adminServiceMotos) || !adminServiceMotos.some(m => String(m.id) === motoId)) {
-try { await loadAdminAgencias(); } catch (_) {}
-if (!Array.isArray(adminServiceMotos) || !adminServiceMotos.some(m => String(m.id) === motoId)) { if (recojoWhatsAppTab) recojoWhatsAppTab.close(); say('No se pudo verificar el motorizado. Actualiza la lista y vuelve a intentarlo.'); return; }
-}
-const moto = adminServiceMotos.find(m => String(m.id) === motoId);
-const locationNotes = [
-'Ubicación de recojo: ' + get('admRecojoUbicacion'),
-get('admRecojoANombre') ? 'Pedido a nombre de: ' + get('admRecojoANombre') : '',
-'Ubicación de entrega: ' + get('admRecojoUbicacionEntrega'),
-method === 'pagado' ? 'Servicio marcado como PAGADO; no cobrar monto al cliente' : (method === 'efectivo' ? 'Pago en efectivo: S/ ' + total.toFixed(2) : 'Pago por Yape: pendiente de captura y confirmación del administrador'),
-method !== 'pagado' ? (window.__pdRecojoQuien === 'envia' ? 'Paga quien envía, al recoger' : 'Paga quien recibe, al entregar') : '',
-method === 'efectivo' && window.pdPagaConMarker ? window.pdPagaConMarker('admRecojoPagaCon', total) : ''
-].filter(Boolean).join(' | ');
-const payload = {
-cliente_id: get('admRecojoClienteId') || null,
-nombre_cliente: get('admRecojoRemitente'),
-telefono_cliente: get('admRecojoTelRemitente'),
-nombre_remitente: get('admRecojoRemitente'),
-telefono_remitente: get('admRecojoTelRemitente'),
-direccion_recojo: get('admRecojoDireccion'),
-nombre_receptor: get('admRecojoReceptor'),
-telefono_receptor: get('admRecojoTelReceptor'),
-direccion_entrega: get('admRecojoEntrega'),
-tipo_servicio: 'recojo_entrega',
-estado: 'asignado',
-motorizado_id: motoId,
-metodo_pago: method === 'pagado' ? 'efectivo' : method,
-costo_delivery: total,
-subtotal: total,
-total: total,
-pago_confirmado: method === 'pagado',
-pago_servicio_momento: method === 'pagado' ? 'pagado' : (window.__pdRecojoQuien === 'envia' ? (method === 'yape' ? 'recojo_yape' : 'recojo_efectivo') : null),
-observaciones: locationNotes
-};
-button.disabled = true;
-const originalText = button.textContent;
-button.textContent = 'Enviando pedido…';
-say('Enviando pedido…', true);
-try {
-const { data, error } = await db.from('pedidos').insert(payload).select('*').single();
-if (error) throw error;
-const motoPhoneDigits = String(moto?.telefono || '').replace(/\D/g, '');
-const motoPhoneIntl = motoPhoneDigits ? (motoPhoneDigits.startsWith('51') ? motoPhoneDigits : (motoPhoneDigits.length === 9 ? '51' + motoPhoneDigits : motoPhoneDigits)) : '';
-if (motoPhoneIntl) {
-const waText = [
-'*PIDEMÁS DELIVERY*',
-'¡Hola, ' + String(moto?.nombre_completo || 'motorizado').trim() + '!',
-'Tienes un nuevo servicio de recojo y entrega asignado.',
-'Pedido: #' + String(data.id || '').slice(0, 8).toUpperCase(),
-'Por favor, entra al panel y confirma la asignación:',
-'https://pidemasdelivery.github.io/motorizado/'
-].join('\n');
-const waUrl = 'https://wa.me/' + motoPhoneIntl + '?text=' + encodeURIComponent(waText);
-if (recojoWhatsAppTab) recojoWhatsAppTab.location.href = waUrl;
-else say('Pedido asignado. El navegador bloqueó la pestaña de WhatsApp; permite ventanas emergentes para este sitio y vuelve a probar.', false);
-} else {
-if (recojoWhatsAppTab) recojoWhatsAppTab.close();
-say('Pedido guardado y asignado, pero el perfil del motorizado no tiene teléfono disponible para WhatsApp. Revisa su número en Motorizados.', false);
-}
-let motoUsuarioId = moto?.usuario_id || null;
-if (!motoUsuarioId) {
-const { data: motoActual, error: motoLookupError } = await db
-.from('motorizados')
-.select('id,usuario_id')
-.eq('id', motoId)
-.maybeSingle();
-if (motoLookupError) console.warn('No se pudo consultar el usuario del motorizado:', motoLookupError);
-motoUsuarioId = motoActual?.usuario_id || null;
-}
-if (!motoUsuarioId) {
-console.error('Pedido guardado, pero el motorizado no tiene usuario_id vinculado:', motoId);
-say('Pedido asignado, pero no se pudo registrar la notificación: el motorizado no tiene una cuenta de acceso vinculada. Revisa su registro en Motorizados.', false);
-} else {
-const { data: notifData, error: notifError } = await db.from('notificaciones').insert({
-usuario_id: motoUsuarioId,
-pedido_id: data.id,
-tipo: 'pedido_asignado',
-titulo: 'Nuevo servicio de recojo y entrega',
-mensaje: 'Tienes un nuevo servicio de recojo y entrega asignado.',
-leida: false
-}).select('id').single();
-if (notifError || !notifData?.id) {
-console.error('Pedido guardado, pero falló el registro de notificación:', notifError);
-say('El pedido quedó asignado, pero Supabase no guardó la notificación. Error: ' + (notifError?.message || 'No se confirmó el registro') + '. Revisa los permisos/políticas RLS de la tabla notificaciones.', false);
-} else {
-say('✓ Pedido enviado, asignado y notificación registrada correctamente.', true);
-}
-}
-['admRecojoClienteNombre','admRecojoClienteId','admRecojoRemitente','admRecojoTelRemitente','admRecojoDireccion','admRecojoUbicacion','admRecojoReceptor','admRecojoTelReceptor','admRecojoEntrega','admRecojoUbicacionEntrega','admRecojoTotal'].forEach(id => { if ($id(id)) $id(id).value = ''; });
-if ($id('admRecojoPago')) $id('admRecojoPago').value = '';
-if ($id('admRecojoMoto')) $id('admRecojoMoto').value = '';
-if ($id('admRecojoYapeInfo')) $id('admRecojoYapeInfo').hidden = true;
-if (typeof loadOrders === 'function') await loadOrders();
-} catch (error) {
-if (recojoWhatsAppTab && !recojoWhatsAppTab.closed) recojoWhatsAppTab.close();
-console.error('Enviar pedido de recojo y entrega:', error);
-say('No se pudo enviar el pedido: ' + (error?.message || String(error)));
-} finally {
-button.disabled = false;
-button.textContent = originalText;
-}
-});
-})();
-(function setupAdminCompraSubmit(){
-const $id=id=>document.getElementById(id);
-const button=$id('admEnviarCompraBtn');
-const status=document.createElement('div');
-status.id='admCompraMsg'; status.className='notice hidden'; status.setAttribute('role','status');
-$id('compraAdminBox')?.appendChild(status);
-const get=id=>String($id(id)?.value??'').trim();
-const say=text=>{status.textContent=text;status.classList.remove('hidden');};
-if(!button||button.dataset.submitBound==='1')return;
-button.dataset.submitBound='1';
-button.addEventListener('click',async event=>{
-event.preventDefault();
-const nombre=get('admCompraCliente'), telefono=get('admCompraTelefono'), direccion=get('admCompraDireccion');
-const lugar=get('admCompraLugar'), detalle=get('admCompraDetalle'), pago=get('admCompraPago'), motoId=get('admCompraMoto'), monto=get('admCompraTotal');
-const ubicacion=get('admCompraUbicacion'), comprobante=get('admCompraComprobante'), documento=get('admCompraDocumento');
-const pagoNormalizado=['efectivo','yape','pagado'].includes(pago.toLowerCase())?pago.toLowerCase():'efectivo';
-const montoNumerico=monto===''||!Number.isFinite(Number(monto))?0:Math.max(0,Number(monto));
-if(!pago){say('Elige cómo pagará el cliente la compra y el servicio: efectivo, Yape o ya pagado.');$id('admCompraPago')?.focus();return;}
-if(!motoId){say('Selecciona un motorizado para asignar la compra.');$id('admCompraMoto')?.focus();return;}
-const compraWhatsAppTab=window.open('about:blank','_blank');
-let moto=(adminServiceMotos||[]).find(m=>String(m.id)===motoId);
-if(!moto || !moto.telefono){
-try{const r=await db.from('motorizados').select('id,nombre_completo,telefono,usuario_id').eq('id',motoId).maybeSingle();if(r.data)moto={...(moto||{}),...r.data};}catch(e){console.warn('No se pudo consultar el perfil del motorizado para WhatsApp:',e);}
-}
-const payload={
-cliente_id:get('admCompraClienteId')||null,
-nombre_cliente:nombre, telefono_cliente:telefono,
-nombre_remitente:nombre, telefono_remitente:telefono,
-direccion_recojo:lugar, direccion_entrega:direccion,
-tipo_servicio:'compra', estado:'asignado', motorizado_id:motoId,
-metodo_pago:pagoNormalizado==='pagado'?'efectivo':pagoNormalizado, costo_delivery:montoNumerico, subtotal:0, total:montoNumerico, pago_confirmado:pagoNormalizado==='pagado',
-observaciones:[pagoNormalizado==='pagado'?'Servicio marcado como PAGADO; no cobrar monto al cliente':'',`Ubicación: ${get('admCompraUbicacion')}`,`Compra solicitada: ${detalle}`,`Comprobante: ${get('admCompraComprobante')||'No especificado'}`,`DNI/RUC: ${get('admCompraDocumento')}`,get('admCompraObs'),pagoNormalizado==='efectivo'&&window.pdPagaConMarker?window.pdPagaConMarker('admCompraPagaCon',montoNumerico):''].filter(Boolean).join(' | ')
-};
-button.disabled=true; const original=button.textContent; button.textContent='Enviando compra…'; say('Enviando compra…');
-try{
-const {data,error}=await db.from('pedidos').insert(payload).select('id').single();
-if(error)throw error;
-const compraPhoneDigits=String(moto?.telefono||'').replace(/\D/g,'');
-const compraPhoneIntl=compraPhoneDigits?(compraPhoneDigits.startsWith('51')?compraPhoneDigits:(compraPhoneDigits.length===9?'51'+compraPhoneDigits:compraPhoneDigits)):'';
-if(compraPhoneIntl){
-const compraMessage=['*PIDEMÁS DELIVERY*','¡Hola, '+String(moto?.nombre_completo||'motorizado').trim()+'!','Tienes una nueva compra asignada.','Pedido: #'+String(data.id||'').slice(0,8).toUpperCase(),'Por favor, entra al panel para revisar los detalles y atender el servicio:','https://pidemasdelivery.github.io/motorizado/'].join('\n');
-const compraWaUrl='https://wa.me/'+compraPhoneIntl+'?text='+encodeURIComponent(compraMessage);
-if(compraWhatsAppTab)compraWhatsAppTab.location.href=compraWaUrl;
-else say('Compra asignada. El navegador bloqueó WhatsApp; permite ventanas emergentes para este sitio.');
-}else{
-if(compraWhatsAppTab)compraWhatsAppTab.close();
-say('Compra guardada, pero el perfil del motorizado no tiene un teléfono válido para WhatsApp.');
-}
-let usuarioId=moto?.usuario_id||null;
-if(!usuarioId){const r=await db.from('motorizados').select('usuario_id').eq('id',motoId).maybeSingle();usuarioId=r.data?.usuario_id||null;}
-if(usuarioId){const n=await db.from('notificaciones').insert({usuario_id:usuarioId,pedido_id:data.id,tipo:'pedido_asignado',titulo:'Nueva compra asignada',mensaje:'Tienes una nueva compra asignada.',leida:false});if(n.error)console.warn('No se pudo registrar notificación de compra',n.error);}
-say('Compra enviada correctamente y asignada al motorizado.');
-['admCompraBuscarCliente','admCompraClienteId','admCompraCliente','admCompraTelefono','admCompraDireccion','admCompraUbicacion','admCompraLugar','admCompraLugarUrl','admCompraDetalle','admCompraDocumento','admCompraObs','admCompraTotal'].forEach(id=>{if($id(id))$id(id).value='';});
-$id('admCompraComprobante').value='';$id('admCompraPago').value='';$id('admCompraMoto').value='';
-if(typeof loadOrders==='function')await loadOrders();
-}catch(error){if(compraWhatsAppTab&&!compraWhatsAppTab.closed)compraWhatsAppTab.close();console.error('Enviar compra:',error);say('No se pudo enviar la compra: '+(error?.message||String(error)));}
-finally{button.disabled=false;button.textContent=original;}
-});
-})();
-(function setupAdminRecojoPaymentFields(){
-const method=document.getElementById('admRecojoPago');
-const yapeInfo=document.getElementById('admRecojoYapeInfo');
-function updatePaymentFields(){
-const value=String(method?.value||'').toLowerCase();
-if(yapeInfo) yapeInfo.hidden=value!=='yape';
-const amount=document.getElementById('admRecojoTotal');
-if(amount){amount.disabled=false;amount.required=true;amount.placeholder=value==='pagado'?'Costo del servicio (ya pagado)':'Ingresa el monto a cobrar';}
-}
-method?.addEventListener('change',updatePaymentFields);
-updatePaymentFields();
-})();
-(function setupPaidAmountFields(){
-[['admCompraPago','admCompraTotal'],['encMetodoPagoServicio','encMontoCobrar']].forEach(([methodId,amountId])=>{
-const method=document.getElementById(methodId), amount=document.getElementById(amountId);
-if(!method||!amount)return;
-const update=()=>{const paid=String(method.value||'').toLowerCase()==='pagado';amount.disabled=false;amount.required=true;amount.placeholder=paid?'Costo del servicio (ya pagado)':'Ingresa el monto a cobrar';};
-method.addEventListener('change',update);update();
-});
-})();
 document.querySelectorAll(".serviceBtn").forEach(btn=>{
 btn.type="button";
 btn.onclick=async(e)=>{
@@ -2606,9 +2287,6 @@ const businessForm=$("crearNegocioAdminBox");
 if(businessForm) businessForm.classList.add("hidden");
 if(typeof window.openAdminTab==="function") window.openAdminTab("restaurantes");
 const boxByType={
-recojo:"recojoAdminBox",
-compra:"compraAdminBox",
-encomienda:"encomiendaAdminBox",
 gps:"gpsAdminBox",
 "crear-motorizado":"crearMotorizadoAdminBox",
 "suspender-motorizado":"suspenderMotorizadoAdminBox",
@@ -2626,13 +2304,6 @@ return;
 const box=boxId?$(boxId):null;
 if(!box){console.warn("No se encontró la página/herramienta para:",type);return;}
 box.classList.remove("hidden");
-if(type==="recojo"||type==="compra"){
-if(typeof loadAdminAgencias==="function") await loadAdminAgencias();
-const motoOptions='<option value="">Seleccionar motorizado</option>'+(Array.isArray(adminServiceMotos)?adminServiceMotos:[]).map(m=>`<option value="${m.id}">${esc(m.nombre_completo||"")}</option>`).join("");
-const select=$(type==="recojo"?"admRecojoMoto":"admCompraMoto");
-if(select) select.innerHTML=motoOptions;
-}
-if(type==="encomienda"&&typeof loadAdminAgencias==="function") await loadAdminAgencias();
 if(type==="gps"&&typeof initAdminGpsMap==="function") await initAdminGpsMap();
 if(type==="descuentos"&&typeof loadDeliveryPromos==="function") await loadDeliveryPromos();
 if(type==="suspender-motorizado") $("actualizarSuspensionMotosBtn")?.click();
@@ -2893,266 +2564,10 @@ console.error("Crear acceso de motorizado:",e);
 msg($("accesoMotorizadoMsg"),"No se pudo crear la cuenta. Verifica que esté desplegada y configurada la Edge Function segura «crear-acceso-motorizado». No se creó ninguna cuenta si la función no está disponible.");
 }finally{btn.disabled=false;btn.textContent="Crear cuenta y vincular";}
 });
-$("encEnviar").onclick=async()=>{
-const getVal=(id)=>String(document.getElementById(id)?.value ?? "").trim();
-const nombreCliente=getVal("encNombreRemitente");
-const telefonoCliente=getVal("encTelefonoRemitente");
-const dniRemitente=getVal("encDniRemitente");
-const direccionRecojo=getVal("encDireccionRecojo");
-const gps=getVal("encGpsRecojo");
-const tipoEnvio=getVal("encTipoEnvio");
-const agenciaIdSeleccionada=getVal("encAgencia");
-const agenciaManual=getVal("encAgenciaManual");
-const destinoIdSeleccionado=getVal("encDestino");
-const destinoManual=getVal("encDestinoManual");
-const metodoPagoServicio=getVal("encMetodoPagoServicio");
-const montoCobrar=getVal("encMontoCobrar");
-const tipoPagoRaw=getVal("encTipoPago");
-const tipoPago=tipoPagoRaw;
-const nombreReceptor=getVal("encNombreReceptor");
-const telefonoReceptor=getVal("encTelefonoReceptor");
-const dniReceptor=getVal("encDniReceptor");
-const motoId=getVal("encMoto");
-const observacionesBase=getVal("encObservaciones");
-const paquetesExtra=[...document.querySelectorAll("#encPaquetesExtra .encPaqueteExtra")].map((row,i)=>{
-const ag=row.querySelector('.encExtraAgencia'),dest=row.querySelector('.encExtraDestino'),tp=row.querySelector('.encExtraTipoPago');
-const agObj=(adminAgencias||[]).find(a=>String(a.id)===String(ag?.value||''));
-const destObj=(adminDestinos||[]).find(d=>String(d.id)===String(dest?.value||''));
-return {numero:i+2,agencia_id:ag?.value||'',agencia:agObj?.nombre||'',destino_id:dest?.value||'',destino:destObj?.destino_final||dest?.selectedOptions?.[0]?.textContent?.trim()||'',tipo_pago:tp?.value||''};
-});
-const observaciones=observacionesBase+(window.pdEncIndicaciones?window.pdEncIndicaciones():'')+(paquetesExtra.length?' | PAQUETES ADICIONALES: '+paquetesExtra.map(p=>`Paquete ${p.numero}: Agencia ${p.agencia||'No especificada'}; destino ${p.destino||'No especificado'}; modalidad ${p.tipo_pago||'No especificada'}`).join(' || '):'');
-const agenciaNombreSeleccionada=adminAgencias.find(a=>a.id===agenciaIdSeleccionada)?.nombre || "";
-const destinoOption=document.getElementById("encDestino")?.selectedOptions?.[0];
-const destinoNombreSeleccionado=destinoOption?.dataset?.destino || String(destinoOption?.textContent || "").trim();
-const agenciaNombreFinal=agenciaNombreSeleccionada || agenciaManual;
-const destinoNombreFinal=destinoNombreSeleccionado || destinoManual;
-const pagoMomento=({efectivo:'recojo_efectivo',yape:'recojo_yape',pagado:'pagado',al_final:'al_final'})[metodoPagoServicio.toLowerCase()]||'recojo_efectivo';
-const metodoPagoFinal=metodoPagoServicio.toLowerCase()==='al_final'?'yape':(['efectivo','yape','pagado'].includes(metodoPagoServicio.toLowerCase())?metodoPagoServicio.toLowerCase():'efectivo');
-const montoFinal=metodoPagoFinal==='pagado'||montoCobrar===''||!Number.isFinite(Number(montoCobrar))?0:Math.max(0,Number(montoCobrar));
-const tipoPagoFinal=tipoPago || 'pago_a_destino';
-const tipoEnvioFinal=tipoEnvio || 'No especificado';
-const agenciaNombreSeguro=agenciaNombreFinal || 'No especificado';
-const destinoNombreSeguro=destinoNombreFinal || 'No especificado';
-{const fx=(sel,n)=>{showEncMsg('Elige la modalidad de pago del paquete '+n+': «Pago en agencia» o «Pago a destino».');const f=sel&&(sel.closest('.field')||sel);f&&f.scrollIntoView({behavior:'smooth',block:'center'})};if(!['pago_en_agencia','pago_a_destino'].includes(tipoPago)){fx(document.getElementById('encTipoPago'),1);return}const sinTp=[...document.querySelectorAll('#encPaquetesExtra .encPaqueteExtra')].findIndex(r=>!['pago_en_agencia','pago_a_destino'].includes(r.querySelector('.encExtraTipoPago')?.value||''));if(sinTp>=0){fx(document.querySelectorAll('#encPaquetesExtra .encExtraTipoPago')[sinTp],sinTp+2);return}}
-if(!motoId){showEncMsg('Selecciona un motorizado para asignar la encomienda.');document.getElementById('encMoto')?.focus();return;}
-const encomiendaWhatsAppTab=window.open('about:blank','_blank');
-let encomiendaMoto=(adminServiceMotos||[]).find(m=>String(m.id)===String(motoId));
-if(!encomiendaMoto || !encomiendaMoto.telefono){
-try{const r=await db.from('motorizados').select('id,nombre_completo,telefono,usuario_id').eq('id',motoId).maybeSingle();if(r.data)encomiendaMoto={...(encomiendaMoto||{}),...r.data};}catch(e){console.warn('No se pudo consultar el perfil del motorizado para WhatsApp:',e);}
-}
-let agenciaId=agenciaIdSeleccionada;
-let agencia=adminAgencias.find(a=>a.id===agenciaId);
-if(!agenciaId){
-const {data:agExist,error:agFindError}=await db
-.from("agencias")
-.select("id,nombre,activo,creado_en")
-.ilike("nombre",agenciaNombreSeguro)
-.limit(1)
-.maybeSingle();
-if(agFindError){showEncMsg("No se pudo verificar la agencia: "+agFindError.message);return;}
-if(agExist){
-agencia=agExist;
-agenciaId=agExist.id;
-}else{
-const {data:agNueva,error:agInsertError}=await db
-.from("agencias")
-.insert({nombre:agenciaNombreSeguro,activo:true})
-.select("id,nombre,activo,creado_en")
-.single();
-if(agInsertError){showEncMsg("No se pudo registrar la nueva agencia: "+agInsertError.message);return;}
-agencia=agNueva;
-agenciaId=agNueva.id;
-}
-}
-let destinoFinal=destinoNombreSeguro;
-if(!destinoIdSeleccionado){
-const {data:destExist,error:destFindError}=await db
-.from("agencia_destinos")
-.select("id,agencia_id,destino_final,activo,creado_en")
-.eq("agencia_id",agenciaId)
-.ilike("destino_final",destinoNombreSeguro)
-.limit(1)
-.maybeSingle();
-if(destFindError){showEncMsg("No se pudo verificar el destino: "+destFindError.message);return;}
-if(!destExist){
-const {error:destInsertError}=await db
-.from("agencia_destinos")
-.insert({agencia_id:agenciaId,destino_final:destinoFinal,activo:true});
-if(destInsertError){showEncMsg("No se pudo registrar el nuevo destino: "+destInsertError.message);return;}
-}else{
-destinoFinal=destExist.destino_final;
-}
-}
-const isUUID=(v)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v||"").trim());
-if(!isUUID(motoId)){
-showEncMsg("Selecciona un motorizado válido antes de enviar la encomienda.");
-return;
-}
-if(!isUUID(agenciaId)){
-showEncMsg("La agencia seleccionada no tiene un ID válido. Actualiza la lista de agencias y vuelve a seleccionarla.");
-return;
-}
-let latitud_recojo=null, longitud_recojo=null;
-const gpsTexto=gps.trim();
-const coordPatterns=[
-/[?&](?:destination|query|q)=(-?\d+(?:\.\d+)?)[,%20]+(-?\d+(?:\.\d+)?)/i,
-/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
-/(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)/
-];
-for(const pattern of coordPatterns){
-const coord=gpsTexto.match(pattern);
-if(coord){
-latitud_recojo=Number(coord[1]);
-longitud_recojo=Number(coord[2]);
-break;
-}
-}
-const esGoogleMapsCorto=/^https?:\/\/(?:www\.)?maps\.app\.goo\.gl\//i.test(gpsTexto);
-const esGoogleMaps=/^https?:\/\/(?:www\.)?google\.[^/]+\/maps\//i.test(gpsTexto);
-if((latitud_recojo===null || longitud_recojo===null) && !esGoogleMapsCorto && !esGoogleMaps){
-showEncMsg("Ingresa un enlace válido de Google Maps o coordenadas GPS.");
-return;
-}
-const payload={
-cliente_id:getVal("encClienteId") || null,
-nombre_cliente:nombreCliente,
-telefono_cliente:telefonoCliente,
-direccion_entrega:destinoFinal,
-referencia_entrega:agencia?.nombre || agenciaNombreFinal,
-estado:"asignado",
-motorizado_id:motoId,
-tipo_servicio:"encomienda",
-nombre_remitente:nombreCliente,
-telefono_remitente:telefonoCliente,
-direccion_recojo:direccionRecojo,
-latitud_recojo,
-longitud_recojo,
-agencia_id:agenciaId,
-agencia_destino:agencia?.nombre || agenciaNombreFinal,
-destino_final:destinoFinal,
-tipo_pago_encomienda:tipoPago,
-nombre_receptor:nombreReceptor,
-telefono_receptor:telefonoReceptor,
-observaciones: [
-observaciones,
-metodoPagoFinal==='pagado' ? 'Servicio marcado como PAGADO; no cobrar monto al cliente' : '',
-pagoMomento==='al_final' ? 'El cliente paga al final por Yape, después de recibir la guía y la clave; no cobrar al recoger' : '',
-`Tipo de encomienda: ${tipoEnvio}`,
-`DNI de quien envía: ${dniRemitente}`,
-`DNI de quien recibe: ${dniReceptor}`,
-`Ubicación de recojo: ${gpsTexto}`,
-pagoMomento==='recojo_efectivo'&&window.pdPagaConMarker ? window.pdPagaConMarker('encPagaCon', Number(montoCobrar)) : ''
-].filter(Boolean).join(" | "),
-costo_delivery:Number(montoCobrar)||0,
-subtotal:0,
-total:Number(montoCobrar)||0,
-pago_confirmado:metodoPagoServicio.toLowerCase()==='pagado',
-metodo_pago:metodoPagoFinal==='pagado'?'efectivo':metodoPagoFinal,
-pago_servicio_momento:pagoMomento
-};
-if(!payload.nombre_cliente){showEncMsg("El nombre de quien envía está vacío. No se enviará el pedido.");return;}
-$("encEnviar").disabled=true;
-showEncMsg("Enviando encomienda...");
-try{
-const {data,error}=await db.from("pedidos").insert(payload).select("id").single();
-if(error) throw error;
-const encPhoneDigits=String(encomiendaMoto?.telefono||'').replace(/\D/g,'');
-const encPhoneIntl=encPhoneDigits?(encPhoneDigits.startsWith('51')?encPhoneDigits:(encPhoneDigits.length===9?'51'+encPhoneDigits:encPhoneDigits)):'';
-if(encPhoneIntl){
-const encMessage=['*PIDEMÁS DELIVERY*','¡Hola, '+String(encomiendaMoto?.nombre_completo||'motorizado').trim()+'!','Tienes una nueva encomienda asignada.','Pedido: #'+String(data.id||'').slice(0,8).toUpperCase(),'Por favor, entra al panel para revisar los detalles y atender el servicio:','https://pidemasdelivery.github.io/motorizado/'].join('\n');
-const encWaUrl='https://wa.me/'+encPhoneIntl+'?text='+encodeURIComponent(encMessage);
-if(encomiendaWhatsAppTab)encomiendaWhatsAppTab.location.href=encWaUrl;
-else showEncMsg('Encomienda asignada. El navegador bloqueó WhatsApp; permite ventanas emergentes para este sitio.');
-}else{
-if(encomiendaWhatsAppTab)encomiendaWhatsAppTab.close();
-showEncMsg('Encomienda guardada, pero el perfil del motorizado no tiene un teléfono válido para WhatsApp.');
-}
-const notif={
-usuario_id:encomiendaMoto?.usuario_id || (adminServiceMotos||[]).find(m=>String(m.id)===String(motoId))?.usuario_id || null,
-tipo:"pedido_nuevo",
-titulo:"Nueva encomienda",
-mensaje:"Tienes una nueva encomienda asignada."
-};
-if(notif.usuario_id) await db.from("notificaciones").insert(notif);
-showEncMsg("Encomienda enviada correctamente. Los paquetes y sus agencias/destinos quedaron incluidos en una sola encomienda.");
-[
-"encNombreRemitente","encTelefonoRemitente","encDniRemitente",
-"encDireccionRecojo","encGpsRecojo","encNombreReceptor",
-"encTelefonoReceptor","encDniReceptor","encObservaciones"
-].forEach(id=>{const el=$(id);if(el)el.value=""});
-[
-"encTipoEnvio","encAgencia","encDestino","encTipoPago","encMetodoPagoServicio",
-"encMoto","encClienteNombre","encClienteId"
-].forEach(id=>{const el=$(id);if(el)el.value=""});
-$("encPaquetesExtra").innerHTML="";encPaquetesCount=1;encActualizarBotonPaquetes();
-$("encClienteHint").textContent="Al seleccionar un cliente registrado se completarán automáticamente sus datos.";
-await loadAdminAgencias();
-await loadClientes();
-}catch(error){
-if(encomiendaWhatsAppTab&&!encomiendaWhatsAppTab.closed)encomiendaWhatsAppTab.close();
-showEncMsg("No se pudo enviar la encomienda: "+(error?.message||error));
-}finally{
-$("encEnviar").disabled=false;
-}
-};
 $("guardarCliente")?.addEventListener("click",guardarClienteAdmin);
 $("cancelarCliente")?.addEventListener("click",()=>{limpiarFormularioCliente();clearMsg($("clienteMsg"));});
 $("refreshClientes")?.addEventListener("click",loadClientes);
 $("buscarClientesRegistrados")?.addEventListener("input",renderClientes);
-document.addEventListener("click", async (event) => {
-const button = event.target?.closest?.("[data-client-service][data-client-id]");
-if (!button) return;
-event.preventDefault();
-const client = (Array.isArray(allClientes) ? allClientes : []).find(c => String(c.id) === String(button.dataset.clientId));
-if (!client) { pdAviso("No se encontró este cliente. Pulsa Actualizar e inténtalo de nuevo."); return; }
-const type = button.dataset.clientService;
-const opener = window.__pidemasOpenServiceModal;
-if (typeof opener !== "function") { pdAviso("No se pudo abrir el formulario del servicio. Recarga la página e inténtalo de nuevo."); return; }
-button.disabled = true;
-try {
-await opener(type);
-if (type === "recojo") {
-$("admRecojoClienteNombre").value = clienteNombre(client);
-$("admRecojoClienteId").value = client.id || "";
-$("admRecojoRemitente").value = clienteNombre(client);
-$("admRecojoTelRemitente").value = clienteTelefono(client);
-$("admRecojoDireccion").value = clienteDireccion(client);
-$("admRecojoUbicacion").value = clienteUbicacion(client);
-$("admRecojoReceptor").value = "";
-$("admRecojoTelReceptor").value = "";
-$("admRecojoEntrega").value = "";
-$("admRecojoUbicacionEntrega").value = "";
-$("admRecojoRemitente")?.focus({preventScroll:true});
-} else if (type === "encomienda") {
-$("encClienteNombre").value = clienteNombre(client);
-aplicarClienteEncomienda(client);
-$("encNombreRemitente")?.focus({preventScroll:true});
-} else if (type === "compra") {
-$("admCompraBuscarCliente").value = clienteNombre(client);
-$("admCompraClienteId").value = client.id || "";
-$("admCompraCliente").value = clienteNombre(client);
-$("admCompraTelefono").value = clienteTelefono(client);
-$("admCompraDireccion").value = clienteDireccion(client);
-$("admCompraUbicacion").value = clienteUbicacion(client);
-$("admCompraDocumento").value = clienteDocumento(client);
-$("admCompraLugar").value = ""; if($("admCompraLugarUrl"))$("admCompraLugarUrl").value = "";
-$("admCompraDetalle").value = "";
-$("admCompraObs").value = "";
-$("admCompraBuscarCliente")?.focus({preventScroll:true});
-}
-} catch (error) {
-console.error("No se pudo abrir el servicio para el cliente:", error);
-pdAviso("No se pudo abrir el formulario. Inténtalo nuevamente.");
-} finally {
-button.disabled = false;
-}
-});
-$("encClienteNombre")?.addEventListener("input",buscarClienteParaEncomienda);
-$("encClienteNombre")?.addEventListener("change",buscarClienteParaEncomienda);
-$("admRecojoClienteNombre")?.addEventListener("input",buscarClienteParaRecojo);
-$("admRecojoClienteNombre")?.addEventListener("change",buscarClienteParaRecojo);
-$("admCompraBuscarCliente")?.addEventListener("input",buscarClienteParaCompra);
-$("admCompraBuscarCliente")?.addEventListener("change",buscarClienteParaCompra);
 (function startAdminOrdersRealtime(){
 try{
 if(window.pidemasAdminOrdersChannel){
@@ -3325,7 +2740,7 @@ const type=service.dataset.service;
 if(typeof window.__pidemasOpenServiceModal==='function'){
 window.__pidemasOpenServiceModal(type);
 }else{
-["recojoAdminBox","compraAdminBox","encomiendaAdminBox","gpsAdminBox"].forEach(id=>$id(id)?.classList.add("hidden"));
+["gpsAdminBox"].forEach(id=>$id(id)?.classList.add("hidden"));
 }
 return;
 }
@@ -3579,13 +2994,12 @@ try{
 if(window.__pdmModal)return;window.__pdmModal=true;
 const $=id=>document.getElementById(id);
 const MAP={
-recojo:['recojoAdminBox','Recojo y entrega'],compra:['compraAdminBox','Compra'],encomienda:['encomiendaAdminBox','Encomienda'],
 gps:['gpsAdminBox','Motorizados / GPS'],'crear-motorizado':['crearMotorizadoAdminBox','Crear motorizado'],
 'suspender-motorizado':['suspenderMotorizadoAdminBox','Suspender / reactivar cuentas'],
 descuentos:['descuentosAdminBox','Códigos de descuento'],'crear-negocio':['crearNegocioAdminBox','Crear negocio'],'estado-negocios':['estadoNegociosAdminBox','Estado de negocios'],
 'config-negocios':['configNegociosAdminBox','Configurar negocios'],'solicitudes':['solicitudesAdminBox','Solicitudes de afiliación'],
 pedidos:['tab-pedidos','Pedidos'],qryape:['pdQrCfg','QR Yape'],clientes:['tab-clientes','Clientes'],agencias:['tab-agencias','Agencias'],
-caja:['tab-caja','Cajas'],sueldo:['tab-sueldo','Sueldos'],tarifas:['tarifasAdminBox','Tarifas'],tarifas:['tarifasAdminBox','Tarifas'],tarifas:['tarifasAdminBox','Tarifas'],tarifas:['tarifasAdminBox','Tarifas'],tarifas:['tarifasAdminBox','Tarifas']
+caja:['tab-caja','Cajas'],sueldo:['tab-sueldo','Sueldos'],tarifas:['tarifasAdminBox','Tarifas']
 };
 let box=null,ph=null,cur=null;
 const RF={pedidos:'refreshOrders',clientes:'refreshClientes',agencias:'refreshAgencias',caja:'pdcjRefresh',sueldo:'pdSalaryRefreshMotos',gps:'gxRef','suspender-motorizado':'spRef','crear-negocio':'pdwRefNeg',solicitudes:'solRefresh','crear-motorizado':'pdwRefMoto'};

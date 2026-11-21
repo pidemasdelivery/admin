@@ -710,14 +710,6 @@ window.__pidemasLoadToolData=async function(key){
 if(key==='suspender-motorizado'){if(typeof window.cargarListaSuspensionMotorizados==='function')await window.cargarListaSuspensionMotorizados();return;}
 if(key==='gps'){if(typeof window.initAdminGpsMap==='function')await window.initAdminGpsMap();return;}
 if(key==='descuentos'){if(typeof loadDeliveryPromos==='function')await loadDeliveryPromos();return;}
-if(key==='recojo'||key==='compra'){
-if(typeof window.loadAdminAgencias==='function')await window.loadAdminAgencias();
-const motos=Array.isArray(window.adminServiceMotos)?window.adminServiceMotos:[];
-const sel=$(key==='recojo'?'admRecojoMoto':'admCompraMoto');
-if(sel)sel.innerHTML='<option value="">Seleccionar motorizado</option>'+motos.map(m=>'<option value="'+m.id+'">'+esc(m.nombre_completo||'')+'</option>').join('');
-return;
-}
-if(key==='encomienda'){if(typeof window.loadAdminAgencias==='function')await window.loadAdminAgencias();return;}
 if(key==='acceso-motorizado'){
 await fillSelect('accesoMotorizadoId','motorizados','id,nombre_completo',{order:'nombre_completo',field:'nombre_completo',fallback:'Motorizado'},'Selecciona un motorizado','accesoMotorizadoMsg','No se pudieron cargar los motorizados.');
 if(typeof clearMsg==='function')clearMsg($('accesoMotorizadoMsg'));
@@ -2044,28 +2036,8 @@ return pdTarifa.calcularCon(JSON.parse(JSON.stringify(C)),{km,subtotal:sub,desti
 function boton(){
 window.pdTarifasAbrir=abrir;
 }
-function calcFormulario(totalId,origenIds,destinoId,etq){
-const tot=$(totalId);if(!tot||tot.dataset.pdtf)return;tot.dataset.pdtf='1';
-const box=document.createElement('div');box.className='pdtfCalc';box.innerHTML='<button type="button">Calcular con la tarifa</button><div class="tf-r"></div>';
-(tot.closest('.field')||tot.parentElement).appendChild(box);
-box.querySelector('button').onclick=async()=>{
-const r=box.querySelector('.tf-r');r.className='tf-r';r.textContent='Calculando…';
-try{
-await pdTarifa.cargar();
-const dest=pdTarifa.coords($(destinoId)?.value);
-const orig=origenIds.map(id=>pdTarifa.coords($(id)?.value)).find(Boolean);
-if(!dest){r.className='tf-r tf-bad';r.textContent='Falta la ubicación de entrega (enlace de Google Maps o lat, lng).';return}
-let km=0,aprox=false,nota='';
-if(orig){const d=await pdTarifa.distanciaRuta(orig,dest);km=d.km;aprox=d.aproximado}else nota=' Sin ubicación de '+etq+': se cobra tarifa base o de zona.';
-const t=pdTarifa.calcular({km,destino:dest,aproximado:aprox});
-tot.value=t.total.toFixed(2);tot.dispatchEvent(new Event('input',{bubbles:true}));tot.dispatchEvent(new Event('change',{bubbles:true}));
-r.innerHTML='<b>'+money(t.total)+'</b>'+(km?' · '+km.toFixed(2)+' km'+(aprox?' (aprox.)':''):'')+(t.zona?' · Zona '+E(t.zona):'')+'<br>'+t.detalle.map(d=>E(d.concepto)+': '+money(d.monto)).join(' · ')+E(nota);
-}catch(e){r.className='tf-r tf-bad';r.textContent='No se pudo calcular: '+(e.message||e)}
-};
-}
-function formularios(){calcFormulario('admRecojoTotal',['admRecojoUbicacion'],'admRecojoUbicacionEntrega','recojo');calcFormulario('admCompraTotal',['admCompraLugar'],'admCompraUbicacion','compra')}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('pdtfModal')&&!$('pdtfModal').hidden)cerrar()});
-setInterval(()=>{try{boton();formularios()}catch(e){}},1200);
+setInterval(()=>{try{boton()}catch(e){}},1200);
 })();
 }catch(e){console.error("[pidemas-tarifa-admin-js]",e)}
 
@@ -2148,11 +2120,6 @@ function cerrar(v){const m=$('pdmpMapa');if(m)m.hidden=true;document.documentEle
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('pdmpMapa')&&!$('pdmpMapa').hidden){e.stopPropagation();cerrar(null)}},true);
 window.pdMapaElegir=elegir;
 const CAMPOS=[
-{id:'admRecojoUbicacion',dir:'admRecojoDireccion',titulo:'Lugar de recojo',icono:'ti-package'},
-{id:'admRecojoUbicacionEntrega',dir:'admRecojoEntrega',titulo:'Lugar de entrega',icono:'ti-home'},
-{id:'encGpsRecojo',dir:'encDireccionRecojo',titulo:'Lugar de recojo de la encomienda',icono:'ti-package'},
-{id:'admCompraUbicacion',dir:'admCompraDireccion',titulo:'Lugar de entrega de la compra',icono:'ti-home'},
-{id:'admCompraLugar',dir:null,titulo:'Dónde se hace la compra',icono:'ti-building-store',lugar:true},
 {id:'clienteUbicacion',dir:'clienteDireccion',titulo:'Ubicación del cliente',icono:'ti-user',ancla:'.pdcWithBtn'}
 ];
 const minis=new Map();
@@ -2394,11 +2361,6 @@ try{
   }
   function admin(){
      
-    document.querySelectorAll('#encAgencia, .encExtraAgencia').forEach(sel=>{
-      const field=sel.closest('.field');if(!field)return;
-      const opt=sel.options[sel.selectedIndex];const nombre=sel.value&&opt?(agNombre(sel.value)||opt.textContent.trim()):'';
-      linea(field,nombre,sel.value);
-    });
      
     document.querySelectorAll('#agLista .pdgAg').forEach(card=>{
       const id=card.dataset.id;const nombre=agNombre(id)||card.querySelector('.pdgAgHead strong')?.textContent.trim();
@@ -2410,38 +2372,8 @@ try{
       if(!agN.dataset.pdAg){agN.dataset.pdAg='1';agN.addEventListener('input',()=>pronto())}
     }
      
-    document.querySelectorAll('#encAgencia, .encExtraAgencia').forEach(sel=>{
-      const field=sel.closest('.field');if(!field||field.querySelector('.pdAgNueva'))return;
-      const w=document.createElement('div');w.className='pdAgNueva';
-      w.innerHTML=`<button type="button" class="pdAgNuevaBt">¿La agencia no está en la lista? Agrégala con el mapa</button><div class="pdAgNuevaF" hidden><input class="an" placeholder="Nombre de la agencia" autocomplete="off"><input class="ad" placeholder="Destino (ej. Lima - Los Olivos)" autocomplete="off"><button type="button" class="ok">Marcar ubicación y agregar</button><small class="msg"></small></div>`;
-      field.appendChild(w);
-      w.querySelector('.pdAgNuevaBt').onclick=e=>{e.preventDefault();const f=w.querySelector('.pdAgNuevaF');f.hidden=!f.hidden;if(!f.hidden)w.querySelector('.an').focus()};
-      w.querySelector('.ok').onclick=e=>{e.preventDefault();nuevaAgencia(sel,w)};
-    });
   }
-  async function nuevaAgencia(sel,w){
-    const nombre=w.querySelector('.an').value.trim(),destino=w.querySelector('.ad').value.trim(),msg=w.querySelector('.msg');
-    if(!nombre){msg.textContent='Escribe el nombre de la agencia.';return}
-    if(!destino){msg.textContent='Escribe el destino del paquete.';return}
-    if(typeof window.pdMapaElegir!=='function')return;
-    const r=await window.pdMapaElegir({titulo:'Ubicación de '+nombre,tip:'Mueve el mapa hasta la puerta de la agencia'});
-    if(!r){msg.textContent='Marca la ubicación en el mapa para agregar la agencia.';return}
-    const c=DB();msg.textContent='Agregando agencia…';
-    try{
-      let ag=null;const ya=(()=>{try{return (adminAgencias||[]).find(a=>clave(a.nombre)===clave(nombre))}catch(e){return null}})();
-      if(ya)ag=ya;else{const {data,error}=await c.from('agencias').insert({nombre,activo:true}).select('id,nombre').single();if(error)throw error;ag=data}
-      const {data:de,error:e2}=await c.from('agencia_destinos').insert({agencia_id:ag.id,destino_final:destino,activo:true}).select('id').single();if(e2)throw e2;
-      await guardar(ag.nombre||nombre,ag.id,r);
-      if(typeof loadAdminAgencias==='function')await loadAdminAgencias();
-      sel.value=String(ag.id);sel.dispatchEvent(new Event('change',{bubbles:true}));
-      await new Promise(x=>setTimeout(x,150));
-      const row=sel.closest('.encPaqueteExtra');
-      if(row&&typeof encRefreshExtraDestinos==='function')encRefreshExtraDestinos(row);
-      const ds=row?row.querySelector('.encExtraDestino'):document.getElementById('encDestino');
-      if(ds&&de&&[...ds.options].some(o=>o.value===String(de.id))){ds.value=String(de.id);ds.dispatchEvent(new Event('change',{bubbles:true}))}
-      w.querySelector('.pdAgNuevaF').hidden=true;w.querySelector('.an').value='';w.querySelector('.ad').value='';msg.textContent='';
-    }catch(err){msg.textContent='No se pudo agregar la agencia: '+(err.message||err)}
-  }
+
 
    
   const list=()=>{try{return Array.isArray(orders)?orders:[]}catch(e){return []}};
@@ -2469,7 +2401,6 @@ try{
   function todo(){if(!cargado)return;try{ES_ADMIN?admin():(document.getElementById('pidemas-moto-encomienda-js')?null:moto())}catch(e){}}
   let q=false;function pronto(){if(q)return;q=true;setTimeout(()=>{q=false;todo()},400)}
   new MutationObserver(m=>{if(m.some(x=>!(x.target.closest&&x.target.closest('.pdAgUb,.pdAgCard'))))pronto()}).observe(document.documentElement,{childList:true,subtree:true});
-  document.addEventListener('change',e=>{if(e.target&&e.target.matches&&e.target.matches('#encAgencia,.encExtraAgencia'))pronto()},true);
   setInterval(pronto,1500);
 })();
 }catch(e){console.error("[pidemas-agencias-mapa-js]",e)}
@@ -2669,9 +2600,6 @@ try{
     ['sol','Solicitudes de afiliación',abrir('solicitudes')],
     ['cfg','Configurar negocios',abrir('config-negocios')],
     ['Servicios'],
-    ['rec','Recojo y entrega',abrir('recojo')],
-    ['com','Compra',abrir('compra')],
-    ['enc','Encomienda',abrir('encomienda')],
     ['tar','Tarifas',()=>{if(typeof window.pdTarifasAbrir==='function')window.pdTarifasAbrir()}],
     ['age','Agencias',abrir('agencias')],
     ['Motorizados'],
@@ -3389,48 +3317,6 @@ function alAbrir(box,fn){
  alAbrir(box,()=>{});
  const pb=$('pdmBody');if(pb)new MutationObserver(()=>{if(box.parentNode!==pb){document.body.classList.remove('pdtf-abierto');const m=$('pdtfModal');if(m)m.hidden=true}}).observe(pb,{childList:true});
 })();
-/* ---------------- RECOJO · COMPRA · ENCOMIENDA ---------------- */
-function servicio(boxId,btnId,msgId,cfg){
- const box=$(boxId);if(!box||box.querySelector(':scope > .pdw'))return;
- const secs=[...box.querySelectorAll('.adminRecojoCards > section.adminRecojoCard')];if(!secs.length||!$(btnId))return;
- const busca=box.querySelector('.adminRecojoClientSearch');
- const tit=x=>{const h=x.querySelector(':scope > h3');return h?h.textContent.replace(/^\s*\d+\s*/,'').trim():''};
- const extra=cfg.extra?cfg.extra():[];const steps0=secs.map(x=>({title:tit(x)}));
- const req=sec=>{const f=[...sec.querySelectorAll('input[id]')].filter(i=>i.type!=='hidden'&&i.getClientRects().length);const nom=f.find(i=>/nombre|remitente|cliente$/i.test(i.id)&&!/buscar/i.test(i.id)),tel=f.find(i=>/tel/i.test(i.id));
-  if(nom&&!nom.value.trim())return 'Escribe el nombre y apellido.';if(tel&&!tel.value.trim())return 'Escribe el número de teléfono.';return ''};
- const W=wizard({noSeg:true,again:cfg.again,
-  stats:()=>{let L=[];try{L=Array.isArray(allOrders)?allOrders:[]}catch(e){}const k=cfg.tipo;const mine=L.filter(o=>String(o.tipo_servicio||'').toLowerCase().includes(k));
-   const hoy=new Date().toLocaleDateString('en-CA',{timeZone:'America/Lima'});const dia=o=>o.creado_en||o.created_at?new Date(o.creado_en||o.created_at).toLocaleDateString('en-CA',{timeZone:'America/Lima'}):'';
-   const curso=mine.filter(o=>!/entregad|cancel|anulad|rechaz/i.test(String(o.estado||''))).length;
-   return [[(cfg.plural||'Pedidos')+' hoy',mine.filter(o=>dia(o)===hoy).length],['En curso',curso]]},
-  steps:secs.map((sec,k)=>{
-   const st={title:tit(sec),nodes:()=>[k===0&&busca?card('','',[busca]):null,sec].concat(extra.filter(e=>e.paso(sec)).map(e=>e.el))};
-   if(k===0)st.check=()=>req(sec);
-   if(k===secs.length-1)Object.assign(st,{next:cfg.enviar,busy:'Enviando…',run:async s=>{
-    const b=$(btnId),m=$(msgId);const pasos=[...W.querySelectorAll('.pdwSteps > .pdwStep')];const antes=pasos.map(x=>x.hidden);
-    if(m){m.textContent='';m.classList.add('hidden')}
-    pasos.forEach(x=>x.hidden=false);b.click();const foc=document.activeElement;pasos.forEach((x,j)=>x.hidden=antes[j]);
-    let t='';const t0=Date.now();
-    while(Date.now()-t0<60000){await sleep(250);const mm=$(msgId);t=(mm&&mm.textContent||'').trim();if(t&&!b.disabled&&!/^enviando/i.test(t))break}
-    if(t&&/correctamente|asignad|guardad/i.test(t)&&!/^no se pudo/i.test(t)){s.t=t.replace(/^✓\s*/,'');return{done:true}}
-    let j=pasos.findIndex(x=>foc&&foc!==document.body&&x.contains(foc));
-    if(j<0&&t){const T=steps0.map(x=>x.title.toLowerCase());const R=[[/paquete|agencia|destino|modalidad/i,/paquete/],[/env[ií]a|remitente/i,/quien env|cliente/],[/recibe|receptor/i,/quien recibe/],[/monto|costo|m[eé]todo de pago|cobrar/i,/pago/],[/comprobante|boleta|factura|ruc/i,/comprobante/],[/qu[eé] desea|lugar de compra/i,/de la compra/]];
-     for(const [r,q] of R){if(r.test(t)){j=T.findIndex(x=>q.test(x));if(j>=0)break}}}
-    return{err:t||'No hubo respuesta al enviar. Revisa tu conexión e intenta otra vez.',paso:j>=0?j:null};
-   }});
-   return st;
-  }),
-  done:s=>({t:cfg.ok,p:E(s.t)}),
-  reset:()=>{const m=$(msgId);if(m){m.textContent='';m.classList.add('hidden')}}
- });
- box.prepend(W);box.classList.add('pdwServ');
- alAbrir(box,()=>W.open());
-}
-servicio('recojoAdminBox','admEnviarRecojoBtn','admRecojoMsg',{tipo:'recojo',plural:'Recojos',again:'Registrar otro recojo',enviar:'Enviar recojo y entrega',ok:'Recojo y entrega enviado',
- extra:()=>[{el:$('admRecojoYapeInfo'),paso:sec=>!!sec.querySelector('#admRecojoPago')}].filter(e=>e.el)});
-servicio('compraAdminBox','admEnviarCompraBtn','admCompraMsg',{tipo:'compra',plural:'Compras',again:'Registrar otra compra',enviar:'Enviar compra',ok:'Compra enviada'});
-servicio('encomiendaAdminBox','encEnviar','encMsg',{tipo:'encomienda',plural:'Encomiendas',again:'Registrar otra encomienda',enviar:'Enviar encomienda',ok:'Encomienda enviada'});
-
 /* ---------------- AGENCIAS ---------------- */
 (function(){
  const tab=$('tab-agencias'),nueva=$('pdgNew'),lista=$('pdgList');if(!tab||!nueva||!lista||tab.querySelector('.pdw'))return;
@@ -3561,7 +3447,7 @@ try{
 (function(){
 if(window.__pdPagesPro)return;window.__pdPagesPro=true;
 var TAB={'tab-pedidos':'Principal','tab-clientes':'Principal','tab-agencias':'Servicios','tab-caja':'Motorizados','tab-sueldo':'Motorizados'};
-var TOOL={'Crear negocio':'Negocios','Estado de negocios':'Negocios','Servicio de recojo y entrega':'Servicios','Servicio de compra':'Servicios','Servicio de encomienda':'Servicios','Motorizados / GPS':'Motorizados','Crear motorizado':'Motorizados','Suspender / reactivar cuentas':'Motorizados','Códigos de descuento':'Marketing'};
+var TOOL={'Crear negocio':'Negocios','Estado de negocios':'Negocios','Motorizados / GPS':'Motorizados','Crear motorizado':'Motorizados','Suspender / reactivar cuentas':'Motorizados','Códigos de descuento':'Marketing'};
 var QI={'Pedidos':'receipt','Clientes':'users','Caja de motorizados':'wallet','Cajas':'wallet'};
 function kick(h2,txt){
 if(!h2||!h2.parentNode)return;

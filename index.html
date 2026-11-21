@@ -220,18 +220,6 @@ html body #appView:not(#Z#Z#Z#Z#Z) > .card:first-child:has(> h1){display:none!im
 </div>
 <div class="card" style="margin-top:14px;border:1px solid var(--fr-line)">
 <div class="serviceCardsAdmin">
-<button class="serviceCardAdmin serviceBtn" data-service="recojo" type="button">
-<span class="serviceTitleAdmin">Servicio de Recojo y entrega</span>
-<span class="serviceTextAdmin">Solicita un recojo y una entrega.</span>
-</button>
-<button class="serviceCardAdmin serviceBtn" data-service="compra" type="button">
-<span class="serviceTitleAdmin">Servicio de compra</span>
-<span class="serviceTextAdmin">Realiza una compra por encargo.</span>
-</button>
-<button class="serviceCardAdmin serviceBtn" data-service="encomienda" type="button">
-<span class="serviceTitleAdmin">Servicio de encomienda</span>
-<span class="serviceTextAdmin">Envía un paquete a su destino.</span>
-</button>
 <button class="serviceCardAdmin serviceBtn" data-service="gps" type="button">
 <span class="serviceTitleAdmin">Motorizados / GPS</span>
 <span class="serviceTextAdmin">Ver ubicación de los motorizados.</span>
@@ -264,148 +252,6 @@ html body #appView:not(#Z#Z#Z#Z#Z) > .card:first-child:has(> h1){display:none!im
 <div class="list" id="suspenderMotorizadoList" style="margin-top:12px"><div class="muted">Cargando motorizados…</div></div>
 </div>
 
-<div class="card hidden serviceAdminBox" id="recojoAdminBox" style="margin-top:14px;border:1px solid var(--fr-line)">
-<div class="serviceAdminHead">
-<div>
-<h3>Servicio de Recojo y entrega</h3>
-</div>
-
-</div>
-<div class="field full adminRecojoClientSearch"><label>Buscar cliente registrado</label><input autocomplete="off" id="admRecojoClienteNombre" list="admRecojoClientesDatalist" placeholder="Escribe el nombre del cliente" type="text"/><datalist id="admRecojoClientesDatalist"></datalist><input id="admRecojoClienteId" type="hidden"/><small class="muted">Al elegir un cliente, se completarán sus datos guardados en Clientes.</small></div>
-<div class="adminRecojoCards" id="admRecojoForm">
-<section class="adminRecojoCard">
-<h3>Información de quien envía</h3>
-<div class="field"><label>Nombre</label><input autocomplete="off" id="admRecojoRemitente" type="text" value=""/></div>
-<div class="field"><label>Número</label><input autocomplete="off" id="admRecojoTelRemitente" type="tel" value=""/></div>
-<div class="field"><label>Dirección</label><input autocomplete="off" id="admRecojoDireccion" type="text" value=""/></div>
-<div class="field"><label>Ubicación</label><input autocomplete="off" id="admRecojoUbicacion" type="text" value=""/></div>
-</section>
-<section class="adminRecojoCard">
-<h3>Información de quien recibe</h3>
-<div class="field"><label>Nombre</label><input autocomplete="off" id="admRecojoReceptor" type="text" value=""/></div>
-<div class="field"><label>Número</label><input autocomplete="off" id="admRecojoTelReceptor" type="tel" value=""/></div>
-<div class="field"><label>Dirección</label><input autocomplete="off" id="admRecojoEntrega" type="text" value=""/></div>
-<div class="field"><label>Ubicación</label><input autocomplete="off" id="admRecojoUbicacionEntrega" type="text" value=""/></div>
-</section>
-<section class="adminRecojoCard">
-<h3>Información de pago del servicio</h3>
-<div class="field"><label>Monto a cobrar</label><input autocomplete="off" id="admRecojoTotal" inputmode="decimal" min="0" placeholder="Ingresa el monto a cobrar" step="0.01" type="number" value=""/></div>
-<div class="field"><label>Método de pago del servicio</label><select id="admRecojoPago"><option selected="" value="">Seleccionar método de pago</option><option value="efectivo">Efectivo</option><option value="yape">Yape</option><option value="pagado">Pagado</option></select></div>
-</section>
-<section class="adminRecojoCard">
-<h3>Asignar motorizado</h3>
-<div class="field"><label>Seleccionar motorizado</label><select id="admRecojoMoto"><option selected="" value="">Seleccionar motorizado</option></select></div>
-</section>
-</div>
-<div class="notice" hidden="" id="admRecojoYapeInfo">Pago con Yape: el motorizado deberá mostrar el QR, subir la captura del pago y esperar la confirmación del administrador antes de finalizar el pedido.</div>
-<div class="actions">
-<button class="btn" id="admEnviarRecojoBtn" type="button">Enviar recojo y entrega</button>
-</div>
-<div aria-live="polite" class="notice hidden" id="admRecojoMsg" role="status" style="margin-top:10px"></div>
-</div>
-<div class="card hidden serviceAdminBox" id="compraAdminBox" style="margin-top:14px;border:1px solid var(--fr-line)">
-<div class="serviceAdminHead">
-<div><h3>Servicio de Compras</h3></div>
-
-</div>
-<div class="field full adminRecojoClientSearch">
-<label>Buscar cliente registrado</label>
-<input autocomplete="off" id="admCompraBuscarCliente" list="admCompraClientesDatalist" placeholder="Escribe nombre o teléfono del cliente" type="text"/>
-<datalist id="admCompraClientesDatalist"></datalist>
-<input id="admCompraClienteId" type="hidden"/>
-<small class="muted">Al seleccionar un cliente, se completarán automáticamente sus datos guardados.</small>
-</div>
-<div class="adminRecojoCards" id="admCompraForm">
-<section class="adminRecojoCard">
-<h3>Información del cliente</h3>
-<div class="field"><label>Nombre</label><input id="admCompraCliente"/></div>
-<div class="field"><label>Número</label><input id="admCompraTelefono" type="tel"/></div>
-<div class="field"><label>Dirección</label><input id="admCompraDireccion"/></div>
-<div class="field"><label>Ubicación</label><input id="admCompraUbicacion" placeholder="Enlace de Google Maps o coordenadas"/></div>
-</section>
-<section class="adminRecojoCard">
-<h3>Información de la compra</h3>
-<div class="field"><label>¿De dónde desea la compra?</label><input id="admCompraLugar"/></div>
-<div class="field"><label>¿Qué desea que compremos?</label><textarea id="admCompraDetalle"></textarea></div>
-<div class="field"><label>Observaciones</label><textarea id="admCompraObs"></textarea></div>
-</section>
-<section class="adminRecojoCard">
-<h3>Información del comprobante</h3>
-<div class="field"><label>Boleta o factura</label><select id="admCompraComprobante"><option value="">Seleccionar</option><option value="boleta">Boleta</option><option value="factura">Factura</option></select></div>
-<div class="field"><label>DNI / RUC</label><input autocomplete="off" id="admCompraDocumento" inputmode="numeric" maxlength="11" pattern="[0-9]*" placeholder="8 dígitos (DNI) u 11 (RUC)" type="text"/></div>
-</section>
-<section class="adminRecojoCard">
-<h3>Información de pago del servicio</h3>
-<div class="field"><label>Costo del servicio (delivery)</label><input autocomplete="off" id="admCompraTotal" inputmode="decimal" min="0" placeholder="Ingresa el costo del servicio" step="0.01" type="number" value=""/><small class="pdCompraHint" style="display:block;margin-top:6px;color:var(--fr-muted);font-size:12px">El gasto de la compra se suma cuando el motorizado registre cuánto gastó.</small></div>
-<div class="field"><label>¿Cómo paga el cliente la compra y el servicio?</label><select id="admCompraPago" required><option value="">Elegir cómo paga el cliente</option><option value="efectivo">Efectivo al recibir · el motorizado cobra y entra a su caja</option><option value="yape">Yape al recibir · QR de Pidemás</option><option value="pagado">Ya pagó todo por adelantado</option></select><small style="display:block;margin-top:6px;color:#6B5E55">El motorizado paga la compra con su efectivo. Al entregar, cobra la compra más el servicio.</small></div>
-</section>
-<section class="adminRecojoCard">
-<h3>Asignar motorizado</h3>
-<div class="field"><label>Seleccionar motorizado</label><select id="admCompraMoto"><option value="">Seleccionar motorizado</option></select></div>
-</section>
-</div>
-<div class="actions"><button class="btn" id="admEnviarCompraBtn" type="button">Enviar compra</button></div>
-</div>
-<div class="card hidden serviceAdminBox" id="encomiendaAdminBox" style="margin-top:14px;border:1px solid var(--fr-line)">
-<div class="serviceAdminHead">
-<div><h3>Servicio de Encomienda</h3></div>
-
-</div>
-<div class="field full adminRecojoClientSearch">
-<label>Buscar cliente registrado</label>
-<input autocomplete="off" id="encClienteNombre" list="encClientesDatalist" placeholder="Escribe el nombre del cliente" type="text"/>
-<datalist id="encClientesDatalist"></datalist>
-<input id="encClienteId" type="hidden"/>
-<small class="muted" id="encClienteHint">Al seleccionar un cliente registrado se completarán automáticamente sus datos.</small>
-</div>
-<div class="adminRecojoCards">
-<section class="adminRecojoCard">
-<h3>Información de quien envía</h3>
-<div class="field"><label>Nombre y apellido</label><input autocomplete="off" id="encNombreRemitente"/></div>
-<div class="field"><label>DNI</label><input autocomplete="off" id="encDniRemitente" inputmode="numeric" pattern="[0-9]*" type="text"/></div>
-<div class="field"><label>Número</label><input autocomplete="tel" id="encTelefonoRemitente" inputmode="numeric" pattern="[0-9]*" type="tel"/></div>
-<div class="field"><label>Dirección de recojo</label><input id="encDireccionRecojo"/></div>
-<div class="field"><label>Ubicación</label><input id="encGpsRecojo" placeholder="Pega el enlace de Google Maps o coordenadas"/></div>
-</section>
-<section class="adminRecojoCard">
-<h3>Información de quien recibe</h3>
-<div class="field"><label>Nombre y apellido</label><input id="encNombreReceptor"/></div>
-<div class="field"><label>DNI</label><input autocomplete="off" id="encDniReceptor" inputmode="numeric" pattern="[0-9]*" type="text"/></div>
-<div class="field"><label>Número</label><input autocomplete="off" id="encTelefonoReceptor" inputmode="numeric" pattern="[0-9]*" type="tel"/></div>
-</section>
-<section class="adminRecojoCard">
-<h3>Información de la encomienda</h3>
-<div class="field"><label>Tipo de encomienda</label><select id="encTipoEnvio">
-<option value="">Seleccionar tipo</option><option value="sobre">Sobre</option><option value="paquete_pequeno">Paquete pequeño</option><option value="paquete_mediano">Paquete mediano</option><option value="paquete_grande">Paquete grande</option>
-</select></div>
-<div class="field"><label>Observaciones</label><textarea id="encObservaciones" placeholder="Describe el contenido u otras indicaciones"></textarea></div>
-</section>
-<section class="adminRecojoCard">
-<h3>Paquetes de la encomienda</h3>
-<p class="muted">Registra hasta 3 paquetes dentro de esta misma encomienda. Cada paquete puede ir a una agencia y destino diferente.</p>
-<div class="encPaqueteCard"><strong>Paquete 1</strong>
-<div class="field"><label>Agencia</label><select id="encAgencia"><option value="">Seleccionar agencia registrada</option></select></div>
-<div class="field"><label>Destino</label><select id="encDestino"><option value="">Seleccionar destino registrado</option></select></div>
-<div class="field"><label>Modalidad de pago de encomienda</label><select id="encTipoPago"><option value="">Seleccionar modalidad</option><option value="pago_en_agencia">Pago en agencia</option><option value="pago_a_destino">Pago a destino</option></select></div>
-</div>
-<div id="encPaquetesExtra"></div>
-<button class="btn-secondary" id="encAgregarPaquete" style="margin-top:10px" type="button">+ Agregar paquete (máximo 3)</button>
-</section>
-<section class="adminRecojoCard">
-<h3>Información de pago del servicio</h3>
-<div class="field"><label>Monto a cobrar</label><input autocomplete="off" id="encMontoCobrar" inputmode="decimal" min="0" placeholder="Ingresa el monto a cobrar" step="0.01" type="number" value=""/></div>
-<div class="field"><label>Método de pago del servicio</label><select id="encMetodoPagoServicio"><option value="">Seleccionar método de pago</option><option value="efectivo">Paga al recoger</option><option value="pagado">Ya pagado</option><option value="al_final">Paga después de recibir la guía</option></select></div>
-</section>
-<section class="adminRecojoCard">
-<h3>Asignar motorizado</h3>
-<div class="field"><label>Seleccionar motorizado</label><select id="encMoto"><option value="">Seleccionar motorizado</option></select></div>
-</section>
-</div>
-<div class="actions">
-<button class="btn" id="encEnviar" type="button">Enviar encomienda</button>
-</div>
-<div aria-live="polite" class="notice hidden" id="encMsg" role="status"></div>
-</div>
 <div class="hidden" id="tarifasAdminBox"></div>
 <div class="card hidden serviceAdminBox" id="gpsAdminBox" style="margin-top:14px;border:1px solid var(--fr-line)">
 <div class="serviceAdminHead gpsAdminHeaderWithActions">
@@ -711,9 +557,9 @@ window.db = db;
 
 
 </script>
-<script id="pd-funciones-js" src="a/pd-funciones-js-728ae842bd.js"></script>
-<script id="pd-pedidos-js" src="a/pd-pedidos-js-c7785214c9.js"></script>
-<script id="pd-admin-js" src="a/pd-admin-js-355615c84f.js"></script>
+<script id="pd-funciones-js" src="a/pd-funciones-js-45f204930f.js"></script>
+<script id="pd-pedidos-js" src="a/pd-pedidos-js-5ea5b764b2.js"></script>
+<script id="pd-admin-js" src="a/pd-admin-js-6fc4b8cb23.js"></script>
 <script id="pd-control-js" src="a/pd-control-js-c041e365ea.js"></script>
 <script id="pd-sueldos-control-js" src="a/pd-sueldos-control-js-fe25d53a47.js"></script>
 <script id="pd-pedidos-control-js" src="a/pd-pedidos-control-js-e868fd1b3d.js"></script>
@@ -783,13 +629,11 @@ buscar();
 <style id="pd-velo-recto">html body [data-pdm-velo][data-pdm-velo][data-pdm-velo],html body [data-pd-sin-velo][data-pd-sin-velo][data-pd-sin-velo],html body .pdnOv.pdnOv.pdnOv{border-radius:0!important;border:0!important;box-shadow:none!important;outline:0!important}</style>
 <script id="pd-guardado-auto" src="a/pd-guardado-auto-5a7f3328e6.js"></script>
 <script id="pd-actualizar" src="a/pd-actualizar-63291e431e.js"></script>
-<script id="pd-pegar-campos" src="a/pd-pegar-campos-75fb6c500e.js"></script>
-<script id="pd-clientes-auto" src="a/pd-clientes-auto-204af7316c.js"></script>
 <script id="pd-minusculas" src="a/pd-minusculas-17daba8f8b.js"></script>
 <script id="pd-pasos-motor" src="a/pd-pasos-motor-2e0fba37ad.js"></script>
 <script id="pd-pasos-admin" src="a/pd-pasos-admin-6002d005e5.js"></script>
 <script id="pd-dialogos-nuevo" src="a/pd-dialogos-nuevo-d0e7b0bf53.js"></script>
-<script id="pd-app-adm" src="a/pd-app-adm-0da12ab1c9.js"></script>
+<script id="pd-app-adm" src="a/pd-app-adm-8d40adac44.js"></script>
 </body>
 
 </html>
