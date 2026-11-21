@@ -1578,7 +1578,7 @@ button:active .pi{transform:scale(.92)}
       const wrap=document.createElement('header');wrap.id='pdAppShell';wrap.style.cssText='display:contents';wrap.appendChild(host);document.body.appendChild(wrap);
       root=host.attachShadow({mode:'open'});{const ocultarViejo=()=>{const t=document.getElementById('pdInicioTop');if(t&&t.style.getPropertyValue('display')!=='none')t.style.setProperty('display','none','important')};ocultarViejo();setInterval(ocultarViejo,1500)}try{PdPasos.flechas(root)}catch(_){}
       root.addEventListener('click',clic);root.addEventListener('input',entrada);
-      root.addEventListener('pointerdown',()=>{tocando=true});root.addEventListener('click',()=>setTimeout(()=>{tocando=false},60),true);root.addEventListener('pointercancel',()=>{tocando=false});
+      root.addEventListener('pointerdown',()=>{tocando=Date.now()});root.addEventListener('pointerup',()=>setTimeout(()=>{tocando=false},150),true);root.addEventListener('click',()=>setTimeout(()=>{tocando=false},60),true);root.addEventListener('pointercancel',()=>{tocando=false});
     }
     if(host.style.display==='none')host.style.display='';
     cls(H,'pdaApp',1);
@@ -1589,9 +1589,9 @@ button:active .pi{transform:scale(.92)}
     else if(Date.now()<pagHasta){return}
     else{cls(H,'pdaPag',0);cls(host,'solo',0);if(topH&&topH.style.display!=='none')topH.style.display='none';keyTop=''}
     {const vv=pv?null:vista();pintarNav(!(vv&&vv.foot)||!!(window.PdPasos&&PdPasos.isOpen()));}
-    if(tocando)return;
-    const act=root.activeElement;if(act&&(act.tagName==='INPUT'||act.tagName==='TEXTAREA'||act.tagName==='SELECT'))return;
+    if(tocando&&Date.now()-tocando<1500)return;tocando=false;/* un toque que no terminó no deja la pantalla congelada */
     const v=pv?{head:'',body:'',foot:''}:vista();const pag=pv?'vieja':sub==='sueldomoto'?'sl:'+SL.pest+':'+(SL.vista||''):(sub||tab);
+    {const act=root.activeElement;if(act&&(act.tagName==='INPUT'||act.tagName==='TEXTAREA'||act.tagName==='SELECT')){if(root.__pag===pag)return;try{act.blur()}catch(_){}}}/* escribiendo: no redibuja; si cambió de página, sí */
     const k=pag+'|'+v.head+v.body+(v.foot||'')+nav();
     if(k===key)return;key=k;
     const lst=root.querySelector('.list');if(lst&&root.__pag)scrollMem[root.__pag]=lst.scrollTop;const chx=[...root.querySelectorAll('.chips')].map(c=>c.scrollLeft);/* las pestañas no vuelven al inicio al marcar */
