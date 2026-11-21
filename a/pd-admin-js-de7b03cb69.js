@@ -253,51 +253,6 @@ C.extra=function(m,modo,editado){let h='';
 
 
 
-/* ===== pdh-js ===== */
-try{
-(function(){
-const dash=document.getElementById('pidemasAdminDashboard');if(!dash||document.getElementById('pdhHome'))return;
-const $=id=>document.getElementById(id);
-const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const money=n=>'S/ '+(Number(n)||0).toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2});
-const code=id=>'#'+String(id||'').slice(0,8).toUpperCase();
-const limaKey=d=>new Date(d).toLocaleDateString('en-CA',{timeZone:'America/Lima'});
-const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-const ago=d=>{const m=Math.round((Date.now()-new Date(d).getTime())/60000);if(!(m>=0))return '';if(m<1)return 'ahora';if(m<60)return 'hace '+m+' min';const h=Math.floor(m/60);return h<24?'hace '+h+' h':new Date(d).toLocaleDateString('es-PE',{day:'2-digit',month:'short'})};
-const ini=n=>String(n||'?').trim().split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
-const root=document.createElement('div');root.id='pdhHome';
-root.innerHTML=`<button type="button" class="h-me" id="pdhMe" aria-label="Mi perfil">R</button>
-    <div class="h-sheet" id="pdhSheet" hidden><div class="h-sheetBg" data-close="1"></div><div class="h-sheetCard" role="dialog" aria-modal="true" aria-label="Mi perfil">
-      <div class="h-head"><span><span class="h-kick">Administrador</span><strong>Mi perfil</strong></span><button type="button" class="h-x" data-close="1" aria-label="Cerrar">×</button></div>
-      <div class="h-meBig" id="pdhMeBig">R</div>
-      <label class="h-lbl">Tu nombre<input id="pdhName" maxlength="40" placeholder="Ej. Roberto" autocomplete="given-name"></label>
-      <label class="h-lbl">WhatsApp de Administración<input id="pdhWa" type="tel" inputmode="numeric" maxlength="15" placeholder="9 dígitos, ej. 986233533" autocomplete="off"></label>
-      <p class="h-note">A este número los motorizados envían la guía y clave de las encomiendas y los avisos de problemas.</p>
-      <p class="h-note" id="pdhMail"></p>
-      <button type="button" class="h-btn" id="pdhQrBtn" style="background:#fff;color:var(--fr-ink);border:1px solid var(--fr-line);margin-bottom:8px">QR Yape</button>
-      <button type="button" class="h-btn" id="pdhSave">Guardar</button>
-      <p class="h-note" id="pdhMsg" role="status"></p>
-    </div></div>`;
-dash.prepend(root);
-try{const hd=document.querySelector('header.top'),bl=document.getElementById('pdaBell'),me=document.getElementById('pdhMe');if(hd&&bl&&me)hd.insertBefore(me,bl)}catch(e){}
-let adminName=LS.get('pd_admin_name','')||'Roberto',uid=null;
-function applyName(){
-$('pdhMe').textContent=ini(adminName);$('pdhMeBig').textContent=ini(adminName);
-window.adminProfile=Object.assign(window.adminProfile||{},{nombre:adminName});
-}
-$('pdhMe').onclick=()=>{$('pdhName').value=adminName;$('pdhMsg').textContent='';$('pdhSheet').hidden=false;setTimeout(()=>$('pdhName').focus(),50)};
-$('pdhSheet').addEventListener('click',e=>{if(e.target.closest('[data-close]'))$('pdhSheet').hidden=true});
-$('pdhQrBtn').addEventListener('click',()=>{if(typeof window.__pdmOpen==='function')window.__pdmOpen('qryape')});
-$('pdhSave').onclick=async()=>{
-const n=$('pdhName').value.trim();if(!n){$('pdhMsg').textContent='Escribe tu nombre.';return}
-adminName=n;LS.set('pd_admin_name',n);window.__pdAdminNombre=n;applyName();
-let saved=false;try{if(uid&&window.db){const {data,error}=await window.db.from('perfiles').update({nombre_completo:n}).eq('id',uid).select('id').maybeSingle();saved=!error&&!!data}}catch(e){}
-$('pdhMsg').textContent=saved?'✓ Guardado en tu cuenta.':'✓ Guardado en este equipo.';setTimeout(()=>{$('pdhSheet').hidden=true},700);
-};
-window.pdhReload=function(){};
-})();
-}catch(e){console.error("[pdh-js]",e)}
-
 /* ===== pidemas-horario-motor ===== */
 try{
 (function(){
