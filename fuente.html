@@ -4,13 +4,16 @@
 <html lang="es">
 <head>
 <script id="pd-sin-arrastre">/* Las páginas ya no son ventanas: no se cierran ni se mueven arrastrando hacia abajo */document.documentElement.dataset.pdSinArrastre="1";</script>
-<script id="pd-sin-cajones">/* Sin cajones de conteo arriba de las páginas: quitan espacio al contenido.
-   Se ocultan en la página y dentro de cada ventana aislada (Shadow DOM). */
-(function(){var C=".pdcStats,.pdgStats,.nxStats,.cnxStats,.d-stats,.s-stats,.g-stats,.pdtfStats{display:none!important}";
+<script id="pd-sin-cajones">/* Sin cuadros de resumen arriba de las páginas: quitan espacio al contenido.
+   Se ocultan con estilo en línea (gana a cualquier hoja de estilos), en la página y dentro de cada Shadow DOM. */
+(function(){var L=".pdcStats,.pdgStats,.nxStats,.cnxStats,.d-stats,.s-stats,.g-stats,.pdtfStats,.pdwStats,.pdslStats,.pdcjStats,.pdCtlStat,.pdHoy,#pdHoyCard,.hkp,.kp,:is(.g2,.cols2,.cols3):has(>.kp)".split(/,(?![^(]*\))/),C=L.join(",")+"{display:none!important}",R=[document];
 try{var s=document.createElement("style");s.id="pd-sin-cajones-css";s.textContent=C;document.head.appendChild(s)}catch(e){}
-var hoja=null;try{hoja=new CSSStyleSheet();hoja.replaceSync(C)}catch(e){hoja=null}
-function poner(r){try{if(hoja){r.adoptedStyleSheets=[].concat(Array.from(r.adoptedStyleSheets||[]),[hoja])}else{var t=document.createElement("style");t.textContent=C;r.appendChild(t)}}catch(e){}}
-var orig=Element.prototype.attachShadow;if(orig&&!orig.__pdSinCaj){var f=function(o){var r=orig.call(this,o);poner(r);return r};f.__pdSinCaj=1;Element.prototype.attachShadow=f}
+function ocultar(e){if(e.style.getPropertyValue("display")!=="none"||e.style.getPropertyPriority("display")!=="important")e.style.setProperty("display","none","important")}
+function barrer(){for(var i=0;i<R.length;i++){for(var j=0;j<L.length;j++){try{R[i].querySelectorAll(L[j]).forEach(ocultar)}catch(e){}}}}
+var t=0;function pronto(){if(t)return;t=setTimeout(function(){t=0;barrer()},30)}
+function mirar(r){try{new MutationObserver(pronto).observe(r,{childList:true,subtree:true})}catch(e){}}
+var orig=Element.prototype.attachShadow;if(orig&&!orig.__pdSinCaj){var f=function(o){var r=orig.call(this,o);R.push(r);mirar(r);try{var st=document.createElement("style");st.textContent=C;r.appendChild(st)}catch(e){}pronto();return r};f.__pdSinCaj=1;Element.prototype.attachShadow=f}
+mirar(document.documentElement);setInterval(barrer,700);
 })();</script>
 
 <style id="pda-capa">@layer pda;</style>
