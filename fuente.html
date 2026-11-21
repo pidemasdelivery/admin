@@ -13840,21 +13840,14 @@ try{
     ['Control de caja y sueldos'],
     ['yape','Yape por confirmar',()=>window.pdCtl&&pdCtl.yape(),'','','yape'],
     ['deu','Por cobrar a negocios',()=>window.pdCtl&&pdCtl.porCobrar(),'','','deu'],
-    ['dev','Cancelados con cobro',()=>window.pdCtl&&pdCtl.devoluciones(),'','','dev'],
-    ['res','Resumen del día',()=>window.pdCtl&&pdCtl.resumen()],
     ['ale','Alerta de caja alta',()=>window.pdCtl&&pdCtl.alerta()],
     ['pla','Planilla de sueldos',()=>window.pdPlanilla&&pdPlanilla()],
     ['Control de pedidos'],
-    ['atn','Pedidos con demora',()=>window.pdPedCtl&&pdPedCtl.alertas(),'','','atn'],
     ['pneg','Por pagar a negocios',()=>window.pdPedCtl&&pdPedCtl.porPagar(),'','','pneg'],
     ['cal','Calificaciones',()=>window.pdPedCtl&&pdPedCtl.calificaciones()],
-    ['rep','Reportes de pedidos',()=>window.pdPedCtl&&pdPedCtl.reportes()],
     ['auto','Asignación automática',()=>window.pdAdmMej&&pdAdmMej.asignacionAuto()],
-    ['rnk','Ranking de negocios y motorizados',()=>window.pdAdmMej&&pdAdmMej.ranking()],
     ['Clientes'],
-    ['masv','Mensajes masivos por WhatsApp',()=>window.pdAdmMej&&pdAdmMej.masivos()],
     ['negra','Lista negra',()=>window.pdAdmMej&&pdAdmMej.listaNegra()],
-    ['regi','Registro de acciones',()=>window.pdAdmMej&&pdAdmMej.registro()],
     ['Más'],
     ['tag','Códigos de descuento',abrir('descuentos')],
     ['qr','QR Yape',abrir('qryape')],
@@ -16329,7 +16322,7 @@ try{
   let ppN=0;
   async function contarPp(){try{const r=await db().from('pedidos').select('id',{count:'exact',head:true}).not('negocio_id','is',null).eq('estado','entregado').is('negocio_pagado_en',null).not('pago_acordado','in','(solo_delivery,pagado,yape_negocio)').gt('subtotal',0);if(!r.error){ppN=r.count||0;bdg('pneg',ppN)}}catch(e){}}
   window.pdPedCtl={porPagar,calificaciones,reportes,alertas:verAlertas,sugerencias};
-  let n=0;setInterval(()=>{if(!document.querySelector('#appView:not(.hidden)')||!db())return;n++;try{pintarAlertas();bdg('atn',ultimas.length)}catch(e){}if(n%20===1)contarPp();else bdg('pneg',ppN);if(n%2===0){pintarSugeridos().catch(()=>{});pintarTarjetas().catch(()=>{})}},4000);
+  let n=0;setInterval(()=>{if(!document.querySelector('#appView:not(.hidden)')||!db())return;n++;/* sin alertas de demora */if(n%20===1)contarPp();else bdg('pneg',ppN);if(n%2===0){pintarSugeridos().catch(()=>{});pintarTarjetas().catch(()=>{})}},4000);
 })();
 
 </script>
@@ -18949,10 +18942,10 @@ input.cod{text-align:center;font-size:30px;letter-spacing:.4em;height:64px}
   /* Menú inferior: 5 pestañas. Cada opción: [clave, nombre, ícono]. Clave «t:» = pantalla nueva, «a:» = acción, otra = opción de siempre */
   const HUBS={
     'inicio':{t:'Pedidos',ic:'box'},
-    'h:caja':{t:'Caja',ic:'cash',k:'Control de caja y sueldos',sec:[['',[['t:caja','Cajas de motorizados','cash'],['yape por confirmar','Yape por confirmar','phone'],['resumen del día','Resumen del día','chart'],['alerta de caja alta','Alerta de caja alta','alert'],['cancelados con cobro','Cancelados con cobro','x']]],['Sueldos',[['t:sueldo','Sueldos de motorizados','wallet'],['planilla de sueldos','Planilla de sueldos','list']]]]},
+    'h:caja':{t:'Caja',ic:'cash',k:'Control de caja y sueldos',sec:[['',[['t:caja','Cajas de motorizados','cash'],['yape por confirmar','Yape por confirmar','phone'],['alerta de caja alta','Alerta de caja alta','alert'],]],['Sueldos',[['t:sueldo','Sueldos de motorizados','wallet'],['planilla de sueldos','Planilla de sueldos','list']]]]},
     'h:neg':{t:'Negocios',ic:'store',k:'Negocios',sec:[['',[['configurar negocios','Configurar negocios','store'],['crear negocio','Crear negocio','plus'],['solicitudes de afiliación','Solicitudes de afiliación','tag'],['por cobrar a negocios','Por cobrar a negocios','cash'],['por pagar a negocios','Por pagar a negocios','wallet']]],['Servicios',[['recojo y entrega','Recojo y entrega','swap'],['compra','Compra','cash'],['encomienda','Encomienda','box'],['tarifas','Tarifas','tag'],['agencias','Agencias','pin']]]]},
-    'h:eq':{t:'Equipo',ic:'group',k:'Equipo',sec:[['Motorizados',[['motorizados / gps','Motorizados y GPS','pin'],['crear motorizado','Crear motorizado','plus'],['suspender / reactivar cuentas','Suspender o reactivar','shield']]],['Clientes',[['t:clientes','Clientes','group'],['lista negra','Lista negra','x'],['mensajes masivos por whatsapp','Mensajes masivos','send']]]]},
-    'h:mas':{t:'Más',ic:'grid',k:'Más',sec:[['Pedidos',[['pedidos con demora','Pedidos con demora','clock'],['asignación automática','Asignación automática','swap'],['calificaciones','Calificaciones','star'],['reportes de pedidos','Reportes de pedidos','chart'],['ranking de negocios y motorizados','Ranking','star']]],['Configuración',[['horario','Horario de Pidemás','clock'],['qr yape','QR Yape','phone'],['códigos de descuento','Códigos de descuento','tag'],['registro de acciones','Registro de acciones','list']]],['Mi cuenta',[['a:perfil','Mi perfil','user']]]]}
+    'h:eq':{t:'Equipo',ic:'group',k:'Equipo',sec:[['Motorizados',[['motorizados / gps','Motorizados y GPS','pin'],['crear motorizado','Crear motorizado','plus'],['suspender / reactivar cuentas','Suspender o reactivar','shield']]],['Clientes',[['t:clientes','Clientes','group'],['lista negra','Lista negra','x'],]]]},
+    'h:mas':{t:'Más',ic:'grid',k:'Más',sec:[['Pedidos',[['asignación automática','Asignación automática','swap'],['calificaciones','Calificaciones','star'],]],['Configuración',[['horario','Horario de Pidemás','clock'],['qr yape','QR Yape','phone'],['códigos de descuento','Códigos de descuento','tag']]],['Mi cuenta',[['a:perfil','Mi perfil','user']]]]}
   };
   const NAVK=['inicio','h:caja','h:neg','h:eq','h:mas'];
   const HUBDE={caja:'h:caja',sueldo:'h:caja',clientes:'h:eq',menu:'h:mas'};
@@ -19169,7 +19162,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const ql=q.trim().toLowerCase();const fil=todos.filter((CH.find(c=>c[0]===chip)||CH[0])[2]).filter(o=>!ql||[o.id,ref(o.id),o.nombre_cliente,o.telefono_cliente,o.nombre_remitente,NEG(o.negocio_id).nombre].join(' ').toLowerCase().includes(ql));
     let h=`<div class="cols2"><button type="button" class="mt" data-t="sueldo"><span>Sueldos</span><b>${E(kp[1]||'—')}</b></button><button type="button" class="mt" data-t="caja"><span>Cajas</span><b>${E(kp[2]||'—')}</b></button></div>`;
     h+=`<div class="fld"><label for="aQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar pedido</label><input id="aQ" type="search" placeholder="N.º de pedido, cliente o teléfono" value="${E(q)}" data-in="q"></div>`;
-    {const AT=[['pedidos con demora','Con demora',IC.clock],['asignación automática','Asignación automática',IC.swap],['calificaciones','Calificaciones',IC.star],['reportes de pedidos','Reportes',IC.chart]];
+    {const AT=[['asignación automática','Asignación automática',IC.swap],['calificaciones','Calificaciones',IC.star]];
      h+=`<div class="atj">${AT.map(([k,n,ic])=>{const x=bdOf(k);return `<button type="button" data-it="${E(k)}" data-gk="Pedidos">${ic}${E(n)}${x?`<span class="bd">${x}</span>`:''}</button>`}).join('')}</div>`}
     h+=`<div class="chW"><div class="chips">${CH.map((c,i)=>`<button type="button" data-c="${c[0]}" class="${chip===c[0]?'on':''}">${c[1]}${cnt[i]?' · '+cnt[i]:''}</button>`).join('')}</div></div>`;
     h+=`<div class="row" style="justify-content:space-between"><div class="lbl" style="margin:0">${fil.length} pedido${fil.length===1?'':'s'}</div><button type="button" class="b" style="height:40px;padding:0 14px" data-a="selmodo">${selModo?'Listo':'Seleccionar'}</button></div>`;
@@ -20023,61 +20016,16 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         if(quien!=='admin'){const r=await D().from('movimientos_caja').insert(L.map(y=>({motorizado_id:quien,pedido_id:y.id,tipo:'ingreso',monto:r2(y.costo_delivery),descripcion:'COBRO DE DELIVERY A NEGOCIO · '+(n.nombre||'Negocio')+' · Pedido '+ref(y.id)})));if(r.error){mal('No se pudo registrar en la caja: '+r.error.message);return}}
         ok('Cobro registrado');recargar(k);try{window.pdCtl&&pdCtl.contar()}catch(_){}}}};
 
-  /* --- Cancelados con cobro --- */
-  SEC['cancelados con cobro']={g:'Control de caja y sueldos',t:'Cancelados con cobro',rf:1,
-    load:async()=>{const b=await baseCtl();const {data,error}=await D().from('pedidos').select('id,nombre_cliente,total,estado,observaciones,motorizado_id,creado_en').in('estado',['cancelado','rechazado']).gte('creado_en',new Date(Date.now()-60*864e5).toISOString()).limit(500);if(error)throw error;if(!data||!data.length)return {b,L:[]};
-      const r=await D().from('movimientos_caja').select('id,pedido_id,motorizado_id,tipo,monto,descripcion').in('pedido_id',data.map(p=>p.id));const mv=r.data||[];
-      return {b,L:data.filter(p=>!/DEVOLUCION_REVISADA/.test(p.observaciones||'')).map(p=>{const ing=mv.filter(m=>String(m.pedido_id)===String(p.id)&&m.tipo==='ingreso'),dev=mv.some(m=>String(m.pedido_id)===String(p.id)&&m.tipo==='retiro'&&/^DEVOLUCI/i.test(m.descripcion||''));return {p,ing,cob:r2(ing.reduce((s,m)=>s+(Number(m.monto)||0),0)),dev}}).filter(x=>x.cob>0&&!x.dev)}},
-    v(){const c=datos('cancelados con cobro',this.load);if(!c.data)return {body:cargando(c)};const {b,L}=c.data;
-      let h=U.note('Pedidos anulados que ya tenían un cobro en la caja del motorizado. Indica si el dinero se le devolvió al cliente.');
-      h+=L.length?L.map(x=>`<div class="cd"><b style="font-size:16px">${E(ref(x.p.id))} · ${E(x.p.nombre_cliente||'Cliente')}</b><span style="font-size:14px;color:#6B5E55">Cobrado ${M(x.cob)} · caja de ${E(mN(b,x.ing[0].motorizado_id))} · ${E(fch(x.p.creado_en))}</span><div class="btns b2"><button type="button" class="b o" data-sa="dev:si:${E(x.p.id)}">Sí, se devolvió</button><button type="button" class="b" data-sa="dev:no:${E(x.p.id)}">No, se queda</button></div></div>`).join(''):vacio('No hay pedidos anulados con cobro pendiente.');
-      return {body:h}},
-    async a(x){const k='cancelados con cobro',[,si,id]=x.split(':'),c=C2['s:'+k],it=c.data.L.find(y=>String(y.p.id)===id);if(!it)return;
-      if(si==='si'){const r=await D().from('movimientos_caja').insert({motorizado_id:it.ing[0].motorizado_id,pedido_id:id,tipo:'retiro',monto:it.cob,descripcion:'DEVOLUCIÓN AL CLIENTE · Pedido '+ref(id)+' anulado'});if(r.error){mal('No se pudo guardar: '+r.error.message);return}}
-      const obs=String(it.p.observaciones||'');const q=await D().from('pedidos').update({observaciones:(obs?obs+' | ':'')+'DEVOLUCION_REVISADA'+(si==='si'?'':' (sin devolución)')}).eq('id',id);if(q.error){mal('No se pudo guardar: '+q.error.message);return}
-      ok(si==='si'?'Devolución registrada':'Listo: el cobro se queda en su caja');recargar(k);try{window.pdCtl&&pdCtl.contar()}catch(_){}}};
-
-  /* --- Resumen del día --- */
+  /* tope de caja (lo usa la alerta de caja alta) */
   const tope=async()=>{try{const {data}=await D().from('ajustes_pidemas').select('valor').eq('clave','caja_alerta').maybeSingle();return Number(data&&data.valor&&data.valor.monto)||0}catch(e){return 0}};
-  SEC['resumen del día']={g:'Control de caja y sueldos',t:'Resumen del día',rf:1,
-    load:async()=>{const b=await baseCtl();const P=CA();const movs=await movsDe();const hoy=diaLima(Date.now()),ini=new Date(hoy+'T00:00:00-05:00').toISOString();const yp=await D().from('cobros').select('motorizado_id,monto').eq('metodo_pago','yape').gte('confirmado_en',ini);const T=await tope();
-      const F=b.motos.map(m=>{const all=movs.filter(x=>String(x.motorizado_id)===String(m.id)),L2=all.filter(x=>diaLima(x.creado_en)===hoy);const s={ef:0,pg:0,ent:0,yape:0};
-        L2.forEach(x=>{const k=P.kind(x),a=P.amount(x);if(x.tipo==='ingreso'){if(k!=='fondo')s.ef+=a}else if(k==='entrega'||k==='liquidacion')s.ent+=(x.recibido!=null?Number(x.recibido):a);else if(k!=='reinicio')s.pg+=a});
-        (yp.data||[]).filter(c=>String(c.motorizado_id)===String(m.id)).forEach(c=>s.yape+=Number(c.monto)||0);return {m,s,bal:P.balance(all),hay:L2.length||s.yape>0}}).filter(f=>f.hay||Math.abs(f.bal)>0.004);return {F,T}},
-    v(){const c=datos('resumen del día',this.load);if(!c.data)return {body:cargando(c)};const {F,T}=c.data,tot=F.reduce((s,f)=>s+f.bal,0);
-      let h=`<div class="amt"><div class="k">Total en cajas</div><div class="n">${M(tot)}</div><div class="pill">${new Date().toLocaleDateString('es-PE',{timeZone:'America/Lima',weekday:'long',day:'2-digit',month:'long'})}</div></div>`;
-      h+=F.length?F.map(f=>`<div class="cd"><div class="row"><b style="flex:1 1 0%;font-size:16px">${E(f.m.nombre_completo)}</b>${T>0&&f.bal>=T?`<span class="pl r">Supera ${M(T)}</span>`:''}</div><div class="li"><span>Saldo en caja</span><b>${M(f.bal)}</b></div><div class="g2"><div class="kp"><span>Efectivo</span><b style="font-size:18px">${M(f.s.ef)}</b></div><div class="kp"><span>Yape</span><b style="font-size:18px">${M(f.s.yape)}</b></div><div class="kp"><span>Pagos y gastos</span><b style="font-size:18px">${M(f.s.pg)}</b></div><div class="kp"><span>Entregó</span><b style="font-size:18px">${M(f.s.ent)}</b></div></div></div>`).join(''):vacio('Hoy todavía no hay movimientos.');
-      const txt=['*Resumen del día · Pidemás Delivery*',new Date().toLocaleDateString('es-PE',{timeZone:'America/Lima',weekday:'long',day:'2-digit',month:'long'}),'',...F.map(f=>'*'+f.m.nombre_completo+'*\nEfectivo '+M(f.s.ef)+' · Yape '+M(f.s.yape)+' · Pagos/gastos '+M(f.s.pg)+' · Entregó '+M(f.s.ent)+'\nSaldo en caja: '+M(f.bal)),'','*Total en cajas: '+M(tot)+'*'].join('\n');
-      return {body:h,foot:`<a class="b g" style="height:54px;font-size:16px" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">${U.I.wa}Compartir por WhatsApp</a>`}}};
 
   /* --- Alerta de caja alta --- */
   SEC['alerta de caja alta']={g:'Control de caja y sueldos',t:'Alerta de caja alta',
     load:async()=>({T:await tope()}),
     v(){const c=datos('alerta de caja alta',this.load);if(!c.data)return {body:cargando(c)};const f=SF['alerta de caja alta'];if(f.v==null)f.v=c.data.T?String(c.data.T):'';
-      return {body:U.note('Cuando la caja de un motorizado llegue a este monto, verá un aviso para entregarte el efectivo, y en el Resumen del día saldrá en rojo. Deja 0 para desactivar.')+`<div class="cd"><div class="fld"><label for="alT">Monto máximo en caja (S/)</label><input id="alT" inputmode="decimal" value="${E(f.v)}" data-in="sf:v" placeholder="0"></div></div>`,
+      return {body:U.note('Cuando la caja de un motorizado llegue a este monto, verá un aviso para entregarte el efectivo, Deja 0 para desactivar.')+`<div class="cd"><div class="fld"><label for="alT">Monto máximo en caja (S/)</label><input id="alT" inputmode="decimal" value="${E(f.v)}" data-in="sf:v" placeholder="0"></div></div>`,
         foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="guardar">Guardar</button>`}},
     async a(){const f=SF['alerta de caja alta'];const v=Math.max(0,r2(String(f.v).replace(',','.')));const q=await D().from('ajustes_pidemas').upsert({clave:'caja_alerta',valor:{monto:v},actualizado_en:new Date().toISOString()});if(q.error){mal('No se pudo guardar: '+q.error.message);return}ok(v?'Alerta guardada en '+M(v):'Alerta desactivada');volverSub()}};
-
-  /* --- Pedidos con demora --- */
-  const UMB={negocio:5,asignar:5,aceptar:3,extra:40};
-  function programado(o){try{if(o.programado_para)return T(o.programado_para);const d=window.pdTarifa&&pdTarifa.desgloseDePedido(o.observaciones);if(d&&d.programado)return T(d.programado)}catch(e){}return 0}
-  function alertasP(){const now=Date.now(),out=[],mn=ms=>Math.round(ms/60000);
-    L().forEach(o=>{const s=est(o);if(['entregado','cancelado','rechazado'].includes(s))return;const prog=programado(o);if(prog&&prog-now>45*60000)return;
-      const base=prog&&prog>T(o.creado_en)?Math.max(T(o.creado_en),prog-45*60000):T(o.creado_en);
-      if(prog&&!o.motorizado_id&&prog-now<=30*60000){out.push({o,k:'prog',t:'Programado para las '+new Date(prog).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'numeric',minute:'2-digit'})+' y sin motorizado'});return}
-      if(o.negocio_id&&s==='pendiente'&&!o.negocio_aceptado_en&&now-base>UMB.negocio*60000){out.push({o,k:'neg',t:(NEG(o.negocio_id).nombre||'El negocio')+' no lo acepta hace '+mn(now-base)+' min'});return}
-      if(!o.motorizado_id&&['pendiente','confirmado'].includes(s)&&(!o.negocio_id||o.negocio_aceptado_en)){const d=o.negocio_aceptado_en?T(o.negocio_aceptado_en):base;if(now-d>UMB.asignar*60000){out.push({o,k:'asig',t:'Sin motorizado hace '+mn(now-d)+' min'});return}}
-      if(s==='asignado'&&!o.aceptado_en&&o.asignado_en&&now-T(o.asignado_en)>UMB.aceptar*60000){out.push({o,k:'acep',t:(o.motorizado_nombre||'El motorizado')+' no acepta hace '+mn(now-T(o.asignado_en))+' min'});return}
-      if(['aceptado','en_camino','en_entrega','asignado'].includes(s)){const lim=(Number(o.tiempo_preparacion_min)||20)+UMB.extra,e=mn(now-base);if(e>lim)out.push({o,k:'tarde',t:'Demorado: '+e+' min desde que se pidió'})}});
-    return out}
-  SEC['pedidos con demora']={g:'Control de pedidos',t:'Pedidos con demora',rf:1,
-    load:async()=>{let sug=new Map();try{if(window.pdPedCtl&&pdPedCtl.sugerencias)sug=await pdPedCtl.sugerencias()}catch(e){}return {sug}},
-    v(){const c=datos('pedidos con demora',this.load);const A=alertasP();const sug=(c.data&&c.data.sug)||new Map();
-      let h=`<div class="amt"><div class="k">Necesitan atención</div><div class="n">${A.length}</div><div class="pill">${A.length?'Revisa y actúa':'Todo en orden'}</div></div>`;
-      h+=A.length?A.map(a=>{const s=['acep','asig','prog'].includes(a.k)?(sug.get(String(a.o.id))||[]).filter(x=>String(x.m.id)!==String(a.o.motorizado_id))[0]:null;
-        return `<div class="cd"><b style="font-size:16px">${E(ref(a.o.id))} · ${E(a.o.nombre_cliente||'Cliente')}</b><span class="pl r" style="align-self:flex-start">${E(a.t)}</span><div class="btns${s?' b2':''}" style="${s?'':'grid-template-columns:1fr'}"><button type="button" class="b" data-o="${E(a.o.id)}">Ver pedido</button>${s?`<button type="button" class="b o" data-sa="asig:${E(a.o.id)}:${E(s.m.id)}">Asignar a ${E(String(s.m.nombre_completo||'').split(' ')[0])}${s.km!=null?' · '+s.km.toFixed(1)+' km':''}</button>`:''}</div></div>`}).join(''):vacio('Todo en orden. Ningún pedido tiene demora.');
-      return {body:h}},
-    async a(x){const [,id,m]=x.split(':');if(typeof assignOrder!=='function')return;await assignOrder(id,m);ok('Motorizado asignado');recargar('pedidos con demora')}};
 
   /* --- Por pagar a negocios --- */
   SEC['por pagar a negocios']={g:'Control de pedidos',t:'Por pagar a negocios',rf:1,
@@ -20118,29 +20066,6 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       h+=`<div class="cd"><div class="lbl">Comentarios y calificaciones bajas</div>${malas.length?malas.map(x=>fila(E(ref(x.pedido_id))+' · negocio '+(x.estrellas_negocio||'—')+'★ · motorizado '+(x.estrellas_motorizado||'—')+'★',E(x.comentario||'Sin comentario')+' · '+E(fecha(x.creado_en)))).join(''):'<div style="color:#6B5E55;font-size:15px">Sin comentarios.</div>'}</div>`;
       return {body:h}}};
 
-  /* --- Reportes de pedidos --- */
-  SEC['reportes de pedidos']={g:'Control de pedidos',t:'Reportes de pedidos',rf:1,
-    load:async()=>{const b=await baseCtl();const dias=SF['reportes de pedidos'].d||7;const {data,error}=await D().from('pedidos').select('id,estado,negocio_id,motorizado_id,tipo_servicio,total,subtotal,costo_delivery,creado_en,asignado_en,aceptado_en,en_camino_en,entregado_en,cancelado_por,motivo_cancelacion').gte('creado_en',new Date(Date.now()-dias*864e5).toISOString()).limit(5000);if(error)throw error;return {b,P:data||[],dias}},
-    v(){const f=SF['reportes de pedidos'];f.d=f.d||7;const c=datos('reportes de pedidos',this.load);
-      let h=`<div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[[1,'Hoy'],[7,'7 días'],[30,'30 días']].map(x=>`<button type="button" class="${f.d===x[0]?'on':''}" data-sa="d:${x[0]}">${x[1]}</button>`).join('')}</div>`;
-      if(!c.data||c.data.dias!==f.d)return {body:h+cargando(c)};const {b,P}=c.data,ent=P.filter(p=>est(p)==='entregado'),can=P.filter(p=>est(p)==='cancelado');
-      const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:0,dur=(a,b2)=>ent.map(p=>p[a]&&p[b2]?(T(p[b2])-T(p[a]))/60000:null).filter(x=>x!=null&&x>=0&&x<600);
-      const hr=new Array(24).fill(0);P.forEach(p=>{hr[+new Date(p.creado_en).toLocaleString('en-US',{timeZone:'America/Lima',hour:'numeric',hour12:false})%24]++});const mx=Math.max(1,...hr);
-      const pN=new Map();ent.filter(p=>p.negocio_id).forEach(p=>{const x=pN.get(String(p.negocio_id))||{n:0,v:0};x.n++;x.v+=Number(p.subtotal)||0;pN.set(String(p.negocio_id),x)});
-      const pM=new Map();ent.filter(p=>p.motorizado_id).forEach(p=>{const x=pM.get(String(p.motorizado_id))||{n:0,d:0};x.n++;x.d+=Number(p.costo_delivery)||0;pM.set(String(p.motorizado_id),x)});
-      const mo=new Map();can.forEach(p=>{const k=(p.cancelado_por?p.cancelado_por+': ':'')+(p.motivo_cancelacion||'Sin motivo');mo.set(k,(mo.get(k)||0)+1)});
-      const venta=ent.reduce((s,p)=>s+(Number(p.total)||0),0),nN=id=>(b.negs.find(n=>String(n.id)===String(id))||{}).nombre||'Negocio';
-      h+=`<div class="amt"><div class="k">Venta entregada</div><div class="n">${M(venta)}</div><div class="pill">${ent.length} entregados · ticket ${M(ent.length?venta/ent.length:0)}</div></div>`;
-      h+=`<div class="cols3"><div class="kp"><span>Pedidos</span><b>${P.length}</b></div><div class="kp"><span>Anulados</span><b>${can.length}</b></div><div class="kp"><span>Delivery</span><b style="font-size:17px">${M(ent.reduce((s,p)=>s+(Number(p.costo_delivery)||0),0))}</b></div></div>`;
-      h+=`<div class="cd"><div class="lbl">Tiempo promedio por etapa</div><div class="li"><span>Pedido → asignado</span><b>${Math.round(avg(dur('creado_en','asignado_en')))} min</b></div><div class="li"><span>Asignado → aceptado</span><b>${Math.round(avg(dur('asignado_en','aceptado_en')))} min</b></div><div class="li"><span>Aceptado → en camino</span><b>${Math.round(avg(dur('aceptado_en','en_camino_en')))} min</b></div><div class="li"><span>Total hasta entregar</span><b>${Math.round(avg(dur('creado_en','entregado_en')))} min</b></div></div>`;
-      if(hr.some(Boolean))h+=`<div class="cd"><div class="lbl">Pedidos por hora</div>${hr.map((n,x)=>n?`<div style="display:flex;align-items:center;gap:10px"><span style="width:44px;font-size:13px;color:#6B5E55">${x%12||12} ${x<12?'am':'pm'}</span><div class="bar" style="flex:1"><s style="width:${Math.max(4,Math.round(n*100/mx))}%"></s></div><b style="width:24px;text-align:right">${n}</b></div>`:'').join('')}</div>`;
-      h+=`<div class="cd"><div class="lbl">Venta por negocio</div>${[...pN].sort((a,b2)=>b2[1].v-a[1].v).map(([id,x])=>fila(E(nN(id)),x.n+' pedido'+(x.n===1?'':'s'),`<span class="am">${M(x.v)}</span>`)).join('')||'<div style="color:#6B5E55">Sin ventas.</div>'}</div>`;
-      h+=`<div class="cd"><div class="lbl">Entregas por motorizado</div>${[...pM].sort((a,b2)=>b2[1].n-a[1].n).map(([id,x])=>fila(E(mN(b,id)),'Delivery '+M(x.d),`<span class="am">${x.n}</span>`)).join('')||'<div style="color:#6B5E55">Sin entregas.</div>'}</div>`;
-      if(mo.size)h+=`<div class="cd"><div class="lbl">Motivos de anulación</div>${[...mo].sort((a,b2)=>b2[1]-a[1]).map(([k,n])=>`<div class="li"><span>${E(k)}</span><b>${n}</b></div>`).join('')}</div>`;
-      const csv=['Pedido;Estado;Tipo;Negocio;Motorizado;Total;Delivery;Creado;Entregado;Anulado por;Motivo',...P.map(p=>[ref(p.id),p.estado,p.tipo_servicio||'',p.negocio_id?nN(p.negocio_id):'',p.motorizado_id?mN(b,p.motorizado_id):'',p.total||0,p.costo_delivery||0,fecha(p.creado_en),p.entregado_en?fecha(p.entregado_en):'',p.cancelado_por||'',p.motivo_cancelacion||''].join(';'))].join('\n');
-      return {body:h,foot:`<a class="b" style="height:50px" download="pedidos-${f.d}d.csv" href="data:text/csv;charset=utf-8,${encodeURIComponent('﻿'+csv)}">${IC.list}Descargar Excel (CSV)</a>`}},
-    async a(x){SF['reportes de pedidos'].d=+x.split(':')[1];recargar('reportes de pedidos')}};
-
   /* --- Asignación automática --- */
   SEC['asignación automática']={g:'Control de pedidos',t:'Asignación automática',
     load:async()=>{const r=await D().from('ajustes').select('valor').eq('clave','auto_asignar').maybeSingle();return Object.assign({on:false,min:3},(r.data&&r.data.valor)||{})},
@@ -20150,27 +20075,6 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         `<div class="lbl">Esperar antes de asignar</div><div class="grid4" style="grid-template-columns:repeat(5,minmax(0,1fr))">${[1,2,3,5,10].map(m=>`<button type="button" class="${m===a.min?'on':''}" data-sa="min:${m}">${m} min</button>`).join('')}</div>`+U.note('Funciona mientras tengas este panel abierto en algún teléfono o computadora.')}},
     async a(x){const c=C2['s:asignación automática'],v=Object.assign({},c.data);if(x==='on')v.on=!v.on;else v.min=+x.split(':')[1];
       const q=await D().from('ajustes').upsert({clave:'auto_asignar',valor:v,actualizado_en:new Date().toISOString()});if(q.error){mal(/relation|column|schema/i.test(q.error.message)?'Falta aplicar un cambio en la base de datos (tabla ajustes).':'No se pudo guardar: '+q.error.message);return}c.data=v}};
-
-  /* --- Ranking --- */
-  SEC['ranking de negocios y motorizados']={g:'Control de pedidos',t:'Ranking',rf:1,
-    load:async()=>{const dias=SF['ranking de negocios y motorizados'].d||30,desde=new Date(Date.now()-dias*864e5).toISOString();
-      let r=await D().from('pedidos').select('id,estado,negocio_id,motorizado_id,subtotal,total,creado_en,negocio_aceptado_en,asignado_en,aceptado_en,listo_para_recojo_en,en_camino_en,entregado_en,tiempo_preparacion_min,cancelado_por,no_entregado').gte('creado_en',desde).limit(8000);
-      if(r.error)r=await D().from('pedidos').select('id,estado,negocio_id,motorizado_id,subtotal,total,creado_en,negocio_aceptado_en,asignado_en,aceptado_en,listo_para_recojo_en,en_camino_en,entregado_en,tiempo_preparacion_min').gte('creado_en',desde).limit(8000);if(r.error)throw r.error;
-      const [b,cal]=await Promise.all([baseCtl(),D().from('calificaciones').select('negocio_id,motorizado_id,estrellas_negocio,estrellas_motorizado').gte('creado_en',desde)]);return {P:r.data||[],b,cal:cal.data||[],dias}},
-    v(){const f=SF['ranking de negocios y motorizados'];f.d=f.d||30;const c=datos('ranking de negocios y motorizados',this.load);
-      let h=`<div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[7,30,90].map(d=>`<button type="button" class="${f.d===d?'on':''}" data-sa="d:${d}">${d} días</button>`).join('')}</div>`;
-      if(!c.data||c.data.dias!==f.d)return {body:h+cargando(c)};const {P,b,cal}=c.data;
-      const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:null,mi=(a,z)=>a&&z?(T(z)-T(a))/60000:null,okk=x=>x!=null&&x>=0&&x<300;
-      const agr=k=>{const g=new Map();P.forEach(p=>{const id=p[k];if(!id)return;const x=g.get(String(id))||{id:String(id),P:[]};x.P.push(p);g.set(String(id),x)});return [...g.values()]};
-      const es=(k,id)=>avg(cal.filter(x=>String(x[k+'_id'])===id&&Number(x['estrellas_'+k])>0).map(x=>Number(x['estrellas_'+k])));
-      const fm=v=>v==null?'—':Math.round(v)+' min',fs=v=>v==null?'—':'★ '+v.toFixed(1);
-      const ng=agr('negocio_id').map(x=>{const e=x.P.filter(p=>est(p)==='entregado');return {n:(b.negs.find(n=>String(n.id)===x.id)||{}).nombre||'Negocio',ped:x.P.length,venta:e.reduce((s,p)=>s+(Number(p.subtotal)||0),0),acep:avg(x.P.map(p=>mi(p.creado_en,p.negocio_aceptado_en)).filter(okk)),prep:avg(x.P.map(p=>mi(p.negocio_aceptado_en,p.listo_para_recojo_en)).filter(okk)),anul:x.P.filter(p=>est(p)==='cancelado'&&p.cancelado_por==='negocio').length,est:es('negocio',x.id)}}).sort((a,z)=>z.venta-a.venta);
-      const mo=agr('motorizado_id').map(x=>{const e=x.P.filter(p=>est(p)==='entregado');return {n:mN(b,x.id),ent:e.length,acep:avg(x.P.map(p=>mi(p.asignado_en,p.aceptado_en)).filter(okk)),viaje:avg(e.map(p=>mi(p.en_camino_en,p.entregado_en)).filter(okk)),noE:x.P.filter(p=>p.no_entregado).length,est:es('motorizado',x.id)}}).sort((a,z)=>z.ent-a.ent);
-      const pos=(i)=>`<span style="flex:0 0 30px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;background:${i<3?'#C4410C':'#F6EFE9'};color:${i<3?'#FFFFFF':'#6B5E55'}">${i+1}</span>`;
-      h+=`<div class="cd"><div class="lbl">Negocios · por ventas</div>${ng.length?ng.map((x,i)=>`<div class="mv">${pos(i)}<span class="tx"><b>${E(x.n)}</b><span>${x.ped} pedidos · acepta en ${fm(x.acep)} · prepara en ${fm(x.prep)} · anuló ${x.anul} · ${fs(x.est)}</span></span><span class="am">${M(x.venta)}</span></div>`).join(''):'<div style="color:#6B5E55">Sin datos.</div>'}</div>`;
-      h+=`<div class="cd"><div class="lbl">Motorizados · por entregas</div>${mo.length?mo.map((x,i)=>`<div class="mv">${pos(i)}<span class="tx"><b>${E(x.n)}</b><span>acepta en ${fm(x.acep)} · viaje ${fm(x.viaje)} · no entregados ${x.noE} · ${fs(x.est)}</span></span><span class="am">${x.ent}</span></div>`).join(''):'<div style="color:#6B5E55">Sin datos.</div>'}</div>`;
-      return {body:h+U.note('«Acepta en» cuenta desde que llega el pedido (negocio) o desde que se le asigna (motorizado).')}},
-    async a(x){SF['ranking de negocios y motorizados'].d=+x.split(':')[1];recargar('ranking de negocios y motorizados')}};
 
   /* --- Lista negra --- */
   const d9=v=>dig(v).slice(-9);
@@ -20186,38 +20090,6 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(x==='add'){const t=d9(f.tel);if(t.length!==9){mal('Escribe un número de 9 dígitos.');return}const cl=(C2.cli&&C2.cli.data||[]).find(c=>d9(cliT(c))===t);
         const q=await D().from('clientes_bloqueados').upsert({telefono:t,motivo:f.mot.trim()||null,nombre:cl?cliN(cl):null});if(q.error){mal(q.error.message);return}ok('Número bloqueado');f.tel='';f.mot='';recargar(k);return}
       const t=x.split(':')[1];if(!(await conf('¿Quitar '+t+' de la lista negra?')))return;const q=await D().from('clientes_bloqueados').delete().eq('telefono',t);if(q.error){mal(q.error.message);return}recargar(k)}};
-
-  /* --- Registro de acciones --- */
-  SEC['registro de acciones']={g:'Clientes',t:'Registro de acciones',rf:1,
-    load:async()=>{const [a,c,pf]=await Promise.all([D().from('acciones_admin').select('*').order('creado_en',{ascending:false}).limit(300),D().from('pedidos_cambios').select('*').in('rol',['administrador','admin']).order('creado_en',{ascending:false}).limit(300),D().from('perfiles').select('id,nombre_completo').eq('rol','administrador')]);
-      const qn=id=>((pf.data||[]).find(p=>String(p.id)===String(id))||{}).nombre_completo||'Administrador';
-      const TB={movimientos_caja:'Caja',negocios:'Negocio',motorizados:'Motorizado',clientes_bloqueados:'Lista negra',ajustes:'Ajustes',productos_negocio:'Producto'},AC={insert:'creó',update:'editó',delete:'borró'};
-      return (a.data||[]).map(x=>({t:x.creado_en,u:qn(x.usuario_id),txt:(TB[x.tabla]||x.tabla)+' · '+(AC[x.accion]||x.accion),det:x.detalle||''})).concat((c.data||[]).map(x=>({t:x.creado_en,u:qn(x.usuario_id),txt:'Pedido '+ref(x.pedido_id)+' · '+x.campo,det:(x.antes||'—')+' → '+(x.despues||'—')}))).sort((p,q)=>T(q.t)-T(p.t))},
-    v(){const k='registro de acciones',c=datos(k,this.load),f=SF[k];f.q=f.q||'';
-      let h=U.note('Todo lo que hace cada administrador en pedidos, caja, negocios, motorizados, productos y lista negra.')+`<div class="fld"><label for="rgQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar</label><input id="rgQ" type="search" placeholder="Buscar pedido, negocio o administrador" value="${E(f.q)}" data-in="sf:q" data-vivo="rgL"></div>`;
-      if(!c.data)return {body:h+cargando(c)};
-      return {body:h+`<div id="rgL">${this.lista()}</div>`}},
-    lista(){const f=SF['registro de acciones'],c=C2['s:registro de acciones'];const q=(f.q||'').trim().toLowerCase();const L2=(c&&c.data||[]).filter(r=>!q||(r.txt+' '+r.det+' '+r.u).toLowerCase().includes(q));
-      return L2.length?`<div class="cd">${L2.slice(0,200).map(r=>fila(E(r.txt),E(r.u)+' · '+E(fecha(r.t))+(r.det?' · '+E(r.det.slice(0,180)):''))).join('')}</div>`:vacio('Sin acciones registradas todavía.')}};
-
-  /* --- Mensajes masivos --- */
-  const KENV='pidemas-admin-masivo-enviados';
-  SEC['mensajes masivos por whatsapp']={g:'Clientes',t:'Mensajes masivos',rf:1,
-    load:async()=>{const [r,bl,cl]=await Promise.all([D().from('pedidos').select('telefono_cliente,nombre_cliente,creado_en,estado').gte('creado_en',new Date(Date.now()-180*864e5).toISOString()).limit(8000),D().from('clientes_bloqueados').select('telefono'),D().from('clientes').select('*')]);
-      const ult=new Map(),cu=new Map();(r.data||[]).forEach(p=>{const t=d9(p.telefono_cliente);if(t.length!==9)return;const ts=T(p.creado_en);if(ts>(ult.get(t)||0))ult.set(t,ts);if(est(p)==='entregado')cu.set(t,(cu.get(t)||0)+1)});
-      const B=new Set((bl.data||[]).map(x=>x.telefono)),base=new Map();(cl.data||[]).filter(c=>c.activo!==false).forEach(c=>{const t=d9(cliT(c));if(t.length===9&&!B.has(t))base.set(t,{t,n:cliN(c)})});
-      (r.data||[]).forEach(p=>{const t=d9(p.telefono_cliente);if(t.length===9&&!B.has(t)&&!base.has(t))base.set(t,{t,n:p.nombre_cliente||''})});return {ult,cu,base:[...base.values()]}},
-    v(){const k='mensajes masivos por whatsapp',c=datos(k,this.load),f=SF[k];if(f.msg==null)f.msg='Hola {nombre} 👋, te escribimos de *Pidemás Delivery*. ';f.fl=f.fl||'todos';
-      let h=U.note('Escribe el mensaje, elige a quiénes y toca «Enviar» en cada cliente: se abre WhatsApp con el mensaje listo. {nombre} se cambia por el nombre del cliente.');
-      h+=`<div class="fld"><label for="mvT">Mensaje</label><textarea id="mvT" rows="4" maxlength="900" data-in="sf:msg" data-vivo="mvL" style="width:100%;min-height:110px;border-radius:14px;border:1.5px solid #F1E4DA;padding:12px 16px;font:500 16px PdInter,Inter,system-ui,sans-serif;color:#1F1A17;box-sizing:border-box;outline:none;resize:vertical">${E(f.msg)}</textarea></div>`;
-      h+=`<div class="chips" style="flex-wrap:wrap">${[['todos','Todos'],['recientes','Pidieron en 30 días'],['inactivos','Sin pedir 30+ días'],['fieles','5+ pedidos']].map(x=>`<button type="button" class="${f.fl===x[0]?'on':''}" data-sa="fl:${x[0]}">${x[1]}</button>`).join('')}</div>`;
-      if(!c.data)return {body:h+cargando(c)};
-      return {body:h+`<div id="mvL">${this.lista()}</div>`,foot:`<button type="button" class="b" style="height:48px" data-sa="reset">Empezar nueva campaña (borrar marcas de enviado)</button>`}},
-    lista(){const k='mensajes masivos por whatsapp',f=SF[k],c=C2['s:'+k];if(!c||!c.data)return '';const {ult,cu,base}=c.data,now=Date.now();let env=new Set();try{env=new Set(JSON.parse(localStorage.getItem(KENV)||'[]'))}catch(e){}
-      const L2=base.filter(x=>{const u=ult.get(x.t)||0;if(f.fl==='recientes')return u&&now-u<=30*864e5;if(f.fl==='inactivos')return !u||now-u>30*864e5;if(f.fl==='fieles')return (cu.get(x.t)||0)>=5;return true}).sort((a,z)=>(ult.get(z.t)||0)-(ult.get(a.t)||0));
-      return `<div class="lbl">${L2.length} cliente${L2.length===1?'':'s'} · enviados ${L2.filter(x=>env.has(x.t)).length}</div><div class="cd">${L2.slice(0,300).map(x=>{const txt=f.msg.replace(/\{nombre\}/g,String(x.n||'').split(' ')[0]||'').replace(/\s+,/g,',');const sent=env.has(x.t);
-        return fila(E(x.n||'Cliente'),E(x.t)+(ult.get(x.t)?' · último pedido '+E(fecha(ult.get(x.t))):''),`<a class="b${sent?'':' g'}" style="height:38px;padding:0 12px" target="_blank" rel="noopener" data-env="${x.t}" href="https://wa.me/51${x.t}?text=${encodeURIComponent(txt)}">${sent?IC.check+'Enviado':'Enviar'}</a>`)}).join('')||'<div style="color:#6B5E55">No hay clientes en este grupo.</div>'}</div>`},
-    async a(x){const f=SF['mensajes masivos por whatsapp'];if(x==='reset'){try{localStorage.setItem(KENV,'[]')}catch(_){}return}f.fl=x.split(':')[1]}};
 
   /* --- Suspender / reactivar cuentas --- */
   SEC['suspender / reactivar cuentas']={g:'Motorizados',t:'Suspender o reactivar',rf:1,

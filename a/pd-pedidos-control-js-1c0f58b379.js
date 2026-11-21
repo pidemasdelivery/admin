@@ -234,6 +234,6 @@
   let ppN=0;
   async function contarPp(){try{const r=await db().from('pedidos').select('id',{count:'exact',head:true}).not('negocio_id','is',null).eq('estado','entregado').is('negocio_pagado_en',null).not('pago_acordado','in','(solo_delivery,pagado,yape_negocio)').gt('subtotal',0);if(!r.error){ppN=r.count||0;bdg('pneg',ppN)}}catch(e){}}
   window.pdPedCtl={porPagar,calificaciones,reportes,alertas:verAlertas,sugerencias};
-  let n=0;setInterval(()=>{if(!document.querySelector('#appView:not(.hidden)')||!db())return;n++;try{pintarAlertas();bdg('atn',ultimas.length)}catch(e){}if(n%20===1)contarPp();else bdg('pneg',ppN);if(n%2===0){pintarSugeridos().catch(()=>{});pintarTarjetas().catch(()=>{})}},4000);
+  let n=0;setInterval(()=>{if(!document.querySelector('#appView:not(.hidden)')||!db())return;n++;/* sin alertas de demora */if(n%20===1)contarPp();else bdg('pneg',ppN);if(n%2===0){pintarSugeridos().catch(()=>{});pintarTarjetas().catch(()=>{})}},4000);
 })();
 
