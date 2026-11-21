@@ -34,13 +34,23 @@
   /* Menú inferior: 5 pestañas. Cada opción: [clave, nombre, ícono]. Clave «t:» = pantalla nueva, «a:» = acción, otra = opción de siempre */
   const HUBS={
     'inicio':{t:'Pedidos',ic:'box'},
-    'h:caja':{t:'Caja',ic:'cash',k:'Control de caja y sueldos',sec:[['',[['t:caja','Cajas de motorizados','cash'],['yape por confirmar','Yape por confirmar','phone'],['alerta de caja alta','Alerta de caja alta','alert'],]],['Sueldos',[['t:sueldo','Sueldos de motorizados','wallet'],['planilla de sueldos','Planilla de sueldos','list']]]]},
-    'h:neg':{t:'Negocios',ic:'store',k:'Negocios',sec:[['',[['configurar negocios','Configurar negocios','store'],['crear negocio','Crear negocio','plus'],['solicitudes de afiliación','Solicitudes de afiliación','tag'],['por cobrar a negocios','Por cobrar a negocios','cash'],['por pagar a negocios','Por pagar a negocios','wallet']]],['Servicios',[['recojo y entrega','Recojo y entrega','swap'],['compra','Compra','cash'],['encomienda','Encomienda','box'],['tarifas','Tarifas','tag'],['agencias','Agencias','pin']]]]},
-    'h:eq':{t:'Equipo',ic:'group',k:'Equipo',sec:[['Motorizados',[['motorizados / gps','Motorizados y GPS','pin'],['crear motorizado','Crear motorizado','plus'],['suspender / reactivar cuentas','Suspender o reactivar','shield']]],['Clientes',[['t:clientes','Clientes','group'],['lista negra','Lista negra','x'],]]]},
-    'h:mas':{t:'Más',ic:'grid',k:'Más',sec:[['Pedidos',[['asignación automática','Asignación automática','swap'],['calificaciones','Calificaciones','star'],]],['Configuración',[['horario','Horario de Pidemás','clock'],['qr yape','QR Yape','phone'],['códigos de descuento','Códigos de descuento','tag']]],['Mi cuenta',[['a:perfil','Mi perfil','user']]]]}
+    'h:moto':{t:'Motorizados',ic:'moto',k:'Motorizados',sec:[
+      ['Motorizados',[['motorizados / gps','Motorizados y GPS','pin'],['crear motorizado','Crear motorizado','plus'],['suspender / reactivar cuentas','Suspender o reactivar','shield']]],
+      ['Caja',[['t:caja','Cajas de motorizados','cash'],['yape por confirmar','Yape por confirmar','phone'],['alerta de caja alta','Alerta de caja alta','alert']]],
+      ['Sueldos',[['t:sueldo','Sueldos de motorizados','wallet'],['planilla de sueldos','Planilla de sueldos','list']]]]},
+    'h:neg':{t:'Negocios',ic:'store',k:'Negocios',sec:[
+      ['Negocios',[['configurar negocios','Configurar negocios','store'],['crear negocio','Crear negocio','plus'],['solicitudes de afiliación','Solicitudes de afiliación','tag']]],
+      ['Cobros y pagos',[['por cobrar a negocios','Por cobrar a negocios','cash'],['por pagar a negocios','Por pagar a negocios','wallet']]]]},
+    'h:mas':{t:'Más',ic:'grid',k:'Más',sec:[
+      ['Pedidos',[['asignación automática','Asignación automática','swap'],['calificaciones','Calificaciones','star']]],
+      ['Servicios',[['recojo y entrega','Recojo y entrega','swap'],['compra','Compra','cash'],['encomienda','Encomienda','box'],['tarifas','Tarifas','tag'],['agencias','Agencias','pin']]],
+      ['Clientes',[['t:clientes','Clientes','group'],['lista negra','Lista negra','x']]],
+      ['Configuración',[['horario','Horario de Pidemás','clock'],['qr yape','QR Yape','phone'],['códigos de descuento','Códigos de descuento','tag']]],
+      ['Mi cuenta',[['a:perfil','Mi perfil','user']]]]}
   };
-  const NAVK=['inicio','h:caja','h:neg','h:eq','h:mas'];
-  const HUBDE={caja:'h:caja',sueldo:'h:caja',clientes:'h:eq',menu:'h:mas'};
+  /* Menú inferior: Pedidos · Motorizados · Negocios · Más */
+  const NAVK=['inicio','h:moto','h:neg','h:mas'];
+  const HUBDE={caja:'h:moto',sueldo:'h:moto',clientes:'h:mas',menu:'h:mas'};
   const bdOf=k=>{const b=document.querySelector(`#pdMenu .m3It[data-txt="${CSS.escape(k)}"]`);return b?Number(((b.querySelector('.pdCtlBdg,.bdg')||{}).textContent||'').trim())||0:0};
   const hubBd=h=>h==='inicio'?L().filter(CH[1][2]).length:(HUBS[h].sec||[]).reduce((s,[,its])=>s+its.reduce((a,x)=>a+(/^[ta]:/.test(x[0])?0:bdOf(x[0])),0),0);
   const GIC={'Negocios':IC.store,'Servicios':IC.swap,'Motorizados':IC.moto,'Control de caja y sueldos':IC.cash,'Control de pedidos':IC.shield,'Clientes':IC.group,'Más':IC.tag};
@@ -292,7 +302,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   }
   function hubVista(h){
     const H2=HUBS[h];if(!H2)return inicio();const ql=mq.trim().toLowerCase();let b='';
-    if(h==='h:caja'){try{caja()}catch(_){}try{sueldos()}catch(_){}const t=window.__pdaCajaTotal,ts=window.__pdaSueldoTotal;void t,void ts}
+    if(h==='h:moto'){try{caja()}catch(_){}try{sueldos()}catch(_){}const t=window.__pdaCajaTotal,ts=window.__pdaSueldoTotal;void t,void ts}
     if(h==='h:mas'){const m=$('pdMenu'),top=m&&m.querySelector('.m3Top'),nom=top?(top.querySelector('strong')||{}).textContent||'Admin':'Admin',foto=window.__pdAdminFoto||'';
       b+=`<button type="button" class="yo" data-a="perfil"><span style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:18px">${E(nom)}</b><span style="font-size:13px;color:#6B5E55">Ver mi perfil</span></span>${IC.chev}</button>`;
       b+=`<div class="fld"><label for="mQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar una opción</label><input id="mQ" type="search" placeholder="Buscar en todo el menú" value="${E(mq)}" data-in="mq"></div>`}
