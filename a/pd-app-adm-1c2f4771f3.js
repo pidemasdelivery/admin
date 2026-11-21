@@ -110,7 +110,7 @@
 .stop .tg{display:inline-flex;height:22px;align-items:center;padding:0 8px;border-radius:999px;font-size:12px;font-weight:800}
 .ph{display:flex;gap:14px;align-items:center;padding:16px;border-radius:18px;background:#FFFFFF;border:1px solid #F1E4DA}
 .ph .ava{flex:0 0 64px;width:64px;height:64px;font-size:26px}
-.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;overscroll-behavior-x:contain}.chips::-webkit-scrollbar{display:none}.list{scrollbar-width:none}.list::-webkit-scrollbar{display:none}
 .chips button{flex:0 0 auto;height:38px;padding:0 14px;border-radius:999px;border:1px solid #F1E4DA;background:#FFFFFF;color:#1F1A17;font-size:14px;font-weight:700;cursor:pointer}
 .chips button.on{border:0;background:#C4410C;color:#FFFFFF}
 .av2{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:18px;background:#FFFFFF;border:1px solid #F1E4DA;text-align:left;width:100%;color:#1F1A17}
@@ -1288,7 +1288,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       return ev.sort((a,b)=>b.t-a.t).slice(0,120)},
     v(){const k='__avisos',c=datos(k,this.load),f=SF[k];f.c=f.c||'todos';if(!c.data)return {body:cargando(c)};
       const ev=this.evs(),vis=f.vis||0;const n=x=>x==='todos'?ev.length:ev.filter(e=>e.cat===x).length;
-      const CH=[['todos','Todos'],['pedidos','Pedidos'],['motorizado','Motorizado'],['negocio','Negocio']];
+      const CH=[['todos','Todos'],['pedidos','Tienda'],['motorizado','Motorizado'],['negocio','Negocio']];
       let h=`<div class="chips">${CH.map(x=>`<button type="button" data-sa="c:${x[0]}" class="${f.c===x[0]?'on':''}">${x[1]}${n(x[0])?' · '+n(x[0]):''}</button>`).join('')}</div>`;
       const Lv=f.c==='todos'?ev:ev.filter(e=>e.cat===f.c);
       const icono=e=>e.cat==='negocio'?(IC[e.icN]||IC.store):e.k==='caja'?IC.cash:e.k==='sueldo'?IC.wallet:e.k==='guia'?IC.box:e.cat==='pedidos'?IC.box:IC.moto;
@@ -1579,9 +1579,9 @@ button:active .pi{transform:scale(.92)}
     const v=pv?{head:'',body:'',foot:''}:vista();const pag=pv?'vieja':sub==='sueldomoto'?'sl:'+SL.pest+':'+(SL.vista||''):(sub||tab);
     const k=pag+'|'+v.head+v.body+(v.foot||'')+nav();
     if(k===key)return;key=k;
-    const lst=root.querySelector('.list');if(lst&&root.__pag)scrollMem[root.__pag]=lst.scrollTop;
+    const lst=root.querySelector('.list');if(lst&&root.__pag)scrollMem[root.__pag]=lst.scrollTop;const chx=[...root.querySelectorAll('.chips')].map(c=>c.scrollLeft);/* las pestañas no vuelven al inicio al marcar */
     root.innerHTML=`<style>${ESTILO}</style><div class="app">${pv?'':v.head+`<div class="list">${v.body}</div>`+(v.foot?`<div class="foot">${v.foot}</div>`:'')}${nav()}</div>`;
-    const nl=root.querySelector('.list');if(nl)nl.scrollTop=root.__pag===pag?(scrollMem[pag]||0):0;root.__pag=pag;
+    const nl=root.querySelector('.list');if(nl)nl.scrollTop=root.__pag===pag?(scrollMem[pag]||0):0;if(root.__pag===pag)root.querySelectorAll('.chips').forEach((c,i)=>{if(chx[i])c.scrollLeft=chx[i]});root.__pag=pag;
     if(sub==='pedidoform'&&PE.f&&PE.f.sv)try{pegarEn(root)}catch(_){}
     if(!pv&&H.style.overflow!=='hidden')H.style.overflow='hidden';
   }
