@@ -4,8 +4,6 @@
    Funciones principales del panel: sesión, carga de datos, ventanas, navegación y utilidades comunes. */
 
 /* ===== principal ===== */
-let editingRestaurant = null;
-let editingRestaurantRecord = null;
 const $ = id => document.getElementById(id);
 function msg(el,text){el.textContent=text;el.classList.remove("hidden")}
 function clearMsg(el){el.textContent="";el.classList.add("hidden")}
@@ -107,15 +105,6 @@ async function loadRestaurants(){
 const {data,error}=await db.from("negocios").select("*").order("nombre",{ascending:true});
 if(error){console.error("Cargar negocios:",error);msg($("restaurantMsg"),"No se pudieron cargar los negocios.");const vl=$("visibilidadNegociosList");if(vl)vl.innerHTML='<div class="muted">No se pudieron cargar los negocios: '+esc(error.message||"error de conexión")+'. Toca actualizar para reintentar.</div>';return}
 renderVisibilidadNegocios(data||[]);
-const list=$("restaurantList"); if(!list){console.error("Falta el contenedor restaurantList");return} list.innerHTML="";
-(data||[]).slice().sort((a,b)=>(Number(a.orden)||0)-(Number(b.orden)||0)||String(a.nombre||"").localeCompare(String(b.nombre||""))).forEach(r=>{
-const row=document.createElement("div"); row.className="row";
-row.innerHTML=`<div><strong>${esc(r.nombre)}</strong><small>${esc(r.direccion||"Sin dirección")} · ${r.activo?"Activo":"Inactivo"}</small></div>
-    <div class="actions"><button class="btn alt editR">Editar</button><button class="btn alt deleteR">Eliminar</button></div>`;
-row.querySelector(".editR").onclick=()=>editRestaurant(r);
-row.querySelector(".deleteR").onclick=()=>deleteRestaurant(r);
-list.appendChild(row);
-});
 }
 async function loadVisibilidadNegocios(){
 const list=$("visibilidadNegociosList"); if(!list) return;
@@ -162,210 +151,12 @@ setMsg(/visible_admin|column/i.test(String(err&&err.message))?"Falta la columna 
 list.appendChild(row);
 });
 }
-async function deleteRestaurant(r){
-const nombre = String(r?.nombre || "este negocio");
-if(!(await pdConfirmar(`¿Eliminar el negocio "${nombre}"? Se eliminará su cuenta de acceso y su catálogo de productos. Se conservarán los pedidos, cobros e historiales. Esta acción no se puede deshacer.`))) return;
-clearMsg($("restaurantMsg"));
-try{
-const {data,error}=await db.functions.invoke("eliminar-negocio-con-catalogo",{
-body:{negocio_id:r.id}
-});
-if(error) throw error;
-if(data?.error) throw new Error(data.error);
-if(data?.ok===false) throw new Error(data.message||"La operación no fue completada.");
-msg($("restaurantMsg"),"Negocio eliminado. Se solicitó eliminar su cuenta de acceso y catálogo; los pedidos e historiales deben permanecer.");
-await loadRestaurants();
-}catch(err){
-console.error("Eliminar negocio y catálogo:",err);
-msg($("restaurantMsg"),"No se pudo eliminar el negocio. Debe estar desplegada la Edge Function segura «eliminar-negocio-con-catalogo». No se eliminaron registros desde esta pantalla.");
-}
-}
 function restaurantPhoneValue(r){
 if(!r) return "";
 const keys=["telefono_whatsapp","whatsapp","whatsapp_telefono","numero_whatsapp","numero_de_whatsapp","celular_whatsapp","telefono","telefono_contacto","telefono_negocio","telefono_restaurante","numero_telefono","numero","celular","phone","contacto_whatsapp","contacto"];
 for(const k of keys){ const v=r[k]; if(v!==undefined && v!==null && String(v).trim()!=="") return String(v).trim(); }
 return "";
 }
-function editRestaurant(r){
-editingRestaurant=r.id; editingRestaurantRecord=r;
-$("rNombre").value=r.nombre||"";
-$("rTelefono").value=restaurantPhoneValue(r);
-$("rDescripcion").value=r.descripcion||r.descripcion_restaurante||r.detalle||"";
-$("rDireccion").value=r.direccion||r.direccion_restaurante||r.ubicacion||r.direccion_comercial||"";
-if($("rTiempo"))$("rTiempo").value=r.tiempo_estimado||"";
-if($("rCategoria")){const cv=r.categoria_negocio||r.categoria_comercial||r.tipo_negocio||r.categoria||"";const cs=$("rCategoria");if(cv&&![...cs.options].some(o=>o.value===cv)){const o=document.createElement("option");o.value=cv;o.textContent=cv;cs.appendChild(o)}cs.value=cv;}
-$("rGoogleMaps").value=r.google_maps_url||r.google_maps||r.maps_url||"";
-$("rLatitud").value=r.latitud??r.latitude??r.lat??"";
-$("rLongitud").value=r.longitud??r.longitude??r.lng??r.lon??"";
-$("rLogo").value=r.logo_url||r.logo||r.imagen_logo_url||r.imagen_logo||"";
-$("rPortada").value=r.imagen_portada_url||r.portada_url||r.imagen_portada||r.portada||"";
-$("rOrden").value=r.orden??r.orden_visual??r.posicion??0;
-$("rActivo").checked=Boolean(r.activo??r.disponible??true);
-$("restaurantFormTitle").textContent="Editar negocio";
-$("saveRestaurant").textContent="Guardar cambios";
-$("cancelRestaurant").classList.remove("hidden");
-window.scrollTo({top:0,behavior:"smooth"});
-}
-$("cancelRestaurant").onclick=()=>{editingRestaurant=null;editingRestaurantRecord=null;["rNombre","rTelefono","rDescripcion","rDireccion","rTiempo","rCategoria","rGoogleMaps","rLatitud","rLongitud","rLogo","rPortada","rLogoFile","rPortadaFile"].forEach(x=>$(x).value="");$("rOrden").value=0;$("rActivo").checked=true;$("restaurantFormTitle").textContent="Negocios";$("saveRestaurant").textContent="Guardar negocio";$("cancelRestaurant").classList.add("hidden")};
-function extensionFor(file){
-const type=(file?.type||"").toLowerCase();
-if(type.includes("png")) return "png";
-if(type.includes("webp")) return "webp";
-return "jpg";
-}
-async function uploadRestaurantImage(restaurantId,file,kind){
-if(!file) return null;
-const ext=extensionFor(file);
-const path=`${restaurantId}/${kind}.${ext}`;
-const {error:uploadError}=await db.storage.from("restaurantes").upload(path,file,{upsert:true,contentType:file.type||"image/jpeg"});
-if(uploadError) throw uploadError;
-const {data}=db.storage.from("restaurantes").getPublicUrl(path);
-return data.publicUrl;
-}
-$("saveRestaurant").onclick=async()=>{
-clearMsg($("restaurantMsg"));
-const logoFile=$("rLogoFile").files[0]||null;
-const portadaFile=$("rPortadaFile").files[0]||null;
-const nombre=$("rNombre").value.trim();
-if(!nombre){
-msg($("restaurantMsg"),"Escribe el nombre del restaurante.");
-return;
-}
-try{
-let restaurantId=editingRestaurant;
-let record=editingRestaurantRecord;
-if(editingRestaurant){
-const res=await db.from("negocios").update({nombre}).eq("id",editingRestaurant);
-if(res.error) throw res.error;
-const q=await db.from("negocios").select("*").eq("id",editingRestaurant).maybeSingle();
-if(q.error) throw q.error;
-record=q.data||record||{};
-}else{
-const res=await db.from("negocios").insert({nombre}).select("*").single();
-if(res.error) throw res.error;
-restaurantId=res.data.id;
-record=res.data||{};
-}
-const avisos=[];
-const updates={};
-const keys=Object.keys(record||{});
-const findColumn=(cands)=>cands.find(k=>keys.includes(k));
-const columns={
-telefono:findColumn(["telefono_whatsapp","whatsapp","whatsapp_telefono","numero_whatsapp","numero_de_whatsapp","celular_whatsapp","telefono","telefono_contacto","telefono_negocio","telefono_restaurante","numero_telefono","numero","celular","phone","contacto_whatsapp","contacto"]),
-descripcion:findColumn(["descripcion","descripcion_restaurante","detalle"]),
-direccion:findColumn(["direccion","direccion_restaurante","ubicacion","direccion_comercial"]),
-orden:findColumn(["orden","orden_visual","posicion"]),
-activo:findColumn(["activo","disponible"]),
-logo:findColumn(["logo_url","logo","imagen_logo_url","imagen_logo"]),
-portada:findColumn(["imagen_portada_url","portada_url","imagen_portada","portada"]),
-googleMaps:findColumn(["google_maps_url","google_maps","maps_url"]),
-latitud:findColumn(["latitud","latitude","lat"]),
-longitud:findColumn(["longitud","longitude","lng","lon"])
-};
-const telefonoIngresado=$("rTelefono").value.trim();
-if(columns.telefono){ updates[columns.telefono]=telefonoIngresado||null; }
-else if(telefonoIngresado) avisos.push("El número no se guardó porque la tabla negocios no expone una columna compatible.");
-if(columns.descripcion) updates[columns.descripcion]=$("rDescripcion").value.trim()||null;
-else if($("rDescripcion").value.trim()) avisos.push("La descripción no se guardó porque la tabla no tiene una columna compatible.");
-if(columns.direccion) updates[columns.direccion]=$("rDireccion").value.trim()||null;
-const tiempoIngresado=($("rTiempo")?.value||"").trim();
-if(keys.includes("tiempo_estimado")) updates.tiempo_estimado=tiempoIngresado||null;
-else if(tiempoIngresado) avisos.push("El tiempo estimado no se guardó: ejecuta en Supabase el SQL que agrega la columna tiempo_estimado.");
-const categoriaIngresada=($("rCategoria")?.value||"").trim();
-const categoriaCol=findColumn(["categoria_negocio","categoria_comercial","tipo_negocio","categoria"]);
-if(categoriaCol) updates[categoriaCol]=categoriaIngresada||null;
-else if(categoriaIngresada) avisos.push("La categoría no se guardó porque la tabla negocios no tiene la columna categoria_negocio.");
-else if($("rDireccion").value.trim()) avisos.push("La dirección no se guardó porque la tabla no tiene una columna compatible.");
-const googleMapsUrl=$("rGoogleMaps").value.trim();
-if(columns.googleMaps) updates[columns.googleMaps]=googleMapsUrl||null;
-else if(googleMapsUrl) avisos.push("La URL de Google Maps no se guardó porque falta la columna google_maps_url en la tabla negocios.");
-const latText=$("rLatitud").value.trim();
-const lngText=$("rLongitud").value.trim();
-const lat=latText===""?null:Number(latText);
-const lng=lngText===""?null:Number(lngText);
-if((latText!==""&&!Number.isFinite(lat))||(lngText!==""&&!Number.isFinite(lng))){
-avisos.push("La latitud o longitud no es válida.");
-}else{
-if(columns.latitud) updates[columns.latitud]=lat;
-else if(latText!=="") avisos.push("La latitud no se guardó porque falta una columna compatible.");
-if(columns.longitud) updates[columns.longitud]=lng;
-else if(lngText!=="") avisos.push("La longitud no se guardó porque falta una columna compatible.");
-}
-if(columns.orden) updates[columns.orden]=Number($("rOrden").value)||0;
-if(columns.activo) updates[columns.activo]=$("rActivo").checked;
-const logoUrlInput=$("rLogo").value.trim();
-if(!logoFile && logoUrlInput && columns.logo) updates[columns.logo]=logoUrlInput;
-const portadaUrlInput=$("rPortada").value.trim();
-if(!portadaFile && portadaUrlInput && columns.portada) updates[columns.portada]=portadaUrlInput;
-if(Object.keys(updates).length){
-let saveRes;
-if(columns.telefono){
-const selectCols=["id",columns.telefono].filter(Boolean).join(",");
-saveRes=await db.from("negocios").update(updates).eq("id",restaurantId).select(selectCols).maybeSingle();
-}else{
-saveRes=await db.from("negocios").update(updates).eq("id",restaurantId);
-}
-if(saveRes.error) throw saveRes.error;
-if(columns.telefono && telefonoIngresado){
-const savedPhone=saveRes.data?.[columns.telefono];
-if(String(savedPhone??"").trim()!==String(telefonoIngresado).trim()){
-const verify=await db.from("negocios").select(["id",columns.telefono].join(",")).eq("id",restaurantId).maybeSingle();
-if(verify.error) throw verify.error;
-const verifiedPhone=verify.data?.[columns.telefono];
-if(String(verifiedPhone??"").trim()!==String(telefonoIngresado).trim()){
-throw new Error("Supabase no confirmó el número del restaurante. El UPDATE no dejó el valor en la columna "+columns.telefono+".");
-}
-}
-}
-}
-if(logoFile){
-try{
-const url=await uploadRestaurantImage(restaurantId,logoFile,"logo");
-if(url){
-$("rLogo").value=url;
-if(columns.logo){
-const res=await db.from("negocios").update({[columns.logo]:url}).eq("id",restaurantId);
-if(res.error) throw res.error;
-}else{
-avisos.push("El logo se subió, pero la tabla no tiene una columna compatible para guardar su URL.");
-}
-}
-}catch(err){
-console.error("Logo:",err);
-avisos.push("El logo no se pudo subir ahora; puedes intentarlo después.");
-}
-}
-if(portadaFile){
-try{
-const url=await uploadRestaurantImage(restaurantId,portadaFile,"portada");
-if(url){
-$("rPortada").value=url;
-if(columns.portada){
-const res=await db.from("negocios").update({[columns.portada]:url}).eq("id",restaurantId);
-if(res.error) throw res.error;
-}else{
-avisos.push("La portada se subió, pero la tabla no tiene una columna compatible para guardar su URL.");
-}
-}
-}catch(err){
-console.error("Portada:",err);
-avisos.push("La portada no se pudo subir ahora; puedes intentarlo después.");
-}
-}
-$("cancelRestaurant").click();
-await loadRestaurants();
-if(avisos.length){
-msg($("restaurantMsg"),"Negocio guardado correctamente. "+avisos.join(" "));
-}else if(logoFile||portadaFile){
-msg($("restaurantMsg"),"Negocio e imágenes guardados correctamente.");
-}else{
-msg($("restaurantMsg"),"Negocio guardado correctamente.");
-}
-}catch(err){
-console.error(err);
-msg($("restaurantMsg"),"No se pudo guardar el restaurante: "+(err?.message||"error desconocido"));
-}
-};
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 /* Marcas __PIDEMAS_X__{json}: lectura y limpieza con llaves anidadas (descartables) */
 window.pdLeerMarca=function(t,nombre){var s=String(t||''),k='__PIDEMAS_'+nombre+'__',i=s.indexOf(k);if(i<0)return null;var j=i+k.length;while(s[j]===' ')j++;if(s[j]!=='{')return null;var p=0,ins=false,es=false,e=j;for(;e<s.length;e++){var c=s[e];if(ins){if(es)es=false;else if(c==='\\')es=true;else if(c==='"')ins=false}else if(c==='"')ins=true;else if(c==='{')p++;else if(c==='}'){p--;if(!p){e++;break}}}try{return JSON.parse(s.slice(j,e))}catch(x){return null}};
@@ -2031,293 +1822,11 @@ if(b){b.disabled=false;b.textContent="Crear código";}
 }
 return false;
 };
-document.querySelectorAll(".serviceBtn").forEach(btn=>{
-btn.type="button";
-btn.onclick=async(e)=>{
-e?.preventDefault?.();
-const type=btn.dataset.service;
-document.querySelectorAll(".serviceAdminBox").forEach(box=>box.classList.add("hidden"));
-document.querySelectorAll(".serviceBtn").forEach(b=>b.classList.toggle("active",b.dataset.service===type));
-const businessForm=$("crearNegocioAdminBox");
-if(businessForm) businessForm.classList.add("hidden");
-if(typeof window.openAdminTab==="function") window.openAdminTab("restaurantes");
-const boxByType={
-gps:"gpsAdminBox",
-"crear-motorizado":"crearMotorizadoAdminBox",
-"suspender-motorizado":"suspenderMotorizadoAdminBox",
-"acceso-motorizado":"accesoMotorizadoAdminBox",
-"acceso-negocio":"accesoNegocioAdminBox",
-descuentos:"descuentosAdminBox"
-};
-const boxId=boxByType[type];
-if(type==="crear-negocio"){
-try{if(typeof loadRestaurants==="function") loadRestaurants();}catch(e){console.error(e)}
-if(businessForm){businessForm.classList.remove("hidden");businessForm.scrollIntoView({behavior:"smooth",block:"start"});}
-else document.getElementById("saveRestaurant")?.scrollIntoView({behavior:"smooth",block:"start"});
-return;
-}
-const box=boxId?$(boxId):null;
-if(!box){console.warn("No se encontró la página/herramienta para:",type);return;}
-box.classList.remove("hidden");
-if(type==="gps"&&typeof initAdminGpsMap==="function") await initAdminGpsMap();
-if(type==="descuentos"&&typeof loadDeliveryPromos==="function") await loadDeliveryPromos();
-if(type==="suspender-motorizado") $("actualizarSuspensionMotosBtn")?.click();
-if(type==="crear-negocio"&&typeof loadRestaurants==="function") await loadRestaurants();
-if(type==="acceso-motorizado"){
-const select=$("accesoMotorizadoId");
-if(select){
-select.innerHTML='<option value="">Selecciona un motorizado</option>';
-const {data,error}=await db.from("motorizados").select("id,nombre_completo").order("nombre_completo",{ascending:true});
-if(error){if(typeof msg==="function") msg($("accesoMotorizadoMsg"),"No se pudieron cargar los motorizados.");}
-else (data||[]).forEach(n=>{const opt=document.createElement("option");opt.value=n.id;opt.textContent=n.nombre_completo||"Motorizado";select.appendChild(opt);});
-}
-if(typeof clearMsg==="function") clearMsg($("accesoMotorizadoMsg"));
-if(typeof cargarAccesosMotorizado==="function") await cargarAccesosMotorizado();
-}
-if(type==="acceso-negocio"){
-const select=$("accesoNegocioId");
-if(select){
-select.innerHTML='<option value="">Selecciona un negocio</option>';
-const {data,error}=await db.from("negocios").select("id,nombre").order("nombre",{ascending:true});
-if(error){if(typeof msg==="function") msg($("accesoNegocioMsg"),"No se pudieron cargar los negocios.");}
-else (data||[]).forEach(n=>{const opt=document.createElement("option");opt.value=n.id;opt.textContent=n.nombre||"Negocio";select.appendChild(opt);});
-}
-if(typeof clearMsg==="function") clearMsg($("accesoNegocioMsg"));
-if(typeof cargarAccesosNegocio==="function") await cargarAccesosNegocio();
-}
-box.scrollIntoView({behavior:"smooth",block:"start"});
-};
-});
 document.querySelectorAll(".closeServiceAdmin").forEach(btn=>{
 btn.onclick=()=>{
 const id=btn.dataset.close;
 $(id)?.classList.add("hidden");
 };
-});
-const ACC_ID_KEYS=["user_id","usuario_id","auth_user_id","auth_id","uid","userId","id_usuario","owner_id","id"];
-function accUid(c){for(const k of ACC_ID_KEYS){const v=c&&c[k];if(v!==undefined&&v!==null&&String(v).trim()!=="")return String(v)}return ""}
-async function resolverUidNegocio(c){
-const directo=accUid(c); if(directo) return directo;
-const nid=c&&(c.negocio_id||c.negocioId); if(!nid) return "";
-try{
-const {data}=await db.from("negocios").select("*").eq("id",nid).maybeSingle();
-for(const k of ["usuario_id","user_id","auth_user_id","owner_id"]){const v=data&&data[k]; if(v) return String(v)}
-}catch(e){console.error("Buscar usuario del negocio:",e)}
-return "";
-}
-async function cargarAccesosNegocio(){
-const list=$("accesosNegocioList");
-if(!list)return;
-list.innerHTML='<div class="notice">Consultando cuentas en Supabase…</div>';
-try{
-const {data,error}=await db.functions.invoke("listar-accesos-negocio",{body:{}});
-if(error)throw error;
-if(data?.error)throw new Error(data.error);
-const rows=Array.isArray(data?.cuentas)?data.cuentas:(Array.isArray(data)?data:[]);
-list.innerHTML="";
-if(!rows.length){list.innerHTML='<div class="notice">La función no devolvió cuentas. Verifica la configuración de Supabase.</div>';return;}
-rows.forEach(c=>{
-const row=document.createElement("div");row.className="row";
-row.dataset.negocioId=String(c.negocio_id||c.negocioId||"");row.dataset.email=String(c.email||"");
-const info=document.createElement("div");
-const name=document.createElement("strong");name.textContent=c.negocio_nombre||c.nombre_negocio||c.nombre||"Negocio sin nombre";
-const email=document.createElement("small");email.textContent=c.email||"Correo no disponible";
-const status=document.createElement("div");status.className="badge";status.textContent=c.activo===false?"Inactivo":"Cuenta registrada";
-info.append(name,email,status);row.appendChild(info);
-const actions=document.createElement("div");actions.className="actions";
-const change=document.createElement("button");change.type="button";change.className="btn alt";change.textContent="Cambiar contraseña";
-change.addEventListener("click",async()=>{
-$("cambiarPasswordNegocioUserId").value=await resolverUidNegocio(c);
-$("cambiarPasswordNegocioLabel").textContent=(c.negocio_nombre||c.nombre_negocio||c.nombre||"Negocio")+" · "+(c.email||"sin correo");
-$("cambiarPasswordNegocioInput").value="";clearMsg($("cambiarPasswordNegocioMsg"));
-$("cambiarPasswordNegocioBox").classList.remove("hidden");
-$("cambiarPasswordNegocioBox").scrollIntoView({behavior:"smooth",block:"start"});
-});
-actions.appendChild(change);
-const edit=document.createElement("button");
-edit.type="button";edit.className="btn alt";edit.textContent="Editar correo";
-edit.addEventListener("click",async()=>{
-const uid=await resolverUidNegocio(c);
-if(!uid){pdAviso("No se identificó el usuario de esta cuenta. Actualiza la lista y vuelve a intentarlo.\n\n(Campos recibidos: "+Object.keys(c||{}).join(", ")+")");return;}
-const oldEmail=String(c.email||"");
-const newEmail=(await pdPedir("Nuevo correo de acceso para "+(c.negocio_nombre||c.nombre_negocio||c.nombre||"este negocio")+":",oldEmail));
-if(newEmail===null)return;
-const emailValue=newEmail.trim().toLowerCase();
-if(!emailValue||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)){pdAviso("Escribe un correo válido.");return;}
-if(emailValue===oldEmail.toLowerCase()){pdAviso("El correo no ha cambiado.");return;}
-edit.disabled=true;edit.textContent="Guardando…";
-try{
-const {data,error}=await db.functions.invoke("editar-acceso-negocio",{body:{user_id:uid,email:emailValue}});
-if(error)throw error;
-if(data?.error)throw new Error(data.error);
-pdAviso("Correo actualizado correctamente.");
-await cargarAccesosNegocio();
-}catch(e){
-console.error("Editar correo de acceso de negocio:",e);
-pdAviso("No se pudo actualizar el correo. Debes crear y desplegar en Supabase la Edge Function segura «editar-acceso-negocio» para guardar el cambio en Authentication.");
-edit.disabled=false;edit.textContent="Editar correo";
-}
-});
-actions.appendChild(edit);row.appendChild(actions);list.appendChild(row);
-});
-}catch(e){
-console.error("Listar accesos de negocio:",e);
-list.innerHTML='<div class="notice">No se pudo cargar la lista. Debe configurarse la Edge Function segura «listar-accesos-negocio» en Supabase.</div>';
-}
-}
-document.querySelectorAll(".passwordEyeBtn").forEach(eye=>{
-eye.addEventListener("click",()=>{
-const input=document.getElementById(eye.dataset.passwordTarget);
-if(!input)return;
-const showing=input.type==="password";
-input.type=showing?"text":"password";
-eye.textContent=showing?"⊗":"◉";
-eye.setAttribute("aria-label",showing?"Ocultar contraseña":"Mostrar contraseña");
-eye.title=showing?"Ocultar contraseña":"Mostrar contraseña";
-});
-});
-$("actualizarAccesosNegocioBtn")?.addEventListener("click",cargarAccesosNegocio);
-$("cancelarPasswordNegocioBtn")?.addEventListener("click",()=>{
-$("cambiarPasswordNegocioBox").classList.add("hidden");
-$("cambiarPasswordNegocioInput").value="";clearMsg($("cambiarPasswordNegocioMsg"));
-});
-$("guardarPasswordNegocioBtn")?.addEventListener("click",async()=>{
-const btn=$("guardarPasswordNegocioBtn"),user_id=$("cambiarPasswordNegocioUserId").value,password=$("cambiarPasswordNegocioInput").value;
-clearMsg($("cambiarPasswordNegocioMsg"));
-if(!user_id){msg($("cambiarPasswordNegocioMsg"),"No se identificó la cuenta. Actualiza la lista y vuelve a intentarlo.");return;}
-if(password.length<12){msg($("cambiarPasswordNegocioMsg"),"La contraseña debe tener al menos 12 caracteres.");return;}
-btn.disabled=true;btn.textContent="Guardando…";
-try{
-const {data,error}=await db.functions.invoke("cambiar-password-negocio",{body:{user_id,password}});
-if(error)throw error;if(data?.error)throw new Error(data.error);
-msg($("cambiarPasswordNegocioMsg"),"Contraseña actualizada correctamente. Comunícala al propietario de forma privada.");
-$("cambiarPasswordNegocioInput").value="";
-}catch(e){
-console.error("Cambiar contraseña de negocio:",e);
-msg($("cambiarPasswordNegocioMsg"),"No se pudo cambiar. Debe configurarse la Edge Function segura «cambiar-password-negocio» en Supabase.");
-}finally{btn.disabled=false;btn.textContent="Guardar contraseña";}
-});
-$("crearAccesoNegocioBtn")?.addEventListener("click",async()=>{
-const btn=$("crearAccesoNegocioBtn");
-const negocio_id=$("accesoNegocioId").value;
-const email=$("accesoNegocioEmail").value.trim().toLowerCase();
-const password=$("accesoNegocioPassword").value;
-clearMsg($("accesoNegocioMsg"));
-if(!negocio_id||!email||!password){msg($("accesoNegocioMsg"),"Completa negocio, correo y contraseña.");return;}
-if(password.length<12){msg($("accesoNegocioMsg"),"La contraseña debe tener al menos 12 caracteres.");return;}
-btn.disabled=true;btn.textContent="Creando cuenta...";
-try{
-const {data,error}=await db.functions.invoke("crear-acceso-negocio",{body:{negocio_id,email,password}});
-if(error) throw error;
-if(data?.error) throw new Error(data.error);
-try{window.pdMensajeAcceso&&window.pdMensajeAcceso({tipo:"negocio",id:negocio_id,email,password})}catch(_){}
-msg($("accesoNegocioMsg"),"Cuenta creada y vinculada correctamente. Entrega las credenciales al propietario de forma privada.");
-$("accesoNegocioEmail").value="";$("accesoNegocioPassword").value="";
-}catch(e){
-console.error("Crear acceso de negocio:",e);
-msg($("accesoNegocioMsg"),"No se pudo crear la cuenta. Verifica que esté desplegada y configurada la Edge Function segura «crear-acceso-negocio». No se creó ninguna cuenta si la función no está disponible.");
-}finally{btn.disabled=false;btn.textContent="Crear cuenta y vincular";}
-});
-async function cargarAccesosMotorizado(){
-const list=$("accesosMotorizadoList");
-if(!list)return;
-list.innerHTML='<div class="notice">Consultando cuentas en Supabase…</div>';
-try{
-const {data,error}=await db.functions.invoke("listar-accesos-motorizado",{body:{}});
-if(error)throw error;
-if(data?.error)throw new Error(data.error);
-const rows=Array.isArray(data?.cuentas)?data.cuentas:(Array.isArray(data)?data:[]);
-list.innerHTML="";
-if(!rows.length){list.innerHTML='<div class="notice">La función no devolvió cuentas. Verifica la configuración de Supabase.</div>';return;}
-rows.forEach(c=>{
-const row=document.createElement("div");row.className="row";
-const info=document.createElement("div");
-const name=document.createElement("strong");name.textContent=c.motorizado_nombre||c.nombre_motorizado||c.nombre_completo||c.nombre||"Motorizado sin nombre";
-const email=document.createElement("small");email.textContent=c.email||"Correo no disponible";
-const status=document.createElement("div");status.className="badge";status.textContent=c.activo===false?"Inactivo":"Cuenta registrada";
-info.append(name,email,status);row.appendChild(info);
-const actions=document.createElement("div");actions.className="actions";
-const change=document.createElement("button");change.type="button";change.className="btn alt";change.textContent="Cambiar contraseña";
-change.addEventListener("click",()=>{
-$("cambiarPasswordMotorizadoUserId").value=accUid(c);
-$("cambiarPasswordMotorizadoLabel").textContent=(c.motorizado_nombre||c.nombre_motorizado||c.nombre||"Motorizado")+" · "+(c.email||"sin correo");
-$("cambiarPasswordMotorizadoInput").value="";clearMsg($("cambiarPasswordMotorizadoMsg"));
-$("cambiarPasswordMotorizadoBox").classList.remove("hidden");
-$("cambiarPasswordMotorizadoBox").scrollIntoView({behavior:"smooth",block:"start"});
-});
-actions.appendChild(change);
-const edit=document.createElement("button");
-edit.type="button";edit.className="btn alt";edit.textContent="Editar correo";
-edit.addEventListener("click",async()=>{
-const uid=accUid(c);
-if(!uid){pdAviso("No se identificó el usuario de esta cuenta. Actualiza la lista y vuelve a intentarlo.\n\n(Campos recibidos: "+Object.keys(c||{}).join(", ")+")");return;}
-const oldEmail=String(c.email||"");
-const newEmail=(await pdPedir("Nuevo correo de acceso para "+(c.motorizado_nombre||c.nombre_motorizado||c.nombre_completo||c.nombre||"este motorizado")+":",oldEmail));
-if(newEmail===null)return;
-const emailValue=newEmail.trim().toLowerCase();
-if(!emailValue||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)){pdAviso("Escribe un correo válido.");return;}
-if(emailValue===oldEmail.toLowerCase()){pdAviso("El correo no ha cambiado.");return;}
-edit.disabled=true;edit.textContent="Guardando…";
-try{
-const {data,error}=await db.functions.invoke("editar-acceso-motorizado",{body:{user_id:uid,email:emailValue}});
-if(error)throw error;
-if(data?.error)throw new Error(data.error);
-pdAviso("Correo actualizado correctamente.");
-await cargarAccesosMotorizado();
-}catch(e){
-console.error("Editar correo de acceso de motorizado:",e);
-pdAviso("No se pudo actualizar el correo. Debes crear y desplegar en Supabase la Edge Function segura «editar-acceso-motorizado» para guardar el cambio en Authentication.");
-edit.disabled=false;edit.textContent="Editar correo";
-}
-});
-actions.appendChild(edit);row.appendChild(actions);list.appendChild(row);
-});
-}catch(e){
-console.error("Listar accesos de motorizado:",e);
-list.innerHTML='<div class="notice">No se pudo cargar la lista. Debe configurarse la Edge Function segura «listar-accesos-motorizado» en Supabase.</div>';
-}
-}
-$("actualizarAccesosMotorizadoBtn")?.addEventListener("click",cargarAccesosMotorizado);
-$("cancelarPasswordMotorizadoBtn")?.addEventListener("click",()=>{
-$("cambiarPasswordMotorizadoBox").classList.add("hidden");
-$("cambiarPasswordMotorizadoInput").value="";clearMsg($("cambiarPasswordMotorizadoMsg"));
-});
-$("guardarPasswordMotorizadoBtn")?.addEventListener("click",async()=>{
-const btn=$("guardarPasswordMotorizadoBtn"),user_id=$("cambiarPasswordMotorizadoUserId").value,password=$("cambiarPasswordMotorizadoInput").value;
-clearMsg($("cambiarPasswordMotorizadoMsg"));
-if(!user_id){msg($("cambiarPasswordMotorizadoMsg"),"No se identificó la cuenta. Actualiza la lista y vuelve a intentarlo.");return;}
-if(password.length<12){msg($("cambiarPasswordMotorizadoMsg"),"La contraseña debe tener al menos 12 caracteres.");return;}
-btn.disabled=true;btn.textContent="Guardando…";
-try{
-const {data,error}=await db.functions.invoke("cambiar-password-motorizado",{body:{user_id,password}});
-if(error)throw error;if(data?.error)throw new Error(data.error);
-msg($("cambiarPasswordMotorizadoMsg"),"Contraseña actualizada correctamente. Comunícala al motorizado de forma privada.");
-$("cambiarPasswordMotorizadoInput").value="";
-}catch(e){
-console.error("Cambiar contraseña de motorizado:",e);
-msg($("cambiarPasswordMotorizadoMsg"),"No se pudo cambiar. Debe configurarse la Edge Function segura «cambiar-password-motorizado» en Supabase.");
-}finally{btn.disabled=false;btn.textContent="Guardar contraseña";}
-});
-$("crearAccesoMotorizadoBtn")?.addEventListener("click",async()=>{
-const btn=$("crearAccesoMotorizadoBtn");
-const motorizado_id=$("accesoMotorizadoId").value;
-const email=$("accesoMotorizadoEmail").value.trim().toLowerCase();
-const password=$("accesoMotorizadoPassword").value;
-clearMsg($("accesoMotorizadoMsg"));
-if(!motorizado_id||!email||!password){msg($("accesoMotorizadoMsg"),"Completa motorizado, correo y contraseña.");return;}
-if(password.length<12){msg($("accesoMotorizadoMsg"),"La contraseña debe tener al menos 12 caracteres.");return;}
-btn.disabled=true;btn.textContent="Creando cuenta...";
-try{
-const {data,error}=await db.functions.invoke("crear-acceso-motorizado",{body:{motorizado_id,email,password}});
-if(error) throw error;
-if(data?.error) throw new Error(data.error);
-try{window.pdMensajeAcceso&&window.pdMensajeAcceso({tipo:"motorizado",id:motorizado_id,email,password})}catch(_){}
-msg($("accesoMotorizadoMsg"),"Cuenta creada y vinculada correctamente. Entrega las credenciales al motorizado de forma privada.");
-$("accesoMotorizadoEmail").value="";$("accesoMotorizadoPassword").value="";
-}catch(e){
-console.error("Crear acceso de motorizado:",e);
-msg($("accesoMotorizadoMsg"),"No se pudo crear la cuenta. Verifica que esté desplegada y configurada la Edge Function segura «crear-acceso-motorizado». No se creó ninguna cuenta si la función no está disponible.");
-}finally{btn.disabled=false;btn.textContent="Crear cuenta y vincular";}
 });
 $("guardarCliente")?.addEventListener("click",guardarClienteAdmin);
 $("cancelarCliente")?.addEventListener("click",()=>{limpiarFormularioCliente();clearMsg($("clienteMsg"));});
@@ -2747,15 +2256,15 @@ try{
 if(window.__pdmModal)return;window.__pdmModal=true;
 const $=id=>document.getElementById(id);
 const MAP={
-gps:['gpsAdminBox','Motorizados / GPS'],'crear-motorizado':['crearMotorizadoAdminBox','Crear motorizado'],
+gps:['gpsAdminBox','Motorizados / GPS'],
 'suspender-motorizado':['suspenderMotorizadoAdminBox','Suspender / reactivar cuentas'],
-descuentos:['descuentosAdminBox','Códigos de descuento'],'crear-negocio':['crearNegocioAdminBox','Crear negocio'],'estado-negocios':['estadoNegociosAdminBox','Estado de negocios'],
-'config-negocios':['configNegociosAdminBox','Configurar negocios'],'solicitudes':['solicitudesAdminBox','Solicitudes de afiliación'],
+descuentos:['descuentosAdminBox','Códigos de descuento'],'estado-negocios':['estadoNegociosAdminBox','Estado de negocios'],
+'config-negocios':['configNegociosAdminBox','Configurar negocios'],
 pedidos:['tab-pedidos','Pedidos'],qryape:['pdQrCfg','QR Yape'],clientes:['tab-clientes','Clientes'],
 caja:['tab-caja','Cajas'],sueldo:['tab-sueldo','Sueldos']
 };
 let box=null,ph=null,cur=null;
-const RF={pedidos:'refreshOrders',clientes:'refreshClientes',caja:'pdcjRefresh',sueldo:'pdSalaryRefreshMotos',gps:'gxRef','suspender-motorizado':'spRef','crear-negocio':'pdwRefNeg',solicitudes:'solRefresh','crear-motorizado':'pdwRefMoto'};
+const RF={pedidos:'refreshOrders',clientes:'refreshClientes',caja:'pdcjRefresh',sueldo:'pdSalaryRefreshMotos',gps:'gxRef','suspender-motorizado':'spRef',};
 let rfBtn=null,rfObs=null;
 function hdr(key){
 const head=document.querySelector('#pdmModal .m-head'),x=head&&head.querySelector('.m-x');if(!head||!x)return;
@@ -2775,7 +2284,6 @@ try{
 if(key==='pedidos'){const r=$('refreshOrders');if(r)r.click();return}
 if(key==='estado-negocios')return call('loadVisibilidadNegocios');
 if(key==='config-negocios')return call('cnxLoad');
-if(key==='solicitudes')return call('solLoad');
 if(key==='clientes')return call('loadClientes');
 if(key==='caja')return call('loadAdminCash');
 if(key==='sueldo')return call('pdLoadSalaryMotorizados');

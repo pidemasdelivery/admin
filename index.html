@@ -172,74 +172,12 @@ html body #appView:not(#Z#Z#Z#Z#Z) > .card:first-child:has(> h1){display:none!im
 <div id="cnxPane"></div>
 </div>
 </div>
-<div class="hidden" id="solicitudesAdminBox">
-<div class="solBar">
-<div id="solFiltros" role="tablist">
-<button type="button" data-f="nueva" class="on">Nuevas <b id="solCnt-nueva">0</b></button>
-<button type="button" data-f="revision">En revisión <b id="solCnt-revision">0</b></button>
-<button type="button" data-f="aprobada">Aprobadas <b id="solCnt-aprobada">0</b></button>
-<button type="button" data-f="rechazada">Rechazadas <b id="solCnt-rechazada">0</b></button>
-<button type="button" data-f="todas">Todas <b id="solCnt-todas">0</b></button>
-</div>
-<button type="button" id="solRefresh" class="btn alt">Actualizar</button>
-</div>
-<div class="notice hidden" id="solMsg" role="status"></div>
-<div id="solLista"><div class="muted">Cargando solicitudes…</div></div>
-</div>
 <div class="hidden" id="estadoNegociosAdminBox">
 <div id="visibilidadNegociosBox" style="margin:0 0 14px;padding:14px;border:1px solid var(--fr-line);border-radius:18px;background:#fff">
 <strong style="display:block;font-size:16px">Visibilidad en la tienda</strong>
 <p class="muted" style="margin:4px 0 12px">Negocios ya registrados. Si apagas uno, deja de verse en la tienda y su dueño no puede volver a activarlo desde su panel: le sale un aviso para que se ponga en contacto contigo.</p>
 <div class="list" id="visibilidadNegociosList"><div class="muted">Cargando negocios…</div></div>
 <div class="notice hidden" id="visibilidadNegociosMsg" role="status"></div>
-</div>
-</div>
-<div class="hidden" id="crearNegocioAdminBox">
-<div class="card" style="margin-top:0;border:1px solid var(--fr-line)">
-<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-<div><h2 id="restaurantFormTitle">Negocios</h2><p class="muted">Registra y administra restaurantes desde aquí. Los cambios se guardan en Supabase.</p></div>
-</div>
-<div class="grid">
-<div class="field"><label>Nombre del negocio *</label><input autocomplete="organization" id="rNombre" placeholder="Ej. Nuevo restaurante"/></div>
-<div class="field"><label>Teléfono / WhatsApp</label><input id="rTelefono" placeholder="Número de contacto" type="tel"/></div>
-<div class="field full"><label>Descripción</label><textarea id="rDescripcion" placeholder="Descripción breve del negocio"></textarea></div>
-<div class="field"><label>Dirección</label><input id="rDireccion" placeholder="Dirección del local"/></div>
-<div class="field"><label>Tiempo de entrega</label><input id="rTiempo" placeholder="Ej. 25–35 min" maxlength="20"/></div>
-<div class="field"><label>Enlace de Google Maps</label><input id="rGoogleMaps" placeholder="https://maps.google.com/..."/></div>
-<div class="field"><label>Latitud</label><input id="rLatitud" placeholder="Ej. -4.89" step="any" type="number"/></div>
-<div class="field"><label>Longitud</label><input id="rLongitud" placeholder="Ej. -80.69" step="any" type="number"/></div>
-<div class="field"><label>Orden en la lista</label><input id="rOrden" step="1" type="number" value="0"/></div>
-<div class="field" style="justify-content:center"><label style="display:flex;align-items:center;gap:9px"><input checked="" id="rActivo" style="width:18px;min-height:18px;height:18px;margin:0" type="checkbox"/> Negocio activo</label></div>
-<div class="field uploadBox"><label>Logo del negocio</label><input id="rLogo" placeholder="URL del logo (opcional)"/><input accept="image/png,image/jpeg,image/webp" id="rLogoFile" type="file"/><div class="uploadHint">Puedes pegar una URL o subir una imagen.</div></div>
-<div class="field uploadBox"><label>Portada del negocio</label><input id="rPortada" placeholder="URL de portada (opcional)"/><input accept="image/png,image/jpeg,image/webp" id="rPortadaFile" type="file"/><div class="uploadHint">Puedes pegar una URL o subir una imagen.</div></div>
-</div>
-<div class="actions"><button class="btn" id="saveRestaurant" type="button">Guardar negocio</button><button class="btn alt hidden" id="cancelRestaurant" type="button">Cancelar edición</button></div>
-<div class="notice hidden" id="restaurantMsg"></div>
-</div>
-<div aria-hidden="true" class="list hidden" id="restaurantList"></div>
-</div>
-<div class="card" style="margin-top:14px;border:1px solid var(--fr-line)">
-<div class="serviceCardsAdmin">
-<button class="serviceCardAdmin serviceBtn" data-service="gps" type="button">
-<span class="serviceTitleAdmin">Motorizados / GPS</span>
-<span class="serviceTextAdmin">Ver ubicación de los motorizados.</span>
-</button>
-<button class="serviceCardAdmin serviceBtn" data-service="crear-motorizado" type="button">
-<span class="serviceTitleAdmin">Crear motorizado</span>
-<span class="serviceTextAdmin">Registrar los datos del motorizado.</span>
-</button>
-<button class="serviceCardAdmin serviceBtn" data-service="suspender-motorizado" type="button">
-<span class="serviceTitleAdmin">Suspender / reactivar motorizados</span>
-<span class="serviceTextAdmin">Gestiona el estado de acceso de cada motorizado.</span>
-</button>
-<button class="serviceCardAdmin serviceBtn" data-service="crear-negocio" type="button">
-<span class="serviceTitleAdmin">Crear negocio</span>
-<span class="serviceTextAdmin">Registrar un restaurante o negocio.</span>
-</button>
-<button class="serviceCardAdmin serviceBtn" data-service="descuentos" type="button">
-<span class="serviceTitleAdmin">Códigos de descuento</span>
-<span class="serviceTextAdmin">Crea descuentos solo para el envío.</span>
-</button>
 </div>
 </div>
 <div class="card hidden serviceAdminBox" id="suspenderMotorizadoAdminBox" style="margin-top:14px;border:1px solid var(--fr-line)">
@@ -265,74 +203,6 @@ html body #appView:not(#Z#Z#Z#Z#Z) > .card:first-child:has(> h1){display:none!im
 </div>
 <div class="gpsAdminMap" id="adminMotoMap" style="margin-top:12px"></div>
 <div class="gpsAdminList" id="adminGpsList"></div>
-</div>
-<div class="card hidden serviceAdminBox" id="crearMotorizadoAdminBox" style="margin-top:14px;border:1px solid var(--fr-line)">
-<h3>Crear motorizado nuevo</h3>
-<p class="muted">Registra al motorizado y luego crea su acceso.</p>
-<div class="grid" style="margin-top:12px">
-<div class="field full"><label>Nombre y apellidos *</label><input autocomplete="name" id="nuevoMotoNombre" placeholder="Nombre completo del motorizado" type="text"/></div>
-<div class="field full"><label>Teléfono / WhatsApp *</label><input autocomplete="tel" id="nuevoMotoTelefono" inputmode="tel" placeholder="Número de contacto" type="tel"/></div>
-<div class="field full">
-<label style="display:flex;align-items:center;gap:9px">
-<input checked="" id="nuevoMotoActivo" style="width:18px;min-height:18px;height:18px;margin:0" type="checkbox"/>
-Motorizado activo
-</label>
-</div>
-</div>
-<div class="notice">Después de guardarlo podrás crear su correo y contraseña.</div>
-<div class="actions">
-<button class="btn" id="guardarNuevoMotorizadoBtn" type="button">Guardar motorizado</button>
-<button class="btn alt closeServiceAdmin" data-close="crearMotorizadoAdminBox" type="button">Cerrar</button>
-</div>
-<div aria-live="polite" class="notice hidden" id="nuevoMotoMsg"></div>
-</div>
-<div class="card hidden serviceAdminBox" id="accesoNegocioAdminBox" style="margin-top:14px;border:1px solid var(--fr-line)">
-<h3>Accesos de negocios</h3>
-<p class="muted">Consulta las cuentas existentes, cambia contraseñas y crea accesos solo para negocios que aún no tengan cuenta.</p>
-<div class="actions"><button class="btn alt" id="actualizarAccesosNegocioBtn" type="button">Actualizar</button></div>
-<div class="list" id="accesosNegocioList" style="margin-top:12px"><div class="notice">Pulsa “Actualizar” para consultar las cuentas registradas.</div></div>
-<div class="card hidden" id="cambiarPasswordNegocioBox" style="margin-top:14px;border:1px solid var(--fr-line)">
-<h3>Cambiar contraseña</h3>
-<p class="muted" id="cambiarPasswordNegocioLabel"></p>
-<input id="cambiarPasswordNegocioUserId" type="hidden"/>
-<div class="field"><label>Nueva contraseña *</label><div class="passwordEyeWrap"><input autocomplete="new-password" id="cambiarPasswordNegocioInput" minlength="12" placeholder="Mínimo 12 caracteres" type="password"/><button aria-label="Mostrar contraseña" class="passwordEyeBtn" data-password-target="cambiarPasswordNegocioInput" title="Mostrar contraseña" type="button">◉</button></div></div>
-<div class="actions"><button class="btn" id="guardarPasswordNegocioBtn" type="button">Guardar contraseña</button><button class="btn alt" id="cancelarPasswordNegocioBtn" type="button">Cancelar</button></div>
-<div aria-live="polite" class="notice hidden" id="cambiarPasswordNegocioMsg"></div>
-</div>
-<hr style="border:0;border-top:1px solid var(--fr-line);margin:20px 0"/>
-<h3>Crear acceso nuevo</h3>
-<div class="grid" style="margin-top:12px">
-<div class="field full"><label>Negocio *</label><select id="accesoNegocioId"><option value="">Selecciona un negocio</option></select></div>
-<div class="field full"><label>Correo de acceso *</label><input autocomplete="off" id="accesoNegocioEmail" placeholder="propietario@negocio.com" type="email"/></div>
-<div class="field full"><label>Contraseña inicial *</label><div class="passwordEyeWrap"><input autocomplete="new-password" id="accesoNegocioPassword" minlength="12" placeholder="Mínimo 12 caracteres" type="password"/><button aria-label="Mostrar contraseña" class="passwordEyeBtn" data-password-target="accesoNegocioPassword" title="Mostrar contraseña" type="button">◉</button></div></div>
-</div>
-<div class="notice">La cuenta se debe crear mediante una Edge Function segura de Supabase. No se utilizará una clave secreta en este HTML.</div>
-<div class="actions"><button class="btn" id="crearAccesoNegocioBtn" type="button">Crear cuenta y vincular</button><button class="btn alt closeServiceAdmin" data-close="accesoNegocioAdminBox" type="button">Cerrar</button></div>
-<div aria-live="polite" class="notice hidden" id="accesoNegocioMsg"></div>
-</div>
-<div class="card hidden serviceAdminBox" id="accesoMotorizadoAdminBox" style="margin-top:14px;border:1px solid var(--fr-line)">
-<h3>Accesos de motorizados</h3>
-<p class="muted">Consulta las cuentas existentes, cambia contraseñas y crea accesos solo para motorizados que aún no tengan cuenta.</p>
-<div class="actions"><button class="btn alt" id="actualizarAccesosMotorizadoBtn" type="button">Actualizar</button></div>
-<div class="list" id="accesosMotorizadoList" style="margin-top:12px"><div class="notice">Pulsa “Actualizar” para consultar las cuentas registradas.</div></div>
-<div class="card hidden" id="cambiarPasswordMotorizadoBox" style="margin-top:14px;border:1px solid var(--fr-line)">
-<h3>Cambiar contraseña</h3>
-<p class="muted" id="cambiarPasswordMotorizadoLabel"></p>
-<input id="cambiarPasswordMotorizadoUserId" type="hidden"/>
-<div class="field"><label>Nueva contraseña *</label><div class="passwordEyeWrap"><input autocomplete="new-password" id="cambiarPasswordMotorizadoInput" minlength="12" placeholder="Mínimo 12 caracteres" type="password"/><button aria-label="Mostrar contraseña" class="passwordEyeBtn" data-password-target="cambiarPasswordMotorizadoInput" title="Mostrar contraseña" type="button">◉</button></div></div>
-<div class="actions"><button class="btn" id="guardarPasswordMotorizadoBtn" type="button">Guardar contraseña</button><button class="btn alt" id="cancelarPasswordMotorizadoBtn" type="button">Cancelar</button></div>
-<div aria-live="polite" class="notice hidden" id="cambiarPasswordMotorizadoMsg"></div>
-</div>
-<hr style="border:0;border-top:1px solid var(--fr-line);margin:20px 0"/>
-<h3>Crear acceso nuevo</h3>
-<div class="grid" style="margin-top:12px">
-<div class="field full"><label>Motorizado *</label><select id="accesoMotorizadoId"><option value="">Selecciona un motorizado</option></select></div>
-<div class="field full"><label>Correo de acceso *</label><input autocomplete="off" id="accesoMotorizadoEmail" placeholder="motorizado@correo.com" type="email"/></div>
-<div class="field full"><label>Contraseña inicial *</label><div class="passwordEyeWrap"><input autocomplete="new-password" id="accesoMotorizadoPassword" minlength="12" placeholder="Mínimo 12 caracteres" type="password"/><button aria-label="Mostrar contraseña" class="passwordEyeBtn" data-password-target="accesoMotorizadoPassword" title="Mostrar contraseña" type="button">◉</button></div></div>
-</div>
-<div class="notice">La cuenta se debe crear mediante una Edge Function segura de Supabase. No se utilizará una clave secreta en este HTML.</div>
-<div class="actions"><button class="btn" id="crearAccesoMotorizadoBtn" type="button">Crear cuenta y vincular</button><button class="btn alt closeServiceAdmin" data-close="accesoMotorizadoAdminBox" type="button">Cerrar</button></div>
-<div aria-live="polite" class="notice hidden" id="accesoMotorizadoMsg"></div>
 </div>
 <div class="card hidden serviceAdminBox discountAdminCard" id="descuentosAdminBox" style="margin-top:14px">
 <div class="serviceAdminHead" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
@@ -521,9 +391,9 @@ window.db = db;
 
 
 </script>
-<script id="pd-funciones-js" src="a/pd-funciones-js-658923c201.js"></script>
+<script id="pd-funciones-js" src="a/pd-funciones-js-4918407cac.js"></script>
 <script id="pd-pedidos-js" src="a/pd-pedidos-js-5ea5b764b2.js"></script>
-<script id="pd-admin-js" src="a/pd-admin-js-da63dc3df2.js"></script>
+<script id="pd-admin-js" src="a/pd-admin-js-52956afcaa.js"></script>
 <script id="pd-control-js" src="a/pd-control-js-c041e365ea.js"></script>
 <script id="pd-sueldos-control-js" src="a/pd-sueldos-control-js-fe25d53a47.js"></script>
 <script id="pd-pedidos-control-js" src="a/pd-pedidos-control-js-e868fd1b3d.js"></script>
@@ -597,7 +467,7 @@ buscar();
 <script id="pd-pasos-motor" src="a/pd-pasos-motor-2e0fba37ad.js"></script>
 <script id="pd-pasos-admin" src="a/pd-pasos-admin-6002d005e5.js"></script>
 <script id="pd-dialogos-nuevo" src="a/pd-dialogos-nuevo-d0e7b0bf53.js"></script>
-<script id="pd-app-adm" src="a/pd-app-adm-99e1eb7354.js"></script>
+<script id="pd-app-adm" src="a/pd-app-adm-d9654eb9bf.js"></script>
 </body>
 
 </html>

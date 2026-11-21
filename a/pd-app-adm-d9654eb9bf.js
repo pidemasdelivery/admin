@@ -1485,6 +1485,160 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(error)throw error;try{window.pdAgenciasRecargar&&window.pdAgenciasRecargar()}catch(_){}return act;
   }
 
+
+  /* --- Cuentas de acceso (motorizados y negocios): mismas funciones seguras de Supabase --- */
+  const ACC_K=['user_id','usuario_id','auth_user_id','auth_id','uid','userId','id_usuario','owner_id','id'];
+  const accUid=c=>{for(const k of ACC_K){const v=c&&c[k];if(v!=null&&String(v).trim())return String(v)}return ''};
+  const genPw=()=>{const ch='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%*';const a=new Uint32Array(14);crypto.getRandomValues(a);return [...a].map(n=>ch[n%ch.length]).join('')};
+  const emailOk=v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||'').trim());
+  async function accInvocar(fn,body){const {data,error}=await D().functions.invoke(fn,{body});if(error)throw error;if(data&&data.error)throw new Error(data.error);return data}
+  async function accListar(tipo){const d=await accInvocar('listar-accesos-'+tipo,{});return Array.isArray(d&&d.cuentas)?d.cuentas:(Array.isArray(d)?d:[])}
+  const accNom=(tipo,c)=>tipo==='negocio'?(c.negocio_nombre||c.nombre_negocio||c.nombre||'Negocio'):(c.motorizado_nombre||c.nombre_motorizado||c.nombre_completo||c.nombre||'Motorizado');
+  async function accUidDe(tipo,c){const u=accUid(c);if(u||tipo!=='negocio')return u;const nid=c.negocio_id||c.negocioId;if(!nid)return '';
+    try{const r=await D().from('negocios').select('*').eq('id',nid).maybeSingle();for(const k of ['usuario_id','user_id','auth_user_id','owner_id']){if(r.data&&r.data[k])return String(r.data[k])}}catch(_){}
+    try{const r=await D().from('negocio_usuarios').select('usuario_id').eq('negocio_id',nid).limit(1).maybeSingle();if(r.data&&r.data.usuario_id)return String(r.data.usuario_id)}catch(_){}return ''}
+  /* campos de correo y contraseña (para crear acceso) */
+  const pwTxt=n=>!n?'Mínimo 12 caracteres':n<12?'Faltan '+(12-n)+' caracteres':'✓ '+n+' caracteres',pwColor=n=>n&&n<12?'#B42318':n>=12?'#0F5E2E':'#6B5E55';
+  function pwVivo(v){const e=root.getElementById('pwCnt');if(e){const n=String(v||'').length;e.textContent=pwTxt(n);e.style.color=pwColor(n)}}
+  function accCampos(pfx,f){const n=String(f.pw||'').length;
+    return `<div class="fld"><label>Correo de acceso</label><input type="email" inputmode="email" autocomplete="off" data-in="${pfx}:em" value="${E(f.em||'')}" placeholder="ejemplo@grupopidemas.com"></div>
+      <div class="fld"><label>Contraseña</label><input type="${f.ver?'text':'password'}" autocomplete="new-password" data-in="${pfx}:pw" value="${E(f.pw||'')}" data-sin-pegar></div>
+      <span id="pwCnt" style="font-size:13px;font-weight:600;color:${pwColor(n)}">${pwTxt(n)}</span>
+      <div class="row"><button type="button" class="b" style="flex:1;height:44px" data-sa="gen">Generar contraseña segura</button><button type="button" class="b" style="height:44px;padding:0 14px" data-sa="ver">${f.ver?'Ocultar':'Mostrar'}</button></div>`}
+  /* lista de cuentas con acciones */
+  function accLista(tipo,f){
+    const c=f.cuentas;if(c==null)return '<div class="load">Consultando cuentas…</div>';if(c.err)return `<div class="err">${E(c.err)}</div>`;
+    if(!c.length)return vacio('Todavía no hay cuentas de acceso.');
+    return c.map((x,i)=>{const nom=accNom(tipo,x),off=x.activo===false,ab=f.pwi===i;
+      return `<div class="cd"><div class="row" style="align-items:center"><span style="flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#FDEBDF;color:#C4410C;display:flex;align-items:center;justify-content:center;font-weight:800">${E(nom.charAt(0).toUpperCase())}</span><span style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:16px;overflow-wrap:anywhere">${E(nom)}</b><span style="font-size:13px;color:#6B5E55;overflow-wrap:anywhere">${E(x.email||'Correo no disponible')}</span></span><span class="pl${off?' r':' g'}">${off?'Inactiva':'Activa'}</span></div>
+        ${ab?`<div class="fld"><label>Nueva contraseña</label><input type="${f.ver?'text':'password'}" autocomplete="new-password" data-in="acc:npw" value="${E(f.npw||'')}" data-sin-pegar></div><span id="pwCnt" style="font-size:13px;font-weight:600;color:${pwColor(String(f.npw||'').length)}">${pwTxt(String(f.npw||'').length)}</span>
+          <div class="row"><button type="button" class="b" style="flex:1;height:44px" data-sa="ngen">Generar</button><button type="button" class="b" style="flex:1;height:44px" data-sa="pwx">Cancelar</button><button type="button" class="b o" style="flex:1.4;height:44px" data-sa="pwok:${i}">Guardar</button></div>`
+        :`<div class="row"><button type="button" class="b" style="flex:1;height:42px" data-sa="pw:${i}">Contraseña</button><button type="button" class="b" style="flex:1;height:42px" data-sa="mail:${i}">Correo</button></div>`}</div>`}).join('')}
+  async function accAccion(tipo,f,op,arg,recargarLista){
+    if(op==='gen'){f.pw=genPw();f.ver=true;return true}
+    if(op==='ver'){f.ver=!f.ver;return true}
+    if(op==='ngen'){f.npw=genPw();f.ver=true;return true}
+    if(op==='pw'){f.pwi=+arg;f.npw='';return true}
+    if(op==='pwx'){f.pwi=null;f.npw='';return true}
+    const x=(f.cuentas||[])[+arg];
+    if(op==='pwok'&&x){if(String(f.npw||'').length<12){mal('La contraseña debe tener al menos 12 caracteres.');return true}
+      const uid=await accUidDe(tipo,x);if(!uid){mal('No se identificó la cuenta. Actualiza la lista y vuelve a intentarlo.');return true}
+      try{await accInvocar('cambiar-password-'+tipo,{user_id:uid,password:f.npw});ok('Contraseña actualizada. Comunícala de forma privada.');f.pwi=null;f.npw=''}catch(e){mal('No se pudo cambiar la contraseña: '+(e.message||e))}return true}
+    if(op==='mail'&&x){const uid=await accUidDe(tipo,x);if(!uid){mal('No se identificó la cuenta. Actualiza la lista y vuelve a intentarlo.');return true}
+      const n=await (window.pdPedir?pdPedir('Nuevo correo de acceso para '+accNom(tipo,x)+':',x.email||''):prompt('Nuevo correo:',x.email||''));if(n==null)return true;const em=String(n).trim().toLowerCase();
+      if(!emailOk(em)){mal('Escribe un correo válido.');return true}if(em===String(x.email||'').toLowerCase())return true;
+      try{await accInvocar('editar-acceso-'+tipo,{user_id:uid,email:em});ok('Correo actualizado');x.email=em}catch(e){mal('No se pudo actualizar el correo: '+(e.message||e))}return true}
+    return false;
+  }
+  async function accCargar(tipo,f){f.cuentas=null;key='';pintar();try{f.cuentas=await accListar(tipo)}catch(e){f.cuentas={err:'No se pudo cargar la lista de cuentas: '+(e.message||e)}}key='';pintar()}
+  async function accCrear(tipo,id,f){
+    const em=String(f.em||'').trim().toLowerCase(),pw=String(f.pw||'');
+    if(!emailOk(em)){mal('Escribe un correo válido.');return false}if(pw.length<12){mal('La contraseña debe tener al menos 12 caracteres.');return false}
+    try{await accInvocar('crear-acceso-'+tipo,tipo==='negocio'?{negocio_id:id,email:em,password:pw}:{motorizado_id:id,email:em,password:pw})}
+    catch(e){mal('No se pudo crear la cuenta: '+(e.message||e));return false}
+    try{window.pdMensajeAcceso&&window.pdMensajeAcceso({tipo,id,email:em,password:pw})}catch(_){}
+    f.em='';f.pw='';f.ver=false;return true;
+  }
+
+  /* --- Crear motorizado --- */
+  SEC['crear motorizado']={g:'Motorizados',t:'Crear motorizado',
+    v(){const k='crear motorizado',f=SF[k];f.p=f.p||'nuevo';f.paso=f.paso||0;
+      let h=`<div class="seg" style="grid-template-columns:1fr 1fr">${[['nuevo','Nuevo motorizado'],['cuentas','Cuentas de acceso']].map(x=>`<button type="button" class="${f.p===x[0]?'on':''}" data-sa="p:${x[0]}">${x[1]}</button>`).join('')}</div>`;
+      if(f.p==='cuentas'){if(f.cuentas===undefined)accCargar('motorizado',f);
+        if(f.motos===undefined){f.motos=null;D().from('motorizados').select('id,nombre_completo,usuario_id,activo').order('nombre_completo').then(r=>{f.motos=(r.data||[]);key='';pintar()},()=>{f.motos=[]})}
+        const sin=(f.motos||[]).filter(m=>!m.usuario_id);
+        h+=`<div class="cd"><div class="lbl">Crear acceso a un motorizado ya registrado</div>${f.motos==null?'<div class="load">Cargando…</div>':sin.length?`<div class="fld"><label>Motorizado</label><select data-in="cm:mid" style="height:56px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px;font-weight:700;width:100%;background:#fff"><option value="">Elige el motorizado</option>${sin.map(m=>`<option value="${E(m.id)}"${String(f.mid)===String(m.id)?' selected':''}>${E(m.nombre_completo||'Motorizado')}</option>`).join('')}</select></div>${f.mid?accCampos('cm',f)+`<button type="button" class="b o" style="height:50px" data-sa="acc">Crear acceso</button>`:''}`:'<span style="font-size:14px;color:#6B5E55">Todos los motorizados ya tienen cuenta.</span>'}</div>`;
+        h+=`<div class="row" style="justify-content:space-between;align-items:center;margin:4px 4px 0"><div class="lbl" style="margin:0">Cuentas registradas</div><button type="button" class="b" style="height:36px;padding:0 12px" data-sa="rf">Actualizar</button></div>`+accLista('motorizado',f);
+        return {body:h}}
+      if(f.paso===2)return {body:h+`<div class="cd" style="align-items:center;text-align:center;gap:10px;padding:22px 16px"><span style="width:56px;height:56px;border-radius:50%;background:#E7F6EC;color:#0F5E2E;display:flex;align-items:center;justify-content:center">${IC.check}</span><b style="font-size:19px">${f.cuenta?'Motorizado y cuenta listos':'Motorizado registrado'}</b><span style="font-size:15px;color:#6B5E55">${E(f.nombre||'')}${f.cuenta?' ya puede entrar a la app con su correo y contraseña.':' quedó registrado. Puedes crear su cuenta de acceso cuando quieras en «Cuentas de acceso».'}</span></div>`,foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="otro">Registrar otro motorizado</button>`};
+      if(f.paso===1)return {body:h+`<div class="cd"><div class="lbl">Paso 2 de 2 · Acceso a la app</div><span style="font-size:14px;color:#6B5E55">Con este correo y contraseña ${E(String(f.nombre||'el motorizado').split(' ')[0])} entra a la app de motorizado. Entrégale la contraseña por un medio privado.</span>${accCampos('cm',f)}</div>`,
+        foot:`<div class="row"><button type="button" class="b" style="flex:1;height:54px" data-sa="luego">Ahora no</button><button type="button" class="b o" style="flex:1.6;height:54px;font-size:16px" data-sa="acc">Crear acceso</button></div>`};
+      h+=`<div class="cd"><div class="lbl">Paso 1 de 2 · Datos del motorizado</div><span style="font-size:14px;color:#6B5E55">Nombre y número con los que lo verás en los pedidos.</span>
+        <div class="fld"><label>Nombre y apellidos</label><input data-in="cm:nombre" value="${E(f.nombre||'')}" placeholder="Nombre completo del motorizado"></div>
+        <div class="fld"><label>Teléfono / WhatsApp</label><input type="tel" inputmode="tel" maxlength="15" data-in="cm:tel" value="${E(f.tel||'')}" placeholder="Número de contacto"></div>
+        <div class="row" style="align-items:center"><span style="flex:1 1 0%"><b style="display:block">Motorizado activo</b><span style="font-size:13px;color:#6B5E55">Si lo apagas no aparecerá para asignar pedidos.</span></span>${tSw(f.activo!==false,'act','Motorizado activo')}</div></div>`;
+      return {body:h,foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="guardar">Guardar motorizado</button>`}},
+    async a(x){const k='crear motorizado',f=SF[k],op=x.split(':')[0],arg=x.split(':').slice(1).join(':');
+      if(op==='p'){f.p=arg;if(arg==='cuentas'){f.cuentas=undefined;f.motos=undefined}return}
+      if(op==='rf'){f.cuentas=undefined;f.motos=undefined;return}
+      if(op==='act'){f.activo=f.activo===false;return}
+      if(await accAccion('motorizado',f,op,arg))return;
+      if(op==='guardar'){const nombre=String(f.nombre||'').trim().replace(/\s+/g,' '),tel=String(f.tel||'').trim();
+        if(!nombre){mal('Escribe el nombre y los apellidos del motorizado.');return}if(!tel){mal('Escribe el teléfono o WhatsApp del motorizado.');return}
+        const r=await D().from('motorizados').insert({nombre_completo:nombre,telefono:tel,activo:f.activo!==false,disponible:false}).select('id').single();
+        if(r.error){mal('No se pudo guardar: '+r.error.message);return}f.id=r.data.id;f.nombre=nombre;f.paso=1;PE.motos=undefined;try{window.loadAdminMotos&&window.loadAdminMotos()}catch(_){}return}
+      if(op==='acc'){const id=f.paso===1?f.id:f.mid;if(!id){mal('Elige el motorizado.');return}
+        if(await accCrear('motorizado',id,f)){if(f.paso===1){f.cuenta=true;f.paso=2}else{f.mid='';f.cuentas=undefined;f.motos=undefined;ok('Cuenta creada')}}return}
+      if(op==='luego'){f.cuenta=false;f.paso=2;return}
+      if(op==='otro'){SF[k]={p:'nuevo',paso:0};return}}};
+
+
+  /* --- Crear negocio --- */
+  const CATS_NEG=['Restaurantes','Comida criolla','Pizzerías','Pollerías','Hamburgueserías','Comida rápida','Sangucherías','Paviferías','Cevicherías','Chifas','Sushi y comida japonesa','Parrillas y anticuchos','Heladerías','Cafeterías','Juguerías','Dulcerías y pastelerías','Panaderías','Bodegas y minimarkets','Fruterías y verdulerías','Carnicerías','Licorerías','Agua y gas','Farmacias y boticas','Ropa y moda','Calzado y zapatillas','Accesorios y bisutería','Tecnología','Celulares y accesorios','Belleza y cuidado personal','Hogar y decoración','Ferreterías','Deportes','Bebés y maternidad','Florerías y regalos','Mascotas','Librerías y útiles escolares','Jugueterías','Lavanderías'];
+  const PASOS_NEG=['Datos del negocio','Ubicación','En la tienda','Imágenes','Acceso al panel del negocio'];
+  function cnNuevo(pre){return Object.assign({p:'nuevo',paso:0,nombre:'',cat:'',tel:'',desc:'',dir:'',maps:'',lat:'',lng:'',tiempo:'',activo:true,logo:null,portada:null,logoPrev:'',portadaPrev:''},pre||{})}
+  window.pdAdmCrearNegocio=function(pre){SF['crear negocio']=cnNuevo(pre);abrirSec('crear negocio')};
+  SEC['crear negocio']={g:'Negocios',t:'Crear negocio',
+    v(){const k='crear negocio';if(!SF[k].p)SF[k]=cnNuevo();const f=SF[k];
+      let h=`<div class="seg" style="grid-template-columns:1fr 1fr">${[['nuevo','Nuevo negocio'],['cuentas','Cuentas de acceso']].map(x=>`<button type="button" class="${f.p===x[0]?'on':''}" data-sa="p:${x[0]}">${x[1]}</button>`).join('')}</div>`;
+      if(f.p==='cuentas'){if(f.cuentas===undefined)accCargar('negocio',f);
+        if(f.negs===undefined){f.negs=null;Promise.all([D().from('negocios').select('id,nombre').order('nombre'),D().from('negocio_usuarios').select('negocio_id')]).then(([a,b])=>{const con=new Set((b.data||[]).map(x=>String(x.negocio_id)));f.negs=(a.data||[]).map(n=>Object.assign(n,{con:con.has(String(n.id))}));key='';pintar()},()=>{f.negs=[]})}
+        const sin=(f.negs||[]).filter(n=>!n.con);
+        h+=`<div class="cd"><div class="lbl">Crear acceso a un negocio ya registrado</div>${f.negs==null?'<div class="load">Cargando…</div>':sin.length?`<div class="fld"><label>Negocio</label><select data-in="cn:nid" style="height:56px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px;font-weight:700;width:100%;background:#fff"><option value="">Elige el negocio</option>${sin.map(n=>`<option value="${E(n.id)}"${String(f.nid)===String(n.id)?' selected':''}>${E(n.nombre||'Negocio')}</option>`).join('')}</select></div>${f.nid?accCampos('cn',f)+`<button type="button" class="b o" style="height:50px" data-sa="acc">Crear acceso</button>`:''}`:'<span style="font-size:14px;color:#6B5E55">Todos los negocios ya tienen cuenta.</span>'}</div>`;
+        h+=`<div class="row" style="justify-content:space-between;align-items:center;margin:4px 4px 0"><div class="lbl" style="margin:0">Cuentas registradas</div><button type="button" class="b" style="height:36px;padding:0 12px" data-sa="rf">Actualizar</button></div>`+accLista('negocio',f);
+        return {body:h}}
+      if(f.paso===5)return {body:h+`<div class="cd" style="align-items:center;text-align:center;gap:10px;padding:22px 16px"><span style="width:56px;height:56px;border-radius:50%;background:#E7F6EC;color:#0F5E2E;display:flex;align-items:center;justify-content:center">${IC.check}</span><b style="font-size:19px">${f.cuenta?'Negocio y cuenta listos':'Negocio registrado'}</b><span style="font-size:15px;color:#6B5E55">${E(f.nombre)}${f.cuenta?' ya puede entrar a su panel con su correo y contraseña.':' quedó registrado. Puedes crear su acceso cuando quieras en «Cuentas de acceso».'}${f.aviso?'<br>'+E(f.aviso):''}</span></div>`,foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="otro">Crear otro negocio</button>`};
+      const bar=`<div class="cd" style="gap:8px"><div class="lbl" style="margin:0">Paso ${f.paso+1} de 5</div><b style="font-size:18px">${PASOS_NEG[f.paso]}</b><div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px">${PASOS_NEG.map((_,i)=>`<span style="height:5px;border-radius:9px;background:${i<f.paso?'#15803D':i===f.paso?'#C4410C':'#EADFD6'}"></span>`).join('')}</div></div>`;
+      const fi=(l,c,o)=>`<div class="fld"><label>${l}</label><input data-in="cn:${c}" value="${E(f[c]??'')}"${o||''}></div>`;
+      let b='';
+      if(f.paso===0)b=`<div class="cd">${fi('Nombre del negocio','nombre',' placeholder="Ej. Nuevo restaurante" autocomplete="organization"')}
+        <div class="fld"><label>Categoría del negocio</label><select data-in="cn:cat" style="height:56px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px;font-weight:700;width:100%;background:#fff"><option value="">Selecciona una categoría</option>${CATS_NEG.map(c=>`<option${f.cat===c?' selected':''}>${E(c)}</option>`).join('')}${f.cat&&!CATS_NEG.includes(f.cat)?`<option selected>${E(f.cat)}</option>`:''}</select></div>
+        ${fi('Teléfono / WhatsApp','tel',' type="tel" inputmode="tel" maxlength="15" placeholder="Número de contacto"')}
+        <div class="fld"><label>Descripción</label><textarea data-in="cn:desc" placeholder="Descripción breve del negocio" style="min-height:96px;padding:14px 16px;border-radius:14px;border:1.5px solid #F1E4DA;font:inherit;font-size:16px;width:100%;box-sizing:border-box">${E(f.desc)}</textarea></div></div>`;
+      if(f.paso===1){const ok2=f.lat!==''&&f.lng!==''&&Number.isFinite(Number(f.lat))&&Number.isFinite(Number(f.lng));
+        b=`<div class="cd">${fi('Dirección','dir',' placeholder="Dirección del local"')}${fi('Enlace de Google Maps','maps',' placeholder="https://maps.google.com/..."')}
+        <button type="button" class="b" style="height:46px" data-sa="mapa">${ok2?'Cambiar en el mapa':'Marcar en el mapa'}</button>
+        <span style="font-size:14px;color:${ok2?'#0F5E2E':'#6B5E55'}">${ok2?'✓ Punto marcado: '+Number(f.lat).toFixed(5)+', '+Number(f.lng).toFixed(5):'Marca la puerta exacta del local: con ese punto se calcula el delivery.'}</span></div>`}
+      if(f.paso===2)b=`<div class="cd"><div class="fld"><label>Tiempo de entrega</label><input data-in="cn:tiempo" maxlength="20" value="${E(f.tiempo)}" placeholder="Ej. 25–35 min"></div><div class="chips" style="flex-wrap:wrap">${['15–25 min','20–30 min','25–35 min','30–45 min'].map(t=>`<button type="button" class="${f.tiempo===t?'on':''}" data-sa="t:${t}">${t}</button>`).join('')}</div>
+        <div class="row" style="align-items:center"><span style="flex:1 1 0%"><b style="display:block">Negocio activo</b><span style="font-size:13px;color:#6B5E55">Si lo apagas, no aparece en la tienda.</span></span>${tSw(f.activo,'act','Negocio activo')}</div></div>`;
+      if(f.paso===3){const pv=(u,t)=>`<span style="flex:0 0 72px;width:72px;height:72px;border-radius:16px;background:#FDEBDF center/cover no-repeat${u?` url('${E(u)}')`:''};display:flex;align-items:center;justify-content:center;color:#9A330A;font-size:12px;font-weight:700;text-align:center">${u?'':t}</span>`;
+        b=`<div class="cd"><div class="lbl">Logo</div><div class="row" style="align-items:center">${pv(f.logoPrev,'Sin logo')}<label class="b" style="flex:1;height:48px;cursor:pointer">${f.logo?'Cambiar logo':'Subir logo'}<input type="file" accept="image/png,image/jpeg,image/webp" data-in="cnfile:logo" style="display:none"></label></div></div>
+          <div class="cd"><div class="lbl">Portada</div><div class="row" style="align-items:center">${pv(f.portadaPrev,'Sin portada')}<label class="b" style="flex:1;height:48px;cursor:pointer">${f.portada?'Cambiar portada':'Subir portada'}<input type="file" accept="image/png,image/jpeg,image/webp" data-in="cnfile:portada" style="display:none"></label></div></div>
+          <div class="cd"><div class="lbl">Así se verá en la tienda</div><div class="row" style="align-items:center">${pv(f.logoPrev,(f.nombre||'?').charAt(0).toUpperCase())}<span style="flex:1 1 0%"><b style="display:block;font-size:16px">${E(f.nombre||'Nombre del negocio')}</b><span style="font-size:13px;color:#6B5E55">${E(f.cat||'Categoría')} · ${E(f.tiempo||'25–40 min')}</span></span><span class="pl${f.activo?' g':' r'}">${f.activo?'Abierto':'Inactivo'}</span></div></div>`}
+      if(f.paso===4)b=`<div class="cd"><span style="font-size:14px;color:#6B5E55">Con este correo y contraseña el dueño entra a su panel. Entrégale la contraseña por un medio privado.</span>${accCampos('cn',f)}</div>`;
+      const atras=f.paso>0&&f.paso<4?`<button type="button" class="b" style="flex:1;height:54px" data-sa="atras">Atrás</button>`:f.paso===4?`<button type="button" class="b" style="flex:1;height:54px" data-sa="luego">Ahora no</button>`:'';
+      const sig=f.paso<3?'Siguiente':f.paso===3?'Guardar negocio':'Crear acceso';
+      return {body:h+bar+b,foot:`<div class="row">${atras}<button type="button" class="b o" style="flex:1.6;height:54px;font-size:16px" data-sa="sig">${sig}</button></div>`}},
+    async a(x){const k='crear negocio',f=SF[k],op=x.split(':')[0],arg=x.split(':').slice(1).join(':');
+      if(op==='p'){f.p=arg;if(arg==='cuentas'){f.cuentas=undefined;f.negs=undefined}return}
+      if(op==='rf'){f.cuentas=undefined;f.negs=undefined;return}
+      if(await accAccion('negocio',f,op,arg))return;
+      if(op==='act'){f.activo=!f.activo;return}
+      if(op==='t'){f.tiempo=arg;return}
+      if(op==='atras'){f.paso=Math.max(0,f.paso-1);return}
+      if(op==='mapa'){const el2=window.pdMapa&&pdMapa.elegir;if(!el2)return;const c0=Number.isFinite(Number(f.lat))&&f.lat!==''?{lat:Number(f.lat),lng:Number(f.lng)}:coordsDe(f.maps);
+        const r=await el2({titulo:'Ubicación de '+(f.nombre||'el negocio'),centro:c0});if(!r)return;f.lat=Number(r.lat).toFixed(6);f.lng=Number(r.lng).toFixed(6);f.maps='https://maps.google.com/?q='+f.lat+','+f.lng;const lin=[r.linea,r.sub].filter(Boolean).join(', ');if(!String(f.dir).trim()&&lin)f.dir=lin;return}
+      if(op==='luego'){f.cuenta=false;f.paso=5;return}
+      if(op==='otro'){SF[k]=cnNuevo();return}
+      if(op==='acc'&&f.p==='cuentas'){if(!f.nid){mal('Elige el negocio.');return}if(await accCrear('negocio',f.nid,f)){f.nid='';f.cuentas=undefined;f.negs=undefined;ok('Cuenta creada')}return}
+      if(op==='sig'){
+        if(f.paso===0){if(!String(f.nombre).trim()){mal('Escribe el nombre del negocio.');return}f.paso=1;return}
+        if(f.paso===1){const c=coordsDe(f.maps);if(c&&(f.lat===''||f.lng==='')){f.lat=String(c.lat);f.lng=String(c.lng)}f.paso=2;return}
+        if(f.paso===2){f.paso=3;return}
+        if(f.paso===3){const lat=f.lat===''?null:Number(f.lat),lng=f.lng===''?null:Number(f.lng);
+          const p={nombre:String(f.nombre).trim(),categoria_negocio:f.cat||null,telefono:String(f.tel).trim()||null,descripcion:String(f.desc).trim()||null,direccion:String(f.dir).trim()||null,google_maps_url:String(f.maps).trim()||null,
+            latitud:Number.isFinite(lat)?lat:null,longitud:Number.isFinite(lng)?lng:null,tiempo_estimado:String(f.tiempo).trim()||null,activo:!!f.activo};
+          let r=await D().from('negocios').insert(p).select('id').single();
+          if(r.error){mal('No se pudo guardar el negocio: '+r.error.message);return}
+          f.id=r.data.id;const av=[];
+          for(const [cl,col,nom] of [['logo','logo_url','logo'],['portada','imagen_url','portada']]){const fl=f[cl];if(!fl)continue;
+            try{const ext=/png/.test(fl.type)?'png':/webp/.test(fl.type)?'webp':'jpg',path=f.id+'/'+nom+'.'+ext;const up=await D().storage.from('restaurantes').upload(path,fl,{upsert:true,contentType:fl.type||'image/jpeg'});if(up.error)throw up.error;
+              const url=D().storage.from('restaurantes').getPublicUrl(path).data.publicUrl;const q=await D().from('negocios').update({[col]:url}).eq('id',f.id);if(q.error)throw q.error}
+            catch(e){av.push('La imagen de '+nom+' no se pudo subir; puedes subirla luego desde Configurar negocios.')}}
+          f.aviso=av.join(' ');try{window.loadRestaurants&&window.loadRestaurants()}catch(_){}
+          f.paso=4;if(!f.em&&f.correo)f.em=f.correo;return}
+        if(f.paso===4){if(await accCrear('negocio',f.id,f)){f.cuenta=true;f.paso=5}return}}}};
+
   /* --- Horario de Pidemás --- */
   const ORD=['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
   const h12=t=>{const m=String(t||'').match(/^(\d{1,2}):(\d{2})/);if(!m)return t||'';const h=+m[1];return (h%12||12)+(m[2]!=='00'?':'+m[2]:'')+' '+(h>=12?'p. m.':'a. m.')};
@@ -1618,8 +1772,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(p[0]==='est')return upd({estado:p[2]},'Solicitud marcada como '+ESTS[p[2]].toLowerCase());
       if(p[0]==='nota')return upd({notas_admin:String(f['n_'+r.id]??r.notas_admin??'').trim()||null},'Nota guardada');
       if(p[0]==='del'){if(!(await conf('¿Eliminar esta solicitud? No se puede deshacer.')))return;const q=await D().from('solicitudes_afiliacion').delete().eq('id',r.id);if(q.error){mal('No se pudo eliminar.');return}C2['s:'+k].data=R.filter(y=>y!==r);ok('Solicitud eliminada');return}
-      if(p[0]==='crear'){marca='menu';kick='Negocios';await (window.__pdmOpen&&window.__pdmOpen('crear-negocio'));const set=(i,v)=>{const e=$(i);if(e&&v){e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}))}};
-        set('rNombre',r.nombre_negocio);set('rTelefono',r.rep_celular);set('rDireccion',[r.direccion,r.distrito].filter(Boolean).join(', '));set('rDescripcion',r.productos);set('rTiempo',r.tiempo_prep?r.tiempo_prep+' min':'');const u=solMapa(r);if(u){set('rGoogleMaps',u.url);set('rLatitud',String(u.lat));set('rLongitud',String(u.lng))}}}};
+      if(p[0]==='crear'){const u=solMapa(r);SF['crear negocio']=cnNuevo({nombre:r.nombre_negocio||'',tel:r.rep_celular||'',dir:[r.direccion,r.distrito].filter(Boolean).join(', '),desc:r.productos||'',tiempo:r.tiempo_prep?r.tiempo_prep+' min':'',cat:CATS_NEG.includes(r.categoria)?r.categoria:'',
+          maps:u?u.url:'',lat:u?String(u.lat):'',lng:u?String(u.lng):'',correo:String(r.rep_correo||'').trim().toLowerCase()});abrirSec('crear negocio')}}};
 
   /* --- Códigos de descuento --- */
   const dcSt=p=>{if(p.activo!==true)return 'Inactivo';const now=Date.now(),i=p.fecha_inicio?Date.parse(p.fecha_inicio):null,f=p.fecha_fin?Date.parse(p.fecha_fin):null;if(i&&now<i)return 'Programado';if(f&&now>f)return 'Vencido';const mx=Number(p.max_usos||0);if(mx>0&&Number(p.usos||0)>=mx)return 'Agotado';return 'Activo'};
@@ -1857,6 +2011,10 @@ button:active .pi{transform:scale(.92)}
     if(k.startsWith('sx:')){SL.f[k.slice(3)]=el.value;slVivo(k.slice(3),el);return}
     if(k.startsWith('sc:')){if(SL.cfg)SL.cfg[k.slice(3)]=el.value;return}
     if(k==='clq'){CL.q=el.value;CL.lim=60;const b=root.getElementById('clL');if(b)b.innerHTML=clFilas();return}
+    if(k.startsWith('cm:')&&SF['crear motorizado']){const f=SF['crear motorizado'],c=k.slice(3);f[c]=el.value;if(c==='mid'){key='';pintar()}else if(c==='pw')pwVivo(el.value);return}
+    if(k==='acc:npw'&&SF[secK]){SF[secK].npw=el.value;pwVivo(el.value);return}
+    if(k.startsWith('cn:')&&SF['crear negocio']){const f=SF['crear negocio'],c=k.slice(3);f[c]=el.value;if(c==='nid'||c==='cat')key='';if(c==='nid')pintar();if(c==='pw')pwVivo(el.value);return}
+    if(k.startsWith('cnfile:')){const f=SF['crear negocio'],c=k.slice(7),fl=el.files&&el.files[0];el.value='';if(!fl)return;if(!/^image\//.test(fl.type)||fl.size>5*1024*1024){mal('Elige una imagen (PNG, JPG o WEBP) de menos de 5 MB.');return}f[c]=fl;f[c+'Prev']=URL.createObjectURL(fl);key='';pintar();return}
     if(k.startsWith('ag:')&&SF['agencias']){const f=SF['agencias'],p=k.split(':');if(p[1]==='n')f.nuevo.nombre=el.value;else if(p[1]==='d')f.nuevo.ds[+p[2]]=el.value;else if(p[1]==='nd')f.nd[p.slice(2).join(':')]=el.value;return}
     if(k.startsWith('tf:')&&SF['tarifas']&&SF['tarifas'].C){const f=SF['tarifas'],C=f.C,p=k.slice(3).split('.');const v=el.type==='time'?el.value:el.value;
       if(p[0]==='zc'){f.zc[+p[1]]=v;return}
