@@ -3092,7 +3092,7 @@ function wizard(cfg){
  <div class="pdwAcc" hidden></div><div class="pdwHold"></div>`;
  const q=c=>w.querySelector(c);if(cfg.noSeg)q('.pdwSeg').remove();
  /* cajitas de resumen arriba (como en Agencias) */
- if(cfg.stats){const sb=document.createElement('div');sb.className='pdgStats pdwStats';sb.setAttribute('style','display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 12px');w.prepend(sb);
+ if(cfg.stats){const sb=document.createElement('div');sb.className='pdgStats pdwStats';sb.hidden=true;sb.setAttribute('style','display:none!important');/* sin cuadros de resumen arriba */w.prepend(sb);
   const upd=()=>{let L=[];try{L=cfg.stats()||[]}catch(e){}const h=L.map(x=>'<div><span>'+E(x[0])+'</span><strong>'+E(x[1]==null||x[1]===''?'–':String(x[1]))+'</strong></div>').join('');if(sb.innerHTML!==h){sb.style.gridTemplateColumns='repeat('+Math.max(1,L.length)+',minmax(0,1fr))';sb.innerHTML=h}};
   w.statsUpd=upd;upd();setInterval(()=>{if(w.isConnected&&w.getClientRects().length)upd()},1500)}
  const steps=cfg.steps.map(st=>{const d=document.createElement('div');d.className='pdwStep';d.hidden=true;st.nodes().filter(Boolean).forEach(n=>d.appendChild(n));q('.pdwSteps').appendChild(d);return Object.assign({el:d},st)});
@@ -3350,7 +3350,7 @@ function alAbrir(box,fn){
   const m=$('pdtfModal');if(!m)return;const b=m.querySelector('.tf-b');if(!b||b.querySelector('.pdtfW'))return;
   const cards=[...b.querySelectorAll(':scope > .tf-c')];if(cards.length<4)return;
   const w=document.createElement('div');w.className='pdw pdtfW';
-  w.innerHTML='<div class="pdtfStats"><div><span>Tarifa base</span><strong class="pdtfBase"></strong></div><div><span>Zonas</span><strong class="pdtfNz"></strong></div></div>'+
+  w.innerHTML='<div class="pdtfStats" hidden style="display:none!important"><div><span>Tarifa base</span><strong class="pdtfBase"></strong></div><div><span>Zonas</span><strong class="pdtfNz"></strong></div></div>'+
    '<div class="pdwSeg"><button type="button" data-v="editar">Editar tarifas</button><button type="button" data-v="probar">Probar tarifa</button></div>'+
    '<div class="pdwNew"><div class="pdwHead"><span class="pdwKick"></span><strong class="pdwTitle"></strong><div class="pdwBar"><i></i><i></i><i></i></div></div><div class="pdwSteps"></div>'+
    '<div class="pdwDone" hidden><span class="pdwOk">'+OK+'</span><h3>Tarifas guardadas</h3><p>La tienda ya cobra el delivery con estos valores.</p><div class="pdwBtns"><button type="button" class="pdwAgain">Probar tarifa</button><button type="button" class="pdwClose">Cerrar</button></div></div>'+

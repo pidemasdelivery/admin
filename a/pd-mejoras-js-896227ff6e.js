@@ -44,7 +44,7 @@
     /* la tarjeta «Hoy» ya no va en el Inicio del admin */
     {const v=$('pdHoyCard');if(v)v.remove();return}
     const sal=document.querySelector('#pdInicioTop > .pdSal');if(!sal)return;
-    let c=$('pdHoyCard');if(!c){c=document.createElement('section');c.id='pdHoyCard';c.className='pdHoy';
+    let c=$('pdHoyCard');if(!c){c=document.createElement('section');c.id='pdHoyCard';c.className='pdHoy';c.hidden=true;c.setAttribute('style','display:none!important');
       c.addEventListener('click',e=>{const b=e.target.closest('[data-h]');if(!b)return;const k=b.dataset.h;
         if(k==='dem'&&window.pdPedCtl)return pdPedCtl.alertas();if(k==='motos'){try{window.__pdmOpen&&__pdmOpen('gps')}catch(_){}return}
         if(k==='rep'&&window.pdPedCtl)return pdPedCtl.reportes(1);
