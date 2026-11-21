@@ -18330,7 +18330,10 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .wn{font-size:17px;font-weight:800;overflow-wrap:anywhere}.ws{font-size:13px;color:#6B5E55;font-weight:500}
 .st{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:#FFF4EC;color:#9A330A;font-size:14px;font-weight:600;line-height:1.35}
 .st .pt{width:8px;height:8px;border-radius:50%;background:#C4410C;flex:0 0 8px}
-.st.ok{background:#E9F6EE;color:#0F5E2E;font-weight:700}.st.mal{background:#FDE8E8;color:#9B1C1C;font-weight:700}
+.st.ok{background:#E9F6EE;color:#0F5E2E;font-weight:700}
+.b:not([aria-label])>svg,a.b:not([aria-label])>svg,.bt:not([aria-label])>svg{display:none!important}
+.nvb{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:#FDEBDF;color:#9A330A;font-size:13px;font-weight:800;line-height:1.3;width:100%;box-sizing:border-box}.nvb i{flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:#C4410C}.nvb em{margin-left:auto;font-style:normal;font-variant-numeric:tabular-nums}
+.nvA{display:flex;gap:8px;margin-top:-4px}.nvA .b{flex:1 1 0;height:50px;font-size:15px}.st.mal{background:#FDE8E8;color:#9B1C1C;font-weight:700}
 .addr{display:flex;gap:10px;align-items:flex-start}.addr svg{flex:0 0 22px;margin-top:2px}
 .at{font-size:18px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}.ar{font-size:14px;color:#6B5E55;margin-top:3px;overflow-wrap:anywhere}
 .btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.btns.b2{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -19163,10 +19166,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const bars=[1,2,3,4,5].map(k=>`<i class="${f.n===0?'':k<f.n||f.n===5?'d':k===f.n?'a':''}"></i>`).join('');
     const mo=o.motorizado_id?(MOTOS().find(m=>String(m.id)===String(o.motorizado_id))||{}).nombre_completo||o.motorizado_nombre||'':'';
     const hace=o.creado_en?Math.max(0,Math.round((Date.now()-T(o.creado_en))/60000)):null;
-    return `<button type="button" class="oc${marc?' sl2':f.k==='new'?' a':''}" data-o="${E(o.id)}"><span class="r1">${selModo?`<span class="sel${marc?' on':''}">${marc?IC.check:''}</span>`:''}<b>${E(ref(o.id))}</b><small>${hace==null?'':hace<1?'ahora':hace<60?'hace '+hace+' min':fecha(o.creado_en)}</small><em>${M(o.total)}</em></span>
+    const nv=!selModo&&f.k==='new'&&!o.motorizado_id;/* pedido nuevo sin motorizado: aviso y botón para asignar */
+    return `<button type="button" class="oc${marc?' sl2':f.k==='new'?' a':''}" data-o="${E(o.id)}">${nv?`<span class="nvb"><i></i>Pedido nuevo · sin motorizado<em>${hace==null?'':hace<1?'ahora':hace<60?hace+' min':fecha(o.creado_en)}</em></span>`:''}<span class="r1">${selModo?`<span class="sel${marc?' on':''}">${marc?IC.check:''}</span>`:''}<b>${E(ref(o.id))}</b><small>${hace==null?'':hace<1?'ahora':hace<60?'hace '+hace+' min':fecha(o.creado_en)}</small><em>${M(o.total)}</em></span>
       <span class="pls"><span class="pl${f.k==='ok'?' g':f.k==='no'?' r':''}">${E(f.txt)}</span><span class="pl n">${E(n.nombre||sv||'Pedido')}</span>${mo?`<span class="pl n">${E(mo.split(' ')[0])}</span>`:''}</span>
       ${f.n?`<span class="bars" style="grid-template-columns:repeat(5,minmax(0,1fr))">${bars}</span>`:''}
-      <span class="ad">${IC.user}<span style="min-width:0"><b>${E(o.nombre_cliente||o.nombre_remitente||'Cliente')}</b><span>${E([o.telefono_cliente,o.direccion_entrega].filter(Boolean).join(' · '))}</span></span></span></button>`;
+      <span class="ad">${IC.user}<span style="min-width:0"><b>${E(o.nombre_cliente||o.nombre_remitente||'Cliente')}</b><span>${E([o.telefono_cliente,o.direccion_entrega].filter(Boolean).join(' · '))}</span></span></span></button>${nv?`<div class="nvA"><button type="button" class="b o" data-o="${E(o.id)}">Asignar motorizado</button></div>`:''}`;
   }
   let nuevoAb=false;
   function inicio(){

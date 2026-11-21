@@ -255,10 +255,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const bars=[1,2,3,4,5].map(k=>`<i class="${f.n===0?'':k<f.n||f.n===5?'d':k===f.n?'a':''}"></i>`).join('');
     const mo=o.motorizado_id?(MOTOS().find(m=>String(m.id)===String(o.motorizado_id))||{}).nombre_completo||o.motorizado_nombre||'':'';
     const hace=o.creado_en?Math.max(0,Math.round((Date.now()-T(o.creado_en))/60000)):null;
-    return `<button type="button" class="oc${marc?' sl2':f.k==='new'?' a':''}" data-o="${E(o.id)}"><span class="r1">${selModo?`<span class="sel${marc?' on':''}">${marc?IC.check:''}</span>`:''}<b>${E(ref(o.id))}</b><small>${hace==null?'':hace<1?'ahora':hace<60?'hace '+hace+' min':fecha(o.creado_en)}</small><em>${M(o.total)}</em></span>
+    const nv=!selModo&&f.k==='new'&&!o.motorizado_id;/* pedido nuevo sin motorizado: aviso y botón para asignar */
+    return `<button type="button" class="oc${marc?' sl2':f.k==='new'?' a':''}" data-o="${E(o.id)}">${nv?`<span class="nvb"><i></i>Pedido nuevo · sin motorizado<em>${hace==null?'':hace<1?'ahora':hace<60?hace+' min':fecha(o.creado_en)}</em></span>`:''}<span class="r1">${selModo?`<span class="sel${marc?' on':''}">${marc?IC.check:''}</span>`:''}<b>${E(ref(o.id))}</b><small>${hace==null?'':hace<1?'ahora':hace<60?'hace '+hace+' min':fecha(o.creado_en)}</small><em>${M(o.total)}</em></span>
       <span class="pls"><span class="pl${f.k==='ok'?' g':f.k==='no'?' r':''}">${E(f.txt)}</span><span class="pl n">${E(n.nombre||sv||'Pedido')}</span>${mo?`<span class="pl n">${E(mo.split(' ')[0])}</span>`:''}</span>
       ${f.n?`<span class="bars" style="grid-template-columns:repeat(5,minmax(0,1fr))">${bars}</span>`:''}
-      <span class="ad">${IC.user}<span style="min-width:0"><b>${E(o.nombre_cliente||o.nombre_remitente||'Cliente')}</b><span>${E([o.telefono_cliente,o.direccion_entrega].filter(Boolean).join(' · '))}</span></span></span></button>`;
+      <span class="ad">${IC.user}<span style="min-width:0"><b>${E(o.nombre_cliente||o.nombre_remitente||'Cliente')}</b><span>${E([o.telefono_cliente,o.direccion_entrega].filter(Boolean).join(' · '))}</span></span></span></button>${nv?`<div class="nvA"><button type="button" class="b o" data-o="${E(o.id)}">Asignar motorizado</button></div>`:''}`;
   }
   let nuevoAb=false;
   function inicio(){
