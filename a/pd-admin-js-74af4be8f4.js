@@ -285,13 +285,6 @@ function applyName(){
 $('pdhMe').textContent=ini(adminName);$('pdhMeBig').textContent=ini(adminName);
 window.adminProfile=Object.assign(window.adminProfile||{},{nombre:adminName});
 }
-async function loadProfile(){
-const db=window.db;if(!db)return;
-try{const {data:{session}}=await db.auth.getSession();uid=session?.user?.id||null;$('pdhMail').textContent=session?.user?.email?'Cuenta: '+session.user.email:'';
-if(uid){const {data}=await db.from('perfiles').select('*').eq('id',uid).maybeSingle();const n=data&&(data.nombre_completo||data.nombre);if(n){adminName=String(n).trim().split(/\s+/)[0];LS.set('pd_admin_name',adminName)}}
-}catch(e){}
-applyName();
-}
 $('pdhMe').onclick=()=>{$('pdhName').value=adminName;$('pdhMsg').textContent='';$('pdhSheet').hidden=false;setTimeout(()=>$('pdhName').focus(),50)};
 $('pdhSheet').addEventListener('click',e=>{if(e.target.closest('[data-close]'))$('pdhSheet').hidden=true});
 $('pdhQrBtn').addEventListener('click',()=>{if(typeof window.__pdmOpen==='function')window.__pdmOpen('qryape')});

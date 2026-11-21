@@ -56,7 +56,6 @@ function limpiar(e){
 /* ---------- cabecera con un solo título y pie fijo ---------- */
 function visto(e){if(!e.getClientRects().length)return false;const c=getComputedStyle(e);return c.visibility!=='hidden'&&c.display!=='none'}
 const INTER='button,a,input,select,textarea,label,[role="button"],[role="tab"],[role="tablist"],[contenteditable="true"]';
-function tieneInter(e){return e.matches(INTER)||!!e.querySelector(INTER)}
 function letra(e){return parseFloat(getComputedStyle(e).fontSize)||0}
 function titulo(head){
   let mejor=null,fs=0;

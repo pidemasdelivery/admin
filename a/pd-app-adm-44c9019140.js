@@ -2152,7 +2152,6 @@ button:active .pi{transform:scale(.92)}
     if(sub==='pedidoform'&&PE.f&&PE.f.sv)try{pegarEn(root)}catch(_){}
     if(!pv&&H.style.overflow!=='hidden')H.style.overflow='hidden';
   }
-  function abrirSeccion(k,m,kk){ultimo='';prepararPag();if(window.PdPasos&&PdPasos.isOpen())PdPasos.close();marca=m;kick=kk||'Administración';if(movido)volverLista();try{window.__pdmOpen&&window.__pdmOpen(k)}catch(e){console.warn(e)}key='';setTimeout(pintar,60)}
   /* Volver a donde se llamó: cada página recuerda de dónde vino (pestaña, sección abierta y menú marcado) */
   var desde=[];
   function volverTab(porPop){const d=desde.pop();if(!d){ir(HUBDE[tab]||'inicio');return}

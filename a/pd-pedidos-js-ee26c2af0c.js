@@ -1442,14 +1442,6 @@ try{
     if(s==='rechazado')return ['Rechazado','no'];
     return [s?(s.charAt(0).toUpperCase()+s.slice(1).replace(/_/g,' ')):'Sin estado','espera'];
   }
-  function pagoTxt(o){
-    const M={efectivo:['Efectivo','efe'],yape:['Yape','yape'],yape_negocio:['Yape del negocio','yape'],pagado:['Pagado','ok'],plin:['Plin','yape'],tarjeta:['Tarjeta','na'],transferencia:['Transferencia','na'],al_final:['Paga al final','na'],solo_delivery:['Productos pagados · delivery al recibir','ok']};
-    const a=String(o.pago_acordado||'').toLowerCase(),m=String(o.metodo_pago||'').toLowerCase();
-    if(a&&M[a])return M[a];
-    if(o.negocio_id&&est(o)==='pendiente')return ['Pago por coordinar','na'];
-    if(m&&M[m])return M[m];
-    return [m?(m.charAt(0).toUpperCase()+m.slice(1).replace(/_/g,' ')):'Pago sin registrar','na'];
-  }
   function progTxt(o){let prog='';try{const dp=window.pdTarifa&&pdTarifa.desgloseDePedido(o.observaciones);if(dp&&dp.programado){prog=dp.programado_txt||'';if(!prog){const f=new Date(dp.programado);prog=f.toLocaleString('es-PE',{timeZone:'America/Lima',weekday:'long',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}}}catch(x){}return prog}
   function afuera(card){
     const btn=card.querySelector(':scope > button.pdList');if(!btn)return;
