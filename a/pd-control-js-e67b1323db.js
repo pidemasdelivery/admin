@@ -111,7 +111,7 @@
   }
   function badges(){const k=window.__pdCtlCuenta||{};document.querySelectorAll('[data-ctl]').forEach(b=>{let i=b.querySelector('.pdCtlBdg');const v=k[b.dataset.ctl]||0;if(!v){if(i)i.remove();return}if(!i){i=document.createElement('b');i.className='pdCtlBdg';b.appendChild(i)}const t=v>99?'99+':String(v);if(i.textContent!==t)i.textContent=t})}
   setInterval(badges,1500);
-  window.pdCtl={yape,porCobrar,alerta,contar,hoja,cerrarHoja,planilla:()=>window.pdPlanilla&&window.pdPlanilla()};
+  window.pdCtl={yape,porCobrar,alerta,contar,hoja,cerrarHoja};
   let t0=0;setInterval(()=>{const on=!!document.querySelector('#appView:not(.hidden)')&&window.db;if(on&&Date.now()-t0>90000){t0=Date.now();contar()}},3000);
 })();
 

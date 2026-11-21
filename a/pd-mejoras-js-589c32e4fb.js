@@ -27,19 +27,6 @@
   const AVISO_MIG='<p class="pdCtlErr">Falta activar esta función en la base de datos. Pídele a Claude que aplique los cambios pendientes.</p>';
   const inicioDia=()=>new Date(diaLima(Date.now())+'T00:00:00-05:00').toISOString();
 
-  /* =================== 1. Mapa en vivo: pedidos sin asignar =================== */
-  const pins=new Map();
-  function mapaPedidos(){
-    const map=window.adminGpsMap;if(!map||!window.L)return;
-    const keep=new Set();
-    L().filter(o=>!o.motorizado_id&&['pendiente','confirmado'].includes(est(o))).forEach(o=>{
-      const lat=Number(o.latitud_recojo)||Number(o.latitud_entrega),lng=Number(o.longitud_recojo)||Number(o.longitud_entrega);if(!lat||!lng)return;
-      const id=String(o.id);keep.add(id);
-      const pop='<b>'+E(ref(id))+' · sin motorizado</b><br>'+E(o.nombre_cliente||'')+'<br>'+E(o.direccion_entrega||'');
-      let mk=pins.get(id);if(!mk){mk=L.marker([lat,lng],{icon:L.divIcon({className:'',html:'<div class="pdPinPed">'+E(ref(id).slice(1,5))+'</div>',iconSize:[46,26],iconAnchor:[23,13]})}).addTo(map).bindPopup(pop);pins.set(id,mk)}else{mk.setLatLng([lat,lng]);mk.setPopupContent(pop)}});
-    for(const [id,mk] of pins)if(!keep.has(id)){mk.remove();pins.delete(id)}
-  }
-
   /* =================== 2. Asignación automática =================== */
   let auto={on:false,min:3},autoLeido=0;
   async function leerAuto(){if(Date.now()-autoLeido<60000)return auto;autoLeido=Date.now();try{const r=await db().from('ajustes').select('valor').eq('clave','auto_asignar').maybeSingle();if(!r.error&&r.data&&r.data.valor)auto=Object.assign({on:false,min:3},r.data.valor)}catch(e){}return auto}
@@ -111,7 +98,7 @@
   window.pdAdmMej={asignacionAuto,listaNegra,ficha};
   let n=0;
   setInterval(()=>{if(!document.querySelector('#appView:not(.hidden)')||!db())return;n++;
-    try{mapaPedidos()}catch(e){}
+    
     if(n%6===3)autoTick().catch(()=>{});
   },5000);
 })();

@@ -460,8 +460,6 @@ if(!hit)return null;
 try{const km=Number(JSON.parse(hit[1])?.km);return Number.isFinite(km)&&km>=0?km:null;}catch(e){return null;}
 }
 
-
-
 function orderFinancialData(order){
 const total=Number(order?.total||0);
 let subtotal=Number(order?.subtotal);
@@ -1592,20 +1590,6 @@ updateOrderBulkBar();
 $("orderBulkDelete")?.addEventListener("click",deleteSelectedOrders);
 $("orderSearch").oninput=renderOrders;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-var adminGpsMap=null, adminGpsMarkers={}, adminGpsChannel=null, adminGpsLoaded=false, adminGpsRefreshing=false;
 function adminGpsValue(row, keys){
 for(const k of keys){
 if(row && row[k]!==undefined && row[k]!==null && row[k]!=="") return row[k];
@@ -1627,201 +1611,6 @@ if(swappedPiura) return {lat:lng,lng:lat};
 return null;
 }
 
-
-
-
-
-
-
-
-var editingDeliveryPromoId=null;
-var editingDeliveryPromoOriginal=null;
-function promoDateValue(v){
-if(!v)return null;
-const d=new Date(v);
-return Number.isNaN(d.getTime())?null:d.toISOString();
-}
-function promoErrorText(e){
-if(!e)return "Error desconocido.";
-return String(e.message||e.error_description||e.details||e.hint||e);
-}
-function promoWithTimeout(promise,ms=10000){
-return Promise.race([
-promise,
-new Promise((_,reject)=>setTimeout(()=>reject(new Error("Supabase no respondió en 10 segundos.")),ms))
-]);
-}
-function promoStatus(p){
-if(p.activo!==true)return "Inactivo";
-const now=Date.now();
-const ini=p.fecha_inicio?Date.parse(p.fecha_inicio):null;
-const fin=p.fecha_fin?Date.parse(p.fecha_fin):null;
-if(ini&&now<ini)return "Programado";
-if(fin&&now>fin)return "Vencido";
-const max=Number(p.max_usos||0);
-if(max>0&&Number(p.usos||0)>=max)return "Agotado";
-return "Activo";
-}
-function promoFormatDate(v){
-if(!v)return "Sin límite";
-const d=new Date(v);
-return Number.isNaN(d.getTime())?"—":d.toLocaleString("es-PE",{dateStyle:"short",timeStyle:"short"});
-}
-async function loadDeliveryPromos(){
-const box=$("promoList"),msgEl=$("promoMsg");
-if(!box)return;
-box.innerHTML='<div class="notice">Cargando códigos…</div>';
-try{
-const res=await promoWithTimeout(db.from("codigos_delivery").select("*"),10000);
-if(res.error)throw res.error;
-const rows=Array.isArray(res.data)?res.data:[];
-rows.sort((a,b)=>(Date.parse(b.creado_en||b.created_at||b.fecha_inicio||0)||0)-(Date.parse(a.creado_en||a.created_at||a.fecha_inicio||0)||0));
-box.innerHTML=rows.map(p=>{
-const tipo=p.tipo==="porcentaje"?`${Number(p.valor||0).toFixed(0)}%`:`S/ ${Number(p.valor||0).toFixed(2)}`;
-return `<div class="discountAdminRow">
-        <div class="discountAdminRowHead"><strong>${esc(p.codigo||"")}</strong><span class="discountAdminStatus">${promoStatus(p)}</span></div>
-        <div class="discountAdminMeta">${tipo} de descuento · Compra mínima: S/ ${Number(p.compra_minima||0).toFixed(2)} · Usos: ${Number(p.usos||0)}${Number(p.max_usos||0)>0?` / ${Number(p.max_usos)}`:" / ilimitados"}<br>Vigencia: ${promoFormatDate(p.fecha_inicio)} → ${promoFormatDate(p.fecha_fin)}</div>
-        <div class="actions" style="margin-top:9px">
-          <button type="button" class="btn alt" onclick="editarCodigoDelivery('${esc(String(p.id))}')">Editar</button>
-          <button type="button" class="btn alt" onclick="toggleCodigoDelivery('${esc(String(p.id))}',${p.activo===true?"false":"true"})">${p.activo===true?"Desactivar":"Activar"}</button>
-          <button type="button" class="btn alt" onclick="eliminarCodigoDelivery('${esc(String(p.id))}')">Eliminar</button>
-        </div>
-      </div>`;
-}).join("")||'<div class="notice">Todavía no hay códigos creados.</div>';
-clearMsg(msgEl);
-}catch(e){
-console.error("loadDeliveryPromos",e);
-box.innerHTML='<div class="notice">No se pudieron cargar los códigos.</div>';
-msg(msgEl,"No se pudieron cargar los códigos: "+promoErrorText(e));
-}
-}
-async function guardarCodigoDelivery(rootEl,buttonEl){
-const root=rootEl || document.getElementById("descuentosAdminBox") || document;
-const get=id=>root.querySelector("#"+id) || document.getElementById(id);
-const btn=buttonEl || get("guardarCodigoDelivery");
-const msgEl=get("promoMsg");
-try{
-if(btn){btn.disabled=true;btn.textContent="Conectando…";}
-if(msgEl){msgEl.textContent="Conectando con Supabase…";msgEl.classList.remove("hidden");}
-const codigo=String(get("promoCodigo")?.value||"").trim().toUpperCase();
-const tipo=String(get("promoTipo")?.value||"fijo");
-const valorTexto=String(get("promoValor")?.value||"").trim();
-const minimoTexto=String(get("promoMinimo")?.value||"").trim();
-const maxUsosTexto=String(get("promoMaxUsos")?.value||"").trim();
-const valor=valorTexto!==""?Number(valorTexto):Number(editingDeliveryPromoOriginal?.valor||0);
-const minimo=minimoTexto!==""?Number(minimoTexto):Number(editingDeliveryPromoOriginal?.compra_minima||0);
-const maxUsos=maxUsosTexto!==""?Number(maxUsosTexto):Number(editingDeliveryPromoOriginal?.max_usos||0);
-const inicio=promoDateValue(get("promoInicio")?.value);
-const fin=promoDateValue(get("promoFin")?.value);
-if(!codigo)throw new Error("Ingresa el código.");
-if(valor<=0)throw new Error("Ingresa un descuento mayor que 0.");
-if(tipo!=="fijo"&&tipo!=="porcentaje")throw new Error("Tipo de descuento no válido.");
-if(tipo==="porcentaje"&&valor>100)throw new Error("El porcentaje no puede superar 100%.");
-if(minimo<0||maxUsos<0)throw new Error("Los valores no pueden ser negativos.");
-if(inicio&&fin&&Date.parse(inicio)>Date.parse(fin))throw new Error("La fecha de inicio no puede ser posterior a la fecha de vencimiento.");
-if(!window.db)throw new Error("La conexión con Supabase no está disponible.");
-const {data:{session},error:sessionError}=await window.db.auth.getSession();
-if(sessionError)throw sessionError;
-if(!session)throw new Error("La sesión de administrador no está activa.");
-if(btn)btn.textContent=editando?"Guardando…":"Creando…";
-if(msgEl)msgEl.textContent=editando?"Guardando cambios en Supabase…":"Enviando código a Supabase…";
-const payload={codigo,tipo,valor,compra_minima:minimo,max_usos:maxUsos,fecha_inicio:inicio,fecha_fin:fin};
-const res=editando
-? await promoWithTimeout(window.db.from("codigos_delivery").update(payload).eq("id",editingDeliveryPromoId).select().single(),10000)
-: await promoWithTimeout(window.db.from("codigos_delivery").insert({...payload,usos:0,activo:true}).select().single(),10000);
-if(res.error)throw res.error;
-if(msgEl){msgEl.textContent=editando?"Código actualizado correctamente: "+codigo:"Código creado correctamente: "+codigo;msgEl.classList.remove("hidden");}
-resetCodigoDeliveryForm();
-await loadDeliveryPromos();
-}catch(e){
-console.error("Guardar código delivery:",e);
-if(msgEl){msgEl.textContent="NO SE PUDO "+(editingDeliveryPromoId?"ACTUALIZAR":"CREAR")+": "+promoErrorText(e);msgEl.classList.remove("hidden");}
-}finally{
-if(btn){btn.disabled=false;btn.textContent=editingDeliveryPromoId?"Guardar cambios":"Crear código";}
-}
-}
-window.crearCodigoDeliveryDesdeBoton=function(button,ev){
-if(ev){ev.preventDefault();ev.stopPropagation();}
-const root=button?.closest?.("#descuentosAdminBox") || document.getElementById("descuentosAdminBox") || document;
-guardarCodigoDelivery(root,button);
-return false;
-};
-window.guardarCodigoDelivery=guardarCodigoDelivery;
-function conectarBotonCrearCodigoDelivery(){
-const btn=document.getElementById("guardarCodigoDelivery");
-if(!btn || btn.dataset.deliveryListener==="1") return;
-btn.dataset.deliveryListener="1";
-btn.addEventListener("click",function(ev){
-ev.preventDefault();
-ev.stopPropagation();
-guardarCodigoDelivery(document.getElementById("descuentosAdminBox"),this);
-});
-}
-if(document.readyState==="loading"){
-document.addEventListener("DOMContentLoaded",conectarBotonCrearCodigoDelivery,{once:true});
-}else{
-conectarBotonCrearCodigoDelivery();
-}
-function resetCodigoDeliveryForm(){
-editingDeliveryPromoId=null;
-editingDeliveryPromoOriginal=null;
-["promoCodigo","promoValor","promoInicio","promoFin"].forEach(id=>{if($(id))$(id).value="";});
-if($("promoTipo"))$("promoTipo").value="fijo";
-if($("promoMinimo"))$("promoMinimo").value="";
-if($("promoMaxUsos"))$("promoMaxUsos").value="";
-if($("guardarCodigoDelivery"))$("guardarCodigoDelivery").textContent="Crear código";
-$("cancelarCodigoDelivery")?.classList.add("hidden");
-}
-async function editarCodigoDelivery(id){
-try{
-const res=await promoWithTimeout(db.from("codigos_delivery").select("*").eq("id",id).maybeSingle(),10000);
-if(res.error)throw res.error;
-if(!res.data)throw new Error("No se encontró el código.");
-const p=res.data;
-editingDeliveryPromoId=id;
-editingDeliveryPromoOriginal={...p};
-$("promoCodigo").value=p.codigo||"";
-$("promoTipo").value=p.tipo||"fijo";
-$("promoValor").value="";
-$("promoMinimo").value="";
-$("promoMaxUsos").value="";
-$("promoInicio").value=p.fecha_inicio?new Date(p.fecha_inicio).toISOString().slice(0,16):"";
-$("promoFin").value=p.fecha_fin?new Date(p.fecha_fin).toISOString().slice(0,16):"";
-$("guardarCodigoDelivery").textContent="Guardar cambios";
-$("cancelarCodigoDelivery").classList.remove("hidden");
-}catch(e){msg($("promoMsg"),"No se pudo cargar el código: "+promoErrorText(e));}
-}
-async function toggleCodigoDelivery(id,activo){
-try{
-const res=await promoWithTimeout(db.from("codigos_delivery").update({activo:activo==="true"||activo===true}).eq("id",id),10000);
-if(res.error)throw res.error;
-await loadDeliveryPromos();
-}catch(e){msg($("promoMsg"),"No se pudo cambiar el estado: "+promoErrorText(e));}
-}
-async function eliminarCodigoDelivery(id){
-if(!(await pdConfirmar("¿Eliminar este código de delivery?")))return;
-try{
-const res=await promoWithTimeout(db.from("codigos_delivery").delete().eq("id",id),10000);
-if(res.error)throw res.error;
-await loadDeliveryPromos();
-}catch(e){msg($("promoMsg"),"No se pudo eliminar: "+promoErrorText(e));}
-}
-$("cancelarCodigoDelivery")?.addEventListener("click",()=>{
-resetCodigoDeliveryForm();
-clearMsg($("promoMsg"));
-});
-window.guardarCodigoDelivery=guardarCodigoDelivery;
-window.guardarCodigoDeliveryDirect=function(ev){
-try{ if(ev){ev.preventDefault();ev.stopPropagation();} guardarCodigoDelivery(); }
-catch(err){
-console.error("Crear código Pidemás",err);
-const el=document.getElementById("promoMsg");
-if(el){el.textContent="Error al ejecutar Crear código: "+(err?.message||String(err));el.classList.remove("hidden");}
-const b=document.getElementById("guardarCodigoDelivery");
-if(b){b.disabled=false;b.textContent="Crear código";}
-}
-return false;
-};
 document.querySelectorAll(".closeServiceAdmin").forEach(btn=>{
 btn.onclick=()=>{
 const id=btn.dataset.close;
@@ -2031,17 +1820,6 @@ return (t>last || (t===last && !isBoundary(x))) && !isBoundary(x);
 });
 }
 window.pidemasCycleMovsFinal=cycleMovs;
-
-
-
-
-
-
-
-
-
-
-
 
 })();
 }catch(e){console.error("[pidemas-final-integrity-fix]",e)}
@@ -2417,5 +2195,4 @@ let q=false;new MutationObserver(()=>{if(q)return;q=true;queueMicrotask(()=>{q=f
 setInterval(limpiar,2000);limpiar();
 })();
 }catch(e){console.error("[pidemas-sin-enlaces-sueltos]",e)}
-
 

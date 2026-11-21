@@ -180,47 +180,6 @@ html body #appView:not(#Z#Z#Z#Z#Z) > .card:first-child:has(> h1){display:none!im
 <div class="notice hidden" id="visibilidadNegociosMsg" role="status"></div>
 </div>
 </div>
-<div class="card hidden serviceAdminBox" id="suspenderMotorizadoAdminBox" style="margin-top:14px;border:1px solid var(--fr-line)">
-<div class="serviceAdminHead">
-<div><h3>Suspender / reactivar motorizados</h3><p class="muted">Desactiva o vuelve a activar el registro del motorizado.</p></div>
-<button class="btn alt closeServiceAdmin" data-close="suspenderMotorizadoAdminBox" type="button">Cerrar</button>
-</div>
-<div class="notice" id="suspenderMotorizadoMsg"></div>
-<div class="actions"><button class="btn alt" id="actualizarSuspensionMotosBtn" type="button">Actualizar lista</button></div>
-<div class="list" id="suspenderMotorizadoList" style="margin-top:12px"><div class="muted">Cargando motorizados…</div></div>
-</div>
-
-<div class="card hidden serviceAdminBox" id="gpsAdminBox" style="margin-top:14px;border:1px solid var(--fr-line)">
-<div class="serviceAdminHead gpsAdminHeaderWithActions">
-<div class="gpsAdminHeadingText">
-<h3>Motorizados / GPS</h3>
-<p class="muted">Ubicación actual de los motorizados. Se actualiza automáticamente.</p>
-</div>
-<div class="gpsAdminHeaderActions">
-<button class="btn alt" id="refreshAdminGpsBtn" onclick="refreshAdminGps()" type="button">Actualizar</button>
-<button class="btn alt closeServiceAdmin" data-close="gpsAdminBox" type="button">Cerrar</button>
-</div>
-</div>
-<div class="gpsAdminMap" id="adminMotoMap" style="margin-top:12px"></div>
-<div class="gpsAdminList" id="adminGpsList"></div>
-</div>
-<div class="card hidden serviceAdminBox discountAdminCard" id="descuentosAdminBox" style="margin-top:14px">
-<div class="serviceAdminHead" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-<div><h3>Códigos de descuento</h3><p class="muted">Los códigos descuentan únicamente la tarifa de delivery; nunca modifican los precios de los productos.</p></div>
-<button class="btn alt closeServiceAdmin" data-close="descuentosAdminBox" type="button">Cerrar</button>
-</div>
-<div class="grid" style="margin-top:12px">
-<div class="field"><label>Código</label><input id="promoCodigo" maxlength="40" placeholder="Ej. DELIVERY5"/></div>
-<div class="field"><label>Tipo</label><select id="promoTipo"><option value="fijo">Monto fijo (S/)</option><option value="porcentaje">Porcentaje (%)</option></select></div>
-<div class="field"><label>Descuento</label><input id="promoValor" min="0" placeholder="" step="0.01" type="number"/></div>
-<div class="field"><label>Compra mínima</label><input id="promoMinimo" min="0" placeholder="" step="0.01" type="number"/></div>
-<div class="field"><label>Máximo de usos (0 = ilimitado)</label><input id="promoMaxUsos" min="0" placeholder="" step="1" type="number"/></div>
-<div class="field"><label>Fecha de inicio</label><input id="promoInicio" type="datetime-local"/></div>
-<div class="field"><label>Fecha de vencimiento</label><input id="promoFin" type="datetime-local"/></div>
-</div>
-<div class="actions"><button class="btn" id="guardarCodigoDelivery" type="button">Crear código</button><button class="btn alt hidden" id="cancelarCodigoDelivery" type="button">Cancelar edición</button></div>
-<div class="notice hidden" id="promoMsg"></div><div class="discountAdminList" id="promoList"></div>
-</div>
 </section>
 
 <section class="hidden" id="tab-pedidos" style="background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important">
@@ -275,97 +234,9 @@ html body #appView:not(#Z#Z#Z#Z#Z) > .card:first-child:has(> h1){display:none!im
 <div class="list" id="clientesList"></div>
 </section>
 
-<section class="card hidden" id="tab-caja">
-<h2>Cajas</h2>
-<section class="card hidden" id="tab-sueldo">
-<div class="pdsl" id="pdsl">
-<div class="pdslTop"><p class="pdslIntro">Los días se suman solos al terminar cada jornada. Si un motorizado faltó, toca ese día en el calendario para descontarlo.</p><button type="button" class="pdslIcon" id="pdSalaryRefreshMotos" aria-label="Actualizar"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg></button></div><section class="pdslCard pdslHero" id="pdslTotal"><span class="pdslKick">Total de sueldos pendientes</span><span class="pdslHeroAmt">—</span><span class="pdslHeroSub">Calculando…</span></section>
-<select id="pdSalaryMotoSelect" hidden><option value="">Cargando motorizados…</option></select>
-<input type="search" class="pdslSearch" id="pdslSearch" placeholder="Buscar motorizado" autocomplete="off" aria-label="Buscar motorizado">
-<div class="pdslMotos" id="pdslMotos"><span class="pdslMuted">Cargando motorizados…</span></div>
-<div id="pdslEmpty" hidden></div>
-<div id="pdslBody" hidden>
-<section class="pdslCard pdslHero" id="pdslHero"></section>
-<section class="pdslCard" id="pdslCfgCard">
-<div class="pdslHead"><span><span class="pdslKick">Configuración</span><strong>Ingreso, horario y días</strong></span><button type="button" class="pdslLink" id="pdslCfgToggle">Editar</button></div>
-<div id="pdslCfgSummary" class="pdslMuted"></div>
-<div id="pdslCfgForm" hidden>
-<div class="pdslField"><label>Tipo de sueldo</label><div class="pdslDays pdslType" id="pdslType"><button type="button" data-type="completo">Jornada completa</button><button type="button" data-type="por_horas">Por horas</button></div></div>
-<div class="pdslField"><label for="pdslHire">Fecha de ingreso (inicio del sueldo)</label><input type="date" id="pdslHire"></div>
-<div id="pdslFullFields">
-<div class="pdslTwo"><div class="pdslField"><label for="pdslStart">Hora de entrada</label><input type="time" id="pdslStart" value="08:00"></div><div class="pdslField"><label for="pdslEnd">Hora de salida</label><input type="time" id="pdslEnd" value="13:00"></div></div>
-<div class="pdslField"><label>Días laborables</label><div class="pdslDays" id="pdslDays"></div></div>
-<p class="pdslNote">La jornada de cada día se suma automáticamente a la hora de salida. Domingos y feriados que no son laborables se pagan como descanso (solo base). El mes se cuenta de 30 días: el 31 no suma y al cerrar febrero se suman los días que faltan hasta el 30.</p>
-</div>
-<p class="pdslNote" id="pdslHourlyNote" hidden>Por horas: no se suman días automáticos. Registras cada jornada con su fecha y horas; el sueldo (S/ 25.625 por 5 h) y la gasolina (S/ 8 por 5 h) se calculan solos, también en domingo o feriado. Sin tope: si trabaja más horas, se le paga más.</p>
-<button type="button" class="pdslBtn" id="pdslCfgSave">Guardar configuración</button>
-</div>
-</section>
-<section class="pdslCard" id="pdslShiftCard" hidden>
-<div class="pdslHead"><span><span class="pdslKick">Por horas</span><strong>Registrar jornada</strong></span></div>
-<div class="pdslTwo"><div class="pdslField"><label for="pdslShDate">Fecha</label><input type="date" id="pdslShDate"></div><div class="pdslField"><label for="pdslShHours">Horas trabajadas</label><input type="number" id="pdslShHours" min="0.5" max="16" step="0.5" inputmode="decimal" placeholder="Ej. 3"></div></div>
-<div class="pdslTwo"><div class="pdslField"><label for="pdslShPay">Sueldo (S/)</label><input type="number" id="pdslShPay" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="pdslField"><label for="pdslShGas">Gasolina (S/)</label><input type="number" id="pdslShGas" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div></div>
-<div class="pdslLineTot" id="pdslShTotal"></div>
-<button type="button" class="pdslBtn" id="pdslShSave">Registrar jornada</button>
-<div id="pdslShList"></div>
-</section>
-<section class="pdslCard" id="pdslAttCard">
-<div class="pdslHead"><span><span class="pdslKick">Asistencia</span><strong id="pdslCalTitle">Quincena actual</strong></span></div>
-<div class="pdslLegend"><span><i class="ok"></i>Trabajado</span><span><i class="rest"></i>Descanso pagado</span><span><i class="bad"></i>Falta</span><span><i class="todo"></i>Pendiente</span></div>
-<div class="pdslCal" id="pdslCal"></div>
-<p class="pdslNote">Toca un día para registrar o quitar una falta, adelantar un día trabajado o dar un adelanto de sueldo.</p>
-<button type="button" class="pdslMini pdslOffBtn" id="pdslOffToggle">Días sin pago (vacaciones, permiso…)</button>
-<div id="pdslOffForm" class="pdslOffForm" hidden>
-<div class="pdslTwo"><div class="pdslField"><label for="pdslOffFrom">Desde</label><input type="date" id="pdslOffFrom"></div><div class="pdslField"><label for="pdslOffTo">Hasta</label><input type="date" id="pdslOffTo"></div></div>
-<div class="pdslField"><label for="pdslOffWhy">Motivo</label><input id="pdslOffWhy" maxlength="80" placeholder="Ej. Vacaciones, permiso, no trabajó"></div>
-<p class="pdslNote" id="pdslOffInfo"></p>
-<div class="pdslTwo"><button type="button" class="pdslMini" id="pdslOffDel">Quitar en esas fechas</button><button type="button" class="pdslBtn" id="pdslOffSave" style="min-height:42px!important">Registrar</button></div>
-</div>
-</section>
-<section class="pdslCard">
-<div class="pdslHead"><span><span class="pdslKick">Pagos</span><strong>Registrar pago de sueldo</strong></span></div>
-<div id="pdslDescBox" class="pdslDescBox" hidden>
-<div class="pdslKick">Fin de mes</div><strong>Descuento AFP / ONP</strong>
-<p class="pdslNote" id="pdslDescNote"></p>
-<div class="pdslTwo"><div class="pdslField"><label for="pdslDescAmount">Monto del descuento (S/)</label><input type="number" id="pdslDescAmount" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="pdslField"><label for="pdslDescType">Sistema</label><select id="pdslDescType"><option value="AFP">AFP</option><option value="ONP">ONP</option></select></div></div>
-<button type="button" class="pdslBtn" id="pdslDescSave">Guardar descuento</button>
-</div>
-<div class="pdslField"><label for="pdslPayPeriod" id="pdslPayPeriodLbl">Quincena que pagas</label><select id="pdslPayPeriod"></select></div>
-<div class="pdslTwo"><div class="pdslField"><label for="pdslPayAmount">Monto (S/)</label><input type="number" id="pdslPayAmount" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="pdslField"><label for="pdslPayNote">Detalle</label><input id="pdslPayNote" maxlength="200" placeholder="Ej. Yape, efectivo"></div></div>
-<button type="button" class="pdslBtn" id="pdslPaySave">Registrar pago</button>
-<div id="pdslPayList"></div>
-</section>
-<section class="pdslCard">
-<div class="pdslHead"><span><span class="pdslKick">Historial</span><strong>Quincenas anteriores</strong></span></div>
-<div id="pdslHistory"></div>
-</section>
-<div id="pdAdminSalaryMsg" class="pdslMsg" role="status" aria-live="polite"></div>
-</div>
-</div>
-
-</section>
-
-</section>
 </section>
 <footer class="pidemas-company-footer">Grupo Pidemás E.I.R.L<br><small style="opacity:.55">versión 202611181000</small></footer>
 </main>
-
-<div id="dcSheet" hidden><div class="d-bg" data-close="1"></div><div class="d-card" role="dialog" aria-modal="true" aria-label="Código de descuento">
-<div class="d-top"><span><span class="d-kick">Delivery</span><strong id="dcSheetTitle">Nuevo código</strong></span><button type="button" class="d-x" data-close="1" aria-label="Cerrar">×</button></div>
-<label class="d-lbl">Código<span class="d-codeRow"><input id="dcCode" maxlength="20" placeholder="EJ. ENVIOGRATIS" autocomplete="off"><button type="button" class="d-btn" id="dcGen">Generar</button></span></label>
-<div class="d-lbl">Tipo de descuento<div class="d-seg" id="dcTipo"><button type="button" data-v="fijo" class="on">Monto (S/)</button><button type="button" data-v="porcentaje">Porcentaje (%)</button></div></div>
-<div class="d-two"><label class="d-lbl" id="dcValLbl">Descuento (S/)<input id="dcVal" type="number" inputmode="decimal" min="0" step="0.10" placeholder="0.00"></label><label class="d-lbl">Compra mínima (S/)<input id="dcMin" type="number" inputmode="decimal" min="0" step="0.10" placeholder="0 = sin mínimo"></label></div>
-<label class="d-lbl">Máximo de usos<input id="dcMax" type="number" inputmode="numeric" min="0" step="1" placeholder="0 = ilimitado"></label>
-<label class="d-lbl">Desde<input id="dcIni" type="datetime-local"></label><label class="d-lbl">Hasta<input id="dcFin" type="datetime-local"></label>
-<div class="d-quick" id="dcQuick"><button type="button" data-d="1">Solo hoy</button><button type="button" data-d="7">7 días</button><button type="button" data-d="30">30 días</button><button type="button" data-d="0">Sin vencimiento</button></div>
-<div class="d-prev" id="dcPrev"></div>
-<button type="button" class="d-btn dark" id="dcSave">Crear código</button>
-<p class="d-msg" id="dcMsg" role="status"></p>
-</div></div>
-<div id="spSheet" hidden><div class="s-bg" data-close="1"></div><div class="s-card" role="dialog" aria-modal="true" aria-label="Confirmar cambio de cuenta">
-<span class="s-ico" id="spIco"></span><strong id="spTitle"></strong><p id="spText"></p>
-<div class="s-two"><button type="button" data-close="1">Cancelar</button><button type="button" class="go" id="spGo"></button></div>
-</div></div>
 
 <div id="pdmModal" hidden><div class="m-bg"></div><div class="m-card" role="dialog" aria-modal="true"><div class="m-head"><strong id="pdmTitle"></strong><button type="button" class="m-x" aria-label="Cerrar">×</button></div><div class="m-body" id="pdmBody"></div></div></div>
 
@@ -391,13 +262,12 @@ window.db = db;
 
 
 </script>
-<script id="pd-funciones-js" src="a/pd-funciones-js-4918407cac.js"></script>
+<script id="pd-funciones-js" src="a/pd-funciones-js-6403f02794.js"></script>
 <script id="pd-pedidos-js" src="a/pd-pedidos-js-5ea5b764b2.js"></script>
-<script id="pd-admin-js" src="a/pd-admin-js-52956afcaa.js"></script>
-<script id="pd-control-js" src="a/pd-control-js-c041e365ea.js"></script>
-<script id="pd-sueldos-control-js" src="a/pd-sueldos-control-js-fe25d53a47.js"></script>
+<script id="pd-admin-js" src="a/pd-admin-js-f6aebef429.js"></script>
+<script id="pd-control-js" src="a/pd-control-js-e67b1323db.js"></script>
 <script id="pd-pedidos-control-js" src="a/pd-pedidos-control-js-e868fd1b3d.js"></script>
-<script id="pd-mejoras-js" src="a/pd-mejoras-js-c0cb137db4.js"></script>
+<script id="pd-mejoras-js" src="a/pd-mejoras-js-589c32e4fb.js"></script>
 <script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 <link rel="stylesheet" id="pd-app-panel-css" href="a/pd-app-panel-css-7dad7a8f6b.css">
 <script id="pd-app-panel-js" src="a/pd-app-panel-js-1e56613cad.js"></script>
@@ -467,7 +337,7 @@ buscar();
 <script id="pd-pasos-motor" src="a/pd-pasos-motor-2e0fba37ad.js"></script>
 <script id="pd-pasos-admin" src="a/pd-pasos-admin-6002d005e5.js"></script>
 <script id="pd-dialogos-nuevo" src="a/pd-dialogos-nuevo-d0e7b0bf53.js"></script>
-<script id="pd-app-adm" src="a/pd-app-adm-d9654eb9bf.js"></script>
+<script id="pd-app-adm" src="a/pd-app-adm-5c045dc544.js"></script>
 </body>
 
 </html>

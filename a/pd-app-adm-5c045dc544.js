@@ -263,6 +263,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   }
   let nuevoAb=false;
   function inicio(){
+    if(window.__pdaCajaTotal==null)try{caja()}catch(_){}
+    if(window.__pdaSueldoTotal==null)try{sueldos()}catch(_){}
     const sal=document.querySelector('.pdSal');const kp=[...(sal?sal.querySelectorAll('.pmaAcc > button b'):[])].map(b=>b.textContent.trim());if(window.__pdaSueldoTotal!=null)kp[1]=M(window.__pdaSueldoTotal);if(window.__pdaCajaTotal!=null)kp[2]=M(window.__pdaCajaTotal);
     const con=sal&&sal.querySelector('.con');const nom=((sal&&sal.querySelector('.pmaTx strong'))||{}).textContent||'Hola, Admin';
     const av=document.querySelector('#pdMenu .m3Av');const foto=window.__pdAdminFoto||'';
