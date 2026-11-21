@@ -252,7 +252,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const av=document.querySelector('#pdMenu .m3Av');const foto=window.__pdAdminFoto||'';
     const todos=L(),cnt=CH.map(c=>todos.filter(c[2]).length);
     const ql=q.trim().toLowerCase();const fil=todos.filter((CH.find(c=>c[0]===chip)||CH[0])[2]).filter(o=>!ql||[o.id,ref(o.id),o.nombre_cliente,o.telefono_cliente,o.nombre_remitente,NEG(o.negocio_id).nombre].join(' ').toLowerCase().includes(ql));
-    let h=`<div class="cols2"><button type="button" class="mt" data-t="sueldo"><span>Sueldos</span><b>${E(kp[1]||'—')}</b></button><button type="button" class="mt" data-t="caja"><span>Cajas</span><b>${E(kp[2]||'—')}</b></button></div>`;
+    let h='';
     h+=`<div class="fld"><label for="aQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar pedido</label><input id="aQ" type="search" placeholder="N.º de pedido, cliente o teléfono" value="${E(q)}" data-in="q"></div>`;
     {const AT=[['pedidos con demora','Con demora',IC.clock],['asignación automática','Asignación automática',IC.swap],['calificaciones','Calificaciones',IC.star],['reportes de pedidos','Reportes',IC.chart]];
      h+=`<div class="atj">${AT.map(([k,n,ic])=>{const x=bdOf(k);return `<button type="button" data-it="${E(k)}" data-gk="Pedidos">${ic}${E(n)}${x?`<span class="bd">${x}</span>`:''}</button>`}).join('')}</div>`}
@@ -292,7 +292,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   }
   function hubVista(h){
     const H2=HUBS[h];if(!H2)return inicio();const ql=mq.trim().toLowerCase();let b='';
-    if(h==='h:caja'){try{caja()}catch(_){}try{sueldos()}catch(_){}const t=window.__pdaCajaTotal,ts=window.__pdaSueldoTotal;b+=`<div class="hkp"><div><span>En cajas</span><b class="o">${t!=null?M(t):'—'}</b></div><div><span>Sueldos por pagar</span><b>${ts!=null?M(ts):'—'}</b></div></div>`}
+    if(h==='h:caja'){try{caja()}catch(_){}try{sueldos()}catch(_){}const t=window.__pdaCajaTotal,ts=window.__pdaSueldoTotal;void t,void ts}
     if(h==='h:mas'){const m=$('pdMenu'),top=m&&m.querySelector('.m3Top'),nom=top?(top.querySelector('strong')||{}).textContent||'Admin':'Admin',foto=window.__pdAdminFoto||'';
       b+=`<button type="button" class="yo" data-a="perfil"><span class="ava"${foto?` style="background-image:url('${E(foto)}')"`:''}>${foto?'':E(nom.trim().charAt(0))}</span><span style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:18px">${E(nom)}</b><span style="font-size:13px;color:#6B5E55">Ver mi perfil</span></span>${IC.chev}</button>`;
       b+=`<div class="fld"><label for="mQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar una opción</label><input id="mQ" type="search" placeholder="Buscar en todo el menú" value="${E(mq)}" data-in="mq"></div>`}
@@ -757,7 +757,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function clientes(){
     const c=datosCli();const head=top2('Clientes','Clientes',`<button type="button" class="ib" data-a="cl:nuevo" aria-label="Nuevo cliente">${IC.plus}</button>`);
     if(!c.data)return {head,body:c.err?`<div class="err">${E(c.err)}</div>`:'<div class="load">Cargando clientes…</div>'};
-    const A=c.data;let h=`<div class="cols3"><div class="kp"><span>Clientes</span><b>${A.length}</b></div><div class="kp"><span>Con mapa</span><b>${A.filter(x=>cliU(x)||x.latitud).length}</b></div><div class="kp"><span>Con DNI</span><b>${A.filter(x=>x.documento||x.dni).length}</b></div></div>`;
+    const A=c.data;let h='';
     h+=`<div class="fld"><label for="clQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar cliente</label><input id="clQ" type="search" placeholder="Nombre, teléfono o DNI" value="${E(CL.q)}" data-in="clq"></div>`;
     h+=`<button type="button" class="b o" data-a="cl:nuevo">${IC.plus}Nuevo cliente</button><div id="clL" style="display:flex;flex-direction:column;gap:10px">${clFilas()}</div>`;
     return {head,body:h};
@@ -783,7 +783,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const fl=(id,l,k,ph,o)=>`<div class="fld"><label for="${id}">${l}</label><input id="${id}" value="${E(f[k])}" data-in="cf:${k}"${ph?` placeholder="${E(ph)}"`:''}${o||''}></div>`;
     try{datosCli()}catch(_){}
     const pa=f.paso||0,LC=(C2.cli&&C2.cli.data)||null;
-    let h=`<div class="g2"><div class="kp"><span>Clientes</span><b>${LC?LC.length:'–'}</b></div><div class="kp"><span>Con ubicación</span><b>${LC?LC.filter(c=>c.latitud!=null||/maps|goo\.gl|-?\d+\.\d+\s*,\s*-?\d+\.\d+/i.test(String(cliU(c)||''))).length:'–'}</b></div></div>`;
+    let h='';
     h+=`<div class="cd pwz"><div class="kick" style="color:#6B5E55">Paso ${pa+1} de 2</div><b style="font-size:20px">${pa?'Dirección y ubicación':'Datos del cliente'}</b><div class="pbar"><i class="on"></i><i class="${pa?'on':''}"></i></div></div>`;
     if(!pa)h+=`<div class="cd"><span style="font-size:14px;color:#6B5E55">Nombre y número con los que lo encontrarás al crear un pedido.</span>${fl('cfN','Nombre y apellido','nombre','Ej. Ana Ruiz',' maxlength="80" autocomplete="off"')}${fl('cfT','Número','tel','9 dígitos',' type="tel" inputmode="numeric" maxlength="15"')}${fl('cfD','DNI (opcional)','dni','8 dígitos',' inputmode="numeric" maxlength="12"')}</div>`;
     else h+=`<div class="cd"><span style="font-size:14px;color:#6B5E55">Dónde se le entrega. Con el enlace de Google Maps, el motorizado podrá abrir la ruta.</span>${fl('cfA','Dirección','dir','Calle, número, urbanización',' maxlength="160"')}${fl('cfU','Ubicación o referencia','ubi','Pega el enlace de Google Maps o una referencia',' maxlength="300"')}</div>`;
@@ -1073,11 +1073,12 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   /* --- Yape por confirmar --- */
   SEC['yape por confirmar']={g:'Control de caja y sueldos',t:'Yape por confirmar',rf:1,
     load:async()=>{const b=await baseCtl();const {data,error}=await D().from('cobros').select('id,pedido_id,motorizado_id,monto,confirmado_en,yape_recibido_en').eq('metodo_pago','yape').eq('confirmado',true).is('yape_recibido_en',null).gte('confirmado_en',new Date(Date.now()-45*864e5).toISOString()).order('confirmado_en',{ascending:false}).limit(300);if(error)throw error;
-      const ids=[...new Set((data||[]).map(c=>c.pedido_id).filter(Boolean))];const peds={};if(ids.length){const r=await D().from('pedidos').select('id,nombre_cliente,total,estado').in('id',ids);(r.data||[]).forEach(p=>peds[p.id]=p)}
+      const ids=[...new Set((data||[]).map(c=>c.pedido_id).filter(Boolean))];const peds={};if(ids.length){const r=await D().from('pedidos').select('id,nombre_cliente,telefono_cliente,total,estado').in('id',ids);(r.data||[]).forEach(p=>peds[p.id]=p)}
       return {b,peds,L:(data||[]).filter(c=>{const p=peds[c.pedido_id];return !p||!['cancelado','rechazado'].includes(est(p))})}},
     v(){const c=datos('yape por confirmar',this.load);if(!c.data)return {body:cargando(c)};const {b,peds,L}=c.data;const tot=L.reduce((s,x)=>s+(Number(x.monto)||0),0);
       let h=`<div class="amt"><div class="k">Yapes por confirmar</div><div class="n">${M(tot)}</div><div class="pill">${L.length} cobro${L.length===1?'':'s'}</div></div>`+U.note('Cobros que el motorizado marcó como pagados por Yape. Confirma cuando el dinero haya llegado al QR de Pidemás.');
-      h+=L.length?`<div class="cd">${L.map(x=>{const p=peds[x.pedido_id]||{};return fila(M(x.monto)+' · '+E(p.nombre_cliente||'Cliente'),E(ref(x.pedido_id))+' · '+E(mN(b,x.motorizado_id))+' · '+E(fch(x.confirmado_en)),`<button type="button" class="b" style="height:40px;padding:0 12px;color:#0F5E2E;border-color:#CFEBDA" data-sa="yok:${E(x.id)}">${IC.check}Recibido</button>`)}).join('')}</div>`:vacio('No hay Yapes pendientes de confirmar.');
+      h+=L.length?`<div class="cd">${L.map(x=>{const p=peds[x.pedido_id]||{};const w=telW(p.telefono_cliente);const msg=['Hola'+(p.nombre_cliente?' '+String(p.nombre_cliente).trim().split(/\s+/)[0]:'')+' 👋','Te escribimos de *Pidemás Delivery*.','Tu pedido *'+ref(x.pedido_id)+'* del '+fch(x.confirmado_en)+' figura como pagado por *Yape* por *'+M(x.monto)+'*.','¿Nos confirmas el pago enviándonos la captura del Yape? ¡Gracias!'].join('\n');
+        return fila(M(x.monto)+' · '+E(p.nombre_cliente||'Cliente'),E(ref(x.pedido_id))+' · '+E(mN(b,x.motorizado_id))+' · '+E(fch(x.confirmado_en)),`<span style="display:flex;gap:6px;flex:0 0 auto">${w?`<a class="b g" style="height:40px;width:44px;padding:0" target="_blank" rel="noopener" aria-label="Pedir confirmación por WhatsApp" title="Pedir confirmación por WhatsApp" href="https://wa.me/${w}?text=${encodeURIComponent(msg)}">${U.I.wa}</a>`:''}<button type="button" class="b" style="height:40px;padding:0 12px;color:#0F5E2E;border-color:#CFEBDA" data-sa="yok:${E(x.id)}">${IC.check}Recibido</button></span>`)}).join('')}</div>`:vacio('No hay Yapes pendientes de confirmar.');
       return {body:h,foot:L.length>1?`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="yall">Marcar todos como recibidos</button>`:''}},
     async a(x){const c=C2['s:yape por confirmar'];const ids=x==='yall'?c.data.L.map(y=>y.id):[x.split(':')[1]];if(x==='yall'&&!(await conf('¿Marcar '+ids.length+' Yapes como recibidos?')))return;
       const u=(await D().auth.getUser()).data.user;const q=await D().from('cobros').update({yape_recibido_en:new Date().toISOString(),yape_recibido_por:u&&u.id}).in('id',ids);if(q.error){mal('No se pudo guardar: '+q.error.message);return}
@@ -1307,7 +1308,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   SEC['suspender / reactivar cuentas']={g:'Motorizados',t:'Suspender o reactivar',rf:1,
     load:async()=>{const r=await D().from('motorizados').select('id,nombre_completo,telefono,activo').order('nombre_completo',{ascending:true});if(r.error)throw r.error;return r.data||[]},
     v(){const k='suspender / reactivar cuentas',c=datos(k,this.load),f=SF[k];f.f=f.f||'todas';f.q=f.q||'';if(!c.data)return {body:cargando(c)};const R=c.data,on=R.filter(m=>m.activo!==false).length;
-      let h=`<div class="g2"><div class="kp"><span>Cuentas activas</span><b>${on}</b></div><div class="kp"><span>Suspendidas</span><b>${R.length-on}</b></div></div><div class="fld"><input type="search" placeholder="Buscar motorizado" value="${E(f.q)}" data-in="sf:q" data-vivo="spL" aria-label="Buscar motorizado"></div><div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[['todas','Todas'],['on','Activas'],['off','Suspendidas']].map(x=>`<button type="button" class="${f.f===x[0]?'on':''}" data-sa="f:${x[0]}">${x[1]}</button>`).join('')}</div>`;
+      let h=`<div class="fld"><input type="search" placeholder="Buscar motorizado" value="${E(f.q)}" data-in="sf:q" data-vivo="spL" aria-label="Buscar motorizado"></div><div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[['todas','Todas'],['on','Activas'],['off','Suspendidas']].map(x=>`<button type="button" class="${f.f===x[0]?'on':''}" data-sa="f:${x[0]}">${x[1]}</button>`).join('')}</div>`;
       return {body:h+`<div id="spL">${this.lista()}</div>`}},
     lista(){const k='suspender / reactivar cuentas',f=SF[k],R=(C2['s:'+k]||{}).data||[],q=(f.q||'').trim().toLowerCase();
       const L2=R.filter(m=>(f.f==='todas'||(f.f==='on')===(m.activo!==false))&&(!q||String(m.nombre_completo||'').toLowerCase().includes(q)||String(m.telefono||'').includes(q))).sort((a,b)=>((a.activo===false)-(b.activo===false))||String(a.nombre_completo||'').localeCompare(String(b.nombre_completo||''),'es'));
@@ -1328,7 +1329,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const bm=new Map();try{const {data}=await D().from('pedidos').select('id,motorizado_id,estado').in('estado',['asignado','aceptado','pedido_aceptado','camino_recojo','en_camino','en_entrega','camino_entrega']);(data||[]).forEach(o=>{const k=String(o.motorizado_id||'');if(k)bm.set(k,(bm.get(k)||0)+1)})}catch(e){}
       return act.map(m=>{const id=String(m.id);let pt=typeof adminGpsPoint==='function'?adminGpsPoint(m):null,t=tsOf(m);const h=hist.get(id);if(h&&(!pt||!t||h.t>t)){pt=h.pt;t=h.t}const age=t?(Date.now()-t)/60000:null,on=!!pt&&age!=null&&age<=5,st=!!pt&&!on&&age!=null&&age<=1440;return {m,id,pt,t,on,stale:st,n:bm.get(id)||0}})},
     v(){const k='motorizados / gps',c=datos(k,this.load),f=SF[k];f.f=f.f||'todos';if(!c.data)return {body:cargando(c)};const S2=c.data,on=S2.filter(s=>s.on).length;
-      let h=`<div class="cols3"><div class="kp"><span>En línea</span><b>${on}</b></div><div class="kp"><span>Sin señal</span><b>${S2.length-on}</b></div><div class="kp"><span>En ruta</span><b>${S2.filter(s=>s.n).length}</b></div></div>`;
+      let h='';
       h+=`<div id="gMap" style="height:300px;border-radius:18px;overflow:hidden;border:1px solid #F1E4DA;background:#F6EFE9"></div>`;
       h+=`<div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[['todos','Todos'],['on','En línea'],['off','Sin señal']].map(x=>`<button type="button" class="${f.f===x[0]?'on':''}" data-sa="f:${x[0]}">${x[1]}</button>`).join('')}</div>`;
       const L2=S2.filter(s=>f.f==='todos'||(f.f==='on')===s.on).sort((a,b)=>(b.on-a.on)||(b.n-a.n)||((b.t||0)-(a.t||0)));
@@ -1469,7 +1470,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     load:async()=>{const r=await D().from('codigos_delivery').select('*');if(r.error)throw r.error;return (r.data||[]).sort((a,b)=>(Date.parse(b.creado_en||b.created_at||b.fecha_inicio||0)||0)-(Date.parse(a.creado_en||a.created_at||a.fecha_inicio||0)||0))},
     v(){const k='códigos de descuento',c=datos(k,this.load),f=SF[k];f.fl=f.fl||'todos';
       if(f.ed)return this.form();if(!c.data)return {body:cargando(c)};const R=c.data,S2=R.map(dcSt);
-      let h=`<div class="cols3"><div class="kp"><span>Activos</span><b>${S2.filter(s=>s==='Activo').length}</b></div><div class="kp"><span>Usos</span><b>${R.reduce((a,p)=>a+Number(p.usos||0),0)}</b></div><div class="kp"><span>Vencidos</span><b>${S2.filter(s=>s==='Vencido'||s==='Agotado').length}</b></div></div>`;
+      let h='';
       h+=`<div class="chips" style="flex-wrap:wrap">${[['todos','Todos'],['Activo','Activos'],['Programado','Programados'],['fin','Vencidos'],['Inactivo','Apagados']].map(x=>`<button type="button" class="${f.fl===x[0]?'on':''}" data-sa="fl:${x[0]}">${x[1]}</button>`).join('')}</div>`;
       const L2=R.filter((p,i)=>f.fl==='todos'||(f.fl==='fin'?['Vencido','Agotado'].includes(S2[i]):S2[i]===f.fl));
       h+=L2.length?L2.map(p=>{const s=dcSt(p),mx=Number(p.max_usos||0),u=Number(p.usos||0);
