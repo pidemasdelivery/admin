@@ -1601,12 +1601,21 @@ button:active .pi{transform:scale(.92)}
     if(!pv&&H.style.overflow!=='hidden')H.style.overflow='hidden';
   }
   function abrirSeccion(k,m,kk){ultimo='';prepararPag();if(window.PdPasos&&PdPasos.isOpen())PdPasos.close();marca=m;kick=kk||'Administración';if(movido)volverLista();try{window.__pdmOpen&&window.__pdmOpen(k)}catch(e){console.warn(e)}key='';setTimeout(pintar,60)}
+  /* Volver a donde se llamó: cada página recuerda de dónde vino (pestaña, sección abierta y menú marcado) */
+  var desde=[];
+  function volverTab(porPop){const d=desde.pop();if(!d){ir(HUBDE[tab]||'inicio');return}
+    tab=d.tab;marca=d.tab;navG=d.navG;sub=d.sub;if(d.secK)secK=d.secK;key='';
+    if(porPop){if(sub)try{history.pushState({pdApp:1},'')}catch(_){}}
+    else if(history.state&&history.state.pdTab){if(sub)try{history.replaceState({pdApp:1},'')}catch(_){}else{ignorarPop=true;history.back()}}
+    pintar()}
   function ir(t){
     if(window.PdPasos&&PdPasos.isOpen())PdPasos.close();
     if(paginaVieja())cerrarVieja();
-    if(sub&&history.state?.pdApp){ignorarPop=true;history.back()}sub=null;
     if(t==='menu')t='h:mas';
-    if(t!=='h:mas')mq='';navG=HUBDE[t]||(NAVK.includes(t)?t:navG);
+    if(!NAVK.includes(t)&&t!==tab){desde.push({tab,sub,secK,navG});
+      if(sub){try{history.replaceState({pdApp:1,pdTab:1},'')}catch(_){}}else{try{history.pushState({pdApp:1,pdTab:1},'')}catch(_){}}sub=null}
+    else{if(NAVK.includes(t))desde=[];if(sub&&history.state?.pdApp){ignorarPop=true;history.back()}sub=null}
+    if(t!=='h:mas')mq='';navG=NAVK.includes(t)?t:(desde.length?navG:(HUBDE[t]||navG));
     tab=t;marca=t;key='';if(t==='caja'&&C2.caja)C2.caja.t=0;if(t==='sueldo'&&C2.sueldo)C2.sueldo.t=0;if(t==='clientes'&&C2.cli)C2.cli.t=0;pintar();
   }
   function abrirPedido(id){
@@ -1664,7 +1673,7 @@ button:active .pi{transform:scale(.92)}
     if(PE.f&&a.dataset.a.startsWith('pe:met:')){PE.f.metodo=a.dataset.a.slice(7);key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:quitar:')){const i=+a.dataset.a.slice(10),x=PE.f.items[i];if(x&&PE.f.items.length>1){PE.f.quitar.push(x.id);PE.f.items.splice(i,1);key='';pintar()}else if(x){(window.pdAviso||alert)('El pedido debe tener al menos un producto.')}return}
     switch(a.dataset.a){
-      case 'hub':ir(HUBDE[tab]||'inicio');break;
+      case 'hub':volverTab(false);break;
       case 'cajon':if(!cajon&&paginaVieja())cerrarVieja();cajon=!cajon;if(cajon){abiertoGr=null;mq='';cajonT=Date.now();try{history.pushState({pdApp:1,cajon:1},'')}catch(_){}}else if(history.state&&history.state.cajon){ignorarPop=true;history.back()}key='';pintar();break;
       case 'act':{a.classList.add('spin');const r=$('refreshOrders');if(r)r.click();else try{await window.loadOrders()}catch(_){}setTimeout(()=>{key='';pintar()},800);break}
       case 'bell':{SF['__avisos']=SF['__avisos']||{};SF['__avisos'].vis=Number((()=>{try{return localStorage.getItem('pdaAvisosVisto')}catch(_){return 0}})())||0;SF['__avisos'].c='todos';abrirSec('__avisos');setTimeout(()=>{try{window.pdaAvisos&&window.pdaAvisos.marcarVisto()}catch(_){}},1500);break}
@@ -1694,7 +1703,7 @@ button:active .pi{transform:scale(.92)}
       case 'salir':{const b=document.querySelector('#pdMenu .m3Out');if(b)b.click();break}
     }
   }
-  addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(sub==='sec'&&secK==='__perfil'&&SF['__perfil']&&SF['__perfil'].vista==='clave'){SF['__perfil'].vista=null;key='';pintar();return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar()}});
+  addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(sub==='sec'&&secK==='__perfil'&&SF['__perfil']&&SF['__perfil'].vista==='clave'){SF['__perfil'].vista=null;key='';pintar();return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar();return}if(desde.length){volverTab(true)}});
   setInterval(pintar,600);
   /* Aviso cuando un pedido se entrega: dice si el motorizado quedó libre */
   {const FIN=/^(entregado|completado|finalizado)$/,CERR=/^(entregado|completado|finalizado|cancelad[oa]|anulado|rechazado|no_entregado)$/;let prev=null;let th=null,tr=null,tq=0;
