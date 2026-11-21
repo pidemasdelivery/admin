@@ -1394,6 +1394,35 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(p[0]==='guardar'){const m=ORD.find(k=>{const d=C.dias[k];return d.activo!==false&&!(d.abre&&d.ultimo&&d.ultimo>d.abre)});if(m){f.msg='Revisa el '+((pdHorario.NOM||{})[m]||m)+': el último pedido debe ser después de la apertura.';return}
         try{await pdHorario.guardar(C);ok('Horario guardado. La tienda ya lo usa.');f.C=null;recargar('horario')}catch(e){f.msg='No se pudo guardar: '+(e.message||e)}}}};
 
+  /* --- Avisos y actividad: separados en Pedidos, Motorizado y Negocio (mismo diseño que el panel del negocio y del motorizado) --- */
+  SEC['__avisos']={g:'Avisos',t:'Avisos y actividad',rf:1,
+    load:async()=>{try{window.pdaAvisos&&await window.pdaAvisos.cargarCaja()}catch(_){}return {t:Date.now()}},
+    evs(){const A=window.pdaAvisos;let ev=[];try{ev=(A&&A.eventos()||[]).slice()}catch(_){}
+      const lim=Date.now()-48*3600e3;
+      ev=ev.map(x=>{let cat='motorizado';if(x.k==='ped'&&/^(Nuev|Pedido cancelado)/.test(String(x.tit||'')))cat='pedidos';return Object.assign({},x,{cat})});
+      L().forEach(o=>{if(!o.negocio_id)return;const n=NEG(o.negocio_id).nombre||'El negocio',c=String(o.nombre_cliente||'').trim(),sub=ref(o.id)+(c?' · '+c:'');
+        const add=(t,tit,s2,ic)=>{if(t>lim)ev.push({cat:'negocio',k:'neg',t,tit,sub:s2,id:o.id,icN:ic})};
+        add(T(o.negocio_aceptado_en),n+' aceptó el pedido',sub,'store');
+        if(est(o)==='rechazado')add(T(o.rechazado_en||o.actualizado_en||o.creado_en),n+' rechazó el pedido',(o.motivo_cancelacion?'Motivo: '+o.motivo_cancelacion+' · ':'')+sub,'x');
+        add(T(o.negocio_pagado_en),'Le pagaste a '+n,'Valor de los productos · '+sub,'cash');
+        add(T(o.negocio_cobrado_en),n+' pagó el delivery',M(o.costo_delivery)+' · '+sub,'cash')});
+      return ev.sort((a,b)=>b.t-a.t).slice(0,120)},
+    v(){const k='__avisos',c=datos(k,this.load),f=SF[k];f.c=f.c||'todos';if(!c.data)return {body:cargando(c)};
+      const ev=this.evs(),vis=f.vis||0;const n=x=>x==='todos'?ev.length:ev.filter(e=>e.cat===x).length;
+      const CH=[['todos','Todos'],['pedidos','Pedidos'],['motorizado','Motorizado'],['negocio','Negocio']];
+      let h=`<div class="chips">${CH.map(x=>`<button type="button" data-sa="c:${x[0]}" class="${f.c===x[0]?'on':''}">${x[1]}${n(x[0])?' · '+n(x[0]):''}</button>`).join('')}</div>`;
+      const Lv=f.c==='todos'?ev:ev.filter(e=>e.cat===f.c);
+      const icono=e=>e.cat==='negocio'?(IC[e.icN]||IC.store):e.k==='caja'?IC.cash:e.k==='sueldo'?IC.wallet:e.k==='guia'?IC.box:e.cat==='pedidos'?IC.box:IC.moto;
+      h+=Lv.length?Lv.map((e,i)=>`<button type="button" class="av2" data-sa="ir:${i}"><span class="ic"${e.k==='ocu'&&e.abierta?' style="background:#FDE8E8;color:#B42318"':''}>${icono(e)}</span><span class="tx"><b>${E((window.pdTxt||String)(e.tit))}</b><span>${E((window.pdTxt||String)(e.sub||''))}</span><small>${E(fecha(e.t))}${e.amt?' · '+E(e.amt):''}</small>${e.k==='ocu'&&e.abierta?`<span style="margin-top:8px"><span class="b" style="display:inline-flex;align-items:center;height:36px;padding:0 12px;font-size:14px" data-sa="res:${E(e.id)}">Marcar como resuelto</span></span>`:''}</span>${e.t>vis?'<span class="pt"></span>':''}</button>`).join(''):'<div class="vac">No hay avisos de las últimas 48 horas.</div>';
+      f.L=Lv;return {body:h}},
+    async a(x){const f=SF['__avisos'];
+      if(x.startsWith('c:')){f.c=x.slice(2);return}
+      if(x.startsWith('res:')){const id=x.slice(4);const q=await D().from('pedidos').update({incidencia_resuelta:true}).eq('id',id);if(q.error){mal('No se pudo guardar: '+q.error.message);return}const o=L().find(y=>String(y.id)===String(id));if(o)o.incidencia_resuelta=true;ok('Reporte resuelto');return}
+      if(x.startsWith('ir:')){const e=(f.L||[])[+x.slice(3)];if(!e)return;
+        if(e.sueldo){try{window.pdAppAdm.ir('sueldo')}catch(_){}return}
+        if(e.caja&&!e.id){try{window.pdAppAdm.ir('caja')}catch(_){}return}
+        if(e.id&&window.pdAbrirPedidoAdmin)window.pdAbrirPedidoAdmin(e.id)}}};
+
   /* --- Mi perfil --- */
   SEC['__perfil']={g:'Mi cuenta',t:'Mi perfil',
     load:async()=>{const {data:{session}}=await D().auth.getSession();const uid=session&&session.user&&session.user.id;let p={};if(uid){const r=await D().from('perfiles').select('*').eq('id',uid).maybeSingle();p=r.data||{}}const cfg=await leerCfg();return {uid,email:session&&session.user&&session.user.email,p,wa:(cfg&&cfg.whatsapp_admin)||'986233533'}},
@@ -1744,7 +1773,7 @@ button:active .pi{transform:scale(.92)}
       case 'hub':ir(HUBDE[tab]||'inicio');break;
       case 'cajon':if(!cajon&&paginaVieja())cerrarVieja();cajon=!cajon;if(cajon){abiertoGr=null;mq='';cajonT=Date.now();try{history.pushState({pdApp:1,cajon:1},'')}catch(_){}}else if(history.state&&history.state.cajon){ignorarPop=true;history.back()}key='';pintar();break;
       case 'act':{a.classList.add('spin');const r=$('refreshOrders');if(r)r.click();else try{await window.loadOrders()}catch(_){}setTimeout(()=>{key='';pintar()},800);break}
-      case 'bell':{ultimo='Avisos';marca=tab;kick='Avisos';$('pdaBell')?.click();setTimeout(()=>{key='';pintar()},120);break}
+      case 'bell':{SF['__avisos']=SF['__avisos']||{};SF['__avisos'].vis=Number((()=>{try{return localStorage.getItem('pdaAvisosVisto')}catch(_){return 0}})())||0;SF['__avisos'].c='todos';abrirSec('__avisos');setTimeout(()=>{try{window.pdaAvisos&&window.pdaAvisos.marcarVisto()}catch(_){}},1500);break}
       case 'atendidos':chip='entregado';limite=40;tab='inicio';key='';pintar();break;
       case 'nuevo':nuevoAb=!nuevoAb;key='';pintar();break;
       case 'nuevoX':nuevoAb=false;key='';pintar();break;

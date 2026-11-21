@@ -994,7 +994,7 @@ function loop(){tick++;sync();if(!$('pdaBell')?.hidden&&(tick%10===1))cargarCaja
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loop,{once:true});else loop();
 setInterval(loop,3000);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('pdaPanel')&&!$('pdaPanel').hidden)cerrar()});
-window.pdaAvisos={abrir,eventos,enCurso,cargarCaja};
+window.pdaAvisos={abrir,eventos,enCurso,cargarCaja,marcarVisto};
 })();
 }catch(e){console.error("[pd-adm-avisos-js]",e)}
 
