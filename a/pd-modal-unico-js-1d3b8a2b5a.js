@@ -173,6 +173,7 @@ new MutationObserver(ms=>{for(const m of ms){const x=m.target;if(x.__pdmOcultoPo
 let D=null;
 function arribaDelTodo(t,h){for(let x=t;x&&x!==h.parentElement;x=x.parentElement){if(x.scrollTop>0){const c=getComputedStyle(x);if(/(auto|scroll)/.test(c.overflowY))return false}if(x===h)break}return true}
 function inicio(y,x,t){
+  if(document.documentElement.dataset.pdSinArrastre==='1')return;/* las páginas ya no se cierran arrastrando hacia abajo */
   const h=t&&t.closest&&t.closest('[data-pdm-hoja]');if(!h)return;
   if(t.closest('input,textarea,select,[contenteditable="true"],.leaflet-container,canvas,[data-pdm-no-arrastre]'))return;
   const r=h.getBoundingClientRect();
