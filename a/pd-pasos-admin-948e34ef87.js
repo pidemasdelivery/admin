@@ -75,13 +75,14 @@
       const sub0=Number(o.subtotal)||0,serv0=Number(o.costo_delivery)||Math.max(0,(Number(o.total)||0)-sub0)||(Number(o.total)||0),tot0=t==='compra'&&sub0>0?sub0+serv0:(Number(o.total)||0);
       let h=`<div class="amt" style="padding:14px"><div class="k">Total del pedido</div><div class="n" style="font-size:36px">${M(tot0)}</div><div class="pill">${E(t==='compra'&&pagado?'Servicio pagado':pagoTx)}</div></div>`;
       h+=U.who(remN,subQ(t==='compra'?'Cliente':'Quien envía'),'',true);
-      let d='';
-      if(t==='compra'){const det=campo(o,'Compra solicitada','¿Qué desea que compremos?'),cmp=campo(o,'Comprobante');/* el lugar sale en el paso Compra */
-        d+=`<div class="li col"><span>Qué comprar</span><b>${E(det||'—')}</b></div>${cmp?`<div class="li"><span>Comprobante</span><b>${E(cmp)}</b></div>`:''}`}
-      if(t==='enc')d+=`<div class="li"><span>Agencia</span><b style="text-align:right;white-space:normal">${E(o.agencia_destino||'—')}</b></div><div class="li"><span>Destino</span><b style="text-align:right;white-space:normal">${E(o.destino_final||o.direccion_entrega||'—')}</b></div><div class="li"><span>Pago del envío</span><b>${o.tipo_pago_encomienda==='pago_en_agencia'?'En agencia':'A destino'}</b></div>`;
-      if(Number(o.subtotal)>0)d+=`<div class="li"><span>${t==='compra'?'Compra':'Productos'}</span><b>${M(o.subtotal)}</b></div><div class="li"><span>Servicio</span><b>${M(serv0)}</b></div>`;
-      if(d)h+=`<div class="box"><div class="k">Detalle</div>${d}</div>`;
-      if(notas.length)h+=`<div class="box"><div class="k">Notas</div><div style="font-size:15px;line-height:1.45">${E(notas.join(' · '))}</div></div>`;
+      /* una tarjeta por cada dato, con su título en negrita */
+      const card=(k,html)=>`<div class="box"><div class="k">${k}</div>${html}</div>`;
+      if(t==='compra'){const det=campo(o,'Compra solicitada','¿Qué desea que compremos?'),cmp=campo(o,'Comprobante'),doc=campo(o,'DNI/RUC');/* el lugar sale en el paso Compra */
+        h+=card('Qué comprar',`<div class="tx">${E(det||'—')}</div>`);
+        if(cmp||doc)h+=card('Comprobante',`${cmp?`<div class="li"><span>Tipo</span><b>${E(cmp)}</b></div>`:''}${doc?`<div class="li"><span>DNI/RUC</span><b>${E(doc)}</b></div>`:''}`)}
+      if(t==='enc')h+=card('Envío',`<div class="li"><span>Agencia</span><b>${E(o.agencia_destino||'—')}</b></div><div class="li"><span>Destino</span><b>${E(o.destino_final||o.direccion_entrega||'—')}</b></div><div class="li"><span>Pago del envío</span><b>${o.tipo_pago_encomienda==='pago_en_agencia'?'En agencia':'A destino'}</b></div>`);
+      if(Number(o.subtotal)>0)h+=card('Montos',`<div class="li"><span>${t==='compra'?'Compra':'Productos'}</span><b>${M(o.subtotal)}</b></div><div class="li"><span>Servicio</span><b>${M(serv0)}</b></div><div class="li"><span>Total</span><b>${M(tot0)}</b></div>`);
+      if(notas.length)h+=`<div class="box"><div class="k">Notas</div><div class="tx">${E(notas.join(' · '))}</div></div>`;
       s.body=h+U.contact(null,remT,'Hola, te escribimos de Pidemás por tu pedido '+U.ref(id)+'.');}
     /* 1 · Asignar */
     {const s=steps[1];s.sum='Asignado a '+mn;
