@@ -1379,6 +1379,55 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(f.file&&old&&old!==url){const p=old.split('/restaurantes/')[1];if(p)stR().remove([decodeURIComponent(p.split('?')[0])]).catch(()=>{})}
       c.data=d;f.file=null;f.prev='';ok('Listo: los motorizados ya ven este QR')}};
 
+
+  /* --- Tarifas --- */
+  const tSw=(on,sa,lbl)=>`<button type="button" role="switch" aria-checked="${!!on}" aria-label="${E(lbl)}" data-sa="${sa}" style="position:relative;flex:0 0 52px;width:52px;height:32px;border-radius:999px;border:0;background:${on?'#C4410C':'#EADFD6'};cursor:pointer"><span style="position:absolute;top:3px;left:${on?23:3}px;width:26px;height:26px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(31,26,23,.25)"></span></button>`;
+  const tNum=v=>{const n=Number(String(v??'').replace(',','.'));return Number.isFinite(n)?n:0};
+  SEC['tarifas']={g:'Servicios',t:'Tarifas',
+    load:async()=>{const T=window.pdTarifa;try{return await T.cargar(true)}catch(e){return T.config}},
+    v(){const k='tarifas',c=datos(k,this.load),f=SF[k];if(!c.data)return {body:cargando(c)};
+      if(!f.C){f.C=JSON.parse(JSON.stringify(c.data));f.C.zonas=f.C.zonas||[];f.C.recargos=f.C.recargos||{};f.zc=f.C.zonas.map(z=>z.lat!=null&&z.lng!=null?z.lat+', '+z.lng:'');f.km=f.km??'4';f.dest=f.dest||''}
+      const C=f.C,R=C.recargos,fi=(l,p,v,ph)=>`<div class="fld"><label>${l}</label><input inputmode="decimal" data-in="tf:${p}" value="${E(v??'')}"${ph?` placeholder="${E(ph)}"`:''}></div>`;
+      const fecha=C.actualizado?new Date(C.actualizado).toLocaleString('es-PE',{timeZone:'America/Lima',dateStyle:'short',timeStyle:'short'}):'nunca (valores por defecto)';
+      let h=U.note('Así se calcula el delivery en la tienda y en los servicios. Última actualización: '+E(fecha)+'.');
+      h+=`<div class="cd"><div class="lbl">Tarifa por distancia</div><span style="font-size:14px;color:#6B5E55">Se usa cuando la entrega no cae dentro de una zona con precio fijo. La distancia es por calles.</span>
+        <div class="g2">${fi('Tarifa base (S/)','base',C.base)}${fi('Km incluidos','km_incluidos',C.km_incluidos)}</div>
+        <div class="g2">${fi('Precio por km extra (S/)','por_km',C.por_km)}${fi('Tarifa mínima (S/)','minimo',C.minimo)}</div>
+        ${fi('Tarifa máxima (S/)','maximo',C.maximo,'0 = sin tope')}
+        <div class="fld"><label>Redondeo</label><div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[[0.1,'S/ 0.10'],[0.5,'S/ 0.50'],[1,'S/ 1.00']].map(x=>`<button type="button" class="${Number(C.redondeo)===x[0]?'on':''}" data-sa="rd:${x[0]}">${x[1]}</button>`).join('')}</div></div></div>`;
+      h+=`<div class="lbl" style="margin:6px 4px 0">Zonas con precio fijo</div><span style="font-size:14px;color:#6B5E55;margin:0 4px">Si la entrega cae dentro del radio de una zona, se cobra su precio fijo. Si cae en varias, gana la más cercana.</span>`;
+      h+=C.zonas.map((z,i)=>{const ok=window.pdTarifa.coords(f.zc[i]);return `<div class="cd" style="${z.activo===false?'opacity:.7':''}"><div class="row"><input style="flex:1;height:50px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px;font-weight:700" placeholder="Nombre de la zona" data-in="tf:z.${i}.nombre" value="${E(z.nombre||'')}">${tSw(z.activo!==false,'zact:'+i,'Zona activa')}</div>
+        <div class="g2">${fi('Precio fijo (S/)','z.'+i+'.precio',z.precio)}${fi('Radio (km)','z.'+i+'.radio_km',z.radio_km)}</div>
+        <div class="fld"><label>Centro de la zona</label><input data-in="tf:zc.${i}" value="${E(f.zc[i])}" placeholder="Enlace de Maps o -5.19, -80.63"></div>
+        <span style="font-size:13px;color:${ok?'#0F5E2E':'#B42318'}">${ok?'Centro: '+ok.lat.toFixed(5)+', '+ok.lng.toFixed(5):'Falta el centro de la zona.'}</span>
+        <div class="row"><button type="button" class="b" style="flex:1;height:44px" data-sa="zmap:${i}">${ok?'Cambiar en el mapa':'Marcar en el mapa'}</button><button type="button" class="b" style="height:44px;padding:0 14px;color:#B42318;border-color:#F4C7C3" data-sa="zdel:${i}">Eliminar</button></div></div>`}).join('');
+      h+=`<button type="button" class="b" style="height:50px" data-sa="zadd">${IC.plus}Agregar zona</button>`;
+      const rg=(key,t,sub,campos)=>{const o=R[key]||{};return `<div class="swr" style="display:flex;align-items:center;gap:12px"><span style="flex:1 1 0%"><b style="display:block;font-size:16px">${t}</b><span style="font-size:13px;color:#6B5E55">${sub}</span></span>${tSw(o.activo,'rg:'+key,t)}</div>${o.activo?campos:''}`};
+      h+=`<div class="cd"><div class="lbl">Recargos</div><span style="font-size:14px;color:#6B5E55">Se suman a la tarifa (por km o por zona).</span>
+        ${rg('nocturno','Recargo nocturno','En el horario indicado (hora de Lima).',`<div class="g2"><div class="fld"><label>Desde</label><input type="time" data-in="tf:r.nocturno.desde" value="${E((R.nocturno||{}).desde||'21:00')}"></div><div class="fld"><label>Hasta</label><input type="time" data-in="tf:r.nocturno.hasta" value="${E((R.nocturno||{}).hasta||'06:00')}"></div></div>${fi('Monto (S/)','r.nocturno.monto',(R.nocturno||{}).monto??2)}`)}
+        ${rg('lluvia','Recargo por lluvia','Actívalo solo mientras llueve y apágalo después.',fi('Monto (S/)','r.lluvia.monto',(R.lluvia||{}).monto??2))}
+        ${rg('pedido_grande','Recargo por pedido grande','Cuando los productos superan un monto.',`<div class="g2">${fi('Desde (S/)','r.pedido_grande.desde_subtotal',(R.pedido_grande||{}).desde_subtotal??150)}${fi('Monto (S/)','r.pedido_grande.monto',(R.pedido_grande||{}).monto??2)}</div>`)}</div>`;
+      h+=`<div class="cd"><div class="lbl">Probar la tarifa</div><span style="font-size:14px;color:#6B5E55">Calcula con lo que estás editando, aunque todavía no lo guardes.</span>
+        <div class="fld"><label>Distancia (km)</label><input inputmode="decimal" data-in="sf:km" value="${E(f.km)}"></div><div class="fld"><label>Ubicación de entrega (opcional)</label><input data-in="sf:dest" value="${E(f.dest)}" placeholder="Enlace de Maps o lat, lng"></div>
+        <button type="button" class="b" style="height:48px" data-sa="sim">Calcular</button>${f.sim?`<div class="sum"><div class="li t"><span>Delivery</span><b>${M(f.sim.total)}</b></div>${f.sim.detalle.map(d=>`<div class="li"><span>${E(d.concepto)}</span><b>${d.monto<0?'− ':''}${M(Math.abs(d.monto))}</b></div>`).join('')}</div>`:''}</div>`;
+      if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
+      return {body:h,foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="guardar">Guardar tarifas</button>`}},
+    leer(){const f=SF['tarifas'],C=f.C;C.zonas.forEach((z,i)=>{const c=window.pdTarifa.coords(f.zc[i]);if(c){z.lat=c.lat;z.lng=c.lng}else{z.lat=null;z.lng=null}})},
+    async a(x){const k='tarifas',f=SF[k],C=f.C,[op,arg]=x.split(':');f.msg='';
+      if(op==='rd'){C.redondeo=Number(arg);return}
+      if(op==='zadd'){C.zonas.push({nombre:'',precio:C.base,radio_km:1.5,lat:null,lng:null,activo:true});f.zc.push('');return}
+      if(op==='zdel'){if(!(await conf('¿Eliminar esta zona?')))return;C.zonas.splice(+arg,1);f.zc.splice(+arg,1);return}
+      if(op==='zact'){const z=C.zonas[+arg];z.activo=z.activo===false;return}
+      if(op==='zmap'){const el2=window.pdMapa&&pdMapa.elegir;if(!el2)return;const r=await el2({titulo:'Centro de la zona',centro:window.pdTarifa.coords(f.zc[+arg])});if(r)f.zc[+arg]=Number(r.lat).toFixed(6)+', '+Number(r.lng).toFixed(6);return}
+      if(op==='rg'){C.recargos[arg]=C.recargos[arg]||{};C.recargos[arg].activo=!C.recargos[arg].activo;return}
+      if(op==='sim'){this.leer();f.sim=window.pdTarifa.calcularCon(JSON.parse(JSON.stringify(C)),{km:tNum(f.km),subtotal:0,destino:window.pdTarifa.coords(f.dest)});return}
+      if(op==='guardar'){this.leer();
+        const malas=C.zonas.filter(z=>z.activo!==false&&(!String(z.nombre||'').trim()||!(Number(z.radio_km)>0)||z.lat==null));
+        if(malas.length){f.msg='Completa nombre, radio y centro de cada zona activa (o desactívala).';return}
+        if(!(C.base>=0)||!(C.por_km>=0)){f.msg='Revisa la tarifa base y el precio por km.';return}
+        try{const n=await window.pdTarifa.guardar(C);C.actualizado=n.actualizado;C2['s:'+k].data=n;ok('Tarifas guardadas. La tienda ya cobra con estos valores.')}
+        catch(e){f.msg='No se pudo guardar: '+(e.message||e)}}}};
+
   /* --- Horario de Pidemás --- */
   const ORD=['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
   const h12=t=>{const m=String(t||'').match(/^(\d{1,2}):(\d{2})/);if(!m)return t||'';const h=+m[1];return (h%12||12)+(m[2]!=='00'?':'+m[2]:'')+' '+(h>=12?'p. m.':'a. m.')};
@@ -1751,6 +1800,11 @@ button:active .pi{transform:scale(.92)}
     if(k.startsWith('sx:')){SL.f[k.slice(3)]=el.value;slVivo(k.slice(3),el);return}
     if(k.startsWith('sc:')){if(SL.cfg)SL.cfg[k.slice(3)]=el.value;return}
     if(k==='clq'){CL.q=el.value;CL.lim=60;const b=root.getElementById('clL');if(b)b.innerHTML=clFilas();return}
+    if(k.startsWith('tf:')&&SF['tarifas']&&SF['tarifas'].C){const f=SF['tarifas'],C=f.C,p=k.slice(3).split('.');const v=el.type==='time'?el.value:el.value;
+      if(p[0]==='zc'){f.zc[+p[1]]=v;return}
+      if(p[0]==='z'){const z=C.zonas[+p[1]];if(z)z[p[2]]=p[2]==='nombre'?v:tNum(v);return}
+      if(p[0]==='r'){C.recargos[p[1]]=C.recargos[p[1]]||{};C.recargos[p[1]][p[2]]=el.type==='time'?v:tNum(v);return}
+      C[p[0]]=tNum(v);return}
     if(k.startsWith('sf:')){SF[secK][k.slice(3)]=el.value;const vv=el.dataset.vivo;if(vv&&SEC[secK].lista){clearTimeout(entrada.t);entrada.t=setTimeout(()=>{const b=root.getElementById(vv);if(b)b.innerHTML=SEC[secK].lista()},250)}return}
     if(k==='qrfile'){const fl=el.files&&el.files[0];el.value='';if(!fl)return;if(!/^image\//.test(fl.type)||fl.size>5*1024*1024){mal('Elige una imagen (PNG o JPG) de menos de 5 MB.');return}SF['qr yape'].file=fl;SF['qr yape'].prev=URL.createObjectURL(fl);key='';pintar();return}
     if(k==='pfoto'){const fl=el.files&&el.files[0];el.value='';const i=$('pdhFotoFile');if(!fl||!i)return;try{const dt=new DataTransfer();dt.items.add(fl);i.files=dt.files;i.dispatchEvent(new Event('change',{bubbles:true}))}catch(_){}SF['__perfil'].prev=URL.createObjectURL(fl);key='';pintar();return}

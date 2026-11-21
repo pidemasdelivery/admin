@@ -1948,99 +1948,6 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 }catch(e){console.error("[pdcj-selector-js]",e)}
 
-/* ===== pidemas-tarifa-admin-js ===== */
-try{
-(function(){
-const $=id=>document.getElementById(id);
-const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const money=n=>'S/ '+(Number(n)||0).toFixed(2);
-let C=null;
-const num=(v,d)=>{const n=Number(String(v).replace(',','.'));return Number.isFinite(n)?n:d};
-function abrir(){
-try{document.getElementById('adminSideMenuClose')?.click()}catch(e){}
-const tbx=$('tarifasAdminBox');if(tbx&&typeof window.__pdmOpen==='function'&&!tbx.closest('#pdmBody')){window.__pdmOpen('tarifas');return}
-let m=$('pdtfModal');
-if(!m){m=document.createElement('div');m.id='pdtfModal';m.setAttribute('role','presentation');(tbx||document.body).appendChild(m)}
-m.hidden=false;document.documentElement.style.overflow='hidden';if(!tbx)document.body.classList.add('pdtf-abierto');m.innerHTML='<div class="tf-bg" data-a="cerrar"></div><div class="tf-s"><div class="tf-top"><div><b>Tarifas</b><small>Cargando…</small></div><button type="button" class="tf-x" data-a="cerrar" aria-label="Cerrar">×</button></div></div>';
-m.onclick=e=>{const b=e.target.closest('[data-a]');if(b)accion(b)};
-/* se abre ya llena con lo último guardado; si en Supabase hay algo distinto se actualiza sola (salvo que ya estés editando) */
-let tocado=false;try{C=JSON.parse(JSON.stringify(pdTarifa.config||{}));pintar();m.addEventListener('input',()=>{tocado=true},{once:true})}catch(e){}
-pdTarifa.cargar(true).then(c=>{if(tocado||$('pdtfModal')?.hidden)return;const n=JSON.stringify(c);if(n!==JSON.stringify(C)){C=JSON.parse(n);pintar()}}).catch(()=>{if(!C){C=pdTarifa.config;pintar()}});
-}
-function cerrar(){const m=$('pdtfModal');if(m)m.hidden=true;document.documentElement.style.overflow='';document.body.classList.remove('pdtf-abierto')}
-function sw(k,t,s,on){return '<div class="tf-sw"><span><b>'+t+'</b><small>'+s+'</small></span><button type="button" class="tf-tg'+(on?' tf-on':'')+'" data-a="tg" data-k="'+k+'" aria-pressed="'+!!on+'"></button></div>'}
-function zonaHTML(z,i){
-const ok=pdTarifa.coords(z.lat!=null&&z.lng!=null&&z.lat!==''?{lat:z.lat,lng:z.lng}:null);
-return '<div class="tf-z" data-i="'+i+'"><div class="tf-zh"><input data-z="nombre" placeholder="Nombre de la zona" value="'+E(z.nombre||'')+'"><button type="button" class="tf-tg'+(z.activo!==false?' tf-on':'')+'" data-a="zact" data-i="'+i+'" title="Activa"></button><button type="button" class="tf-zd" data-a="zdel" data-i="'+i+'" aria-label="Eliminar zona">×</button></div>'+
-'<div class="tf-g"><label class="tf-f">Precio fijo (S/)<input data-z="precio" inputmode="decimal" value="'+E(z.precio??'')+'"></label><label class="tf-f">Radio (km)<input data-z="radio_km" inputmode="decimal" value="'+E(z.radio_km??'')+'"></label></div>'+
-'<label class="tf-f" style="margin-top:10px">Centro de la zona<input data-z="centro" placeholder="Enlace de Maps o -5.19, -80.63" value="'+(ok?ok.lat+', '+ok.lng:'')+'"></label>'+
-'<div style="display:flex;gap:8px;margin-top:8px"><button type="button" class="tf-bt" data-a="zgps" data-i="'+i+'">Usar mi ubicación</button></div>'+
-'<div class="tf-zok'+(ok?'':' tf-bad')+'">'+(ok?'Centro: '+ok.lat.toFixed(5)+', '+ok.lng.toFixed(5)+' · <a href="https://www.google.com/maps?q='+ok.lat+','+ok.lng+'" target="_blank" rel="noopener">ver en el mapa</a>':'Falta el centro de la zona.')+'</div></div>';
-}
-function pintar(){
-const m=$('pdtfModal');if(!m||!C)return;const R=C.recargos||{};
-const fecha=C.actualizado?new Date(C.actualizado).toLocaleString('es-PE',{dateStyle:'short',timeStyle:'short'}):'nunca (se usan los valores por defecto)';
-m.innerHTML='<div class="tf-bg" data-a="cerrar"></div><div class="tf-s"><div class="tf-top"><div><b>Tarifas</b><small>Última actualización: '+E(fecha)+'</small></div><button type="button" class="tf-x" data-a="cerrar" aria-label="Cerrar">×</button></div><div class="tf-b">'+
-'<div class="tf-c"><div class="tf-ct">Tarifa por distancia</div><p class="tf-cs">Se usa cuando la dirección del cliente no está dentro de una zona con precio fijo. La distancia es por calles.</p><div class="tf-g">'+
-'<label class="tf-f">Tarifa base<input data-k="base" inputmode="decimal" value="'+E(C.base)+'"></label>'+
-'<label class="tf-f">Km incluidos<input data-k="km_incluidos" inputmode="decimal" value="'+E(C.km_incluidos)+'"></label>'+
-'<label class="tf-f">Precio por km extra<input data-k="por_km" inputmode="decimal" value="'+E(C.por_km)+'"></label>'+
-'<label class="tf-f">Redondeo<select data-k="redondeo">'+[[0.1,'S/ 0.10'],[0.5,'S/ 0.50'],[1,'S/ 1.00']].map(([v,t])=>'<option value="'+v+'"'+(Number(C.redondeo)===v?' selected':'')+'>'+t+'</option>').join('')+'</select></label>'+
-'<label class="tf-f">Tarifa mínima<input data-k="minimo" inputmode="decimal" value="'+E(C.minimo)+'"></label>'+
-'<label class="tf-f">Tarifa máxima<input data-k="maximo" inputmode="decimal" value="'+E(C.maximo)+'"></label></div><p class="tf-cs tf-nota">Montos en soles (S/). Tarifa máxima en 0 = sin tope.</p></div>'+
-'<div class="tf-c"><div class="tf-ct">Zonas con precio fijo</div><p class="tf-cs">Si la entrega cae dentro del radio de una zona, se cobra su precio fijo en lugar de calcular por km. Si cae en varias, gana la más cercana.</p><div id="pdtfZonas">'+(C.zonas||[]).map(zonaHTML).join('')+'</div><button type="button" class="tf-bt" data-a="zadd" style="width:100%">+ Agregar zona</button></div>'+
-'<div class="tf-c"><div class="tf-ct">Recargos</div><p class="tf-cs">Se suman a la tarifa (por km o por zona).</p>'+
-sw('nocturno','Recargo nocturno','Se cobra en el horario indicado (hora de Lima).',R.nocturno?.activo)+
-'<div class="tf-sub"'+(R.nocturno?.activo?'':' hidden')+'><label class="tf-f">Desde<input type="time" data-r="nocturno.desde" value="'+E(R.nocturno?.desde||'21:00')+'"></label><label class="tf-f">Hasta<input type="time" data-r="nocturno.hasta" value="'+E(R.nocturno?.hasta||'06:00')+'"></label><label class="tf-f">Monto (S/)<input inputmode="decimal" data-r="nocturno.monto" value="'+E(R.nocturno?.monto??2)+'"></label></div>'+
-sw('lluvia','Recargo por lluvia','Actívalo solo mientras llueve y apágalo después.',R.lluvia?.activo)+
-'<div class="tf-sub"'+(R.lluvia?.activo?'':' hidden')+'><label class="tf-f">Monto (S/)<input inputmode="decimal" data-r="lluvia.monto" value="'+E(R.lluvia?.monto??2)+'"></label></div>'+
-sw('pedido_grande','Recargo por pedido grande','Cuando los productos superan un monto.',R.pedido_grande?.activo)+
-'<div class="tf-sub"'+(R.pedido_grande?.activo?'':' hidden')+'><label class="tf-f">Desde (S/)<input inputmode="decimal" data-r="pedido_grande.desde_subtotal" value="'+E(R.pedido_grande?.desde_subtotal??150)+'"></label><label class="tf-f">Monto (S/)<input inputmode="decimal" data-r="pedido_grande.monto" value="'+E(R.pedido_grande?.monto??2)+'"></label></div>'+
-'</div>'+
-'<div class="tf-c"><div class="tf-ct">Probar la tarifa</div><p class="tf-cs">Simula cuánto se cobraría con las tarifas que estás editando, aunque todavía no las guardes.</p><div class="tf-g">'+
-'<label class="tf-f" style="grid-column:1/-1">Distancia (km)<input id="pdtfSimKm" inputmode="decimal" value="4"></label>'+
-'<label class="tf-f" style="grid-column:1/-1">Dirección de entrega (opcional)<input id="pdtfSimDest" placeholder="Enlace de Maps o lat, lng"></label></div>'+
-'<button type="button" class="tf-bt tf-dk" data-a="sim" style="width:100%;margin-top:10px">Calcular</button><div id="pdtfSimRes"></div></div>'+
-'</div><div class="tf-foot"><p id="pdtfMsg"></p><button type="button" class="tf-save" data-a="guardar">Guardar tarifas</button></div></div>';
-m.oninput=leer;
-}
-function leer(){
-const m=$('pdtfModal');if(!m||!C)return;
-m.querySelectorAll('[data-k]').forEach(el=>{if(el.tagName==='BUTTON')return;C[el.dataset.k]=num(el.value,0)});
-m.querySelectorAll('[data-r]').forEach(el=>{const [g,k]=el.dataset.r.split('.');C.recargos[g]=C.recargos[g]||{};C.recargos[g][k]=el.type==='time'?el.value:num(el.value,0)});
-m.querySelectorAll('#pdtfZonas .tf-z').forEach(z=>{const i=Number(z.dataset.i),o=C.zonas[i];if(!o)return;o.nombre=z.querySelector('[data-z=nombre]').value.trim();o.precio=num(z.querySelector('[data-z=precio]').value,0);o.radio_km=num(z.querySelector('[data-z=radio_km]').value,0);const c=pdTarifa.coords(z.querySelector('[data-z=centro]').value);const ok=z.querySelector('.tf-zok');if(c){o.lat=c.lat;o.lng=c.lng;ok.className='tf-zok';ok.innerHTML='Centro: '+c.lat.toFixed(5)+', '+c.lng.toFixed(5)}else{ok.className='tf-zok tf-bad';ok.textContent=z.querySelector('[data-z=centro]').value.trim()?'No se reconoce la ubicación. Pega un enlace de Google Maps con coordenadas o escribe «lat, lng».':'Falta el centro de la zona.'}});
-}
-async function accion(b){
-const a=b.dataset.a,msg=$('pdtfMsg');
-if(a==='cerrar')return cerrar();
-if(a==='tg'){leer();const g=b.dataset.k;C.recargos[g]=C.recargos[g]||{};C.recargos[g].activo=!C.recargos[g].activo;b.classList.toggle('tf-on',C.recargos[g].activo);const s=b.closest('.tf-sw').nextElementSibling;if(s&&s.classList.contains('tf-sub'))s.hidden=!C.recargos[g].activo;return}
-if(a==='zadd'){leer();C.zonas=C.zonas||[];C.zonas.push({nombre:'',precio:C.base,radio_km:1.5,lat:null,lng:null,activo:true});pintar();return}
-if(a==='zdel'){leer();if(!(await pdConfirmar('¿Eliminar esta zona?')))return;C.zonas.splice(Number(b.dataset.i),1);pintar();return}
-if(a==='zact'){leer();const z=C.zonas[Number(b.dataset.i)];z.activo=z.activo===false;b.classList.toggle('tf-on',z.activo!==false);return}
-if(a==='zgps'){leer();if(!navigator.geolocation){if(msg)msg.textContent='Este equipo no permite obtener la ubicación.';return}b.textContent='Buscando…';navigator.geolocation.getCurrentPosition(p=>{const z=C.zonas[Number(b.dataset.i)];z.lat=Number(p.coords.latitude.toFixed(6));z.lng=Number(p.coords.longitude.toFixed(6));pintar()},()=>{b.textContent='Usar mi ubicación';if(msg){msg.className='tf-bad';msg.textContent='No se pudo obtener la ubicación.'}},{enableHighAccuracy:true,timeout:15000});return}
-if(a==='sim'){leer();const viejo=pdTarifa.config;const km=num($('pdtfSimKm').value,0),sub=0,dest=pdTarifa.coords($('pdtfSimDest').value);
-const r=simular(km,sub,dest);$('pdtfSimRes').innerHTML='<div class="tf-res"><div class="tf-t"><span>Delivery</span><span>'+money(r.total)+'</span></div>'+r.detalle.map(d=>'<div class="tf-l"><span>'+E(d.concepto)+'</span><span>'+(d.monto<0?'− ':'')+money(Math.abs(d.monto))+'</span></div>').join('')+'</div>';return}
-if(a==='guardar'){leer();
-const malas=(C.zonas||[]).filter(z=>z.activo!==false&&(!z.nombre||!(Number(z.radio_km)>0)||z.lat==null));
-if(malas.length){msg.className='tf-bad';msg.textContent='Completa nombre, radio y centro de cada zona activa (o desactívala).';return}
-if(!(C.base>=0)||!(C.por_km>=0)){msg.className='tf-bad';msg.textContent='Revisa la tarifa base y el precio por km.';return}
-b.disabled=true;b.textContent='Guardando…';msg.className='';msg.textContent='';
-try{await pdTarifa.guardar(C);msg.textContent='Tarifas guardadas. La tienda ya cobra con estos valores.';const t=document.querySelector('#pdtfModal .tf-top small');if(t)t.textContent='Última actualización: ahora'}
-catch(e){msg.className='tf-bad';msg.textContent='No se pudo guardar: '+(e.message||e)+'. Revisa que el Admin pueda subir archivos al bucket «restaurantes» de Supabase.'}
-finally{b.disabled=false;b.textContent='Guardar tarifas'}
-}
-}
-function simular(km,sub,dest){
-return pdTarifa.calcularCon(JSON.parse(JSON.stringify(C)),{km,subtotal:sub,destino:dest});
-}
-function boton(){
-window.pdTarifasAbrir=abrir;
-}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('pdtfModal')&&!$('pdtfModal').hidden)cerrar()});
-setInterval(()=>{try{boton()}catch(e){}},1200);
-})();
-}catch(e){console.error("[pidemas-tarifa-admin-js]",e)}
-
 /* ===== pidemas-mapa-admin-js ===== */
 try{
 (function(){
@@ -2600,7 +2507,6 @@ try{
     ['sol','Solicitudes de afiliación',abrir('solicitudes')],
     ['cfg','Configurar negocios',abrir('config-negocios')],
     ['Servicios'],
-    ['tar','Tarifas',()=>{if(typeof window.pdTarifasAbrir==='function')window.pdTarifasAbrir()}],
     ['age','Agencias',abrir('agencias')],
     ['Motorizados'],
     ['gps','Motorizados / GPS',abrir('gps')],
@@ -2708,7 +2614,7 @@ try{
   /* antes de abrir otra ventana, cierra cualquier ventana abierta (no se apilan) */
   function cerrarTodo(){
     const vis=e=>e&&e.getClientRects().length;
-    ['#pdtfModal .tf-x','#pdhoModal .hd > .x','#pdaPanel .a-x','#orderList .adminOrderCard.is-expanded .pdCerrarX'].forEach(q=>{const b=document.querySelector(q);if(vis(b))try{b.click()}catch(e){}});
+    ['#pdhoModal .hd > .x','#pdaPanel .a-x','#orderList .adminOrderCard.is-expanded .pdCerrarX'].forEach(q=>{const b=document.querySelector(q);if(vis(b))try{b.click()}catch(e){}});
     const ph=$('pdhSheet');if(ph&&!ph.hidden)ph.hidden=true;
     try{const m=$('pdmModal');if(m&&!m.hidden&&window.__pdmClose)window.__pdmClose()}catch(e){}
   }
@@ -3258,65 +3164,6 @@ function alAbrir(box,fn){
  alAbrir(box,()=>{nuevo();W.open();W.go(0)});
 })();
 
-/* ---------------- TARIFAS ---------------- */
-(function(){
- const box=$('tarifasAdminBox');if(!box)return;
- let paso=0,vista='editar',hecho=false;
- const TIT=['Tarifa por distancia','Zonas con precio fijo','Recargos'];
- const o=window.__pidemasLoadToolData;
- window.__pidemasLoadToolData=async function(k){if(k==='tarifas'){paso=0;vista='editar';hecho=false;try{window.pdTarifasAbrir&&window.pdTarifasAbrir()}catch(e){}return}return typeof o==='function'?o.apply(this,arguments):undefined};
- function stats(m){const w=m.querySelector('.pdtfW');if(!w)return;const v=Number(String(m.querySelector('[data-k="base"]')?.value||'0').replace(',','.'))||0;
-  w.querySelector('.pdtfBase').textContent='S/ '+v.toFixed(2);w.querySelector('.pdtfNz').textContent=m.querySelectorAll('#pdtfZonas .tf-z').length}
- function armar(){
-  const m=$('pdtfModal');if(!m)return;const b=m.querySelector('.tf-b');if(!b||b.querySelector('.pdtfW'))return;
-  const cards=[...b.querySelectorAll(':scope > .tf-c')];if(cards.length<4)return;
-  const w=document.createElement('div');w.className='pdw pdtfW';
-  w.innerHTML='<div class="pdtfStats" hidden style="display:none!important"><div><span>Tarifa base</span><strong class="pdtfBase"></strong></div><div><span>Zonas</span><strong class="pdtfNz"></strong></div></div>'+
-   '<div class="pdwSeg"><button type="button" data-v="editar">Editar tarifas</button><button type="button" data-v="probar">Probar tarifa</button></div>'+
-   '<div class="pdwNew"><div class="pdwHead"><span class="pdwKick"></span><strong class="pdwTitle"></strong><div class="pdwBar"><i></i><i></i><i></i></div></div><div class="pdwSteps"></div>'+
-   '<div class="pdwDone" hidden><span class="pdwOk">'+OK+'</span><h3>Tarifas guardadas</h3><p>La tienda ya cobra el delivery con estos valores.</p><div class="pdwBtns"><button type="button" class="pdwAgain">Probar tarifa</button><button type="button" class="pdwClose">Cerrar</button></div></div>'+
-   '<div class="pdwFoot"><p class="pdwMsg" role="status" hidden></p><button type="button" class="pdwBack">Atrás</button><button type="button" class="pdwNext">Siguiente</button></div></div>'+
-   '<div class="pdwAcc" hidden></div>';
-  const q=c=>w.querySelector(c);
-  cards.slice(0,3).forEach(c=>{const d=document.createElement('div');d.className='pdwStep';d.appendChild(c);q('.pdwSteps').appendChild(d)});
-  q('.pdwAcc').appendChild(cards[3]);
-  b.prepend(w);
-  const msg=t=>{const e=q('.pdwMsg');e.textContent=t||'';e.hidden=!t};
-  function paint(){
-   w.querySelectorAll('.pdwSeg > button').forEach(x=>x.classList.toggle('on',x.dataset.v===vista));
-   q('.pdwNew').hidden=vista!=='editar';q('.pdwAcc').hidden=vista!=='probar';
-   const st=[...q('.pdwSteps').children];
-   if(hecho){st.forEach(x=>x.hidden=true);q('.pdwHead').hidden=true;q('.pdwFoot').hidden=true;q('.pdwDone').hidden=false}
-   else{q('.pdwDone').hidden=true;q('.pdwHead').hidden=false;q('.pdwFoot').hidden=false;st.forEach((x,k)=>x.hidden=k!==paso);
-    q('.pdwKick').textContent='Paso '+(paso+1)+' de 3';q('.pdwTitle').textContent=TIT[paso];
-    [...q('.pdwBar').children].forEach((x,k)=>x.classList.toggle('on',k<=paso));
-    q('.pdwBack').hidden=!paso;q('.pdwFoot').classList.toggle('solo',!paso);q('.pdwNext').textContent=paso<2?'Siguiente':'Guardar tarifas'}
-   stats(m);
-  }
-  const arriba=()=>{const p=$('pdmBody');if(p)p.scrollTop=0};
-  w.querySelectorAll('.pdwSeg > button').forEach(x=>x.addEventListener('click',()=>{vista=x.dataset.v;paint();arriba()}));
-  q('.pdwBack').addEventListener('click',()=>{if(paso){paso--;msg('');paint();arriba()}});
-  q('.pdwNext').addEventListener('click',async()=>{
-   if(paso<2){paso++;msg('');paint();arriba();return}
-   const sv=m.querySelector('.tf-save'),pm=$('pdtfMsg'),nx=q('.pdwNext');if(!sv||nx.disabled)return;
-   if(pm){pm.textContent='';pm.className=''}nx.disabled=true;nx.textContent='Guardando…';msg('');
-   sv.click();const t0=Date.now();let t='';
-   while(Date.now()-t0<45000){await sleep(200);const p2=$('pdtfMsg');t=(p2&&p2.textContent||'').trim();if(t&&!(m.querySelector('.tf-save')||{}).disabled)break}
-   const ok=/guardad/i.test(t);
-   const w2=m.querySelector('.pdtfW');if(!w2)return;
-   if(ok){hecho=true}
-   if(w2===w){nx.disabled=false;if(!ok)msg(t||'No hubo respuesta al guardar.');paint();arriba()}else armar();
-  });
-  q('.pdwAgain').addEventListener('click',()=>{hecho=false;paso=0;vista='probar';paint();arriba()});
-  q('.pdwClose').addEventListener('click',()=>{if(typeof window.__pdmClose==='function')window.__pdmClose()});
-  m.addEventListener('input',()=>stats(m));
-  paint();
- }
- new MutationObserver(armar).observe(box,{childList:true,subtree:true});
- /* al cerrar la ventana, la hoja de tarifas queda cerrada */
- alAbrir(box,()=>{});
- const pb=$('pdmBody');if(pb)new MutationObserver(()=>{if(box.parentNode!==pb){document.body.classList.remove('pdtf-abierto');const m=$('pdtfModal');if(m)m.hidden=true}}).observe(pb,{childList:true});
-})();
 /* ---------------- AGENCIAS ---------------- */
 (function(){
  const tab=$('tab-agencias'),nueva=$('pdgNew'),lista=$('pdgList');if(!tab||!nueva||!lista||tab.querySelector('.pdw'))return;

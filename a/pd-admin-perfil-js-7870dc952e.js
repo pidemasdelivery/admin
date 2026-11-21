@@ -22,7 +22,6 @@
       acc.addEventListener('click',e=>{const b=e.target.closest('[data-ir]');if(!b)return;const k=b.dataset.ir;
         const cerrar=()=>{const x=c.querySelector('.h-x');x&&x.click()};
         if(k==='horario'){const h=$('pdhoBtn');cerrar();setTimeout(()=>h&&h.click(),250)}
-        else if(k==='tarifas'){cerrar();setTimeout(()=>window.pdTarifasAbrir&&window.pdTarifasAbrir(),250)}
         else{cerrar();setTimeout(()=>window.__pdmOpen&&window.__pdmOpen(k==='qr'?'qryape':'descuentos'),250)}});
       $('pdhPassBtn').addEventListener('click',async()=>{
         const a=$('pdhPass1').value,b=$('pdhPass2').value,m=$('pdhPassMsg');m.textContent='';

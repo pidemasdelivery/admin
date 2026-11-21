@@ -2999,7 +2999,7 @@ gps:['gpsAdminBox','Motorizados / GPS'],'crear-motorizado':['crearMotorizadoAdmi
 descuentos:['descuentosAdminBox','Códigos de descuento'],'crear-negocio':['crearNegocioAdminBox','Crear negocio'],'estado-negocios':['estadoNegociosAdminBox','Estado de negocios'],
 'config-negocios':['configNegociosAdminBox','Configurar negocios'],'solicitudes':['solicitudesAdminBox','Solicitudes de afiliación'],
 pedidos:['tab-pedidos','Pedidos'],qryape:['pdQrCfg','QR Yape'],clientes:['tab-clientes','Clientes'],agencias:['tab-agencias','Agencias'],
-caja:['tab-caja','Cajas'],sueldo:['tab-sueldo','Sueldos'],tarifas:['tarifasAdminBox','Tarifas']
+caja:['tab-caja','Cajas'],sueldo:['tab-sueldo','Sueldos']
 };
 let box=null,ph=null,cur=null;
 const RF={pedidos:'refreshOrders',clientes:'refreshClientes',agencias:'refreshAgencias',caja:'pdcjRefresh',sueldo:'pdSalaryRefreshMotos',gps:'gxRef','suspender-motorizado':'spRef','crear-negocio':'pdwRefNeg',solicitudes:'solRefresh','crear-motorizado':'pdwRefMoto'};
