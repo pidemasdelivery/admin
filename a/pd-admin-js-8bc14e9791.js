@@ -669,27 +669,13 @@ try{
   const tocar=(sel,mostrar)=>()=>{const b=document.querySelector(sel);if(!b)return;if(mostrar)b.hidden=false;b.click()};
   const ITEMS=[
     ['Negocios'],
-    ['cli','Clientes',abrir('clientes')],
-    ['sol','Solicitudes de afiliación',abrir('solicitudes')],
     ['cfg','Configurar negocios',abrir('config-negocios')],
-    ['Servicios'],
-    ['Motorizados'],
-    ['gps','Motorizados / GPS',abrir('gps')],
-    ['ban','Suspender / reactivar cuentas',abrir('suspender-motorizado')],
     ['Control de caja y sueldos'],
-    ['yape','Yape por confirmar',()=>window.pdCtl&&pdCtl.yape(),'','','yape'],
-    ['deu','Por cobrar a negocios',()=>window.pdCtl&&pdCtl.porCobrar(),'','','deu'],
-    ['ale','Alerta de caja alta',()=>window.pdCtl&&pdCtl.alerta()],
+    ['yape','Yape por confirmar',()=>{},'','','yape'],
+    ['deu','Por cobrar a negocios',()=>{},'','','deu'],
     ['Control de pedidos'],
-    ['pneg','Por pagar a negocios',()=>window.pdPedCtl&&pdPedCtl.porPagar(),'','','pneg'],
-    ['cal','Calificaciones',()=>window.pdPedCtl&&pdPedCtl.calificaciones()],
-    ['auto','Asignación automática',()=>window.pdAdmMej&&pdAdmMej.asignacionAuto()],
-    ['Clientes'],
-    ['negra','Lista negra',()=>window.pdAdmMej&&pdAdmMej.listaNegra()],
+    ['pneg','Por pagar a negocios',()=>{},'','','pneg'],
     ['Más'],
-    ['tag','Códigos de descuento',abrir('descuentos')],
-    ['qr','QR Yape',abrir('qryape')],
-    ['hor','Horario',tocar('#pdhoBtn')],
     ['out','Cerrar sesión',()=>{const b=$('pdaLogout')||$('logout');b&&b.click()},'','out']
   ];
   const PANEL={tienda:IC.com,motorizado:IC.gps,negocios:IC.neg};
