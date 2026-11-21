@@ -252,7 +252,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const av=document.querySelector('#pdMenu .m3Av');const foto=window.__pdAdminFoto||'';
     const todos=L(),cnt=CH.map(c=>todos.filter(c[2]).length);
     const ql=q.trim().toLowerCase();const fil=todos.filter((CH.find(c=>c[0]===chip)||CH[0])[2]).filter(o=>!ql||[o.id,ref(o.id),o.nombre_cliente,o.telefono_cliente,o.nombre_remitente,NEG(o.negocio_id).nombre].join(' ').toLowerCase().includes(ql));
-    let h='';
+    let h=`<div class="cols2"><button type="button" class="mt" data-t="sueldo"><span>Sueldos</span><b>${E(kp[1]||'—')}</b></button><button type="button" class="mt" data-t="caja"><span>Cajas</span><b>${E(kp[2]||'—')}</b></button></div>`;
     h+=`<div class="fld"><label for="aQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar pedido</label><input id="aQ" type="search" placeholder="N.º de pedido, cliente o teléfono" value="${E(q)}" data-in="q"></div>`;
     {const AT=[['pedidos con demora','Con demora',IC.clock],['asignación automática','Asignación automática',IC.swap],['calificaciones','Calificaciones',IC.star],['reportes de pedidos','Reportes',IC.chart]];
      h+=`<div class="atj">${AT.map(([k,n,ic])=>{const x=bdOf(k);return `<button type="button" data-it="${E(k)}" data-gk="Pedidos">${ic}${E(n)}${x?`<span class="bd">${x}</span>`:''}</button>`}).join('')}</div>`}
@@ -1066,7 +1066,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   const vacio=t=>`<div class="vac">${E(t)}</div>`;
   const cargando=c=>c.err?`<div class="err">${E(c.err)}</div>`:'<div class="load">Cargando…</div>';
   function abrirSec(k){secK=k;SF[k]=SF[k]||{};if(C2['s:'+k])C2['s:'+k].t=0;sub='sec';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}
-  function secVista(){const S=SEC[secK];if(!S)return {head:top3('Administración','Sección'),body:''};const v=S.v();return {head:top3(S.g,S.t,S.rf?`<button type="button" class="ib" data-a="sec:rf" aria-label="Actualizar">${IC.refresh}</button>`:''),body:v.body,foot:v.foot}}
+  function secVista(){const S=SEC[secK];if(!S)return {head:top3('Administración','Sección'),body:''};const v=S.v();return {head:v.head||top3(S.g,S.t,S.rf?`<button type="button" class="ib" data-a="sec:rf" aria-label="Actualizar">${IC.refresh}</button>`:''),body:v.body,foot:v.foot}}
   const datos=(k,fn)=>cargar('s:'+k,fn);
   const recargar=k=>{if(C2['s:'+k])C2['s:'+k].t=0;cargar('s:'+k,SEC[k].load,true)};
 
@@ -1397,15 +1397,31 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   /* --- Mi perfil --- */
   SEC['__perfil']={g:'Mi cuenta',t:'Mi perfil',
     load:async()=>{const {data:{session}}=await D().auth.getSession();const uid=session&&session.user&&session.user.id;let p={};if(uid){const r=await D().from('perfiles').select('*').eq('id',uid).maybeSingle();p=r.data||{}}const cfg=await leerCfg();return {uid,email:session&&session.user&&session.user.email,p,wa:(cfg&&cfg.whatsapp_admin)||'986233533'}},
-    v(){const k='__perfil',c=datos(k,this.load),f=SF[k];if(!c.data)return {body:cargando(c)};const d=c.data;if(f.nom==null){f.nom=d.p.nombre_completo||d.p.nombre||'';f.wa=d.wa;f.p1='';f.p2=''}
+    v(){const k='__perfil',c=datos(k,this.load),f=SF[k];if(f.vista==='clave')return this.clave();if(!c.data)return {body:cargando(c)};const d=c.data;if(f.nom==null){f.nom=d.p.nombre_completo||d.p.nombre||'';f.wa=d.wa;f.p1='';f.p2=''}
       const foto=f.prev||d.p.foto_url||window.__pdAdminFoto||'';
       let h=`<div class="ph"><span class="ava"${foto?` style="background-image:url('${E(foto)}')"`:''}>${foto?'':E(String(f.nom||'A').charAt(0).toUpperCase())}</span><div style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:20px">${E(f.nom||'Administrador')}</b><span style="font-size:13px;color:#6B5E55">Administrador · ${E(d.email||'')}</span></div><label class="b" style="height:44px;cursor:pointer">${IC.plus}Foto<input type="file" accept="image/jpeg,image/png,image/webp" data-in="pfoto" style="display:none"></label></div>`;
       h+=`<div class="cd"><div class="lbl">Tus datos</div><div class="fld"><label for="pfN">Tu nombre</label><input id="pfN" maxlength="40" value="${E(f.nom)}" data-in="sf:nom"></div><div class="fld"><label for="pfW">WhatsApp de administración</label><input id="pfW" type="tel" inputmode="numeric" maxlength="15" value="${E(f.wa)}" data-in="sf:wa"></div><span style="font-size:13px;color:#6B5E55">A este número los motorizados envían la guía y clave de las encomiendas y los avisos de problemas.</span><button type="button" class="b o" data-sa="guardar">Guardar cambios</button></div>`;
-      h+=`<div class="cd"><div class="lbl">Seguridad</div><div class="fld"><label for="pfP1">Nueva contraseña</label><input id="pfP1" type="password" autocomplete="new-password" value="${E(f.p1)}" data-in="sf:p1" placeholder="Mínimo 6 caracteres"></div><div class="fld"><label for="pfP2">Repite la contraseña</label><input id="pfP2" type="password" autocomplete="new-password" value="${E(f.p2)}" data-in="sf:p2"></div><button type="button" class="b" data-sa="clave">${IC.lock||''}Cambiar contraseña</button></div>`;
+      h+=`<div class="cd"><div class="lbl">Seguridad</div><button type="button" class="b" data-sa="clave:abrir">${IC.lock||''}Cambiar contraseña</button></div>`;
       if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
       h+=`<button type="button" class="b" style="color:#B42318;border-color:#F4C7C3" data-a="salir">${IC.logout}Cerrar sesión</button>`;
       return {body:h}},
-    async a(x){const k='__perfil',f=SF[k],d=C2['s:'+k].data;f.msg='';
+    /* Cambiar contraseña: página propia, igual que en el panel del negocio */
+    clave(){const f=SF['__perfil'],t=f.ver?'text':'password';
+      const ojo='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+      const cmp=(id,l,c,ac)=>`<div class="fld"><label for="${id}">${l}</label><input id="${id}" type="${t}" autocomplete="${ac}" maxlength="72" value="${E(f[c]||'')}" data-in="sf:${c}"></div>`;
+      let h=`<div class="cd">${cmp('pfP0','Contraseña actual','p0','current-password')}${cmp('pfP1','Nueva contraseña','p1','new-password')}${cmp('pfP2','Repite la nueva contraseña','p2','new-password')}<button type="button" class="b" style="height:42px" data-sa="clave:ver">${ojo}${f.ver?'Ocultar contraseñas':'Mostrar contraseñas'}</button><span style="font-size:13px;color:#6B5E55">Usa al menos 6 caracteres. Al cambiarla, entrarás con la nueva clave en todos tus teléfonos.</span></div>`;
+      if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
+      return {head:top3('Seguridad','Cambiar contraseña').replace('data-a="volver"','data-sa="clave:salir"'),body:h,foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="clave:guardar">Guardar contraseña</button>`}},
+    async a(x){const k='__perfil',f=SF[k],d=C2['s:'+k]&&C2['s:'+k].data;f.msg='';
+      if(x==='clave:abrir'){f.vista='clave';f.p0='';f.p1='';f.p2='';f.ver=false;try{history.pushState({pdApp:1,pdClave:1},'')}catch(_){}return}
+      if(x==='clave:salir'){f.vista=null;f.p0='';f.p1='';f.p2='';if(history.state&&history.state.pdClave){ignorarPop=true;history.back()}return}
+      if(x==='clave:ver'){f.ver=!f.ver;return}
+      if(x==='clave:guardar'){const a0=String(f.p0||''),n=String(f.p1||''),r=String(f.p2||'');
+        if(!a0){f.msg='Escribe tu contraseña actual.';return}if(n.length<6){f.msg='La nueva contraseña debe tener al menos 6 caracteres.';return}if(n!==r){f.msg='Las contraseñas nuevas no coinciden.';return}if(n===a0){f.msg='La nueva contraseña debe ser diferente a la actual.';return}
+        const {data:u}=await D().auth.getUser();const email=u&&u.user&&u.user.email;if(!email){f.msg='Tu sesión expiró. Vuelve a ingresar.';return}
+        const e1=(await D().auth.signInWithPassword({email,password:a0})).error;if(e1){f.msg='La contraseña actual no es correcta.';return}
+        const e2=(await D().auth.updateUser({password:n})).error;if(e2){const t=String(e2.message||'');f.msg=/different/i.test(t)?'La nueva contraseña debe ser diferente a la actual.':/weak|short|least/i.test(t)?'La nueva contraseña es muy débil. Usa una más larga.':'No se pudo cambiar: '+t;return}
+        f.p0='';f.p1='';f.p2='';f.vista=null;if(history.state&&history.state.pdClave){ignorarPop=true;history.back()}ok('Contraseña actualizada');return}
       if(x==='guardar'){const n=String(f.nom||'').trim();if(!n){f.msg='Escribe tu nombre.';return}const w=String(f.wa||'').replace(/\D/g,'');if(w&&w.length!==9&&w.length!==11){f.msg='El WhatsApp de administración debe tener 9 dígitos.';return}
         if(d.uid){const q=await D().from('perfiles').update({nombre_completo:n}).eq('id',d.uid).select('id').maybeSingle();if(q.error){f.msg='No se pudo guardar: '+q.error.message;return}}
         try{localStorage.setItem('pd_admin_name',n)}catch(_){}window.__pdAdminNombre=n;
@@ -1751,11 +1767,11 @@ button:active .pi{transform:scale(.92)}
       case 'sec:rf':recargar(secK);key='';pintar();break;
       case 'cj:mas':CJ.lim+=40;key='';pintar();break;
       case 'cj:recibir':case 'cj:dif':case 'cj:dar':{if(a.disabled)break;a.disabled=true;try{await cajaAccion(a.dataset.a,a)}finally{key='';pintar()}break}
-      case 'perfil':{cajon=false;abrirSec('__perfil');break;ultimo='Mi perfil';marca='menu';kick='Mi cuenta';const b=document.querySelector('#pdMenu .m3Top');if(b)b.click();setTimeout(()=>{key='';pintar()},120);break}
+      case 'perfil':{cajon=false;if(SF['__perfil'])SF['__perfil'].vista=null;abrirSec('__perfil');break;ultimo='Mi perfil';marca='menu';kick='Mi cuenta';const b=document.querySelector('#pdMenu .m3Top');if(b)b.click();setTimeout(()=>{key='';pintar()},120);break}
       case 'salir':{const b=document.querySelector('#pdMenu .m3Out');if(b)b.click();break}
     }
   }
-  addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar()}});
+  addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(sub==='sec'&&secK==='__perfil'&&SF['__perfil']&&SF['__perfil'].vista==='clave'){SF['__perfil'].vista=null;key='';pintar();return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar()}});
   setInterval(pintar,600);
   /* Aviso cuando un pedido se entrega: dice si el motorizado quedó libre */
   {const FIN=/^(entregado|completado|finalizado)$/,CERR=/^(entregado|completado|finalizado|cancelad[oa]|anulado|rechazado|no_entregado)$/;let prev=null;let th=null,tr=null,tq=0;
