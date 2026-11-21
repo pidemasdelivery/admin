@@ -12440,7 +12440,7 @@ return {amount,kind,LABEL,clean,split,summary,balance,isBoundary,cycleWithAmount
 }catch(e){console.error("[pd-caja-lib]",e)}
 try{(function(){const C=window.PdCaja;if(!C||C.vueltoTag)return;const RX=/\s*·\s*VUELTO (DE CAJA|CON DINERO PROPIO)/i;const c0=C.clean;
 C.clean=function(m){return String(c0.call(this,m)||'').replace(RX,'')};
-C.vueltoTag=function(m){const x=String((m&&m.descripcion)||'').match(RX);if(!x)return '';return /CAJA/i.test(x[1])?'<span class="pdcjVu caja">Vuelto de su caja</span>':'<span class="pdcjVu">Vuelto con su dinero</span>'};})()}catch(e){}
+C.vueltoTag=function(m){const x=String((m&&m.descripcion)||'').match(RX);if(!x)return '';return /CAJA/i.test(x[1])?'<span class="pdcjVu caja">Vuelto de su caja</span>':'<span class="pdcjVu">Vuelto recibido</span>'};})()}catch(e){}
 try{(function(){const C=window.PdCaja;if(!C||C.extra)return;
 const a0=C.amount;C.amount=function(m){if(m&&m.tipo==='retiro'&&m.revision==='rechazado')return 0;return a0.call(this,m)};
 const s0=C.summary;C.summary=function(movs){return s0.call(this,(movs||[]).map(m=>m&&m.tipo==='retiro'&&m.revision==='rechazado'?Object.assign({},m,{monto:0}):m))};C.balance=function(movs){return C.summary(C.split(movs).current).balance};C.cycleWithAmounts=function(movs){return C.split(movs).current.map(m=>Object.assign({},m,{monto:C.amount(m)}))};
