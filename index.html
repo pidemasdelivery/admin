@@ -17,8 +17,8 @@ mirar(document.documentElement);setInterval(barrer,700);
 })();</script>
 
 <style id="pda-capa">@layer pda;</style>
-<link rel="stylesheet" id="pd-modal-unico-css" href="a/pd-modal-unico-css-b795d48ef5.css">
-<link rel="stylesheet" id="pd-ui-unico-css" href="a/pd-ui-unico-css-7475df4448.css">
+<link rel="stylesheet" id="pd-modal-unico-css" href="a/pd-modal-unico-css-2bd23fbf93.css">
+<link rel="stylesheet" id="pd-ui-unico-css" href="a/pd-ui-unico-css-df149fc15a.css">
 
 
 
@@ -73,42 +73,42 @@ window.pdQuitarCarga=salir;
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-500-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-700-normal.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/fontsource/fonts/inter@5/latin-800-normal.woff2">
-<link rel="stylesheet" id="pd-estilos-css" href="a/pd-estilos-css-567c1a59bd.css">
+<link rel="stylesheet" id="pd-estilos-css" href="a/pd-estilos-css-15edd7214f.css">
 <style id="pd-detalle-sin-destello">
-@layer pd-tipo{html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #orderList .adminOrderCard.is-expanded:not(.pdDetOk){visibility:hidden!important}
-html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #pdmModal .m-card:has(#orderList .adminOrderCard.is-expanded){visibility:hidden!important;box-shadow:none!important}
-html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #pdmModal .m-card:has(#orderList .adminOrderCard.is-expanded) :is(.m-head,.m-body,.m-body > *){visibility:hidden!important}
-html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #pdmModal .m-card:has(#orderList .adminOrderCard.is-expanded) #orderList .adminOrderCard.is-expanded.pdDetOk{visibility:visible!important}}
+@layer pd-tipo{html:root body:not(#Z#Z#Z#Z#Z#Z) #orderList .adminOrderCard.is-expanded:not(.pdDetOk){visibility:hidden!important}
+html:root body:not(#Z#Z#Z#Z#Z#Z) #pdmModal .m-card:has(#orderList .adminOrderCard.is-expanded){visibility:hidden!important;box-shadow:none!important}
+html:root body:not(#Z#Z#Z#Z#Z#Z) #pdmModal .m-card:has(#orderList .adminOrderCard.is-expanded) :is(.m-head,.m-body,.m-body > *){visibility:hidden!important}
+html:root body:not(#Z#Z#Z#Z#Z#Z) #pdmModal .m-card:has(#orderList .adminOrderCard.is-expanded) #orderList .adminOrderCard.is-expanded.pdDetOk{visibility:visible!important}}
 
 
 /* al refrescar, el detalle antiguo no debe verse mientras se rearman los pasos */
-@layer pd-tipo{html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #orderList .adminOrderCard.is-expanded > .pdRoute:not(:has(> .pdpaW)):not(.pdAPasosNo) > :not(.pdRouteBand):not(.pdpaW){display:none!important}}
+@layer pd-tipo{html:root body:not(#Z#Z#Z#Z#Z#Z#Z#Z#Z#Z) #orderList .adminOrderCard.is-expanded > .pdRoute:not(:has(> .pdpaW)):not(.pdAPasosNo) > :not(.pdRouteBand):not(.pdpaW){display:none!important}}
 /* esperando al negocio: solo el estado del negocio */
-@layer pd-tipo{html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #orderList .adminOrderCard.is-expanded .pdRoute.pdAEsperaNeg :is(.pdAPed,.pdRouteBlock,.pdRoutePay,.pdAMir){display:none!important}}
+@layer pd-tipo{html:root body:not(#Z#Z#Z#Z#Z#Z#Z#Z#Z#Z) #orderList .adminOrderCard.is-expanded .pdRoute.pdAEsperaNeg :is(.pdAPed,.pdRouteBlock,.pdRoutePay,.pdAMir){display:none!important}}
 /* el texto rojo de alerta ya no tapa el checkbox de la lista */
-@layer pd-tipo{html:root body:not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ):not(#pdZ) #orderList .adminOrderCard:not(.is-expanded):has(> .pdAlertChip) > .pdSelChk{top:calc(12px + 27px)!important}}
+@layer pd-tipo{html:root body:not(#Z#Z#Z#Z#Z#Z#Z#Z) #orderList .adminOrderCard:not(.is-expanded):has(> .pdAlertChip) > .pdSelChk{top:calc(12px + 27px)!important}}
 </style>
 
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" media="print" onload="this.media='all'"/>
 
 <style id="login-logo-fijo">
-html body #loginView#loginView#loginView#loginView#loginView#loginView#loginView#loginView#loginView#loginView .lg-head{gap:8px!important}
-html body #loginView#loginView#loginView#loginView#loginView#loginView#loginView#loginView#loginView#loginView .lg-head .lg-mark.lg-logo{width:210px!important;height:90px!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;border:0!important;padding:0!important;display:flex!important}
-html body #loginView#loginView#loginView#loginView#loginView#loginView#loginView#loginView#loginView#loginView .lg-head .lg-mark.lg-logo img{display:block!important;width:100%!important;height:100%!important;max-width:100%!important;object-fit:contain!important}
-@media(max-width:520px){html body #loginView#loginView#loginView#loginView#loginView#loginView#loginView#loginView#loginView#loginView .lg-head .lg-mark.lg-logo{width:190px!important;height:82px!important}}
+html body #loginView:not(#Z#Z#Z#Z#Z#Z#Z#Z#Z) .lg-head{gap:8px!important}
+html body #loginView:not(#Z#Z#Z#Z#Z#Z#Z#Z#Z) .lg-head .lg-mark.lg-logo{width:210px!important;height:90px!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;border:0!important;padding:0!important;display:flex!important}
+html body #loginView:not(#Z#Z#Z#Z#Z#Z#Z#Z#Z) .lg-head .lg-mark.lg-logo img{display:block!important;width:100%!important;height:100%!important;max-width:100%!important;object-fit:contain!important}
+@media(max-width:520px){html body #loginView:not(#Z#Z#Z#Z#Z#Z#Z#Z#Z) .lg-head .lg-mark.lg-logo{width:190px!important;height:82px!important}}
 </style>
 <style id="pedidos-sin-tarjeta-fondo">
-html body #appView#appView#appView#appView#appView#appView section#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;margin-left:0!important;margin-right:0!important}
-html body #appView#appView#appView#appView#appView#appView section#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos > div:first-child:has(h2){display:none!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;overflow:hidden!important}
-html body #appView#appView#appView#appView#appView#appView section#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos > h2.adminPageTitle,html body #appView#appView#appView#appView#appView#appView section#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos#tab-pedidos > div:first-child h2{display:none!important;min-height:0!important;height:0!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:transparent!important}
-html body #appView#appView#appView#appView#appView#appView > .card:first-child:has(> h1){display:none!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:transparent!important}
+html body #appView:not(#Z#Z#Z#Z#Z) section#tab-pedidos:not(#Z#Z#Z#Z#Z){background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;margin-left:0!important;margin-right:0!important}
+html body #appView:not(#Z#Z#Z#Z#Z) section#tab-pedidos:not(#Z#Z#Z#Z#Z) > div:first-child:has(h2){display:none!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;overflow:hidden!important}
+html body #appView:not(#Z#Z#Z#Z#Z) section#tab-pedidos:not(#Z#Z#Z#Z#Z) > h2.adminPageTitle,html body #appView:not(#Z#Z#Z#Z#Z) section#tab-pedidos:not(#Z#Z#Z#Z#Z) > div:first-child h2{display:none!important;min-height:0!important;height:0!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:transparent!important}
+html body #appView:not(#Z#Z#Z#Z#Z) > .card:first-child:has(> h1){display:none!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:transparent!important}
 </style>
-<link rel="stylesheet" id="pd-dialogos-css" href="a/pd-dialogos-css-e49c5d1a2c.css">
+<link rel="stylesheet" id="pd-dialogos-css" href="a/pd-dialogos-css-67073b16fe.css">
 <script id="pd-dialogos-js" src="a/pd-dialogos-js-30880f5650.js"></script>
 </head>
 <body>
-<link rel="stylesheet" id="pd-instalar-css" href="a/pd-instalar-css-57104b9311.css">
+<link rel="stylesheet" id="pd-instalar-css" href="a/pd-instalar-css-74ca9ea3e5.css">
 <script id="pd-instalar-js" src="a/pd-instalar-js-1b5c620181.js"></script>
 
 
@@ -714,12 +714,12 @@ window.db = db;
 <script id="pd-funciones-js" src="a/pd-funciones-js-728ae842bd.js"></script>
 <script id="pd-pedidos-js" src="a/pd-pedidos-js-c7785214c9.js"></script>
 <script id="pd-admin-js" src="a/pd-admin-js-355615c84f.js"></script>
-<script id="pd-control-js" src="a/pd-control-js-f4525be7c4.js"></script>
+<script id="pd-control-js" src="a/pd-control-js-c041e365ea.js"></script>
 <script id="pd-sueldos-control-js" src="a/pd-sueldos-control-js-fe25d53a47.js"></script>
-<script id="pd-pedidos-control-js" src="a/pd-pedidos-control-js-1c0f58b379.js"></script>
-<script id="pd-mejoras-js" src="a/pd-mejoras-js-896227ff6e.js"></script>
+<script id="pd-pedidos-control-js" src="a/pd-pedidos-control-js-e868fd1b3d.js"></script>
+<script id="pd-mejoras-js" src="a/pd-mejoras-js-c0cb137db4.js"></script>
 <script>if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
-<link rel="stylesheet" id="pd-app-panel-css" href="a/pd-app-panel-css-38381cca16.css">
+<link rel="stylesheet" id="pd-app-panel-css" href="a/pd-app-panel-css-7dad7a8f6b.css">
 <script id="pd-app-panel-js" src="a/pd-app-panel-js-1e56613cad.js"></script>
 <script id="pd-admin-sin-barra-js">
 /* Admin sin barra inferior: el menú se abre con el botón ☰ de la cabecera (o deslizando desde la izquierda) */
@@ -741,7 +741,7 @@ window.db = db;
 <script id="pd-admin-detalle-js" src="a/pd-admin-detalle-js-a7d85e7320.js"></script>
 <script id="pd-mapa-js" data-layer="pd-tipo" src="a/pd-mapa-js-88af9107d4.js"></script>
 
-<link rel="stylesheet" id="pd-select-hoja-css" href="a/pd-select-hoja-css-b40d0dad43.css">
+<link rel="stylesheet" id="pd-select-hoja-css" href="a/pd-select-hoja-css-8791bac8b9.css">
 <script id="pd-select-hoja-js" src="a/pd-select-hoja-js-7e08b932b5.js"></script>
 <script id="pd-modal-unico-js" src="a/pd-modal-unico-js-1d3b8a2b5a.js"></script>
 <script id="pd-ui-unico-js" src="a/pd-ui-unico-js-eb58920808.js"></script>

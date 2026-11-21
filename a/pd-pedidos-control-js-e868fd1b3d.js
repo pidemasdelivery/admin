@@ -27,37 +27,6 @@
   const negN=id=>(negocios.find(n=>String(n.id)===String(id))||{}).nombre||'Negocio';
   function programado(o){try{if(o.programado_para)return T(o.programado_para);const d=window.pdTarifa&&pdTarifa.desgloseDePedido(o.observaciones);if(d&&d.programado)return T(d.programado)}catch(e){}return 0}
 
-  /* =================== 1. Alertas de demora =================== */
-  const UMBRAL={negocio:5,asignar:5,aceptar:3,extra:40};
-  function alertas(){
-    const now=Date.now(),out=[];
-    L().forEach(o=>{
-      const s=est(o);if(['entregado','cancelado','rechazado'].includes(s))return;
-      const prog=programado(o);if(prog&&prog-now>45*60000)return;
-      const base=prog&&prog>T(o.creado_en)?Math.max(T(o.creado_en),prog-45*60000):T(o.creado_en);
-      if(prog&&!o.motorizado_id&&prog-now<=30*60000){out.push({o,k:'prog',t:'Programado para las '+new Date(prog).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'numeric',minute:'2-digit'})+' y sin motorizado'});return}
-      if(o.negocio_id&&s==='pendiente'&&!o.negocio_aceptado_en&&now-base>UMBRAL.negocio*60000){out.push({o,k:'neg',t:negN(o.negocio_id)+' no lo acepta hace '+min(now-base)+' min'});return}
-      if(!o.motorizado_id&&['pendiente','confirmado'].includes(s)&&(!o.negocio_id||o.negocio_aceptado_en)){const desde=o.negocio_aceptado_en?T(o.negocio_aceptado_en):base;if(now-desde>UMBRAL.asignar*60000){out.push({o,k:'asig',t:'Sin motorizado hace '+min(now-desde)+' min'});return}}
-      if(s==='asignado'&&!o.aceptado_en&&o.asignado_en&&now-T(o.asignado_en)>UMBRAL.aceptar*60000){out.push({o,k:'acep',t:(o.motorizado_nombre||'El motorizado')+' no acepta hace '+min(now-T(o.asignado_en))+' min'});return}
-      if(['aceptado','en_camino','en_entrega','asignado'].includes(s)){const lim=(Number(o.tiempo_preparacion_min)||20)+UMBRAL.extra;const e=min(now-base);if(e>lim)out.push({o,k:'tarde',t:'Demorado: '+e+' min desde que se pidió'})}
-    });
-    return out;
-  }
-  let vistos=new Set(),ultimas=[];
-  function pintarAlertas(){
-    const A=alertas();ultimas=A;
-    const list=$('orderList');if(!list)return;
-    let b=$('pdAlertBar');
-    if(!A.length){if(b)b.remove()}else{
-      if(!b){b=document.createElement('button');b.type='button';b.id='pdAlertBar';b.className='pdAlertBar';b.addEventListener('click',verAlertas)}
-      if(b.nextElementSibling!==list&&list.parentElement)list.parentElement.insertBefore(b,list);
-      const t='⚠ '+A.length+' pedido'+(A.length===1?'':'s')+' necesita'+(A.length===1?'':'n')+' atención · Ver';if(b.textContent!==t)b.textContent=t;
-    }
-    const ids=new Map(A.map(a=>[String(a.o.id),a]));
-    document.querySelectorAll('#orderList .adminOrderCard[data-order-id]').forEach(c=>{const a=ids.get(c.dataset.orderId);c.classList.toggle('pdAlerta',!!a);let ch=c.querySelector(':scope > .pdAlertChip');if(a){if(!ch){ch=document.createElement('div');ch.className='pdAlertChip';c.prepend(ch)}if(ch.textContent!==a.t)ch.textContent=a.t}else if(ch)ch.remove()});
-    const nuevas=A.filter(a=>!vistos.has(a.k+a.o.id));nuevas.forEach(a=>vistos.add(a.k+a.o.id));
-    if(nuevas.length&&window.pdAviso)pdAviso(nuevas.length===1?ref(nuevas[0].o.id)+' · '+nuevas[0].t:nuevas.length+' pedidos nuevos con demora. Toca el aviso rojo de la lista.');
-  }
   /* Abre el detalle del pedido SIN pasar por el inicio: si el modal "Pedidos" ya está abierto no se vuelve a abrir ni a recargar la lista */
   function pedidosAbierto(){const pm=$('pdmModal'),t=$('pdmTitle');return !!pm&&!pm.hidden&&/pedidos/i.test((t&&t.textContent)||'')&&!!pm.querySelector('#orderList')}
   window.pdAbrirPedidoAdmin=abrirPedido;
@@ -76,16 +45,6 @@
       if(++n>20){clearInterval(tm);ok('No se encontró ese pedido en la lista.')}
     },250);
   }
-  async function verAlertas(){
-    /* un solo pedido con alerta: se abre su detalle directo, sin la hoja intermedia */
-    if(ultimas.length===1){abrirPedido(ultimas[0].o.id);return}
-    const b=hoja('Pedidos que necesitan atención');if(!b)return;await negs();
-    const sug=await sugerencias();
-    b.innerHTML=ultimas.length?ultimas.map(a=>{const s=a.k==='acep'||a.k==='asig'||a.k==='prog'?(sug.get(String(a.o.id))||[]).filter(x=>String(x.m.id)!==String(a.o.motorizado_id))[0]:null;
-      return '<section class="pdCtlCard"><div class="pdCtlTx"><strong>'+E(ref(a.o.id))+' · '+E(a.o.nombre_cliente||'Cliente')+'</strong><small>'+E(a.t)+'</small></div><div class="pdCtlDos"><button type="button" class="pdCtlBtn alt" data-ver="'+E(a.o.id)+'">Ver pedido</button>'+(s?'<button type="button" class="pdCtlBtn" data-asig="'+E(a.o.id)+'" data-m="'+E(s.m.id)+'">Asignar a '+E(String(s.m.nombre_completo||'').split(' ')[0])+(s.km!=null?' ('+s.km.toFixed(1)+' km)':'')+'</button>':'')+'</div></section>'}).join(''):'<p class="pdCtlVacio">Todo en orden. 🎉</p>';
-    b.onclick=async e=>{const v=e.target.closest('[data-ver]');if(v)return abrirPedido(v.dataset.ver);const a=e.target.closest('[data-asig]');if(a){if(typeof assignOrder!=='function')return;a.disabled=true;await assignOrder(a.dataset.asig,a.dataset.m);try{pdCtl.cerrarHoja()}catch(_){}}};
-  }
-
   /* =================== 2. Asignación sugerida =================== */
   const rad=x=>x*Math.PI/180;
   const km=(a,b,c,d)=>{const R=6371,dl=rad(c-a),dn=rad(d-b);const h=Math.sin(dl/2)**2+Math.cos(rad(a))*Math.cos(rad(c))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
@@ -203,37 +162,10 @@
       +'<div class="pdCtlLbl">Comentarios y calificaciones bajas</div>'+(malas.length?malas.map(c=>'<div class="pdCtlRow"><div class="pdCtlTx"><strong>'+E(ref(c.pedido_id))+' · negocio '+(c.estrellas_negocio||'-')+'★ · motorizado '+(c.estrellas_motorizado||'-')+'★</strong><small>'+E(c.comentario||'Sin comentario')+' · '+E(fH(c.creado_en))+'</small></div></div>').join(''):'<p class="pdCtlMuted">Sin comentarios.</p>');
   }
 
-  /* =================== 7. Reportes =================== */
-  async function reportes(dias){
-    dias=dias||7;const b=hoja('Reportes de pedidos');if(!b)return;await negs();
-    const desde=new Date(Date.now()-dias*864e5).toISOString();
-    const {data,error}=await db().from('pedidos').select('id,estado,negocio_id,motorizado_id,tipo_servicio,total,subtotal,costo_delivery,creado_en,asignado_en,aceptado_en,en_camino_en,entregado_en,cancelado_por,motivo_cancelacion').gte('creado_en',desde).limit(5000);
-    if(error){b.innerHTML='<p class="pdCtlErr">'+E(error.message)+'</p>';return}
-    const P=data||[],ent=P.filter(p=>est(p)==='entregado'),can=P.filter(p=>est(p)==='cancelado');
-    const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:0;
-    const dur=(a,b2)=>ent.map(p=>p[a]&&p[b2]?(T(p[b2])-T(p[a]))/60000:null).filter(x=>x!=null&&x>=0&&x<600);
-    const hora=new Array(24).fill(0);P.forEach(p=>{const h=+new Date(p.creado_en).toLocaleString('en-US',{timeZone:'America/Lima',hour:'numeric',hour12:false})%24;hora[h]++});
-    const maxH=Math.max(1,...hora);
-    const porNeg=new Map();ent.filter(p=>p.negocio_id).forEach(p=>{const x=porNeg.get(String(p.negocio_id))||{n:0,v:0};x.n++;x.v+=Number(p.subtotal)||0;porNeg.set(String(p.negocio_id),x)});
-    const porMot=new Map();ent.filter(p=>p.motorizado_id).forEach(p=>{const x=porMot.get(String(p.motorizado_id))||{n:0,d:0};x.n++;x.d+=Number(p.costo_delivery)||0;porMot.set(String(p.motorizado_id),x)});
-    const mot=new Map();can.forEach(p=>{const k=(p.cancelado_por?p.cancelado_por+': ':'')+(p.motivo_cancelacion||'Sin motivo');mot.set(k,(mot.get(k)||0)+1)});
-    const venta=ent.reduce((s,p)=>s+(Number(p.total)||0),0);
-    const csv=['Pedido;Estado;Tipo;Negocio;Motorizado;Total;Delivery;Creado;Entregado;Anulado por;Motivo',...P.map(p=>[ref(p.id),p.estado,p.tipo_servicio||'',p.negocio_id?negN(p.negocio_id):'',(MO().find(m=>String(m.id)===String(p.motorizado_id))||{}).nombre_completo||'',p.total||0,p.costo_delivery||0,fH(p.creado_en),p.entregado_en?fH(p.entregado_en):'',p.cancelado_por||'',p.motivo_cancelacion||''].join(';'))].join('\n');
-    b.innerHTML='<div class="pdChips">'+[1,7,30].map(d=>'<button type="button" data-d="'+d+'" class="'+(d===dias?'on':'')+'">'+(d===1?'Hoy':'Últimos '+d+' días')+'</button>').join('')+'</div>'
-      +'<div class="pdCtlGrid"><div><span>Pedidos</span><b>'+P.length+'</b></div><div><span>Entregados</span><b>'+ent.length+'</b></div><div><span>Venta entregada</span><b>'+M(venta)+'</b></div><div><span>Ticket promedio</span><b>'+M(ent.length?venta/ent.length:0)+'</b></div><div><span>Anulados</span><b>'+can.length+' ('+(P.length?Math.round(can.length*100/P.length):0)+'%)</b></div><div><span>Delivery cobrado</span><b>'+M(ent.reduce((s,p)=>s+(Number(p.costo_delivery)||0),0))+'</b></div></div>'
-      +'<div class="pdCtlLbl">Tiempo promedio por etapa</div><div class="pdCtlGrid"><div><span>Pedido → asignado</span><b>'+Math.round(avg(dur('creado_en','asignado_en')))+' min</b></div><div><span>Asignado → aceptado</span><b>'+Math.round(avg(dur('asignado_en','aceptado_en')))+' min</b></div><div><span>Aceptado → en camino</span><b>'+Math.round(avg(dur('aceptado_en','en_camino_en')))+' min</b></div><div><span>Total hasta entregar</span><b>'+Math.round(avg(dur('creado_en','entregado_en')))+' min</b></div></div>'
-      +'<div class="pdCtlLbl">Pedidos por hora</div><div class="pdHoras">'+hora.map((n,h)=>n?'<div><span>'+h+'h</span><i style="width:'+Math.max(4,Math.round(n*100/maxH))+'%"></i><b>'+n+'</b></div>':'').join('')+'</div>'
-      +'<div class="pdCtlLbl">Venta por negocio</div>'+([...porNeg].sort((a,b2)=>b2[1].v-a[1].v).map(([id,x])=>'<div class="pdCtlRow"><div class="pdCtlTx"><strong>'+E(negN(id))+'</strong><small>'+x.n+' pedido'+(x.n===1?'':'s')+'</small></div><b>'+M(x.v)+'</b></div>').join('')||'<p class="pdCtlMuted">Sin ventas.</p>')
-      +'<div class="pdCtlLbl">Entregas por motorizado</div>'+([...porMot].sort((a,b2)=>b2[1].n-a[1].n).map(([id,x])=>'<div class="pdCtlRow"><div class="pdCtlTx"><strong>'+E((MO().find(m=>String(m.id)===id)||{}).nombre_completo||'Motorizado')+'</strong><small>Delivery '+M(x.d)+'</small></div><b>'+x.n+'</b></div>').join('')||'<p class="pdCtlMuted">Sin entregas.</p>')
-      +'<div class="pdCtlLbl">Motivos de anulación</div>'+([...mot].sort((a,b2)=>b2[1]-a[1]).map(([k,n])=>'<div class="pdCtlRow"><div class="pdCtlTx"><strong>'+E(k)+'</strong></div><b>'+n+'</b></div>').join('')||'<p class="pdCtlMuted">Sin anulaciones.</p>')
-      +'<a class="pdCtlBtn alt" download="pedidos-'+dias+'d.csv" href="data:text/csv;charset=utf-8,'+encodeURIComponent('﻿'+csv)+'">Descargar Excel (CSV)</a>';
-    b.onclick=e=>{const d=e.target.closest('[data-d]');if(d)reportes(+d.dataset.d)};
-  }
-
   function bdg(k,v){const c=window.__pdCtlCuenta=window.__pdCtlCuenta||{};c[k]=v;document.querySelectorAll('[data-ctl="'+k+'"]').forEach(b=>{let i=b.querySelector('.pdCtlBdg');if(!v){if(i)i.remove();return}if(!i){i=document.createElement('b');i.className='pdCtlBdg';b.appendChild(i)}const t=v>99?'99+':String(v);if(i.textContent!==t)i.textContent=t})}
   let ppN=0;
   async function contarPp(){try{const r=await db().from('pedidos').select('id',{count:'exact',head:true}).not('negocio_id','is',null).eq('estado','entregado').is('negocio_pagado_en',null).not('pago_acordado','in','(solo_delivery,pagado,yape_negocio)').gt('subtotal',0);if(!r.error){ppN=r.count||0;bdg('pneg',ppN)}}catch(e){}}
-  window.pdPedCtl={porPagar,calificaciones,reportes,alertas:verAlertas,sugerencias};
-  let n=0;setInterval(()=>{if(!document.querySelector('#appView:not(.hidden)')||!db())return;n++;/* sin alertas de demora */if(n%20===1)contarPp();else bdg('pneg',ppN);if(n%2===0){pintarSugeridos().catch(()=>{});pintarTarjetas().catch(()=>{})}},4000);
+  window.pdPedCtl={porPagar,calificaciones,sugerencias};
+  let n=0;setInterval(()=>{if(!document.querySelector('#appView:not(.hidden)')||!db())return;n++;if(n%20===1)contarPp();else bdg('pneg',ppN);if(n%2===0){pintarSugeridos().catch(()=>{});pintarTarjetas().catch(()=>{})}},4000);
 })();
 

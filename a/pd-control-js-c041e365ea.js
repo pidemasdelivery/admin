@@ -1,8 +1,7 @@
 
 /* ===== antes control.js ===== */
 /* ===== Pidemás · Control de caja (admin) =====
-   Yape por confirmar · Por cobrar a negocios (con WhatsApp) · Cancelados con cobro (devolución)
-   · Resumen del día · Alerta de caja alta */
+   Yape por confirmar · Por cobrar a negocios (con WhatsApp) · Alerta de caja alta */
 (function(){
   if(window.pdCtl)return;
   const $=id=>document.getElementById(id);
@@ -92,52 +91,10 @@
     };
   }
 
-  /* =================== 3. Cancelados con cobro en caja =================== */
-  async function cancelados(){
-    const {data,error}=await db().from('pedidos').select('id,nombre_cliente,total,estado,observaciones,motorizado_id,creado_en').in('estado',['cancelado','rechazado']).gte('creado_en',new Date(Date.now()-60*864e5).toISOString()).limit(500);
-    if(error||!data||!data.length)return [];
-    const ids=data.map(p=>p.id);
-    const r=await db().from('movimientos_caja').select('id,pedido_id,motorizado_id,tipo,monto,descripcion').in('pedido_id',ids);
-    const mv=r.data||[];
-    return data.filter(p=>!/DEVOLUCION_REVISADA/.test(p.observaciones||'')).map(p=>{const ing=mv.filter(m=>String(m.pedido_id)===String(p.id)&&m.tipo==='ingreso'),dev=mv.some(m=>String(m.pedido_id)===String(p.id)&&m.tipo==='retiro'&&/^DEVOLUCI/i.test(m.descripcion||''));return {p,ing,cob:r2(ing.reduce((s,m)=>s+(Number(m.monto)||0),0)),dev}}).filter(x=>x.cob>0&&!x.dev);
-  }
-  async function devoluciones(){
-    const b=hoja('Cancelados con cobro');await base();
-    const L=await cancelados();
-    b.innerHTML='<p class="pdCtlMuted">Pedidos anulados que ya tenían un cobro en la caja del motorizado. Indica si el dinero se le devolvió al cliente.</p>'
-      +(L.length?L.map(x=>'<section class="pdCtlCard" data-p="'+E(x.p.id)+'"><div class="pdCtlTx"><strong>'+E(ref(x.p.id))+' · '+E(x.p.nombre_cliente||'Cliente')+'</strong><small>Cobrado '+M(x.cob)+' · caja de '+E(motoN(x.ing[0].motorizado_id))+' · '+E(fecha(x.p.creado_en))+'</small></div><div class="pdCtlDos"><button type="button" class="pdCtlBtn" data-dev="si">Sí, se devolvió</button><button type="button" class="pdCtlBtn alt" data-dev="no">No, el dinero se queda</button></div></section>').join(''):'<p class="pdCtlVacio">No hay pedidos anulados con cobro pendiente.</p>');
-    b.onclick=async e=>{
-      const btn=e.target.closest('[data-dev]');if(!btn)return;const id=btn.closest('[data-p]').dataset.p;const x=L.find(y=>String(y.p.id)===id);if(!x)return;
-      btn.disabled=true;
-      try{
-        if(btn.dataset.dev==='si'){const r=await db().from('movimientos_caja').insert({motorizado_id:x.ing[0].motorizado_id,pedido_id:id,tipo:'retiro',monto:x.cob,descripcion:'DEVOLUCIÓN AL CLIENTE · Pedido '+ref(id)+' anulado'});if(r.error)throw r.error}
-        const obs=String(x.p.observaciones||'');const r2_=await db().from('pedidos').update({observaciones:(obs?obs+' | ':'')+'DEVOLUCION_REVISADA'+(btn.dataset.dev==='si'?'':' (sin devolución)')}).eq('id',id);if(r2_.error)throw r2_.error;
-        aviso(btn.dataset.dev==='si'?'Devolución registrada: se descontó de su caja.':'Listo: el cobro se queda en su caja.');devoluciones();contar();
-      }catch(err){pdAviso('No se pudo guardar: '+(err.message||err));btn.disabled=false}
-    };
-  }
-
-  /* =================== 4. Resumen del día + 5. Alerta de caja alta =================== */
   async function tope(){try{const {data}=await db().from('ajustes_pidemas').select('valor').eq('clave','caja_alerta').maybeSingle();return Number(data&&data.valor&&data.valor.monto)||0}catch(e){return 0}}
-  async function todosMovs(){const rows=[];for(let f=0;;f+=1000){const {data,error}=await db().from('movimientos_caja').select('id,motorizado_id,pedido_id,tipo,monto,descripcion,creado_en,revision,recibido').order('creado_en',{ascending:false}).range(f,f+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000||rows.length>50000)break}return rows}
-  async function resumen(){
-    const b=hoja('Resumen del día');await base();const C=window.PdCaja;
-    let movs=[];try{movs=await todosMovs()}catch(e){b.innerHTML='<p class="pdCtlErr">No se pudo leer: '+E(e.message)+'</p>';return}
-    const hoy=hoyLima(),ini=new Date(hoy+'T00:00:00-05:00').toISOString();
-    const yp=await db().from('cobros').select('motorizado_id,monto').eq('metodo_pago','yape').gte('confirmado_en',ini);
-    const T=await tope();
-    const filas=motos.map(m=>{const all=movs.filter(x=>String(x.motorizado_id)===String(m.id));const L=all.filter(x=>diaLima(x.creado_en)===hoy);
-      const s={ef:0,pg:0,ent:0,yape:0};L.forEach(x=>{const k=C.kind(x),a=C.amount(x);if(x.tipo==='ingreso'){if(k!=='fondo')s.ef+=a}else if(k==='entrega'||k==='liquidacion')s.ent+=(x.recibido!=null?Number(x.recibido):a);else if(k!=='reinicio')s.pg+=a});
-      (yp.data||[]).filter(c=>String(c.motorizado_id)===String(m.id)).forEach(c=>s.yape+=Number(c.monto)||0);
-      return {m,s,bal:C.balance(all),hay:L.length||s.yape>0}}).filter(f=>f.hay||Math.abs(f.bal)>0.004);
-    const txt=['*Resumen del día · Pidemás Delivery*',new Date().toLocaleDateString('es-PE',{timeZone:'America/Lima',weekday:'long',day:'2-digit',month:'long'}),'',...filas.map(f=>'*'+f.m.nombre_completo+'*\nEfectivo '+M(f.s.ef)+' · Yape '+M(f.s.yape)+' · Pagos/gastos '+M(f.s.pg)+' · Entregó '+M(f.s.ent)+'\nSaldo en caja: '+M(f.bal)),'','*Total en cajas: '+M(filas.reduce((s,f)=>s+f.bal,0))+'*'].join('\n');
-    b.innerHTML='<div class="pdCtlStat"><span>Total en cajas</span><b>'+M(filas.reduce((s,f)=>s+f.bal,0))+'</b></div>'
-      +(filas.length?filas.map(f=>'<section class="pdCtlCard"><div class="pdCtlCardHd"><span><strong>'+E(f.m.nombre_completo)+'</strong><small>Saldo en caja '+M(f.bal)+'</small></span>'+(T>0&&f.bal>=T?'<span class="pdcjRev bad">Supera '+M(T)+'</span>':'')+'</div><div class="pdCtlGrid"><div><span>Efectivo</span><b>'+M(f.s.ef)+'</b></div><div><span>Yape</span><b>'+M(f.s.yape)+'</b></div><div><span>Pagos y gastos</span><b>'+M(f.s.pg)+'</b></div><div><span>Entregó</span><b>'+M(f.s.ent)+'</b></div></div></section>').join(''):'<p class="pdCtlVacio">Hoy todavía no hay movimientos.</p>')
-      +'<a class="pdCtlWa big" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(txt)+'">Compartir resumen por WhatsApp</a>';
-  }
   async function alerta(){
     const b=hoja('Alerta de caja alta');const T=await tope();
-    b.innerHTML='<p class="pdCtlMuted">Cuando la caja de un motorizado llegue a este monto, él verá un aviso para entregarte el efectivo, y en el Resumen del día se marcará en rojo. Deja 0 para desactivar.</p><label class="pdCtlLbl">Monto máximo en caja (S/)<input type="number" inputmode="decimal" min="0" step="10" id="pdCtlTope" value="'+E(T||'')+'"></label><button type="button" class="pdCtlBtn" id="pdCtlTopeOk">Guardar</button>';
+    b.innerHTML='<p class="pdCtlMuted">Cuando la caja de un motorizado llegue a este monto, él verá un aviso para entregarte el efectivo, Deja 0 para desactivar.</p><label class="pdCtlLbl">Monto máximo en caja (S/)<input type="number" inputmode="decimal" min="0" step="10" id="pdCtlTope" value="'+E(T||'')+'"></label><button type="button" class="pdCtlBtn" id="pdCtlTopeOk">Guardar</button>';
     $('pdCtlTopeOk').onclick=async()=>{const v=Math.max(0,r2($('pdCtlTope').value));const {error}=await db().from('ajustes_pidemas').upsert({clave:'caja_alerta',valor:{monto:v},actualizado_en:new Date().toISOString()});if(error){pdAviso('No se pudo guardar: '+error.message);return}aviso(v?'Alerta guardada en '+M(v)+'.':'Alerta desactivada.');cerrarHoja()};
   }
 
@@ -145,18 +102,16 @@
   async function contar(){
     try{
       const desde=new Date(Date.now()-45*864e5).toISOString();
-      const [y,n,c]=await Promise.all([
+      const [y,n]=await Promise.all([
         db().from('cobros').select('id',{count:'exact',head:true}).eq('metodo_pago','yape').eq('confirmado',true).is('yape_recibido_en',null).gte('confirmado_en',desde),
-        db().from('pedidos').select('id',{count:'exact',head:true}).in('pago_acordado',['pagado','yape_negocio']).eq('estado','entregado').is('delivery_negocio_cobrado_en',null),
-        cancelados()]);
-      const k={yape:y.count||0,deu:n.count||0,dev:c.length};
+        db().from('pedidos').select('id',{count:'exact',head:true}).in('pago_acordado',['pagado','yape_negocio']).eq('estado','entregado').is('delivery_negocio_cobrado_en',null)]);
+      const k={yape:y.count||0,deu:n.count||0};
       window.__pdCtlCuenta=k;badges();
-      if(c.length&&!contar.avisado){contar.avisado=1;pdAviso&&pdAviso('Hay '+c.length+' pedido'+(c.length===1?'':'s')+' anulado'+(c.length===1?'':'s')+' con cobro en caja. Revisa «Cancelados con cobro» en el menú.')}
     }catch(e){}
   }
   function badges(){const k=window.__pdCtlCuenta||{};document.querySelectorAll('[data-ctl]').forEach(b=>{let i=b.querySelector('.pdCtlBdg');const v=k[b.dataset.ctl]||0;if(!v){if(i)i.remove();return}if(!i){i=document.createElement('b');i.className='pdCtlBdg';b.appendChild(i)}const t=v>99?'99+':String(v);if(i.textContent!==t)i.textContent=t})}
   setInterval(badges,1500);
-  window.pdCtl={yape,porCobrar,devoluciones,resumen,alerta,contar,hoja,cerrarHoja,planilla:()=>window.pdPlanilla&&window.pdPlanilla()};
+  window.pdCtl={yape,porCobrar,alerta,contar,hoja,cerrarHoja,planilla:()=>window.pdPlanilla&&window.pdPlanilla()};
   let t0=0;setInterval(()=>{const on=!!document.querySelector('#appView:not(.hidden)')&&window.db;if(on&&Date.now()-t0>90000){t0=Date.now();contar()}},3000);
 })();
 
