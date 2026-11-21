@@ -171,104 +171,6 @@ window.renderOrders=function(){const out=_ro.apply(this,arguments);try{paint();s
 })();
 }catch(e){console.error("[pidemas-admin-calificaciones]",e)}
 
-/* ===== pidemas-clientes-modelo2 ===== */
-try{
-(function(){
-const tab=document.getElementById('tab-clientes');if(!tab||typeof window.renderClientes!=='function')return;
-const $=id=>document.getElementById(id);
-const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const N=v=>String(v||'').toLocaleLowerCase('es').normalize('NFD').replace(/[̀-ͯ]/g,'');
-const REF='<svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg>';
-const formCard=$('clienteFormTitle')?.closest('.card');
-const search=$('buscarClientesRegistrados');const list=$('clientesList');
-const ui=document.createElement('div');
-ui.innerHTML=`<div class="pdcTop"><span><span class="pdcKick">Principal</span><strong>Clientes</strong></span><button type="button" class="pdcIcon" id="pdcRefresh" aria-label="Actualizar">${REF}</button></div>
-    <div class="pdcStats"><div><span>Clientes</span><strong id="pdcN">–</strong></div><div><span>Con mapa</span><strong id="pdcU">–</strong></div><div><span>Con DNI</span><strong id="pdcD">–</strong></div></div>
-    <div class="pdcBar" id="pdcBar"><button type="button" class="pdcBtn" id="pdcNew">+ Nuevo</button></div>
-    <div id="pdcFormSlot"></div><div id="pdcListSlot"></div>`;
-[...tab.children].forEach(c=>c.classList.add('pdcHidden'));
-tab.appendChild(ui);
-if(search){search.placeholder='Buscar por nombre, número, DNI o dirección';$('pdcBar').prepend(search)}
-if(formCard){
-formCard.classList.add('pdcForm');formCard.hidden=true;formCard.removeAttribute('style');
-const t=$('clienteFormTitle');const head=document.createElement('div');head.className='pdcFormHead';t.before(head);head.appendChild(t);
-head.insertAdjacentHTML('beforeend','<button type="button" class="pdcClose" aria-label="Cerrar">×</button>');
-const F=id=>$(id)?.closest('.field');
-const grid=formCard.querySelector('.grid');
-const p1=document.createElement('div');p1.className='pdcPair';[F('clienteNombre'),F('clienteTelefono')].forEach(f=>f&&p1.appendChild(f));
-const p2=document.createElement('div');p2.className='pdcPair';[F('clienteDireccion'),F('clienteDocumento')].forEach(f=>f&&p2.appendChild(f));
-const fu=F('clienteUbicacion');
-grid.before(p1);grid.before(p2);if(fu)grid.before(fu);grid.classList.add('pdcHidden');
-const u=$('clienteUbicacion');if(u){const w=document.createElement('div');w.className='pdcWithBtn';u.before(w);w.appendChild(u);w.insertAdjacentHTML('beforeend','<button type="button" class="pdcMini" id="pdcPaste">Pegar</button>')}
-$('clienteTelefono')?.setAttribute('inputmode','tel');
-const cancel=$('cancelarCliente');if(cancel)cancel.textContent='Cancelar';
-$('pdcFormSlot').appendChild(formCard);
-}
-if(list)$('pdcListSlot').appendChild(list);
-function openForm(){if(!formCard)return;formCard.hidden=false;setTimeout(()=>{formCard.scrollIntoView({behavior:'smooth',block:'start'});$('clienteNombre')?.focus({preventScroll:true})},30)}
-function closeForm(){if(!formCard)return;try{limpiarFormularioCliente();clearMsg($('clienteMsg'))}catch(e){}formCard.hidden=true}
-$('pdcNew')?.addEventListener('click',()=>{try{limpiarFormularioCliente();clearMsg($('clienteMsg'))}catch(e){}const q=(search?.value||'').trim();if(q){if(/^\d[\d\s]{5,}$/.test(q))$('clienteTelefono').value=q.replace(/\s/g,'');else $('clienteNombre').value=q}openForm()});
-formCard?.querySelector('.pdcClose')?.addEventListener('click',closeForm);
-$('cancelarCliente')?.addEventListener('click',()=>setTimeout(()=>{formCard.hidden=true},0));
-$('pdcPaste')?.addEventListener('click',async()=>{const u=$('clienteUbicacion');try{const t=await navigator.clipboard.readText();if(t)u.value=t.trim()}catch(e){u.focus()}});
-formCard?.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target.tagName!=='INPUT')return;const f=[...formCard.querySelectorAll('input')].filter(x=>x.offsetParent);const i=f.indexOf(e.target);e.preventDefault();if(f[i+1])f[i+1].focus();else $('guardarCliente')?.click()});
-$('guardarCliente')?.addEventListener('click',()=>{const t0=Date.now();const t=setInterval(()=>{if(Date.now()-t0>8000){clearInterval(t);return}if(!$('clienteNombre').value&&!editingClienteId){clearInterval(t);formCard.hidden=true}},300)});
-if(typeof window.editarClienteAdmin==='function'){
-const _ed=window.editarClienteAdmin;
-window.editarClienteAdmin=function(){const out=_ed.apply(this,arguments);openForm();return out};
-}
-const _origRender=window.renderClientes;
-try{search?.removeEventListener('input',_origRender)}catch(e){}
-const opened=new Set();let limit=60;
-const digits=v=>String(v||'').replace(/\D/g,'');
-const wa=t=>{const d=digits(t);if(!d)return '';return 'https://wa.me/'+(d.startsWith('51')?d:(d.length===9?'51'+d:d))};
-window.renderClientes=function(){
-if(!list)return;
-const all=Array.isArray(allClientes)?allClientes:[];
-$('pdcN').textContent=all.length;
-$('pdcU').textContent=all.filter(c=>clienteUbicacion(c)).length;
-$('pdcD').textContent=all.filter(c=>clienteDocumento(c)).length;
-if(!all.length){list.innerHTML='<div class="pdcEmpty">Todavía no hay clientes. Toca «+ Nuevo» para registrar el primero.</div>';return}
-const q=N(search?.value||'').trim();const qd=digits(search?.value||'');
-const rows=all.filter(c=>{if(!q)return true;const t=N([clienteNombre(c),clienteDireccion(c),clienteUbicacion(c)].join(' '));return t.includes(q)||(qd.length>=3&&(digits(clienteTelefono(c)).includes(qd)||digits(clienteDocumento(c)).includes(qd)))});
-if(!rows.length){list.innerHTML=`<div class="pdcEmpty">No hay clientes con «${E(search.value.trim())}». Toca «+ Nuevo» para registrarlo.</div>`;return}
-let last='';const shown=rows.slice(0,limit);
-let html=shown.map(c=>{
-const name=clienteNombre(c)||'Sin nombre';const L=N(name).charAt(0).toUpperCase()||'#';
-const sep=!q&&L!==last?`<div class="pdcLetter">${E(L)}</div>`:'';last=L;
-const tel=clienteTelefono(c),dni=clienteDocumento(c),dir=clienteDireccion(c),ub=clienteUbicacion(c);
-const id=String(c.id);const w=wa(tel);
-const ubLink=/^https?:\/\//i.test(ub)?ub:(ub?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(ub):'');
-const ic=d=>`<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
-const I={tel:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',dni:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c.6-1.5 1.7-2 3-2s2.4.5 3 2M14 10h4M14 13h3"/>',dir:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',map:'<path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',wa:'<path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-2-2l.8-1-1-2z"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/>',del:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>'};
-const ini=name.trim().split(/\s+/).map(x=>x[0]||'').slice(0,2).join('').toUpperCase();
-const linea=(k,lbl,val,link)=>`<div class="pccLi">${ic(I[k])}<span class="pccLiTx"><small>${lbl}</small>${link?`<a href="${E(link)}" target="_blank" rel="noopener">${E(val)}</a>`:`<b class="${val?'':'vacio'}">${E(val||'No registrado')}</b>`}</span></div>`;
-return `${sep}<div class="pccRow ${opened.has(id)?'open':''}" data-id="${E(id)}">
-        <button type="button" class="pccHead" aria-expanded="${opened.has(id)}"><span class="pccAv">${E(ini||'#')}</span><span class="pccTxt"><strong>${E(name)}</strong><small>${E(tel||'Sin número')}</small></span><svg class="pccChev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="pccBody">
-          <div class="pccInfo">${linea('tel','Número',tel)}${linea('dni','DNI',dni)}${linea('dir','Dirección',dir)}${ubLink?linea('map','Ubicación','Ver en el mapa',ubLink):linea('map','Ubicación','')}</div>
-          <div class="pccMain"><a class="pccWa" href="${w?E(w):'#'}" target="_blank" rel="noopener" ${w?'':'aria-disabled="true"'}>${ic(I.wa)}WhatsApp</a><a class="pccCall" href="${tel?'tel:'+E(digits(tel)):'#'}" ${tel?'':'aria-disabled="true"'}>${ic(I.tel)}Llamar</a></div>
-          <div class="pccSub"><button type="button" data-act="ficha">${ic('<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/>')}Ficha</button><button type="button" data-act="edit">${ic(I.edit)}Editar</button><button type="button" class="del" data-act="del">${ic(I.del)}Borrar</button></div>
-        </div></div>`;
-}).join('');
-if(rows.length>limit)html+=`<button type="button" class="pdcMore" id="pdcMore">Ver ${Math.min(60,rows.length-limit)} más (${rows.length-limit} restantes)</button>`;
-list.innerHTML=html;
-};
-list?.addEventListener('click',e=>{
-if(e.target.closest('#pdcMore')){limit+=60;window.renderClientes();return}
-const row=e.target.closest('.pccRow');if(!row)return;const id=row.dataset.id;
-if(e.target.closest('.pccHead')){row.classList.toggle('open');const on=row.classList.contains('open');on?opened.add(id):opened.delete(id);row.querySelector('.pccHead').setAttribute('aria-expanded',String(on));return}
-if(e.target.closest('a[aria-disabled="true"]')){e.preventDefault();return}
-const b=e.target.closest('[data-act]');if(!b)return;
-if(b.dataset.act==='edit')editarClienteAdmin(id);
-if(b.dataset.act==='del')borrarClienteAdmin(id);
-});
-search?.addEventListener('input',()=>{limit=60;window.renderClientes()});
-$('pdcRefresh')?.addEventListener('click',async()=>{const b=$('pdcRefresh');b.classList.add('spin');try{await loadClientes()}finally{b.classList.remove('spin')}});
-try{window.renderClientes()}catch(e){}
-})();
-}catch(e){console.error("[pidemas-clientes-modelo2]",e)}
-
 /* ===== pd-caja-lib ===== */
 try{
 window.PdCaja=window.PdCaja||(function(){
@@ -896,19 +798,6 @@ try{
 })();
 }catch(e){console.error("[pidemas-inicio-pedidos-js]",e)}
 
-/* ===== pidemas-clientes-app-js ===== */
-try{
-/* «+ Nuevo cliente» sale de la barra del buscador y va arriba, a todo el ancho */
-(function(){
-function armar(){
-  const b=document.getElementById('pdcNew'),bar=document.getElementById('pdcBar');if(!b||!bar||b.dataset.pdApp)return;
-  b.dataset.pdApp='1';b.textContent='+ Nuevo cliente';bar.before(b);
-  const q=document.getElementById('buscarClientesRegistrados');if(q)q.placeholder='Buscar cliente';
-}
-armar();new MutationObserver(armar).observe(document.documentElement,{childList:true,subtree:true});
-})();
-}catch(e){console.error("[pidemas-clientes-app-js]",e)}
-
 /* ===== pidemas-guia-tienda-js ===== */
 try{
 /* Guía de la Tienda: reconoce botones, campos, tarjetas, pastillas, títulos, etiquetas e íconos por su forma
@@ -1114,7 +1003,7 @@ if(root && window.MutationObserver){new MutationObserver(()=>clean()).observe(ro
 try{
 (function(){
 if(window.__pdPagesPro)return;window.__pdPagesPro=true;
-var TAB={'tab-pedidos':'Principal','tab-clientes':'Principal','tab-caja':'Motorizados','tab-sueldo':'Motorizados'};
+var TAB={'tab-pedidos':'Principal','tab-caja':'Motorizados','tab-sueldo':'Motorizados'};
 var TOOL={'Crear negocio':'Negocios','Estado de negocios':'Negocios','Motorizados / GPS':'Motorizados','Crear motorizado':'Motorizados','Suspender / reactivar cuentas':'Motorizados','Códigos de descuento':'Marketing'};
 var QI={'Pedidos':'receipt','Clientes':'users','Caja de motorizados':'wallet','Cajas':'wallet'};
 function kick(h2,txt){

@@ -43,7 +43,6 @@ $("loginView").classList.add("hidden"); $("appView").classList.remove("hidden");
 try{window.pdPedidosCache&&window.pdPedidosCache.pintar(uid)}catch(e){}
 loadOrders();
 await loadRestaurants();
-await loadClientes();
 }
 function setupLoginOptions(){
 const key="pidemas_admin_remember_email";
@@ -171,100 +170,6 @@ var adminRestaurantsById = window.adminRestaurantsById || new Map();
 window.adminRestaurantsById = adminRestaurantsById;
 const adminDeliveryDistanceCache=new Map();
 var allMotos=[];
-var allClientes=[];
-var editingClienteId=null;
-function clienteField(c, key){ return c && Object.prototype.hasOwnProperty.call(c,key) ? c[key] : ""; }
-function clienteNombre(c){ return clienteField(c,"nombre_completo") || clienteField(c,"nombre") || ""; }
-function clienteDocumento(c){ return clienteField(c,"documento") || clienteField(c,"dni") || ""; }
-function clienteTelefono(c){ return clienteField(c,"telefono") || clienteField(c,"numero") || clienteField(c,"celular") || ""; }
-function clienteDireccion(c){ return clienteField(c,"direccion") || clienteField(c,"direccion_recojo") || ""; }
-function clienteUbicacion(c){
-return clienteField(c,"referencia") ||
-clienteField(c,"ubicacion_recojo_url") ||
-clienteField(c,"ubicacion_url") || "";
-}
-async function loadClientes(){
-const box=$("clientesList");
-if(!box)return;
-const {data,error}=await db.from("clientes").select("*");
-if(error){
-msg($("clienteMsg"),"No se pudieron cargar los clientes: "+error.message);
-return;
-}
-allClientes=(data||[]).filter(c=>c.activo!==false);
-allClientes.sort((a,b)=>clienteNombre(a).localeCompare(clienteNombre(b),"es"));
-renderClientes();
-}
-function renderClientes(){
-const box=$("clientesList");
-if(!box)return;
-if(!allClientes.length){
-box.innerHTML='<div class="notice">No hay clientes registrados.</div>';
-return;
-}
-const query=String($("buscarClientesRegistrados")?.value||"").trim().toLocaleLowerCase("es");
-const normaliza=v=>String(v||"").toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-const filtrados=allClientes.filter(c=>{
-const datos=[clienteNombre(c),clienteTelefono(c),clienteDocumento(c),clienteDireccion(c),clienteUbicacion(c)].join(" ");
-return normaliza(datos).includes(normaliza(query));
-});
-if(!filtrados.length){
-box.innerHTML='<div class="notice">No se encontraron clientes con esa búsqueda.</div>';
-return;
-}
-box.innerHTML=filtrados.map(c=>{
-const dni=clienteDocumento(c), ubic=clienteUbicacion(c);
-return `<div class="row" style="display:block">
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap">
-        <div><strong>${esc(clienteNombre(c)||"Sin nombre")}</strong><small>Cliente registrado</small></div>
-        <span class="badge">${c.activo===false?"Inactivo":"Activo"}</span>
-      </div>
-      <div class="clientData" style="margin-top:8px">
-        <div><b>DNI:</b> ${esc(dni||"—")}</div>
-        <div><b>Número:</b> ${esc(clienteTelefono(c)||"—")}</div>
-        <div><b>Dirección:</b> ${esc(clienteDireccion(c)||"—")}</div>
-        <div><b>Ubicación:</b> ${ubic?`<a href="${esc(ubic)}" target="_blank" rel="noopener">Ver ubicación</a>`:"—"}</div>
-      </div>
-      <div class="actions clientButtons clientServiceButtons" style="margin-top:10px">
-        <button type="button" class="btn" data-client-service="recojo" data-client-id="${esc(c.id)}">Recojo y entrega</button>
-        <button type="button" class="btn" data-client-service="encomienda" data-client-id="${esc(c.id)}">Encomienda</button>
-        <button type="button" class="btn" data-client-service="compra" data-client-id="${esc(c.id)}">Compra</button>
-      </div>
-      <div class="actions clientButtons" style="margin-top:8px">
-        <button type="button" class="btn alt" onclick="editarClienteAdmin('${esc(c.id)}')">Editar</button>
-        <button type="button" class="btn alt" onclick="borrarClienteAdmin('${esc(c.id)}')">Borrar</button>
-      </div>
-    </div>`;
-}).join("");
-}
-function limpiarFormularioCliente(){
-editingClienteId=null;
-$("clienteNombre").value="";
-$("clienteDocumento").value="";
-$("clienteTelefono").value="";
-$("clienteDireccion").value="";
-$("clienteUbicacion").value="";
-$("clienteFormTitle").textContent="Agregar cliente";
-$("guardarCliente").textContent="Guardar cliente";
-$("cancelarCliente").classList.add("hidden");
-}
-function editarClienteAdmin(id){
-const c=allClientes.find(x=>String(x.id)===String(id));
-if(!c)return;
-editingClienteId=c.id;
-$("clienteNombre").value=clienteNombre(c);
-$("clienteDocumento").value=clienteDocumento(c);
-$("clienteTelefono").value=clienteTelefono(c);
-$("clienteDireccion").value=clienteDireccion(c);
-$("clienteUbicacion").value=clienteUbicacion(c);
-$("clienteFormTitle").textContent="Editar cliente";
-$("guardarCliente").textContent="Guardar cambios";
-$("cancelarCliente").classList.remove("hidden");
-clearMsg($("clienteMsg"));
-window.openAdminTab&&window.openAdminTab("clientes");
-window.scrollTo({top:0,behavior:"smooth"});
-}
-
 function extraerCoordsCliente(texto){
 const t=String(texto||"").trim();
 const patterns=[
@@ -277,87 +182,6 @@ const m=t.match(p);
 if(m)return {lat:Number(m[1]),lng:Number(m[2])};
 }
 return null;
-}
-async function guardarClienteAdmin(){
-const nombre=$("clienteNombre").value.trim();
-const documento=$("clienteDocumento").value.trim();
-const telefono=$("clienteTelefono").value.trim();
-const direccion=$("clienteDireccion").value.trim();
-const ubicacion=$("clienteUbicacion").value.trim();
-if(!nombre||!telefono||!direccion){
-msg($("clienteMsg"),"Completa nombre, número y dirección.");
-return;
-}
-try{
-const base={
-nombre_completo:nombre,
-telefono:telefono,
-direccion:direccion,
-referencia:ubicacion||null
-};
-const coords=extraerCoordsCliente(ubicacion);
-if(coords){
-base.latitud=coords.lat;
-base.longitud=coords.lng;
-}else{
-base.latitud=null;
-base.longitud=null;
-}
-const docProbe=await db.from("clientes").select("documento").limit(1);
-if(!docProbe.error){
-base.documento=documento||null;
-}
-base.activo=true;
-let result;
-if(editingClienteId){
-result=await db.from("clientes")
-.update(base)
-.eq("id",editingClienteId)
-.select("*")
-.single();
-}else{
-result=await db.from("clientes")
-.insert(base)
-.select("*")
-.single();
-}
-if(result.error)throw result.error;
-msg($("clienteMsg"),editingClienteId
-?"Cliente actualizado correctamente."
-:"Cliente registrado correctamente.");
-limpiarFormularioCliente();
-await loadClientes();
-}catch(e){
-console.error(e);
-msg($("clienteMsg"),e.message||"No se pudo guardar el cliente.");
-}
-}
-async function borrarClienteAdmin(id){
-const c=allClientes.find(x=>String(x.id)===String(id));
-if(!c)return;
-if(!(await pdConfirmar(`¿Borrar el cliente "${clienteNombre(c)||""}"? Los pedidos históricos deben conservarse.`)))return;
-try{
-if(Object.prototype.hasOwnProperty.call(c,"activo")){
-const r=await db.from("clientes").update({activo:false}).eq("id",id).select("id").maybeSingle();
-if(r.error)throw r.error;
-}else{
-const r=await db.from("clientes").delete().eq("id",id).select("id");
-if(r.error)throw r.error;
-}
-msg($("clienteMsg"),"Cliente borrado correctamente.");
-if(String(editingClienteId)===String(id))limpiarFormularioCliente();
-await loadClientes();
-}catch(e){
-msg($("clienteMsg"),e.message||"No se pudo borrar el cliente.");
-}
-}
-function formatMinutes(sec){
-if(sec==null || !Number.isFinite(sec)) return "—";
-const total=Math.max(0,Math.round(sec));
-const h=Math.floor(total/3600);
-const m=Math.floor((total%3600)/60);
-const s=total%60;
-return h ? `${h} h ${m} min` : `${m} min ${String(s).padStart(2,"0")} s`;
 }
 let __pdCargaPedidos=null;
 async function loadOrders(){if(__pdCargaPedidos)return __pdCargaPedidos;__pdCargaPedidos=loadOrdersReal().finally(()=>{__pdCargaPedidos=null});return __pdCargaPedidos}
@@ -1617,10 +1441,6 @@ const id=btn.dataset.close;
 $(id)?.classList.add("hidden");
 };
 });
-$("guardarCliente")?.addEventListener("click",guardarClienteAdmin);
-$("cancelarCliente")?.addEventListener("click",()=>{limpiarFormularioCliente();clearMsg($("clienteMsg"));});
-$("refreshClientes")?.addEventListener("click",loadClientes);
-$("buscarClientesRegistrados")?.addEventListener("input",renderClientes);
 (function startAdminOrdersRealtime(){
 try{
 if(window.pidemasAdminOrdersChannel){

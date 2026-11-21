@@ -203,37 +203,6 @@ html body #appView:not(#Z#Z#Z#Z#Z) > .card:first-child:has(> h1){display:none!im
 <div class="list" id="orderList"></div>
 </section>
 
-<section class="card hidden" id="tab-clientes">
-<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-<div>
-<h2>Clientes</h2>
-<p class="muted"></p>
-</div>
-<button class="btn alt" id="refreshClientes" type="button">Actualizar</button>
-</div>
-<div class="card" style="margin-top:14px;border:1px solid var(--fr-line)">
-<h3 id="clienteFormTitle">Agregar cliente</h3>
-<div class="grid">
-<div class="field"><label>Nombre y apellido</label><input id="clienteNombre"/></div>
-<div class="field"><label>DNI</label><input id="clienteDocumento" inputmode="numeric" pattern="[0-9]*" type="text"/></div>
-<div class="field"><label>Número</label><input id="clienteTelefono" inputmode="numeric" pattern="[0-9]*" type="tel"/></div>
-<div class="field"><label>Dirección</label><input id="clienteDireccion"/></div>
-<div class="field full"><label>Ubicación</label><input id="clienteUbicacion" placeholder="Enlace de Maps o lat, lng"/></div>
-</div>
-<div class="actions">
-<button class="btn" id="guardarCliente" type="button">Guardar cliente</button>
-<button class="btn alt hidden" id="cancelarCliente" type="button">Cancelar edición</button>
-</div>
-<div class="notice hidden" id="clienteMsg"></div>
-</div>
-<div class="field" style="margin:14px 0 10px">
-<label for="buscarClientesRegistrados">Buscar cliente registrado</label>
-<input autocomplete="off" id="buscarClientesRegistrados" placeholder="Nombre, teléfono, DNI o dirección" type="search"/>
-<small class="muted">Escribe para filtrar la lista de clientes guardados.</small>
-</div>
-<div class="list" id="clientesList"></div>
-</section>
-
 </section>
 <footer class="pidemas-company-footer">Grupo Pidemás E.I.R.L<br><small style="opacity:.55">versión 202611181000</small></footer>
 </main>
@@ -262,9 +231,9 @@ window.db = db;
 
 
 </script>
-<script id="pd-funciones-js" src="a/pd-funciones-js-6403f02794.js"></script>
+<script id="pd-funciones-js" src="a/pd-funciones-js-932d105f12.js"></script>
 <script id="pd-pedidos-js" src="a/pd-pedidos-js-5ea5b764b2.js"></script>
-<script id="pd-admin-js" src="a/pd-admin-js-8bc14e9791.js"></script>
+<script id="pd-admin-js" src="a/pd-admin-js-6ccbbfcdd4.js"></script>
 <script id="pd-control-js" src="a/pd-control-js-6ab7ad68f7.js"></script>
 <script id="pd-pedidos-control-js" src="a/pd-pedidos-control-js-ac0b071548.js"></script>
 <script id="pd-mejoras-js" src="a/pd-mejoras-js-c798058642.js"></script>
