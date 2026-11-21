@@ -81,7 +81,7 @@
         h+=card('Qué comprar',`<div class="tx">${E(det||'—')}</div>`);
         if(cmp||doc)h+=card('Comprobante',`${cmp?`<div class="li"><span>Tipo</span><b>${E(cmp)}</b></div>`:''}${doc?`<div class="li"><span>DNI/RUC</span><b>${E(doc)}</b></div>`:''}`)}
       if(t==='enc')h+=card('Envío',`<div class="li"><span>Agencia</span><b>${E(o.agencia_destino||'—')}</b></div><div class="li"><span>Destino</span><b>${E(o.destino_final||o.direccion_entrega||'—')}</b></div><div class="li"><span>Pago del envío</span><b>${o.tipo_pago_encomienda==='pago_en_agencia'?'En agencia':'A destino'}</b></div>`);
-      if(Number(o.subtotal)>0)h+=card('Montos',`<div class="li"><span>${t==='compra'?'Compra':'Productos'}</span><b>${M(o.subtotal)}</b></div><div class="li"><span>Servicio</span><b>${M(serv0)}</b></div><div class="li"><span>Total</span><b>${M(tot0)}</b></div>`);
+      if(Number(o.subtotal)>0)h+=card('Montos',`<div class="li"><span>${t==='compra'?'Compra':'Productos'}</span><b>${M(o.subtotal)}</b></div><div class="li"><span>Servicio</span><b>${M(serv0)}</b></div><div class="li t"><span>Total</span><b>${M(tot0)}</b></div>`);
       if(notas.length)h+=`<div class="box"><div class="k">Notas</div><div class="tx">${E(notas.join(' · '))}</div></div>`;
       s.body=h+U.contact(null,remT,'Hola, te escribimos de Pidemás por tu pedido '+U.ref(id)+'.');}
     /* 1 · Asignar */
