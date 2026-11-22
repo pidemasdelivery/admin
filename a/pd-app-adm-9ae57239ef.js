@@ -940,6 +940,26 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       pago:pagado?'pagado':m==='al_final'?'al_final':m==='recojo_yape'?'yape':String(o.metodo_pago||'efectivo').toLowerCase()==='yape'?'yape':'efectivo'})}
     return b;
   }
+  /* Eliminar los pedidos marcados: confirma, avisa al motorizado, borra y muestra el resultado */
+  async function borrarSel(s){
+    const ids=[...s].map(String);const ped=ids.map(id=>L().find(o=>String(o.id)===id)||{id});
+    const n=ids.length,txt=n===1?'el pedido '+ref(ids[0]):'los '+n+' pedidos marcados';
+    const conf=window.pdConfirmar?await window.pdConfirmar('¿Eliminar definitivamente '+txt+'?\n\nLos motorizados dejarán de verlos y recibirán una notificación.'):confirm('¿Eliminar '+txt+'?');
+    if(!conf)return;
+    let ok=0;const mal=[];
+    for(const p of ped){
+      try{
+        try{if(typeof notifyMotoOrderChange==='function')await notifyMotoOrderChange(p,'Pedido eliminado por administración','El pedido '+ref(p.id)+' fue eliminado por administración.','pedido_eliminado')}catch(_){}
+        const d1=await D().from('detalle_pedidos').delete().eq('pedido_id',p.id);if(d1.error)throw d1.error;
+        const d2=await D().from('pedidos').delete().eq('id',p.id).select('id');if(d2.error)throw d2.error;
+        if(Array.isArray(d2.data)&&!d2.data.length)throw new Error('la base no permitió borrarlo');
+        ok++;s.delete(String(p.id));try{if(Array.isArray(allOrders)){const i=allOrders.findIndex(o=>String(o.id)===String(p.id));if(i>=0)allOrders.splice(i,1)}}catch(_){}
+      }catch(e){console.error('Eliminar pedido',p.id,e);mal.push(ref(p.id)+' ('+(e?.message||e)+')')}
+    }
+    try{await window.loadOrders()}catch(_){}
+    if(mal.length)(window.pdAviso||alert)('Se eliminaron '+ok+' de '+n+'. No se pudo eliminar: '+mal.join(', '));
+    else (window.pdExito||window.pdAviso||alert)(ok===1?'Pedido eliminado':ok+' pedidos eliminados');
+  }
   /* QR Yape de Pidemás (config/yape.json); se lee una vez y se repinta cuando llega */
   let YCFG=null,YCARGA=false;
   function yapeCfg(){if(!YCFG&&!YCARGA){YCARGA=true;leerCfg().then(c=>{YCFG=Object.assign({url:'',numero:'986233533',titular:'Grupo Pidemás EIRL'},c||{});key='';pintar()}).catch(()=>{YCARGA=false})}
@@ -2374,7 +2394,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
       case 'nuevoX':nuevoAb=false;key='';pintar();break;
       case 'selmodo':{selModo=!selModo;const s=SEL();if(!selModo&&s)s.clear();key='';pintar();break}
       case 'seleditar':{const s2=SEL();if(!s2||s2.size!==1)break;const id=[...s2][0];selModo=false;s2.clear();await pedidoEditar(id);break}
-      case 'borrar':{const s=SEL();if(!s||!s.size)break;try{await window.deleteSelectedOrders()}catch(err){(window.pdAviso||alert)(String(err.message||err))}if(!s.size)selModo=false;key='';pintar();break}
+      case 'borrar':{const s=SEL();if(!s||!s.size||a.disabled)break;a.disabled=true;try{await borrarSel(s)}catch(err){console.error('Eliminar pedidos:',err);(window.pdAviso||alert)('No se pudo eliminar: '+String(err?.message||err))}finally{a.disabled=false}if(!s.size)selModo=false;key='';pintar();break}
       case 'mas':limite+=40;key='';pintar();break;
       case 'volver':if(sub==='sueldomoto'&&SL.vista){cerrarV();SL.msg='';key='';pintar();break}sub=null;key='';pintar();if(history.state?.pdApp){ignorarPop=true;history.back()}break;
       case 'cj:act':if(C2.caja)C2.caja.t=0;datosCaja(true);key='';pintar();break;
