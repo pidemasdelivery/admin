@@ -43,7 +43,7 @@
       ['Cobros y pagos',[['por cobrar a negocios','Por cobrar a negocios','cash'],['por pagar a negocios','Por pagar a negocios','wallet']]]]},
     'h:mas':{t:'Más',ic:'nvMas',k:'Más',sec:[
       ['Pedidos',[['asignación automática','Asignación automática','swap'],['calificaciones','Calificaciones','star']]],
-      ['Servicios',[['recojo y entrega','Recojo y entrega','swap'],['compra','Compra','cash'],['encomienda','Encomienda','box'],['tarifas','Tarifas','tag'],['agencias','Agencias','pin']]],
+      ['Servicios',[['recojo y entrega','Recojo y entrega','swap'],['clientes frecuentes','Clientes frecuentes','star'],['compra','Compra','cash'],['encomienda','Encomienda','box'],['tarifas','Tarifas','tag'],['agencias','Agencias','pin']]],
       ['Clientes',[['t:clientes','Clientes','group'],['lista negra','Lista negra','x']]],
       ['Configuración',[['horario','Horario de Pidemás','clock'],['qr yape','QR Yape','phone'],['códigos de descuento','Códigos de descuento','tag']]],
       ['Mi cuenta',[['a:perfil','Mi perfil','user']]]]}
@@ -317,7 +317,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(nv){d.arriba=`<div class="cAv"><i></i>Pedido nuevo · sin motorizado<em>${E(hTxt)}</em></div>`;d.abajo=`<button type="button" class="b o" style="height:48px" data-o="${E(o.id)}">Asignar motorizado</button>`}
     return cGrande(d);
   }
-  let nuevoAb=false;
+  let nuevoAb=false,frecAb=false;
   function inicio(){
     if(window.__pdaCajaTotal==null)try{caja()}catch(_){}
     if(window.__pdaSueldoTotal==null)try{sueldos()}catch(_){}
@@ -1121,11 +1121,12 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   /* =============== NUEVO SERVICIO (recojo, compra, encomienda) =============== */
   const NSV={'recojo y entrega':'Recojo y entrega','compra':'Compra','encomienda':'Encomienda'};
   const TSV={'Recojo y entrega':'recojo_entrega','Compra':'compra','Encomienda':'encomienda'};
-  async function svcNuevo(k){
+  async function svcNuevo(k,fav){
     const sv=NSV[k];if(!sv)return;
     try{if(window.PdPasos&&PdPasos.isOpen())PdPasos.close()}catch(_){}
     try{if(paginaVieja())cerrarVieja()}catch(_){}
     PE.f=Object.assign(svcDatos({},sv),{nuevo:true,paso:0,costo:'',pago:'efectivo',quien:'recibe',moto:'',pagacon:'',cq:'',cli:'',ind1:'',paqs:[]});
+    if(fav&&sv==='Recojo y entrega'){FR_K.forEach(x=>{if(String(fav[x]||'').trim())PE.f[x]=String(fav[x])});PE.f.frec=fav.rnom||'Cliente frecuente';PE.f.paso=1}
     if(!sub)try{history.pushState({pdApp:1},'')}catch(_){}
     sub='pedidoform';key='';pintar();
     datosCli();
@@ -1145,7 +1146,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const P=nsPasos(f),i=Math.min(f.paso||0,P.length-1),paso=P[i];f.paso=i;
     const form=svcForm(f).replace(/<div class="err">[\s\S]*?<\/div>$/,'');
     const cards={};form.split('<!--cd:').slice(1).forEach(x=>{const j=x.indexOf('-->');const t=x.slice(0,j);cards[t]=x.slice(j+3).replace(/^<div class="cd"><div class="lbl">[^<]*<\/div>/,'<div class="cd">')});
-    let h=`<div class="cd" style="gap:8px"><div class="lbl" style="margin:0">Paso ${i+1} de ${P.length}</div><b style="font-size:18px">${E(paso)}</b><div style="display:grid;grid-template-columns:repeat(${P.length},minmax(0,1fr));gap:6px">${P.map((_,k)=>`<span style="height:5px;border-radius:9px;background:${k<=i?'#C4410C':'#EADFD6'}"></span>`).join('')}</div></div>`;
+    let h=`<div class="cd" style="gap:8px"><div class="lbl" style="margin:0">Paso ${i+1} de ${P.length}</div><b style="font-size:18px">${E(paso)}</b>${f.frec&&i>0?`<span style="font-size:13px;color:#6B5E55">Envía <b style="color:#1F1A17">${E(f.frec)}</b> · cliente frecuente</span>`:''}<div style="display:grid;grid-template-columns:repeat(${P.length},minmax(0,1fr));gap:6px">${P.map((_,k)=>`<span style="height:5px;border-radius:9px;background:${k<=i?'#C4410C':'#EADFD6'}"></span>`).join('')}</div></div>`;
     if(i===0)h+=busca;
     if(paso==='Asignar motorizado'){
       const ms=PE.motos,ini=n=>String(n||'?').trim().split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
@@ -1491,6 +1492,49 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   const stR=()=>D().storage.from('restaurantes');
   async function leerCfg(){try{const u=stR().getPublicUrl('config/yape.json').data.publicUrl+'?t='+Date.now();const r=await fetch(u,{cache:'no-store'});if(r.ok)return await r.json();if(r.status===400||r.status===404)return {};return null}catch(e){return null}}
   async function guardarCfg(c){const r=await stR().upload('config/yape.json',new Blob([JSON.stringify(c)],{type:'application/json'}),{upsert:true,contentType:'application/json',cacheControl:'0'});if(r.error)throw r.error}
+
+
+  /* =============== CLIENTES FRECUENTES (recojo y entrega): config/recojo-frecuentes.json =============== */
+  const FR_P='config/recojo-frecuentes.json',FR_MAX=5,FR_K=['rnom','rtel','rdir','rref','rubi','anom','lleva','costo','quien'];
+  let FREC=null,FRCARGA=false;
+  async function frLeer(){const u=stR().getPublicUrl(FR_P).data.publicUrl+'?t='+Date.now();const r=await fetch(u,{cache:'no-store'});if(r.ok){const j=await r.json();return Array.isArray(j&&j.lista)?j.lista.slice(0,FR_MAX):[]}if(r.status===400||r.status===404)return [];throw new Error('No se pudo leer ('+r.status+')')}
+  async function frGuardar(L2){const r=await stR().upload(FR_P,new Blob([JSON.stringify({lista:L2.slice(0,FR_MAX),actualizado_en:new Date().toISOString()})],{type:'application/json'}),{upsert:true,contentType:'application/json',cacheControl:'0'});if(r.error)throw r.error;FREC=L2.slice(0,FR_MAX)}
+  function frecs(){if(!FREC&&!FRCARGA){FRCARGA=true;frLeer().then(L2=>{FREC=L2;FRCARGA=false;navKey='';pintar()}).catch(()=>{FRCARGA=false;FREC=FREC||null;navKey='';pintar()})}return FREC}
+  const frIni=n=>String(n||'?').trim().split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
+  SEC['clientes frecuentes']={g:'Servicios',t:'Clientes frecuentes',
+    load:async()=>{const L2=await frLeer();FREC=L2;return L2},
+    v(){const k='clientes frecuentes',c=datos(k,this.load),f=SF[k];if(!c.data)return {body:cargando(c)};const L2=c.data;
+      if(f.ed==null){
+        let h=U.note('Son los '+FR_MAX+' clientes que más envían. En «Nuevo › Recojo y entrega» aparecen arriba: al tocar uno, sus datos de quien envía ya están llenos y solo escribes los de quien recibe.');
+        h+=L2.length?`<div class="cd">${L2.map((x,i)=>`<div class="mv"><span class="ic" style="background:#FDEBDF;color:#C4410C;font-weight:800;font-size:14px">${E(frIni(x.rnom))}</span><span class="tx"><b>${E(x.rnom||'Cliente')}</b><span>${E([x.rtel,x.rdir].filter(Boolean).join(' · ')||'Sin dirección')}</span></span>${i?`<button type="button" class="ib" style="width:38px;height:38px;flex:0 0 38px" data-sa="up:${i}" aria-label="Subir">↑</button>`:''}<button type="button" class="b" style="height:38px;padding:0 12px" data-sa="ed:${i}">Editar</button></div>`).join('')}</div>`:vacio('Aún no tienes clientes frecuentes.');
+        if(L2.length<FR_MAX)h+=`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="nuevo">${IC.plus}Agregar cliente frecuente</button>`;
+        else h+=`<span style="font-size:13px;color:#6B5E55;margin:0 4px">Ya tienes ${FR_MAX}. Para agregar otro, edita o quita uno.</span>`;
+        return {body:h}}
+      datosCli();
+      const fl=(id,l,k2,ph,o)=>`<div class="fld"><label for="${id}">${l}</label><input id="${id}" value="${E(f[k2]??'')}" data-in="sf:${k2}"${ph?` placeholder="${E(ph)}"`:''}${o||''}></div>`;
+      let h=`<div class="cd"><div class="lbl">Llenar con un cliente registrado</div><div class="fld"><input type="search" value="${E(f.q||'')}" data-in="sf:q" data-vivo="frL" placeholder="Nombre o teléfono" autocomplete="off" aria-label="Buscar cliente registrado"></div><div id="frL" style="display:flex;flex-direction:column;gap:8px">${this.lista()}</div></div>`;
+      h+=`<div class="cd"><div class="lbl">Quien envía</div>${fl('frN','Nombre o negocio','rnom','Ej. Boutique Ana')}${fl('frT','Teléfono','rtel','',' type="tel" inputmode="tel" maxlength="20"')}${fl('frD','Dirección de recojo','rdir','')}${fl('frR','Referencia','rref','Ej. frente al parque, portón negro')}${fl('frU','Ubicación (Google Maps)','rubi','Pega el enlace de Google Maps')}${fl('frA','¿A nombre de quién? (opcional)','anom','')}</div>`;
+      h+=`<div class="cd"><div class="lbl">Lo de siempre (opcional)</div>${fl('frQ','¿Qué suele enviar?','lleva','Ej. ropa en bolsa')}${fl('frC','Costo habitual (S/)','costo','Ej. 7',' inputmode="decimal"')}<div class="fld"><label>¿Quién suele pagar el servicio?</label><div class="opc">${[['envia','Quien envía'],['recibe','Quien recibe']].map(x=>`<button type="button" class="${f.quien===x[0]?'on':''}" data-sa="q:${x[0]}">${x[1]}</button>`).join('')}</div></div></div>`;
+      if(f.ed!=='nuevo')h+=`<button type="button" class="b" style="height:50px;color:#B42318;border-color:#F4C7C3" data-sa="del">${IC.x}Quitar de frecuentes</button>`;
+      if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
+      return {head:top3('Clientes frecuentes',f.ed==='nuevo'?'Nuevo cliente frecuente':'Editar cliente frecuente'),body:h,foot:`<div class="row"><button type="button" class="b" style="flex:1;height:54px" data-sa="cancel">Cancelar</button><button type="button" class="b o" style="flex:1.7;height:54px;font-size:16px" data-sa="guardar">Guardar</button></div>`}},
+    lista(){const f=SF['clientes frecuentes'],q=String(f.q||'').trim().toLowerCase(),qd=dig(q);if(q.length<2)return '';
+      const R=((C2.cli&&C2.cli.data)||[]).filter(c=>cliN(c).toLowerCase().includes(q)||(qd.length>=3&&dig(cliT(c)).includes(qd))).slice(0,5);
+      return R.length?R.map(c=>`<button type="button" class="b" style="height:auto;min-height:48px;padding:8px 12px;justify-content:flex-start;text-align:left;flex-direction:column;align-items:flex-start;gap:2px" data-sa="cli:${E(c.id)}"><b style="font-size:15px">${E(cliN(c)||'Cliente')}</b><span style="font-size:13px;color:#6B5E55;font-weight:500">${E([cliT(c),c.direccion].filter(Boolean).join(' · '))}</span></button>`).join(''):`<div style="font-size:14px;color:#6B5E55">No hay clientes con «${E(f.q)}».</div>`},
+    async a(x){const k='clientes frecuentes',f=SF[k],c=C2['s:'+k],L2=(c&&c.data)||[],p=x.split(':');f.msg='';
+      const limpiar=()=>{FR_K.forEach(y=>delete f[y]);f.q='';f.ed=null;f.msg=''};
+      if(p[0]==='nuevo'){limpiar();f.ed='nuevo';f.quien='recibe';return}
+      if(p[0]==='ed'){limpiar();const it=L2[+p[1]];if(!it)return;f.ed=+p[1];FR_K.forEach(y=>f[y]=it[y]||'');return}
+      if(p[0]==='cancel'){limpiar();return}
+      if(p[0]==='q'){f.quien=p[1];return}
+      if(p[0]==='cli'){const cl=((C2.cli&&C2.cli.data)||[]).find(y=>String(y.id)===p[1]);if(!cl)return;Object.assign(f,{rnom:cliN(cl),rtel:cliT(cl),rdir:cl.direccion||f.rdir||'',rubi:cliU(cl)||f.rubi||'',q:''});return}
+      if(p[0]==='up'){const i=+p[1];if(i<1)return;const N=L2.slice();[N[i-1],N[i]]=[N[i],N[i-1]];await frGuardar(N);c.data=FREC;return}
+      if(p[0]==='del'){if(typeof f.ed!=='number')return;if(!(await conf('¿Quitar a '+(L2[f.ed].rnom||'este cliente')+' de frecuentes?')))return;const N=L2.filter((_,i)=>i!==f.ed);await frGuardar(N);c.data=FREC;limpiar();ok('Quitado de frecuentes');return}
+      if(p[0]==='guardar'){const it={};FR_K.forEach(y=>it[y]=String(f[y]??'').trim());
+        if(!it.rnom){f.msg='Escribe el nombre de quien envía.';return}if(!it.rtel){f.msg='Escribe el teléfono de quien envía.';return}
+        if(it.costo&&!(Number(it.costo.replace(',','.'))>=0)){f.msg='El costo debe ser un número.';return}
+        const N=(await frLeer().catch(()=>L2)).slice();if(f.ed==='nuevo'){if(N.length>=FR_MAX){f.msg='Ya hay '+FR_MAX+' clientes frecuentes.';return}N.push(it)}else N[f.ed]=it;
+        await frGuardar(N);c.data=FREC;limpiar();ok('Cliente frecuente guardado');return}}};
 
   /* --- QR Yape --- */
   SEC['qr yape']={g:'Más',t:'QR Yape',
@@ -2183,14 +2227,21 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     ['compra','Compra','#1F6F43',-115,138,S('<path d="M5 8h14l-1 13H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>')],
     ['recojo y entrega','Recojo y entrega','#C4410C',0,198,IC.swap],
     ['encomienda','Encomienda','#1D4F91',115,138,S('<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>')]];
+  function frecPanel(){const L2=frecs();
+    const cab=`<div class="fqh"><b>Clientes frecuentes</b><button type="button" class="fqe" data-frecedit>${L2&&L2.length?'Editar':'Agregar'}</button></div>`;
+    if(!L2)return `<div class="fq">${cab}<div class="fqv">${FRCARGA?'Cargando…':'No se pudo cargar. Toca Recojo y entrega otra vez para un pedido nuevo.'}</div></div>`;
+    if(!L2.length)return `<div class="fq">${cab}<div class="fqv">Guarda hasta ${FR_MAX} clientes que envían seguido: al tocarlos, sus datos ya están llenos.</div><button type="button" class="fqn" data-frecedit>Agregar cliente frecuente</button></div>`;
+    return `<div class="fq">${cab}${L2.map((x,i)=>`<button type="button" class="fqi" data-frec="${i}"><span class="fqa">${E(frIni(x.rnom))}</span><span class="fqt"><b>${E(x.rnom||'Cliente')}</b><span>${E(x.rdir||x.rtel||'')}</span></span>${IC.chev||''}</button>`).join('')}<div class="fqp">Para un pedido nuevo sin cliente frecuente, toca otra vez <b>Recojo y entrega</b>.</div></div>`}
   function pintarNav(show){
     const H=document.documentElement;
     if(!show){nuevoAb=false;if(navH&&navH.style.display!=='none')navH.style.display='none';if(host)host.style.bottom='';if(H.style.getPropertyValue('--pda-nav')!=='0px')H.style.setProperty('--pda-nav','0px');return}
     if(!navH){navH=document.createElement('pd-app-adm-nav');$('pdAppShell').appendChild(navH);navR=navH.attachShadow({mode:'open'});
       navR.addEventListener('click',e=>{
-        if(e.target.closest('[data-nuevo]')){nuevoAb=!nuevoAb;cajon=false;pintar();return}
-        if(e.target.closest('[data-nuevox]')){nuevoAb=false;pintar();return}
-        const sv=e.target.closest('[data-svc]');if(sv){nuevoAb=false;cajon=false;pintar();svcNuevo(sv.dataset.svc);return}
+        if(e.target.closest('[data-nuevo]')){nuevoAb=!nuevoAb;frecAb=false;cajon=false;pintar();return}
+        if(e.target.closest('[data-nuevox]')){nuevoAb=false;frecAb=false;pintar();return}
+        const fq=e.target.closest('[data-frec]');if(fq){const it=(FREC||[])[+fq.dataset.frec];nuevoAb=false;frecAb=false;cajon=false;pintar();if(it)svcNuevo('recojo y entrega',it);return}
+        if(e.target.closest('[data-frecedit]')){nuevoAb=false;frecAb=false;cajon=false;mq='';abrirSec('clientes frecuentes');return}
+        const sv=e.target.closest('[data-svc]');if(sv){if(sv.dataset.svc==='recojo y entrega'&&!frecAb){frecAb=true;frecs();pintar();return}nuevoAb=false;frecAb=false;cajon=false;pintar();svcNuevo(sv.dataset.svc);return}
         const b=e.target.closest('[data-n]');if(!b)return;cajon=false;nuevoAb=false;mq='';const k=b.dataset.n;if(k===navG&&!sub&&!paginaVieja()&&tab===k){const l=root&&root.querySelector('.list');if(l)l.scrollTo({top:0,behavior:'smooth'});return}ir(k)})}
     if(navH.style.display==='none')navH.style.display='';
     if(host&&host.style.bottom!==NAVALTO)host.style.bottom=NAVALTO;
@@ -2198,7 +2249,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const bts=NAVK.map(k=>{const n=hubBd(k);return `<button type="button" data-n="${k}" class="${navG===k?'on':''}"${navG===k?' aria-current="page"':''}><span class="pi">${IC[HUBS[k].ic]}${n?`<span class="bd">${n>99?'99+':n}</span>`:''}</span><span class="lb">${HUBS[k].t}</span></button>`});
     /* Botón central «Nuevo servicio»: abre los tres servicios en abanico */
     bts.splice(2,0,`<button type="button" class="nw" data-nuevo aria-label="${nuevoAb?'Cerrar':'Nuevo servicio'}" aria-expanded="${nuevoAb}"><span class="c">${IC.plus}</span><span class="lb">Nuevo</span></button>`);
-    const h=`<nav aria-label="Menú del admin" class="${nuevoAb?'ab':''}">${bts.join('')}</nav>`+(nuevoAb?`<div class="fv" data-nuevox></div><p class="ft">¿Qué servicio creamos?</p>`+NUEVOS.map((x,i)=>`<button type="button" class="fa" data-svc="${x[0]}" style="left:calc(50% + ${x[3]}px - 60px);bottom:calc(env(safe-area-inset-bottom,0px) + ${x[4]}px - 32px);animation-delay:${i*35}ms"><span class="fc" style="color:${x[2]}">${x[5]}</span><span class="fl">${x[1]}</span></button>`).join(''):'');
+    const h=`<nav aria-label="Menú del admin" class="${nuevoAb?'ab':''}">${bts.join('')}</nav>`+(nuevoAb?`<div class="fv" data-nuevox></div>`+(frecAb?frecPanel():`<p class="ft">¿Qué servicio creamos?</p>`)+NUEVOS.map((x,i)=>`<button type="button" class="fa${frecAb&&i===1?' fon':''}" data-svc="${x[0]}" style="left:calc(50% + ${x[3]}px - 60px);bottom:calc(env(safe-area-inset-bottom,0px) + ${x[4]}px - 32px);animation-delay:${i*35}ms"><span class="fc" style="color:${x[2]}">${x[5]}</span><span class="fl">${x[1]}</span></button>`).join(''):'');
     if(h===navKey)return;navKey=h;
     navR.innerHTML=`<style>:host{all:initial;position:fixed;left:0;right:0;bottom:0;z-index:2147482700;display:block;font-family:PdInter,Inter,system-ui,sans-serif}
 nav{display:grid;grid-template-columns:repeat(${NAVK.length+1},minmax(0,1fr));align-items:stretch;height:70px;box-sizing:border-box;padding:0 4px env(safe-area-inset-bottom,0px);background:#FFFFFF;border-top:1px solid #F1E4DA;box-shadow:0 -4px 16px rgba(31,26,23,.05)}
@@ -2223,6 +2274,19 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
 .fc svg{width:28px;height:28px}
 .fa:active .fc{transform:scale(.94)}
 .fl{position:absolute;top:72px;left:0;right:0;text-align:center;color:#FFFFFF;font-size:14px;font-weight:700;line-height:1.2;white-space:normal}
+.fon .fc{box-shadow:0 0 0 4px #C4410C,0 6px 16px rgba(0,0,0,.25)}
+.fl small{display:block;font-size:12px;font-weight:600;opacity:.85;margin-top:2px}
+.fq{position:fixed;z-index:6;left:14px;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 250px);max-height:calc(100dvh - env(safe-area-inset-bottom,0px) - 270px);overflow:auto;box-sizing:border-box;background:#FFFFFF;border-radius:22px;padding:14px;box-shadow:0 12px 32px rgba(0,0,0,.3);animation:faIn .22s ease-out both;color:#1F1A17}
+.fqh{display:flex;align-items:center;gap:8px;margin:0 2px 10px}.fqh b{flex:1;font-size:17px;font-weight:800}
+.fqe{height:34px;padding:0 12px;border-radius:999px;border:1.5px solid #F1E4DA;font-size:13.5px;font-weight:800;color:#C4410C;display:flex;flex-direction:row;align-items:center}
+.fqi{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:12px;width:100%;box-sizing:border-box;padding:10px;border-radius:16px;min-height:60px}.fqi:active{background:#FFF4EC}
+.fqi+.fqi{border-top:1px solid #F6EDE6}
+.fqi svg{width:18px;height:18px;flex:0 0 auto;color:#B9A79A}
+.fqa{width:42px;height:42px;flex:0 0 42px;border-radius:50%;background:#FDEBDF;color:#C4410C;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
+.fqt{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left}.fqt b{font-size:15.5px;color:#1F1A17;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fqt span{font-size:13px;font-weight:500;color:#6B5E55;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fqv{font-size:14px;font-weight:500;color:#6B5E55;text-align:center;padding:6px 4px 12px;line-height:1.4}
+.fqp{font-size:13px;font-weight:500;color:#6B5E55;text-align:center;line-height:1.4;padding:10px 6px 2px;border-top:1px solid #F6EDE6;margin-top:4px}.fqp b{color:#C4410C}
+.fqn{width:100%;box-sizing:border-box;height:48px;border-radius:14px;background:#C4410C;color:#FFFFFF;font-size:15px;font-weight:800;flex-direction:row}
 @keyframes fvIn{from{opacity:0}to{opacity:1}}
 @keyframes faIn{from{opacity:0;transform:translateY(24px) scale(.6)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.fv,.ft,.fa{animation:none}.nw .c,.nw .c svg{transition:none}}
