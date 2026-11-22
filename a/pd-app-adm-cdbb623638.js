@@ -68,7 +68,7 @@
 .oC.a{border:1.5px solid #C4410C}.oC.sl2{border:1.5px solid #C4410C;background:#FFF4EC}
 .oC .cTp{display:flex;align-items:center;gap:8px;min-width:0}
 .oC .cCh{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;font-size:13px;font-weight:800;white-space:nowrap;min-width:0;overflow:hidden;flex:0 1 auto}.oC .cCh span{overflow:hidden;text-overflow:ellipsis}.oC .cCh svg{flex:0 0 auto}
-.oC .cCod{font-size:12px;font-weight:700;color:#6B5E55;letter-spacing:.02em;margin-top:4px}
+.oC .cCod{font-size:12.5px;font-weight:800;color:#6B5E55;letter-spacing:.02em;margin-bottom:2px}
 .oC .cPr{margin-left:auto;font-size:20px;font-weight:800;letter-spacing:-.01em;white-space:nowrap;flex:0 0 auto}
 .oC .cNm{font-size:18px;font-weight:800;letter-spacing:-.01em;line-height:1.25;overflow-wrap:anywhere}
 .oC .cDr{font-size:14px;color:#6B5E55;margin-top:2px;line-height:1.35;overflow-wrap:anywhere}
@@ -90,6 +90,7 @@
 .oR .cOk{flex:0 0 32px;width:32px;height:32px;border-radius:16px;background:#E9F6EE;color:#15803D;display:flex;align-items:center;justify-content:center}
 .oR .cOk.no{background:#FDE8E8;color:#B42318}
 .oR .cMd{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}.oR .cMd b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.oR .cMd span{font-size:13px;color:#6B5E55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oR .cMd i{font-style:normal;font-size:12.5px;font-weight:800;color:#6B5E55;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .oR em{font-style:normal;font-weight:800;font-size:15px;white-space:nowrap}
 .oSec{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;letter-spacing:.08em;color:#6B5E55;margin:6px 4px 0;text-transform:uppercase}
 `;
@@ -100,13 +101,13 @@
     const m=d.moto||null,mt=m&&cTel(m.tel);
     return `<div class="oC${d.act?' a':''}${d.marcado?' sl2':''}" ${d.attr||''} role="button" tabindex="0">${d.arriba||''}
       <div class="cTp">${d.sel||''}<span class="cCh" style="background:${c[0]};color:${c[1]}">${cSvg(c[2])}<span>${E(d.neg||d.sv)}</span></span><span class="cPr">${E(d.precio)}</span></div>
-      <div><div class="cNm">${E(d.cliente||'Cliente')}</div>${d.dir?`<div class="cDr">${E(d.dir)}</div>`:''}<div class="cCod">${E(d.ref)}${d.hace?' · '+E(d.hace):''}</div></div>
+      <div><div class="cCod">${E(d.ref)}${d.hace?' · '+E(d.hace):''}</div><div class="cNm">${E(d.cliente||'Cliente')}</div>${d.dir?`<div class="cDr">${E(d.dir)}</div>`:''}</div>
       ${d.pasos&&d.fase.n?`<div class="cStp" style="grid-template-columns:repeat(${d.pasos.length},minmax(0,1fr))" aria-label="Avance: ${E(d.fase.txt||'')}">${bars}</div>`:''}
       ${m&&m.nombre?`<div class="cFt"><span class="cMo">${E(String(m.nombre).trim().charAt(0).toUpperCase())}</span><span class="cMt"><b>${E(m.nombre)}</b><span>${E(m.rol||'Motorizado')}</span></span>${mt?`<a class="cIk" data-lnk href="tel:+${mt}" aria-label="Llamar a ${E(m.nombre)}">${cSvg('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',20)}</a><a class="cIk g" data-lnk href="https://wa.me/${mt}" target="_blank" rel="noopener" aria-label="WhatsApp a ${E(m.nombre)}">${cSvg('<path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/>',20)}</a>`:''}</div>`:''}${d.abajo||''}</div>`;
   }
   function cFila(d){
     const no=d.fase.k==='no';
-    return `<button type="button" class="oR${d.marcado?' sl2':''}" ${d.attr||''}>${d.sel||`<span class="cOk${no?' no':''}">${no?cSvg('<path d="M6 6l12 12M18 6L6 18"/>',16):cSvg('<path d="M5 12l5 5L19 7"/>',16)}</span>`}<span class="cMd"><b>${E(d.cliente||'Cliente')}</b><span>${E([d.ref,d.neg||d.sv,d.moto&&d.moto.nombre?String(d.moto.nombre).split(' ')[0]:'',d.cuando].filter(Boolean).join(' · '))}</span></span><em>${E(d.precio)}</em></button>`;
+    return `<button type="button" class="oR${d.marcado?' sl2':''}" ${d.attr||''}>${d.sel||`<span class="cOk${no?' no':''}">${no?cSvg('<path d="M6 6l12 12M18 6L6 18"/>',16):cSvg('<path d="M5 12l5 5L19 7"/>',16)}</span>`}<span class="cMd"><i>${E([d.ref,d.cuando].filter(Boolean).join(' · '))}</i><b>${E(d.cliente||'Cliente')}</b><span>${E([d.neg||d.sv,d.moto&&d.moto.nombre?String(d.moto.nombre).split(' ')[0]:''].filter(Boolean).join(' · '))}</span></span><em>${E(d.precio)}</em></button>`;
   }
   const cPasos=(sv,neg)=>['Recibido','Asignado',sv==='Compra'?'Compra':neg?'En el local':'Recojo','En camino','Entregado'];
   const ESTILO=PdPasos.css+C_CSS+`
