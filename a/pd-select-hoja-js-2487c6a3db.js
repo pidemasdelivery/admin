@@ -4,13 +4,14 @@
   if(window.__pdSelHoja)return;window.__pdSelHoja=true;
   const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const apto=s=>s&&s.tagName==='SELECT'&&!s.multiple&&!s.disabled&&!(s.size>1)&&!s.closest('[data-nativo]');
+  const selDe=e=>{let t=e.composedPath?e.composedPath()[0]:e.target;if(!t||t.nodeType!==1)t=e.target;return t&&t.closest?t.closest('select'):null};
   const relleno=o=>o.value===''&&/^(selecciona|elige|seleccione|escoge)/i.test(o.text.trim());
   function titulo(s){
     let t='';
-    if(s.id){const l=document.querySelector('label[for="'+CSS.escape(s.id)+'"]');if(l)t=l.textContent}
+    if(s.id){const rn=s.getRootNode&&s.getRootNode();const l=(rn&&rn.querySelector?rn:document).querySelector('label[for="'+CSS.escape(s.id)+'"]');if(l)t=l.textContent}
     if(!t&&s.closest('label'))t=[...s.closest('label').childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ');
     if(!t)t=s.getAttribute('aria-label')||s.title||'';
-    if(!t){const f=s.closest('.field,.f,.cnxF,.profileItem,.x-eLbl');const l=f&&f.querySelector('label,span,.l');if(l&&!l.contains(s))t=l.textContent}
+    if(!t){const f=s.closest('.field,.fld,.f,.cnxF,.profileItem,.x-eLbl');const l=f&&f.querySelector('label,span,.l');if(l&&!l.contains(s))t=l.textContent}
     if(!t){const o=s.options[0];if(o&&relleno(o))t=o.text}
     t=String(t).replace(/\s+/g,' ').replace(/\(opcional\)/i,'').trim();
     return t||'Elige una opción';
@@ -55,9 +56,9 @@
   }
   /* Tocar el select: se cancela la lista del navegador y se abre la hoja */
   let t0=null;
-  document.addEventListener('touchstart',e=>{const s=e.target.closest&&e.target.closest('select');t0=apto(s)&&e.touches.length===1?{s,x:e.touches[0].clientX,y:e.touches[0].clientY}:null},{capture:true,passive:true});
+  document.addEventListener('touchstart',e=>{const s=selDe(e);t0=apto(s)&&e.touches.length===1?{s,x:e.touches[0].clientX,y:e.touches[0].clientY}:null},{capture:true,passive:true});
   document.addEventListener('touchend',e=>{if(!t0)return;const s=t0.s,c=e.changedTouches[0];const mov=c&&(Math.abs(c.clientX-t0.x)>10||Math.abs(c.clientY-t0.y)>10);t0=null;if(mov)return;if(e.cancelable)e.preventDefault();abrir(s)},{capture:true,passive:false});
-  document.addEventListener('mousedown',e=>{const s=e.target.closest&&e.target.closest('select');if(!apto(s))return;e.preventDefault();if(e.button===0)abrir(s)},true);
-  document.addEventListener('click',e=>{const s=e.target.closest&&e.target.closest('select');if(apto(s))e.preventDefault()},true);
-  document.addEventListener('keydown',e=>{const s=e.target;if(!apto(s))return;if(e.key===' '||e.key==='Enter'||(e.altKey&&e.key==='ArrowDown')||e.key==='F4'){e.preventDefault();abrir(s)}},true);
+  document.addEventListener('mousedown',e=>{const s=selDe(e);if(!apto(s))return;e.preventDefault();if(e.button===0)abrir(s)},true);
+  document.addEventListener('click',e=>{const s=selDe(e);if(apto(s))e.preventDefault()},true);
+  document.addEventListener('keydown',e=>{const s=selDe(e)||e.target;if(!apto(s))return;if(e.key===' '||e.key==='Enter'||(e.altKey&&e.key==='ArrowDown')||e.key==='F4'){e.preventDefault();abrir(s)}},true);
 })();
