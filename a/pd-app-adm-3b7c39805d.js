@@ -280,8 +280,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     h+=`<div class="chW"><div class="chips">${CH.map((c,i)=>`<button type="button" data-c="${c[0]}" class="${chip===c[0]?'on':''}">${c[1]}${cnt[i]?' · '+cnt[i]:''}</button>`).join('')}</div></div>`;
     h+=`<div class="row" style="justify-content:space-between"><div class="lbl" style="margin:0">${fil.length} pedido${fil.length===1?'':'s'}</div><button type="button" class="b" style="height:40px;padding:0 14px" data-a="selmodo">${selModo?'Listo':'Seleccionar'}</button></div>`;
     h+=`<div id="aLista" style="display:flex;flex-direction:column;gap:10px">${lista(fil)}</div>`;
-    if(!selModo){h+=`<div style="height:76px"></div><button type="button" class="fabN" data-a="nuevo" aria-label="Nuevo servicio">${IC.plus}</button>`;
-      if(nuevoAb)h+=`<div class="fabV" data-a="nuevoX"></div><div class="fabS" role="dialog" aria-label="Nuevo servicio"><div class="lbl" style="margin:0 0 4px">Nuevo servicio</div>${[['recojo y entrega','Recojo y entrega','Recoge y lleva a otro lugar',IC.swap],['compra','Compra','Compramos lo que el cliente pida',IC.cash||IC.swap],['encomienda','Encomienda','Lleva paquetes a la agencia',IC.box||IC.swap]].map(x=>`<button type="button" class="tl" data-it="${x[0]}"><span class="ic">${x[3]}</span><span class="tx"><b>${x[1]}</b><span>${x[2]}</span></span>${IC.chev}</button>`).join('')}</div>`}
+    /* El botón «Nuevo servicio» ahora vive en el centro del menú inferior (ver pintarNav) */
     const nb=Number((($('pdaBell')||{}).querySelector?.('.pdaBadge,.badge,b,span')||{}).textContent)||0;
     const f=new Date().toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'short',timeZone:'America/Lima'}).replace('.','');
     const s=SEL(),ns=s?s.size:0;
@@ -2082,18 +2081,30 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   let cajon=false,cajonT=0;
   let navH=null,navR=null,navKey='',navG='inicio';
   const NAVALTO='calc(70px + env(safe-area-inset-bottom, 0px))';
+  /* Abanico de «Nuevo servicio»: [clave, nombre, color, desplazamiento x, altura del centro sobre el borde inferior, ícono] */
+  const NUEVOS=[
+    ['compra','Compra','#1F6F43',-115,138,S('<path d="M5 8h14l-1 13H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>')],
+    ['recojo y entrega','Recojo y entrega','#C4410C',0,198,IC.swap],
+    ['encomienda','Encomienda','#1D4F91',115,138,S('<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>')]];
   function pintarNav(show){
     const H=document.documentElement;
-    if(!show){if(navH&&navH.style.display!=='none')navH.style.display='none';if(host)host.style.bottom='';if(H.style.getPropertyValue('--pda-nav')!=='0px')H.style.setProperty('--pda-nav','0px');return}
+    if(!show){nuevoAb=false;if(navH&&navH.style.display!=='none')navH.style.display='none';if(host)host.style.bottom='';if(H.style.getPropertyValue('--pda-nav')!=='0px')H.style.setProperty('--pda-nav','0px');return}
     if(!navH){navH=document.createElement('pd-app-adm-nav');$('pdAppShell').appendChild(navH);navR=navH.attachShadow({mode:'open'});
-      navR.addEventListener('click',e=>{const b=e.target.closest('[data-n]');if(!b)return;cajon=false;nuevoAb=false;mq='';const k=b.dataset.n;if(k===navG&&!sub&&!paginaVieja()&&tab===k){const l=root&&root.querySelector('.list');if(l)l.scrollTo({top:0,behavior:'smooth'});return}ir(k)})}
+      navR.addEventListener('click',e=>{
+        if(e.target.closest('[data-nuevo]')){nuevoAb=!nuevoAb;cajon=false;pintar();return}
+        if(e.target.closest('[data-nuevox]')){nuevoAb=false;pintar();return}
+        const sv=e.target.closest('[data-svc]');if(sv){nuevoAb=false;cajon=false;pintar();svcNuevo(sv.dataset.svc);return}
+        const b=e.target.closest('[data-n]');if(!b)return;cajon=false;nuevoAb=false;mq='';const k=b.dataset.n;if(k===navG&&!sub&&!paginaVieja()&&tab===k){const l=root&&root.querySelector('.list');if(l)l.scrollTo({top:0,behavior:'smooth'});return}ir(k)})}
     if(navH.style.display==='none')navH.style.display='';
     if(host&&host.style.bottom!==NAVALTO)host.style.bottom=NAVALTO;
     if(H.style.getPropertyValue('--pda-nav')!==NAVALTO)H.style.setProperty('--pda-nav',NAVALTO);
-    const h=NAVK.map(k=>{const n=hubBd(k);return `<button type="button" data-n="${k}" class="${navG===k?'on':''}"${navG===k?' aria-current="page"':''}><span class="pi">${IC[HUBS[k].ic]}${n?`<span class="bd">${n>99?'99+':n}</span>`:''}</span><span class="lb">${HUBS[k].t}</span></button>`}).join('');
+    const bts=NAVK.map(k=>{const n=hubBd(k);return `<button type="button" data-n="${k}" class="${navG===k?'on':''}"${navG===k?' aria-current="page"':''}><span class="pi">${IC[HUBS[k].ic]}${n?`<span class="bd">${n>99?'99+':n}</span>`:''}</span><span class="lb">${HUBS[k].t}</span></button>`});
+    /* Botón central «Nuevo servicio»: abre los tres servicios en abanico */
+    bts.splice(2,0,`<button type="button" class="nw" data-nuevo aria-label="${nuevoAb?'Cerrar':'Nuevo servicio'}" aria-expanded="${nuevoAb}"><span class="c">${IC.plus}</span><span class="lb">Nuevo</span></button>`);
+    const h=`<nav aria-label="Menú del admin" class="${nuevoAb?'ab':''}">${bts.join('')}</nav>`+(nuevoAb?`<div class="fv" data-nuevox></div><p class="ft">¿Qué servicio creamos?</p>`+NUEVOS.map((x,i)=>`<button type="button" class="fa" data-svc="${x[0]}" style="left:calc(50% + ${x[3]}px - 60px);bottom:calc(env(safe-area-inset-bottom,0px) + ${x[4]}px - 32px);animation-delay:${i*35}ms"><span class="fc" style="color:${x[2]}">${x[5]}</span><span class="fl">${x[1]}</span></button>`).join(''):'');
     if(h===navKey)return;navKey=h;
     navR.innerHTML=`<style>:host{all:initial;position:fixed;left:0;right:0;bottom:0;z-index:2147482700;display:block;font-family:PdInter,Inter,system-ui,sans-serif}
-nav{display:grid;grid-template-columns:repeat(${NAVK.length},minmax(0,1fr));align-items:stretch;height:70px;box-sizing:border-box;padding:0 4px env(safe-area-inset-bottom,0px);background:#FFFFFF;border-top:1px solid #F1E4DA;box-shadow:0 -4px 16px rgba(31,26,23,.05)}
+nav{display:grid;grid-template-columns:repeat(${NAVK.length+1},minmax(0,1fr));align-items:stretch;height:70px;box-sizing:border-box;padding:0 4px env(safe-area-inset-bottom,0px);background:#FFFFFF;border-top:1px solid #F1E4DA;box-shadow:0 -4px 16px rgba(31,26,23,.05)}
 button{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#6B5E55;font-size:12px;font-weight:700;-webkit-tap-highlight-color:transparent;min-width:0}
 .pi{position:relative;width:58px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;transition:background .18s}
 .pi svg{width:24px;height:24px;display:block;flex:0 0 auto}
@@ -2101,7 +2112,24 @@ button.on{color:#C4410C;font-weight:800}button.on .pi{background:#FDEBDF}
 button:active .pi{transform:scale(.92)}
 .bd{position:absolute;top:-5px;right:5px;min-width:20px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:999px;background:#C4410C;color:#FFFFFF;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #FFFFFF}
 .lb{display:block;text-align:center;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-</style><nav aria-label="Menú del admin">${h}</nav>`;
+nav{position:relative;z-index:3}
+nav.ab button:not(.nw){opacity:.35}
+.nw{color:#1F1A17}
+.nw .c{width:48px;height:48px;margin-top:-26px;border-radius:50%;border:4px solid #FFF9F5;background:#C4410C;color:#FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(196,65,12,.32);transition:transform .2s,background .2s}
+.nw .c svg{width:22px;height:22px;stroke-width:2.6;transition:transform .2s}
+nav.ab .nw .c svg{transform:rotate(45deg)}
+.nw:active .c{transform:scale(.92)}
+.fv{position:fixed;inset:0;z-index:1;background:rgba(31,26,23,.72);animation:fvIn .18s ease-out}
+.ft{position:fixed;left:0;right:0;z-index:2;margin:0;text-align:center;bottom:calc(env(safe-area-inset-bottom,0px) + 290px);color:#FFFFFF;font-size:20px;font-weight:800;pointer-events:none;animation:fvIn .18s ease-out}
+.fa{position:fixed;z-index:2;width:120px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;animation:faIn .22s ease-out both}
+.fc{width:64px;height:64px;border-radius:50%;background:#FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.fc svg{width:28px;height:28px}
+.fa:active .fc{transform:scale(.94)}
+.fl{position:absolute;top:72px;left:0;right:0;text-align:center;color:#FFFFFF;font-size:14px;font-weight:700;line-height:1.2;white-space:normal}
+@keyframes fvIn{from{opacity:0}to{opacity:1}}
+@keyframes faIn{from{opacity:0;transform:translateY(24px) scale(.6)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.fv,.ft,.fa{animation:none}.nw .c,.nw .c svg{transition:none}}
+</style>${h}`;
   }
   function nav(){
     if(!cajon)return '';
