@@ -2041,7 +2041,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const CH=[['todos','Todos'],['pedidos','Tienda'],['motorizado','Motorizado'],['negocio','Negocio']];
       let h=`<div class="chips">${CH.map(x=>`<button type="button" data-sa="c:${x[0]}" class="${f.c===x[0]?'on':''}">${x[1]}${n(x[0])?' · '+n(x[0]):''}</button>`).join('')}</div>`;
       const Lv=f.c==='todos'?ev:ev.filter(e=>e.cat===f.c);
-      const icono=e=>e.cat==='negocio'?(IC[e.icN]||IC.store):e.k==='caja'?IC.cash:e.k==='sueldo'?IC.wallet:e.k==='guia'?IC.box:e.cat==='pedidos'?IC.box:IC.moto;
+      /* mismos íconos del menú inferior: Pedidos, Motorizados y Negocios (caja y sueldos son de Motorizados) */
+      const icono=e=>e.cat==='negocio'?IC.nvNeg:e.cat==='pedidos'?IC.nvPed:IC.nvMoto;
       h+=Lv.length?Lv.map((e,i)=>`<button type="button" class="av2" data-sa="ir:${i}"><span class="ic"${e.k==='ocu'&&e.abierta?' style="background:#FDE8E8;color:#B42318"':''}>${icono(e)}</span><span class="tx"><b>${E((window.pdTxt||String)(e.tit))}</b><span>${E((window.pdTxt||String)(e.sub||''))}</span><small>${E(fecha(e.t))}${e.amt?' · '+E(e.amt):''}</small>${e.k==='ocu'&&e.abierta?`<span style="margin-top:8px"><span class="b" style="display:inline-flex;align-items:center;height:36px;padding:0 12px;font-size:14px" data-sa="res:${E(e.id)}">Marcar como resuelto</span></span>`:''}</span>${e.t>vis?'<span class="pt"></span>':''}</button>`).join(''):'<div class="vac">No hay avisos de las últimas 48 horas.</div>';
       f.L=Lv;return {body:h}},
     async a(x){const f=SF['__avisos'];
