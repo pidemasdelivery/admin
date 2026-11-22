@@ -940,6 +940,14 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       pago:pagado?'pagado':m==='al_final'?'al_final':m==='recojo_yape'?'yape':String(o.metodo_pago||'efectivo').toLowerCase()==='yape'?'yape':'efectivo'})}
     return b;
   }
+  /* QR Yape de Pidemás (config/yape.json); se lee una vez y se repinta cuando llega */
+  let YCFG=null,YCARGA=false;
+  function yapeCfg(){if(!YCFG&&!YCARGA){YCARGA=true;leerCfg().then(c=>{YCFG=Object.assign({url:'',numero:'986233533',titular:'Grupo Pidemás EIRL'},c||{});key='';pintar()}).catch(()=>{YCARGA=false})}
+    return YCFG||{url:'',numero:'986233533',titular:'Grupo Pidemás EIRL'}}
+  function vueltoTxt(f){const c=Number(String(f.costo||'').replace(',','.'))||0,pc=Number(String(f.pagacon||'').replace(',','.'))||0;
+    if(f.tipo!=='compra'&&pc>0&&c>0)return pc+0.004<c?`<span style="color:#B42318;font-weight:700">Es menos que el servicio (S/ ${c.toFixed(2)})</span>`:`<span style="color:#0F5E2E;font-weight:700">${pc-c>0.004?'Vuelto: S/ '+(pc-c).toFixed(2):'Paga exacto, sin vuelto'}</span>`;
+    if(f.tipo==='compra'&&pc>0)return `<span style="color:#6B5E55">El motorizado calcula el vuelto con el total de la compra.</span>`;
+    return `<span style="color:#6B5E55">Así el motorizado sabe cuánto sencillo llevar.</span>`}
   function svcForm(f){
     const fl=(id,l,k,ph,o)=>`<div class="fld"><label for="${id}">${l}</label><input id="${id}" value="${E(f[k]??'')}" data-in="pe:${k}"${ph?` placeholder="${E(ph)}"`:''}${o||''}></div>`;
     const ta=(id,l,k,ph)=>`<div class="fld"><label for="${id}">${l}</label><textarea id="${id}" data-in="pe:${k}" placeholder="${E(ph||'')}" style="min-height:96px;padding:14px 16px;border-radius:14px;border:1.5px solid #F1E4DA;font:inherit;font-size:16px;width:100%;box-sizing:border-box">${E(f[k]??'')}</textarea></div>`;
@@ -948,9 +956,18 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const card=(t,h)=>`<!--cd:${t}--><div class="cd"><div class="lbl">${t}</div>${h}</div>`;
     const mp=(k,dk,t)=>`<button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:mapa:${k}:${dk}:${encodeURIComponent(t)}">${coordsDe(f[k])?'Cambiar en el mapa':'Marcar en el mapa'}</button>`;
     const tel=' type="tel" inputmode="tel" maxlength="20"';
+    /* Botones grandes como en la tienda (dos por fila) */
+    const tb=(l,k,ops,opc)=>`<div class="fld"><label>${l}</label><div style="display:grid;grid-template-columns:repeat(${ops.length},minmax(0,1fr));gap:10px">${ops.map(x=>{const on=String(f[k]??'').toLowerCase()===String(x[0]).toLowerCase();return `<button type="button" style="min-height:58px;border-radius:16px;border:1.5px solid ${on?'#C4410C':'#F1E4DA'};background:${on?'#FFF4EC':'#FFFFFF'};color:#1F1A17;font:inherit;font-size:17px;font-weight:${on?800:700};cursor:pointer${on?';box-shadow:inset 0 0 0 1px #C4410C':''}" aria-pressed="${on}" data-a="pe:set:${k}:${on&&opc?'':E(x[0])}">${E(x[1])}</button>`}).join('')}</div></div>`;
+    /* Efectivo: con cuánto paga y vuelto. Yape: el QR de Pidemás (el que se configura en Más › QR Yape) */
+    const pagoExtra=()=>{
+      if(f.pago==='efectivo')return `<div class="fld"><label for="pePc">¿Con cuánto paga? (para el vuelto)</label><input id="pePc" inputmode="decimal" placeholder="Ej. 50" value="${E(f.pagacon??'')}" data-in="pe:pagacon"></div><div id="peVu" style="font-size:14px;line-height:1.4">${vueltoTxt(f)}</div>`;
+      if(f.pago==='yape'){const y=yapeCfg();
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px;border-radius:16px;background:#FFFFFF;border:1px dashed #E3CFC2;text-align:center"><img src="${E(y.url||'a/yape-qr-d656e70b4f.png')}" alt="QR de Yape de ${E(y.titular)}" style="width:200px;max-width:100%;height:auto;border-radius:12px"><b style="font-size:15px">Yape a ${E(y.titular)}</b><span style="font-size:14px;color:#6B5E55">${E(y.numero)} · el cliente paga al QR de Pidemás</span></div>`}
+      return ''};
     const costo=card('Información de pago del servicio',fl('peCo','Costo del servicio','costo','S/ 0.00',' inputmode="decimal"')+`<div class="chips" style="flex-wrap:wrap">${[5,6,7,8,10,12,15].map(v=>`<button type="button" class="${Number(f.costo)===v?'on':''}" data-a="pe:set:costo:${v}">S/ ${v}</button>`).join('')}</div>`+(f.tipo!=='enc'?`<button type="button" class="b" style="height:44px" data-a="pe:tarifa">Calcular con la tarifa</button>${f.tf?`<div style="font-size:13px;color:${f.tf.mal?'#B42318':'#6B5E55'};line-height:1.45">${f.tf.t}</div>`:''}`:'')+
       (f.tipo==='enc'?sg('¿Cómo paga el servicio?','pago',[['efectivo','Efectivo al recoger'],['yape','Yape al recoger'],['pagado','Pagado'],['al_final','Al recibir la guía']])
-       :sg(f.tipo==='compra'?'¿Cómo paga el cliente la compra y el servicio?':'¿Cómo paga el servicio?','pago',[['efectivo','Efectivo'],['yape','Yape'],['pagado','Pagado']]))+
+       :tb(f.tipo==='compra'?'¿Cómo paga el cliente la compra y el servicio?':'¿Cómo paga el servicio?','pago',[['efectivo','Efectivo'],['yape','Yape']])+`<div class="opc"><button type="button" class="${f.pago==='pagado'?'on':''}" style="min-height:40px;font-size:14px" data-a="pe:set:pago:${f.pago==='pagado'?'efectivo':'pagado'}">Ya está pagado</button></div>`)+
+      pagoExtra()+
       (f.tipo==='recojo'&&f.pago!=='pagado'?sg('¿Quién paga el servicio?','quien',[['envia','Quien envía'],['recibe','Quien recibe']]):''));
     let h='';
     if(f.tipo==='recojo'){
@@ -961,7 +978,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       h+=card('Información del cliente',fl('peN','Nombre y apellido','nom','')+fl('peT','Teléfono','tel','',tel)+fl('peD','Dirección','dir','')+fl('peR','Referencia','ref','Ej. frente a la bodega, casa verde')+fl('peU','Ubicación (Google Maps)','ubi','Pega el enlace de Google Maps')+mp('ubi','dir','Lugar de entrega de la compra'));
       h+=card('Información de la compra',fl('peLg','¿De dónde desea la compra?','lugar','')+fl('peLu','Ubicación del lugar (Google Maps)','lugarUrl','Pega el enlace de Google Maps')+mp('lugarUrl','lugar','Dónde se hace la compra')+ta('peDt','¿Qué desea que compremos?','detalle','')+ta('peOb','Observaciones','obs',''));
       const oc=optsDe('admCompraComprobante');
-      h+=card('Información del comprobante',sg('Boleta o factura','comp',[['','No especificado']].concat(oc.length?oc:[['boleta','Boleta'],['factura','Factura']]))+fl('peDc','DNI / RUC','doc','',' inputmode="numeric" maxlength="11"'));
+      h+=card('Información del comprobante',tb('Comprobante (opcional)','comp',(oc.length?oc:[['boleta','Boleta'],['factura','Factura']]).filter(x=>x[0]),true)+fl('peDc','DNI / RUC','doc','',' inputmode="numeric" maxlength="11"'));
       h+=costo;
     }else{
       h+=card('Información de quien envía',fl('peRn','Nombre y apellido','rnom','')+fl('peRi','DNI','rdni','',' inputmode="numeric" maxlength="12"')+fl('peRt','Teléfono','rtel','',tel)+fl('peRd','Dirección de recojo','rdir','')+fl('peRr','Referencia','rref','Ej. casa de dos pisos, reja negra')+fl('peRu','Ubicación (Google Maps)','rubi','Pega el enlace de Google Maps')+mp('rubi','rdir','Lugar de recojo'));
@@ -1063,7 +1080,6 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         <div class="fld"><label>Indicación del cliente (opcional)</label>${inp('ind',i2,q.ind,'')}</div></div>`});
       if(f.paqs.length<2)h+=`<button type="button" class="b" style="height:50px" data-a="pe:pq+">${IC.plus}Agregar otro paquete</button>`;
     }
-    if(paso==='Información de pago del servicio'&&f.pago==='efectivo')h+=`<div class="cd"><div class="lbl">Pago en efectivo</div><div class="fld"><label for="pePc">¿Con cuánto paga? (opcional)</label><input id="pePc" inputmode="decimal" placeholder="Ej. 50" value="${E(f.pagacon)}" data-in="pe:pagacon"></div><span style="font-size:13px;color:#6B5E55">Así el motorizado sabe cuánto sencillo llevar.</span></div>`;
     if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
     const ult=i===P.length-1,fin='Enviar '+String(f.sv||'pedido').toLowerCase();
     const foot=i===0?`<button type="button" class="b o" style="height:54px;font-size:16px" data-a="pe:sig">Siguiente</button>`
@@ -1192,7 +1208,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
     return {head:top3('Pedido '+ref(f.id),'Editar pedido'),body:h,foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-a="pe:guardar">Guardar cambios · ${M(peTot(f))}</button>`};
   }
-  function peVivo(){const f=PE.f;if(!f)return;const a=root.getElementById('peSu'),b=root.getElementById('peTo'),g=root.querySelector('[data-a="pe:guardar"]');if(a)a.textContent=M(peSub(f));if(b)b.textContent=M(peTot(f));if(g)g.textContent='Guardar cambios · '+M(peTot(f))}
+  function peVivo(){const f=PE.f;if(!f)return;const vu=root.getElementById('peVu');if(vu&&f.tipo)vu.innerHTML=vueltoTxt(f);const a=root.getElementById('peSu'),b=root.getElementById('peTo'),g=root.querySelector('[data-a="pe:guardar"]');if(a)a.textContent=M(peSub(f));if(b)b.textContent=M(peTot(f));if(g)g.textContent='Guardar cambios · '+M(peTot(f))}
   async function pedidoGuardar(){
     const f=PE.f;f.msg='';const o=L().find(x=>String(x.id)===String(f.id));if(!o){f.msg='No se encontró el pedido.';return}
     if(f.tipo){
