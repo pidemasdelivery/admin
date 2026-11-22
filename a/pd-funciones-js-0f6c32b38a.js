@@ -504,7 +504,7 @@ const motoPhone=String(moto.telefono||"").replace(/\D/g,"");
 const phoneForWhatsApp=motoPhone ? (motoPhone.startsWith("51")?motoPhone:(motoPhone.length===9?"51"+motoPhone:motoPhone)) : "";
 const pedidoAsignado=allOrders.find(o=>String(o.id)===String(orderId))||current||{};
 const orderCode=String(orderId).slice(0,8).toUpperCase();
-const panelUrl="https://pidemasdelivery.github.io/motorizado/";
+const panelUrl="https://pidemas.pe/motorizado/";
 const whatsappMessage=[
 "*PIDEMÁS DELIVERY*",
 "¡Hola, "+String(moto.nombre_completo||"motorizado").trim()+"!",

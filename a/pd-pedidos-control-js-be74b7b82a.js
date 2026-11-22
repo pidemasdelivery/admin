@@ -19,7 +19,7 @@
   const min=ms=>Math.round(ms/60000);
   const est=o=>String(o.estado||'').toLowerCase();
   const tel=t=>{const d=String(t||'').replace(/\D/g,'');if(!d)return '';return d.startsWith('51')?d:(d.length===9?'51'+d:d)};
-  const TIENDA='https://pidemasdelivery.github.io/';
+  const TIENDA='https://pidemas.pe/';
   const fH=v=>{try{return new Date(v).toLocaleString('es-PE',{timeZone:'America/Lima',day:'2-digit',month:'short',hour:'numeric',minute:'2-digit'})}catch(e){return ''}};
 
   let negocios=[];

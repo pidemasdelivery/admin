@@ -30,7 +30,7 @@ jobs:
           OWNER=$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
           REPO="${GITHUB_REPOSITORY#*/}"
           ID=$(echo "$REPO" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9')
-          HOST="$OWNER.github.io"
+          HOST="pidemas.pe"
           case "$ID" in
             admin)      NOMBRE="Pidemás Admin" ;;
             motorizado) NOMBRE="Pidemás Moto" ;;
