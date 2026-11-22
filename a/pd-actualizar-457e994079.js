@@ -28,9 +28,11 @@
   function recargar(){var fin=function(){location.reload()};
     try{if(navigator.serviceWorker)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(_){}})}).catch(function(){})}catch(_){}
     fetch(location.href,{cache:'reload'}).then(fin,fin);setTimeout(fin,3000)}
-  function intentar(){if(!pendiente)return;if(document.hidden||!ocupado())recargar()}
+  function enPag(){try{return !!(window.pdEnPagina&&window.pdEnPagina())}catch(e){return false}}
+  /* nunca recarga si hay una página abierta (detalle, sección, formulario): así no te devuelve a Pedidos */
+  function intentar(){if(!pendiente||enPag())return;if(document.hidden||!ocupado())recargar()}
   setInterval(intentar,5000);
-  document.addEventListener('visibilitychange',function(){if(document.hidden){if(pendiente)recargar()}else chequear()});
+  document.addEventListener('visibilitychange',function(){if(document.hidden){if(pendiente&&!enPag())recargar()}else chequear()});
   addEventListener('focus',chequear);
   setTimeout(chequear,2500);setInterval(chequear,5*60000);
 
