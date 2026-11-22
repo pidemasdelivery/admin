@@ -2369,7 +2369,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
     if(pv){cls(H,'pdaPag',1);cls(host,'solo',1);pintarTop(pv)}
     else if(Date.now()<pagHasta){return}
     else{cls(H,'pdaPag',0);cls(host,'solo',0);if(topH&&topH.style.display!=='none')topH.style.display='none';keyTop=''}
-    {const vv=pv?null:vista();pintarNav(!(vv&&vv.foot)||!!(window.PdPasos&&PdPasos.isOpen()));}
+    {const vv=pv?null:vista();pintarNav(!movido&&(!(vv&&vv.foot)||!!(window.PdPasos&&PdPasos.isOpen())));}
     if(tocando&&Date.now()-tocando<1500)return;tocando=false;/* un toque que no terminó no deja la pantalla congelada */
     const v=pv?{head:'',body:'',foot:''}:vista();const pag=pv?'vieja':sub==='sueldomoto'?'sl:'+SL.pest+':'+(SL.vista||''):(sub||tab);
     {const act=root.activeElement;if(act&&(act.tagName==='INPUT'||act.tagName==='TEXTAREA'||act.tagName==='SELECT')){if(root.__pag===pag)return;try{act.blur()}catch(_){}}}/* escribiendo: no redibuja; si cambió de página, sí */
@@ -2568,6 +2568,6 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
           const quedan=mid?L2.filter(x=>String(x.motorizado_id)===String(mid)&&String(x.id)!==id&&!CERR.test(est(x))).length:-1;
           tostada('Pedido '+ref(id)+' entregado',quedan<0?'Pedido cerrado':quedan===0?nom+' ya está libre':nom+' sigue con '+quedan+' pedido'+(quedan===1?'':'s'),id)}}
     },2000);}
-  window.pdAppAdm={pintar,ir,navH:()=>navH&&navH.style.display!=='none'?navH.getBoundingClientRect().height:0};
+  window.pdAppAdm={pintar,ir,navEnDetalle:false,navH:()=>navH&&navH.style.display!=='none'?navH.getBoundingClientRect().height:0};
 })();
 
