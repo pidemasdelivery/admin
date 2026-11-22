@@ -4,6 +4,8 @@
    · Que requieren reinstalar (pd-instalacion: cambia ícono, nombre o pantalla de arranque): solo entonces se muestra un aviso. */
 (function(){
   if(window.__pdActualizar)return;window.__pdActualizar=1;
+  /* la dirección se ve limpia: sin ?v=… (número de versión que agregan los enlaces y las recargas) */
+  try{var lu=new URL(location.href);if(lu.searchParams.has('v')||lu.searchParams.has('pdv')){lu.searchParams.delete('v');lu.searchParams.delete('pdv');history.replaceState(history.state,'',lu.pathname+lu.search+lu.hash)}}catch(e){}
   var mv=document.querySelector('meta[name="pd-version"]');if(!mv)return;var V=mv.content;
   var mi=document.querySelector('meta[name="pd-instalacion"]');var I=mi?mi.content:'1';
   var ls={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
