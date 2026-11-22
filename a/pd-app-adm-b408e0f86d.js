@@ -429,12 +429,12 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(q.error){CJ.msg='No se pudo registrar: '+q.error.message;return}
       CJ.dar='';CJ.darMot='';CJ.darNota='';await recargaMoto();CJ.ok='Se agregaron '+M(v)+' a su caja.';return}
   }
-  async function cajaBorrar(id,cerrada){const q0=cerrada?'Esta caja ya se cerró: al borrar el movimiento cambia lo que debía entregar en esa caja.\n¿Por qué lo borras? (ej. monto mal escrito)':'¿Por qué borras este movimiento? (ej. monto mal escrito)';const mt=window.pdPedir?await pdPedir(q0):prompt(q0);if(mt===null)return;if(!String(mt).trim()){(window.pdAviso||alert)('Escribe un motivo para borrar el movimiento.');return}
+  async function cajaBorrar(id,cerrada){const q0=cerrada?'Esta caja ya se cerró: al borrar el movimiento cambia lo que debía entregar en esa caja.\n¿Por qué lo borras? (ej. monto mal escrito)':'¿Por qué borras este movimiento? (ej. monto mal escrito)';const mt=await pedirL(q0);if(mt===null)return;if(!String(mt).trim()){(window.pdAviso||alert)('Escribe un motivo para borrar el movimiento.');return}
     const q=await D().from('movimientos_caja').delete().eq('id',id).eq('motorizado_id',CJ.moto.id).select('id');if(q.error||!q.data||!q.data.length){CJ.msg='No se pudo borrar: '+(q.error?q.error.message:'revisa el permiso de borrar.');key='';pintar();return}
     console.info('[Caja] Movimiento borrado',id,'motivo:',String(mt).trim());await recargaMoto();CJ.ok='Movimiento borrado.'}
   async function cajaRevision(v){const [st,id]=v.split(':');let upd;
     if(st==='aprobado')upd={revision:'aprobado',revisado_en:new Date().toISOString(),revision_nota:null};
-    else{const n=window.pdPedir?await pdPedir('¿Por qué lo rechazas? (el motorizado lo verá):\nMotivo:',''):prompt('Motivo');if(n===null)return;upd={revision:'rechazado',revisado_en:new Date().toISOString(),revision_nota:String(n).trim()||'Sin comprobante válido'}}
+    else{const n=await pedirL('¿Por qué lo rechazas? (el motorizado lo verá):\nMotivo:','');if(n===null)return;upd={revision:'rechazado',revisado_en:new Date().toISOString(),revision_nota:String(n).trim()||'Sin comprobante válido'}}
     const q=await D().from('movimientos_caja').update(upd).eq('id',id);if(q.error){CJ.msg='No se pudo guardar: '+q.error.message;key='';pintar();return}
     await recargaMoto();CJ.ok=st==='aprobado'?'Pago aprobado.':'Pago rechazado: ya no se descuenta de su caja.'}
 
@@ -940,11 +940,16 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       pago:pagado?'pagado':m==='al_final'?'al_final':m==='recojo_yape'?'yape':String(o.metodo_pago||'efectivo').toLowerCase()==='yape'?'yape':'efectivo'})}
     return b;
   }
+  /* Pedir un texto y avisar con ventanas propias: no esperan en la cola de avisos viejos, así nunca quedan escondidas */
+  function pedirL(t,v){if(!window.pdVentana)return Promise.resolve(window.pdPedir?window.pdPedir(t,v):prompt(t,v||''));const [a,...b]=String(t||'').split('\n');
+    return window.pdVentana({ic:'q',titulo:a,html:(b.length?'<p style="white-space:pre-line;margin:0 0 10px">'+E(b.join('\n'))+'</p>':'')+'<input id="pdLx" value="'+E(v||'')+'" style="width:100%;box-sizing:border-box;height:52px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px">',
+      botones:[{k:'0',t:'Cancelar'},{k:'1',t:'Aceptar',c:'o'}],cancelar:false,valor:(k,r)=>{if(k!=='1')return null;const i=r.getElementById('pdLx');return 'v:'+(i?i.value:'')}}).then(x=>x&&String(x).startsWith('v:')?String(x).slice(2):null)}
+  function avisoL(t,txt,ok){if(!window.pdVentana)return (window.pdAviso||alert)(t+(txt?'\n'+txt:''));return window.pdVentana({ic:ok?'ok':'mal',titulo:t,html:txt?'<p style="margin:0">'+E(txt)+'</p>':'',botones:[{k:'1',t:'Aceptar',c:'o'}],cancelar:false})}
   /* Eliminar los pedidos marcados: confirma, avisa al motorizado, borra y muestra el resultado */
   async function borrarSel(s){
     const ids=[...s].map(String);const ped=ids.map(id=>L().find(o=>String(o.id)===id)||{id});
     const n=ids.length,txt=n===1?'el pedido '+ref(ids[0]):'los '+n+' pedidos marcados';
-    const conf=window.pdConfirmar?await window.pdConfirmar('¿Eliminar definitivamente '+txt+'?\n\nLos motorizados dejarán de verlos y recibirán una notificación.'):confirm('¿Eliminar '+txt+'?');
+    const conf=await pregunta('¿Eliminar definitivamente '+txt+'?\nLos motorizados dejarán de verlos y recibirán una notificación.');
     if(!conf)return;
     let ok=0;const mal=[];
     for(const p of ped){
@@ -957,8 +962,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       }catch(e){console.error('Eliminar pedido',p.id,e);mal.push(ref(p.id)+' ('+(e?.message||e)+')')}
     }
     try{await window.loadOrders()}catch(_){}
-    if(mal.length)(window.pdAviso||alert)('Se eliminaron '+ok+' de '+n+'. No se pudo eliminar: '+mal.join(', '));
-    else (window.pdExito||window.pdAviso||alert)(ok===1?'Pedido eliminado':ok+' pedidos eliminados');
+    if(mal.length)avisoL('Se eliminaron '+ok+' de '+n,'No se pudo eliminar: '+mal.join(', '),false);
+    else avisoL(ok===1?'Pedido eliminado':ok+' pedidos eliminados','',true);
   }
   /* QR Yape de Pidemás (config/yape.json); se lee una vez y se repinta cuando llega */
   let YCFG=null,YCARGA=false;
@@ -1539,7 +1544,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         const r2=await D().from('agencia_destinos').insert(ds.map(d=>({agencia_id:r.data.id,destino_final:d,activo:true})));if(r2.error)mal('La agencia se guardó, pero no los destinos: '+r2.error.message);
         if(f.nuevo.ubi)try{await agGuardarUbi(nombre,r.data.id,f.nuevo.ubi)}catch(e){mal('La agencia se guardó, pero no su ubicación: '+(e.message||e))}
         ok('Agencia registrada');f.nuevo=null;f.p='lista';PE.ags=null;PE.dsts=null;recargar(k);return}
-      if(op==='ed'&&ag){const n=await (window.pdPedir?pdPedir('Nuevo nombre de la agencia:',ag.nombre||''):prompt('Nuevo nombre de la agencia:',ag.nombre||''));if(n==null)return;const nn=String(n).trim();if(!nn){mal('El nombre no puede quedar vacío.');return}
+      if(op==='ed'&&ag){const n=await pedirL('Nuevo nombre de la agencia:',ag.nombre||'');if(n==null)return;const nn=String(n).trim();if(!nn){mal('El nombre no puede quedar vacío.');return}
         const q=await D().from('agencias').update({nombre:nn}).eq('id',ag.id);if(q.error){mal('No se pudo editar: '+q.error.message);return}
         const u=c.data.U[agClave(ag.nombre)];if(u&&agClave(nn)!==agClave(ag.nombre))try{await agGuardarUbi(nn,ag.id,u,agClave(ag.nombre))}catch(_){}
         ok('Agencia actualizada');PE.ags=null;recargar(k);return}
@@ -1603,7 +1608,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const uid=await accUidDe(tipo,x);if(!uid){mal('No se identificó la cuenta. Actualiza la lista y vuelve a intentarlo.');return true}
       try{await accInvocar('cambiar-password-'+tipo,{user_id:uid,password:f.npw});ok('Contraseña actualizada. Comunícala de forma privada.');f.pwi=null;f.npw=''}catch(e){mal('No se pudo cambiar la contraseña: '+(e.message||e))}return true}
     if(op==='mail'&&x){const uid=await accUidDe(tipo,x);if(!uid){mal('No se identificó la cuenta. Actualiza la lista y vuelve a intentarlo.');return true}
-      const n=await (window.pdPedir?pdPedir('Nuevo correo de acceso para '+accNom(tipo,x)+':',x.email||''):prompt('Nuevo correo:',x.email||''));if(n==null)return true;const em=String(n).trim().toLowerCase();
+      const n=await pedirL('Nuevo correo de acceso para '+accNom(tipo,x)+':',x.email||'');if(n==null)return true;const em=String(n).trim().toLowerCase();
       if(!emailOk(em)){mal('Escribe un correo válido.');return true}if(em===String(x.email||'').toLowerCase())return true;
       try{await accInvocar('editar-acceso-'+tipo,{user_id:uid,email:em});ok('Correo actualizado');x.email=em}catch(e){mal('No se pudo actualizar el correo: '+(e.message||e))}return true}
     return false;
@@ -1851,7 +1856,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const cat=(f.C||[]).find(y=>String(y.id)===String(arg));
       if(op==='csave'){const nm=String(f.cn||'').trim();if(!nm){mal('Escribe el nombre de la categoría.');return}let r=await D().from('categorias_negocio').insert({negocio_id:n.id,nombre:nm,orden:f.C.length+1});if(r.error&&/orden/i.test(r.error.message||''))r=await D().from('categorias_negocio').insert({negocio_id:n.id,nombre:nm});if(r.error)throw r.error;f.cNew=false;ok('Categoría agregada');return cxCargarCarta(f,n)}
       if(op==='cv'&&cat){const r=await D().from('categorias_negocio').update({activo:cat.activo===false}).eq('id',cat.id).eq('negocio_id',n.id);if(r.error)throw r.error;cat.activo=cat.activo===false;return}
-      if(op==='cr'&&cat){const nm=await (window.pdPedir?pdPedir('Nuevo nombre de la categoría:',cat.nombre||''):prompt('Nuevo nombre:',cat.nombre||''));if(!nm||!String(nm).trim())return;const r=await D().from('categorias_negocio').update({nombre:String(nm).trim()}).eq('id',cat.id).eq('negocio_id',n.id);if(r.error)throw r.error;cat.nombre=String(nm).trim();return}
+      if(op==='cr'&&cat){const nm=await pedirL('Nuevo nombre de la categoría:',cat.nombre||'');if(!nm||!String(nm).trim())return;const r=await D().from('categorias_negocio').update({nombre:String(nm).trim()}).eq('id',cat.id).eq('negocio_id',n.id);if(r.error)throw r.error;cat.nombre=String(nm).trim();return}
       if((op==='cu'||op==='cd')&&cat){const l=f.C.slice(),i=l.indexOf(cat),j=i+(op==='cu'?-1:1);if(j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];for(let q=0;q<l.length;q++){if(Number(l[q].orden)===q+1)continue;const r=await D().from('categorias_negocio').update({orden:q+1}).eq('id',l[q].id).eq('negocio_id',n.id);if(r.error)throw r.error;l[q].orden=q+1}f.C=l;return}
       if(op==='cx'&&cat){const cnt=f.P.filter(y=>String(y.categoria_id)===String(cat.id)).length;const ch=window.pdElegirBorrarCat?await window.pdElegirBorrarCat(cat.nombre||'',cnt):((await conf('¿Eliminar la categoría «'+(cat.nombre||'')+'»?'))?'solo':null);if(!ch)return;
         const u=ch==='todo'?await D().from('productos_negocio').delete().eq('categoria_id',cat.id).eq('negocio_id',n.id):await D().from('productos_negocio').update({categoria_id:null}).eq('categoria_id',cat.id).eq('negocio_id',n.id);if(u.error)throw u.error;
