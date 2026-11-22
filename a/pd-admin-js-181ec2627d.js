@@ -340,7 +340,7 @@ function abiertas(){
 const W=innerWidth,H=innerHeight,out=[];
 document.querySelectorAll('body *').forEach(el=>{
 if(el.closest(IGNORAR))return;
-const cs=getComputedStyle(el);if(cs.position!=='fixed')return;
+const cs=getComputedStyle(el);if(cs.position!=='fixed')return;if(cs.pointerEvents==='none'){const sr=el.shadowRoot;if(!sr)return;/* capa transparente (p. ej. la de ventanas): solo cuenta si muestra algo */if(![...sr.querySelectorAll('*')].some(c=>{const s=getComputedStyle(c);if(s.pointerEvents==='none'||s.display==='none'||s.visibility==='hidden')return false;const q=c.getBoundingClientRect();return q.width*q.height>W*H*0.2}))return}
 if(!visible(el))return;const r=el.getBoundingClientRect();
 const area=Math.max(0,Math.min(r.right,W)-Math.max(r.left,0))*Math.max(0,Math.min(r.bottom,H)-Math.max(r.top,0));
 if(area<W*H*0.45)return;
@@ -376,8 +376,9 @@ clearTimeout(sync.t);const bajar=()=>{const m=abiertas().nivel;if(m<puestos){con
 }
 }
 addEventListener('popstate',()=>{
-if(ignorar>0){ignorar--;return}
-if(puestos>0){puestos--;const antes=abiertas().nivel;cerrarArriba();
+/* este «atrás» lo usó una ventana (mapa, selector…): las páginas de la app no deben moverse */
+    if(ignorar>0){ignorar--;window.__pdPopPropio=true;setTimeout(()=>{window.__pdPopPropio=false},0);return}
+if(puestos>0){puestos--;window.__pdPopPropio=true;setTimeout(()=>{window.__pdPopPropio=false},0);const antes=abiertas().nivel;cerrarArriba();
 setTimeout(()=>{const ahora=abiertas().nivel;if(ahora>=antes&&ahora>0){try{history.pushState({pdNivel:puestos+1},'')}catch(e){}puestos++}else sync(true)},350)}
 });
 let t=null;const prog=()=>{clearTimeout(t);t=setTimeout(sync,150)};

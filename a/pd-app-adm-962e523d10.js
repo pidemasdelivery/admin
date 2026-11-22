@@ -2544,7 +2544,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
       case 'salir':{const b=document.querySelector('#pdMenu .m3Out');if(b)b.click();break}
     }
   }
-  addEventListener('popstate',()=>{if(ignorarPop){ignorarPop=false;return}if(sub==='sec'&&secK==='__perfil'&&SF['__perfil']&&SF['__perfil'].vista==='clave'){SF['__perfil'].vista=null;key='';pintar();return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar();return}if(desde.length){volverTab(true)}});
+  addEventListener('popstate',()=>{if(window.__pdPopPropio)return;if(ignorarPop){ignorarPop=false;return}if(sub==='sec'&&secK==='__perfil'&&SF['__perfil']&&SF['__perfil'].vista==='clave'){SF['__perfil'].vista=null;key='';pintar();return}if(cajon){if(Date.now()-cajonT<600)return;cajon=false;key='';pintar();return}if(sub==='sueldomoto'&&SL.vista){SL.vista=null;SL.msg='';key='';pintar();return}if(sub){sub=null;key='';pintar();return}if(desde.length){volverTab(true)}});
   setInterval(pintar,600);
   /* Aviso cuando un pedido se entrega: dice si el motorizado quedó libre */
   {const FIN=/^(entregado|completado|finalizado)$/,CERR=/^(entregado|completado|finalizado|cancelad[oa]|anulado|rechazado|no_entregado)$/;let prev=null;let th=null,tr=null,tq=0;
