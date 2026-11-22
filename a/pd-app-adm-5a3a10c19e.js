@@ -65,7 +65,9 @@
   const cTel=t=>{const d=String(t||'').replace(/\D/g,'');return d?(d.length===9?'51'+d:d):''};
   const C_CSS=`
 .oC{display:flex;flex-direction:column;gap:12px;width:100%;box-sizing:border-box;text-align:left;color:#1F1A17;background:#FFFFFF;border:1px solid #F1E4DA;border-radius:22px;padding:16px;cursor:pointer;box-shadow:0 8px 22px rgba(31,26,23,.06)}
-.oC.a{border:1.5px solid #C4410C}.oC.sl2{border:1.5px solid #C4410C;background:#FFF4EC}
+.oC.a{border:1.5px solid #C4410C}.oC.cNw{border:2px solid #C4410C;animation:cLate 1.6s ease-out infinite}
+@keyframes cLate{0%{box-shadow:0 0 0 0 rgba(196,65,12,.45),0 8px 22px rgba(31,26,23,.06)}100%{box-shadow:0 0 0 12px rgba(196,65,12,0),0 8px 22px rgba(31,26,23,.06)}}
+@media (prefers-reduced-motion:reduce){.oC.cNw{animation:none;box-shadow:0 0 0 4px rgba(196,65,12,.25)}}.oC.sl2{border:1.5px solid #C4410C;background:#FFF4EC}
 .oC .cTp{display:flex;align-items:center;gap:8px;min-width:0}
 .oC .cCh{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;font-size:13px;font-weight:800;white-space:nowrap;min-width:0;overflow:hidden;flex:0 1 auto}.oC .cCh span{overflow:hidden;text-overflow:ellipsis}.oC .cCh svg{flex:0 0 auto}
 .oC .cCod{font-size:12.5px;font-weight:800;color:#6B5E55;letter-spacing:.02em;margin-bottom:2px}
@@ -99,7 +101,7 @@
     const c=C_SV[d.sv]||C_SV['Negocio'];
     const bars=(d.pasos||[]).map((t,i)=>{const k=i+1,n=d.fase.n;const cl=n===0?'':(k<n||n>=d.pasos.length)?'d':k===n?'a':'';return `<span class="${cl}"><i></i><small>${E(t)}</small></span>`}).join('');
     const m=d.moto||null,mt=m&&cTel(m.tel);
-    return `<div class="oC${d.act?' a':''}${d.marcado?' sl2':''}" ${d.attr||''} role="button" tabindex="0">${d.arriba||''}
+    return `<div class="oC${d.act?' a':''}${d.nuevo?' cNw':''}${d.marcado?' sl2':''}" ${d.attr||''} role="button" tabindex="0">${d.arriba||''}
       <div class="cTp">${d.sel||''}<span class="cCh" style="background:${c[0]};color:${c[1]}">${cSvg(c[2])}<span>${E(d.neg||d.sv)}</span></span><span class="cPr">${E(d.precio)}</span></div>
       <div><div class="cCod">${E(d.ref)}${d.hace?' · '+E(d.hace):''}</div><div class="cNm">${E(d.cliente||'Cliente')}</div>${d.dir?`<div class="cDr">${E(d.dir)}</div>`:''}</div>
       ${d.pasos&&d.fase.n?`<div class="cStp" style="grid-template-columns:repeat(${d.pasos.length},minmax(0,1fr))" aria-label="Avance: ${E(d.fase.txt||'')}">${bars}</div>`:''}
@@ -315,7 +317,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       sel:selModo?`<span class="sel${marc?' on':''}">${marc?IC.check:''}</span>`:'',attr:`data-o="${E(o.id)}"`,
       cuando:o.entregado_en?fecha(o.entregado_en):hTxt};
     if(f.k==='ok'||f.k==='no')return cFila(d);
-    if(nv){d.arriba=`<div class="cAv"><i></i>Pedido nuevo · sin motorizado<em>${E(hTxt)}</em></div>`;d.abajo=`<button type="button" class="b o" style="height:48px" data-o="${E(o.id)}">Asignar motorizado</button>`}
+    if(nv){d.nuevo=1;d.arriba=`<div class="cAv"><i></i>Pedido nuevo · sin motorizado<em>${E(hTxt)}</em></div>`;d.abajo=`<button type="button" class="b o" style="height:48px" data-o="${E(o.id)}">Asignar motorizado</button>`}
     return cGrande(d);
   }
   let nuevoAb=false,frecAb=false;
