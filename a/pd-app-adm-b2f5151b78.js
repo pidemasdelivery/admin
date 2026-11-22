@@ -2112,16 +2112,16 @@ button.on{color:#C4410C;font-weight:800}button.on .pi{background:#FDEBDF}
 button:active .pi{transform:scale(.92)}
 .bd{position:absolute;top:-5px;right:5px;min-width:20px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:999px;background:#C4410C;color:#FFFFFF;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #FFFFFF}
 .lb{display:block;text-align:center;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-nav{position:relative;z-index:3}
-nav.ab button:not(.nw){opacity:.35}
+nav{position:relative}
+.nw{position:relative;z-index:5}nav.ab .nw{color:#FFFFFF}nav.ab .nw .c{border-color:transparent;box-shadow:0 6px 16px rgba(0,0,0,.35)}
 .nw{color:#1F1A17}
 .nw .c{width:48px;height:48px;margin-top:-26px;border-radius:50%;border:4px solid #FFF9F5;background:#C4410C;color:#FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(196,65,12,.32);transition:transform .2s,background .2s}
 .nw .c svg{width:22px;height:22px;stroke-width:2.6;transition:transform .2s}
 nav.ab .nw .c svg{transform:rotate(45deg)}
 .nw:active .c{transform:scale(.92)}
-.fv{position:fixed;inset:0;z-index:1;background:rgba(31,26,23,.72);animation:fvIn .18s ease-out}
-.ft{position:fixed;left:0;right:0;z-index:2;margin:0;text-align:center;bottom:calc(env(safe-area-inset-bottom,0px) + 290px);color:#FFFFFF;font-size:20px;font-weight:800;pointer-events:none;animation:fvIn .18s ease-out}
-.fa{position:fixed;z-index:2;width:120px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;animation:faIn .22s ease-out both}
+.fv{position:fixed;inset:0;z-index:4;background:rgba(31,26,23,.72);animation:fvIn .18s ease-out}
+.ft{position:fixed;left:0;right:0;z-index:6;margin:0;text-align:center;bottom:calc(env(safe-area-inset-bottom,0px) + 290px);color:#FFFFFF;font-size:20px;font-weight:800;pointer-events:none;animation:fvIn .18s ease-out}
+.fa{position:fixed;z-index:6;width:120px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;animation:faIn .22s ease-out both}
 .fc{width:64px;height:64px;border-radius:50%;background:#FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(0,0,0,.25)}
 .fc svg{width:28px;height:28px}
 .fa:active .fc{transform:scale(.94)}
