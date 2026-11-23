@@ -1718,7 +1718,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   async function accCargar(tipo,f){f.cuentas=null;key='';pintar();try{f.cuentas=await accListar(tipo)}catch(e){f.cuentas={err:'No se pudo cargar la lista de cuentas: '+(e.message||e)}}key='';pintar()}
   async function accCrear(tipo,id,f){
     const em=String(f.em||'').trim().toLowerCase(),pw=String(f.pw||'');
-    if(!emailOk(em)){mal('Escribe un correo válido.');return false}if(pw.length<12){mal('La contraseña debe tener al menos 12 caracteres.');return false}
+    if(/[^\x21-\x7e]/.test(em)){mal('El correo no puede llevar ñ, tildes ni espacios. Ejemplo: ellenador@grupopidemas.com');return false}if(!emailOk(em)){mal('Escribe un correo válido.');return false}if(pw.length<12){mal('La contraseña debe tener al menos 12 caracteres.');return false}
     try{await accInvocar('crear-acceso-'+tipo,tipo==='negocio'?{negocio_id:id,email:em,password:pw}:{motorizado_id:id,email:em,password:pw})}
     catch(e){mal('No se pudo crear la cuenta: '+(e.message||e));return false}
     try{window.pdMensajeAcceso&&window.pdMensajeAcceso({tipo,id,email:em,password:pw})}catch(_){}
