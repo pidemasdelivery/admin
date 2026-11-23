@@ -2070,6 +2070,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const foto=f.prev||d.p.foto_url||window.__pdAdminFoto||'';
       let h=`<div class="ph"><div style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:20px">${E(f.nom||'Administrador')}</b><span style="font-size:13px;color:#6B5E55">Administrador · ${E(d.email||'')}</span></div></div>`;
       h+=`<div class="cd"><div class="lbl">Tus datos</div><div class="fld"><label for="pfN">Tu nombre</label><input id="pfN" maxlength="40" value="${E(f.nom)}" data-in="sf:nom"></div><div class="fld"><label for="pfW">WhatsApp de administración</label><input id="pfW" type="tel" inputmode="numeric" maxlength="15" value="${E(f.wa)}" data-in="sf:wa"></div><span style="font-size:13px;color:#6B5E55">A este número los motorizados envían la guía y clave de las encomiendas y los avisos de problemas.</span><button type="button" class="b o" data-sa="guardar">Guardar cambios</button></div>`;
+      if(window.PdAvisos)h+=window.PdAvisos.card('data-sa','Suena cuando entra un pedido nuevo.');
       h+=`<div class="cd"><div class="lbl">Seguridad</div><button type="button" class="b" data-sa="clave:abrir">${IC.lock||''}Cambiar contraseña</button></div>`;
       if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
       h+=`<button type="button" class="b" style="color:#B42318;border-color:#F4C7C3" data-a="salir">${IC.logout}Cerrar sesión</button>`;
@@ -2082,6 +2083,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
       return {head:top3('Seguridad','Cambiar contraseña').replace('data-a="volver"','data-sa="clave:salir"'),body:h,foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="clave:guardar">Guardar contraseña</button>`}},
     async a(x){const k='__perfil',f=SF[k],d=C2['s:'+k]&&C2['s:'+k].data;f.msg='';
+      if(x.startsWith('avs:')){if(window.PdAvisos)await window.PdAvisos.accion(x.slice(4));return}
       if(x==='clave:abrir'){f.vista='clave';f.p0='';f.p1='';f.p2='';f.ver=false;try{history.pushState({pdApp:1,pdClave:1},'')}catch(_){}return}
       if(x==='clave:salir'){f.vista=null;f.p0='';f.p1='';f.p2='';if(history.state&&history.state.pdClave){ignorarPop=true;history.back()}return}
       if(x==='clave:ver'){f.ver=!f.ver;return}
@@ -2570,7 +2572,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
         document.body.appendChild(th)}
       tr.querySelector('.x b').textContent=t;tr.querySelector('.x span').textContent=s2;th.dataset.id=id||'';th.style.display='block';
       clearTimeout(tq);tq=setTimeout(()=>{th.style.display='none'},9000);
-      try{const C=window.AudioContext||window.webkitAudioContext;const c=new C();[0,.16].forEach((d,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=i?1046:784;g.gain.setValueAtTime(.16,c.currentTime+d);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d+.28);o.connect(g).connect(c.destination);o.start(c.currentTime+d);o.stop(c.currentTime+d+.3)});navigator.vibrate&&navigator.vibrate([120,60,120])}catch(_){}
+      try{if(window.PdSound&&!window.PdSound.on)throw 0;const C=window.AudioContext||window.webkitAudioContext;const c=new C();[0,.16].forEach((d,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=i?1046:784;g.gain.setValueAtTime(.16,c.currentTime+d);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d+.28);o.connect(g).connect(c.destination);o.start(c.currentTime+d);o.stop(c.currentTime+d+.3)});navigator.vibrate&&navigator.vibrate([120,60,120])}catch(_){}
     }
     setInterval(()=>{const L2=L();if(!L2.length)return;
       if(!prev){prev=new Map(L2.map(o=>[String(o.id),est(o)]));return}

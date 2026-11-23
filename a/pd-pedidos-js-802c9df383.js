@@ -234,7 +234,7 @@ card.classList.toggle('pfNegPend',!!o.negocio_id&&String(o.estado||'').toLowerCa
 });
 }
 let seen=null;
-function beep(){try{const C=window.AudioContext||window.webkitAudioContext;const c=new C();[0,.25,.5].forEach(t=>{const o=c.createOscillator(),g=c.createGain();o.type='square';o.frequency.value=880;g.gain.setValueAtTime(.18,c.currentTime+t);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+t+.2);o.connect(g).connect(c.destination);o.start(c.currentTime+t);o.stop(c.currentTime+t+.22)});navigator.vibrate&&navigator.vibrate([300,120,300])}catch(e){}}
+function beep(){if(window.PdSound&&!window.PdSound.on)return;try{const C=window.AudioContext||window.webkitAudioContext;const c=new C();[0,.25,.5].forEach(t=>{const o=c.createOscillator(),g=c.createGain();o.type='square';o.frequency.value=880;g.gain.setValueAtTime(.18,c.currentTime+t);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+t+.2);o.connect(g).connect(c.destination);o.start(c.currentTime+t);o.stop(c.currentTime+t+.22)});navigator.vibrate&&navigator.vibrate([300,120,300])}catch(e){}}
 function incidencias(){
 const abiertas=list().filter(o=>o.incidencia&&o.incidencia_resuelta!==true&&!['entregado','cancelado'].includes(String(o.estado||'').toLowerCase()));
 const keys=new Set(abiertas.map(o=>o.id+'|'+o.incidencia_en));
@@ -273,7 +273,7 @@ const vistos=()=>{try{return new Set(JSON.parse(localStorage.getItem(KEY)||'[]')
 const marcar=k=>{try{const s=vistos();s.add(k);localStorage.setItem(KEY,JSON.stringify([...s].slice(-300)))}catch(e){}};
 const motoName=id=>{try{const m=(typeof allMotos!=='undefined'?allMotos:[]).find(x=>String(x.id)===String(id));return m?(m.nombre_completo||'El motorizado'):'El motorizado'}catch(e){return 'El motorizado'}};
 let prev=null;
-function beep(){try{const a=new (window.AudioContext||window.webkitAudioContext)();const o=a.createOscillator(),g=a.createGain();o.frequency.value=880;o.connect(g);g.connect(a.destination);g.gain.value=.08;o.start();setTimeout(()=>{o.stop();a.close()},220)}catch(e){}}
+function beep(){if(window.PdSound&&!window.PdSound.on)return;try{const a=new (window.AudioContext||window.webkitAudioContext)();const o=a.createOscillator(),g=a.createGain();o.frequency.value=880;o.connect(g);g.connect(a.destination);g.gain.value=.08;o.start();setTimeout(()=>{o.stop();a.close()},220)}catch(e){}}
 function avisos(){
 const v=vistos(),lim=Date.now()-12*3600e3,items=[];
 list().forEach(o=>{if(!String(o.tipo_servicio||'').toLowerCase().includes('encomienda'))return;
