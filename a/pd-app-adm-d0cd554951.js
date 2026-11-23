@@ -876,7 +876,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const base={nombre_completo:nombre,telefono:tel,direccion:dir,referencia:ubi||null,activo:true};
     const co=typeof extraerCoordsCliente==='function'?extraerCoordsCliente(ubi):null;if(co){base.latitud=co.lat;base.longitud=co.lng}else if(!f.id||ubi){base.latitud=null;base.longitud=null}
     const probe=await D().from('clientes').select('documento').limit(1);if(!probe.error)base.documento=f.dni.trim()||null;
-    const q=f.id?await D().from('clientes').update(base).eq('id',f.id).select('*').single():await D().from('clientes').insert(base).select('*').single();
+    /* un cliente por nombre: si otro ya tiene ese nombre, no se duplica */
+    const mismo=((C2.cli&&C2.cli.data)||[]).find(c=>agClave(cliN(c))===agClave(nombre)&&String(c.id)!==String(f.id||''));
+    if(mismo&&f.id){f.msg='Ya hay otro cliente llamado «'+cliN(mismo)+'». Usa otro nombre o edita ese cliente.';return}
+    const idU=f.id||(mismo&&mismo.id);
+    const q=idU?await D().from('clientes').update(base).eq('id',idU).select('*').single():await D().from('clientes').insert(base).select('*').single();
     if(q.error){f.msg=q.error.message||'No se pudo guardar el cliente.';return}
     try{window.loadClientes&&window.loadClientes()}catch(_){}
     await new Promise(res=>{datosCli(true);const t=setInterval(()=>{if(C2.cli&&!C2.cli.busy){clearInterval(t);res()}},150)});
@@ -1260,9 +1264,14 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   /* agencia y destino: si no están registrados, se registran (como antes) */
   async function nsAgencia(nom,dest){
     nom=String(nom||'').trim();dest=String(dest||'').trim();if(!nom)return null;
-    let a=(PE.ags||[]).find(x=>String(x.nombre||'').trim().toLowerCase()===nom.toLowerCase());
-    if(!a){const r=await D().from('agencias').insert({nombre:nom,activo:true}).select('id,nombre,activo').single();if(r.error)return null;a=r.data;(PE.ags=PE.ags||[]).push(a)}
-    if(dest){try{const d=await D().from('agencia_destinos').select('id,destino_final').eq('agencia_id',a.id);if(!d.error&&!(d.data||[]).some(x=>String(x.destino_final||'').trim().toLowerCase()===dest.toLowerCase()))await D().from('agencia_destinos').insert({agencia_id:a.id,destino_final:dest,activo:true})}catch(_){}}
+    let a=(PE.ags||[]).find(x=>agClave(x.nombre)===agClave(nom));
+    /* una sola agencia por nombre: si ya existe (aunque esté desactivada) se usa esa */
+    if(!a){const t=await D().from('agencias').select('id,nombre,activo');a=((t&&t.data)||[]).find(x=>agClave(x.nombre)===agClave(nom))||null;
+      if(a&&a.activo===false){await D().from('agencias').update({activo:true}).eq('id',a.id);a.activo=true}
+      if(!a){const r=await D().from('agencias').insert({nombre:nom,activo:true}).select('id,nombre,activo').maybeSingle();
+        if(r.data)a=r.data;else{const t2=await D().from('agencias').select('id,nombre,activo');a=((t2&&t2.data)||[]).find(x=>agClave(x.nombre)===agClave(nom))||null}}
+      if(!a)return null;if(!(PE.ags||[]).some(x=>x.id===a.id))(PE.ags=PE.ags||[]).push(a)}
+    if(dest){try{const d=await D().from('agencia_destinos').select('id,destino_final').eq('agencia_id',a.id);if(!d.error&&!(d.data||[]).some(x=>agClave(x.destino_final)===agClave(dest)))await D().from('agencia_destinos').insert({agencia_id:a.id,destino_final:dest,activo:true})}catch(_){}}
     return a.id;
   }
   /* ubicación guardada de cada agencia (la misma que se marca en Más › Agencias) */
@@ -1284,8 +1293,12 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   async function nsGuardarClientes(f){
     const ps=f.tipo==='compra'?[[f.nom,f.tel,f.dir,f.ubi,f.doc]]:[[f.rnom,f.rtel,f.rdir,f.rubi,f.rdni],[f.enom,f.etel,f.tipo==='recojo'?f.edir:'',f.tipo==='recojo'?f.eubi:'',f.edni]];
     const L2=(C2.cli&&C2.cli.data)||[];let n=0;
-    for(const [nom,tel,dir,ubi,doc] of ps){const t=dig(tel).slice(-9);if(!String(nom||'').trim()||t.length<9)continue;if(L2.some(c=>dig(cliT(c)).slice(-9)===t))continue;
-      const b={nombre_completo:String(nom).trim(),telefono:t,direccion:String(dir||'').trim()||null,referencia:String(ubi||'').trim()||null,activo:true};const co=coordsDe(ubi);if(co){b.latitud=co.lat;b.longitud=co.lng}
+    for(const [nom,tel,dir,ubi,doc] of ps){const t=dig(tel).slice(-9);if(!String(nom||'').trim()||t.length<9)continue;
+      const b={nombre_completo:String(nom).trim().replace(/\s+/g,' '),telefono:t,direccion:String(dir||'').trim()||null,referencia:String(ubi||'').trim()||null,activo:true};const co=coordsDe(ubi);if(co){b.latitud=co.lat;b.longitud=co.lng}
+      /* un cliente por nombre: si ya existe, solo se actualizan sus datos (teléfono, dirección, ubicación) */
+      const ya=L2.find(c=>agClave(cliN(c))===agClave(b.nombre_completo));
+      if(ya){const u={};if(t!==dig(cliT(ya)).slice(-9))u.telefono=t;if(b.direccion&&b.direccion!==ya.direccion)u.direccion=b.direccion;if(b.referencia&&b.referencia!==ya.referencia)u.referencia=b.referencia;if(co){u.latitud=co.lat;u.longitud=co.lng}if(doc&&String(doc).trim()!==String(ya.documento||''))u.documento=String(doc).trim();
+        if(Object.keys(u).length){let q=await D().from('clientes').update(u).eq('id',ya.id);if(q.error&&u.documento){delete u.documento;q=await D().from('clientes').update(u).eq('id',ya.id)}if(!q.error)n++}continue}
       let q=await D().from('clientes').insert(Object.assign({},b,doc?{documento:String(doc).trim()}:{}));if(q.error&&doc)q=await D().from('clientes').insert(b);if(!q.error)n++}
     if(n)datosCli(true);
   }
@@ -1677,11 +1690,15 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(op==='crear'){const nombre=f.nuevo.nombre.trim(),ds=[...new Set(f.nuevo.ds.map(d=>d.trim()).filter(Boolean))];
         if(!nombre){f.msg='Escribe el nombre de la agencia.';return}if(!ds.length){f.msg='Agrega al menos un destino.';return}
         if(A.some(a=>agClave(a.nombre)===agClave(nombre))){f.msg='Esa agencia ya está registrada.';return}
-        const r=await D().from('agencias').insert({nombre,activo:true}).select('id').single();if(r.error){f.msg='No se pudo registrar: '+r.error.message;return}
+        let r;{const t=await D().from('agencias').select('id,nombre,activo');const vieja=((t&&t.data)||[]).find(x=>agClave(x.nombre)===agClave(nombre));
+          /* si estaba eliminada, se vuelve a activar en vez de crear otra con el mismo nombre */
+          r=vieja?await D().from('agencias').update({activo:true}).eq('id',vieja.id).select('id').single():await D().from('agencias').insert({nombre,activo:true}).select('id').single()}
+         if(r.error){f.msg='No se pudo registrar: '+r.error.message;return}
         const r2=await D().from('agencia_destinos').insert(ds.map(d=>({agencia_id:r.data.id,destino_final:d,activo:true})));if(r2.error)mal('La agencia se guardó, pero no los destinos: '+r2.error.message);
         if(f.nuevo.ubi)try{await agGuardarUbi(nombre,r.data.id,f.nuevo.ubi)}catch(e){mal('La agencia se guardó, pero no su ubicación: '+(e.message||e))}
         ok('Agencia registrada');f.nuevo=null;f.p='lista';PE.ags=null;PE.dsts=null;recargar(k);return}
       if(op==='ed'&&ag){const n=await pedirL('Nuevo nombre de la agencia:',ag.nombre||'');if(n==null)return;const nn=String(n).trim();if(!nn){mal('El nombre no puede quedar vacío.');return}
+         if(A.some(a=>a!==ag&&agClave(a.nombre)===agClave(nn))){mal('Ya hay una agencia llamada «'+nn+'».');return}
         const q=await D().from('agencias').update({nombre:nn}).eq('id',ag.id);if(q.error){mal('No se pudo editar: '+q.error.message);return}
         const u=c.data.U[agClave(ag.nombre)];if(u&&agClave(nn)!==agClave(ag.nombre))try{await agGuardarUbi(nn,ag.id,u,agClave(ag.nombre))}catch(_){}
         ok('Agencia actualizada');PE.ags=null;recargar(k);return}
