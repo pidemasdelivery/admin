@@ -30,8 +30,14 @@ html.pdCarga body::after{content:"";position:fixed;top:50%;left:50%;width:38px;h
 @keyframes pdCargaGira{to{transform:rotate(360deg)}}
 html.pdCarga.pdCargaSale body>*{visibility:visible!important}
 html.pdCarga.pdCargaSale body::before,html.pdCarga.pdCargaSale body::after{opacity:0;transition:opacity .28s ease}
+/* Al abrir: el panel antiguo nunca se ve; se muestra la rueda hasta que el panel nuevo (html.pdaApp) esté listo */
+html.pdArranque #appView,html.pdArranque:has(#appView:not(.hidden):not([hidden])) body>header.top{visibility:hidden!important}
+html.pdArranque:has(#appView:not(.hidden):not([hidden])),html.pdArranque:has(#appView:not(.hidden):not([hidden])) body{background:#FFF9F5!important}
+html.pdArranque:has(#appView:not(.hidden):not([hidden])) body::after{content:"";position:fixed;top:50%;left:50%;width:38px;height:38px;margin:-19px 0 0 -19px;z-index:2147483647;border-radius:50%;border:4px solid rgba(0,0,0,.10);border-top-color:#C4410C;animation:pdCargaGira .8s linear infinite;visibility:visible!important;box-sizing:border-box;opacity:1!important}
 </style><script>(function(){var h=document.documentElement;try{
-h.classList.add("pdCarga");var fin=false,t0=Date.now(),q=0,fuentes=false;
+h.classList.add("pdCarga");
+/* se quita para siempre la primera vez que aparece el panel nuevo (o a los 40 s si no cargara) */
+h.classList.add("pdArranque");(function(){var t0=Date.now(),iv=setInterval(function(){if(h.classList.contains("pdaApp")||Date.now()-t0>40000){h.classList.remove("pdArranque");clearInterval(iv)}},100)})();var fin=false,t0=Date.now(),q=0,fuentes=false;
 try{document.fonts.ready.then(function(){fuentes=true})}catch(e){fuentes=true}
 /* ¿Hay sesión guardada? Entonces se espera el panel; si no, el login */
 var ses=false;try{ses=!!localStorage.getItem("pidemas-admin-sesion")}catch(e){}
