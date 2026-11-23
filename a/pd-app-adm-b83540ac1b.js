@@ -2052,7 +2052,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     load:async()=>{try{window.pdaAvisos&&await window.pdaAvisos.cargarCaja()}catch(_){}return {t:Date.now()}},
     evs(){const A=window.pdaAvisos;let ev=[];try{ev=(A&&A.eventos()||[]).slice()}catch(_){}
       const lim=Date.now()-48*3600e3;
-      ev=ev.map(x=>{let cat='motorizado';if(x.k==='ped'&&/^(Nuev|Pedido cancelado)/.test(String(x.tit||'')))cat='pedidos';return Object.assign({},x,{cat})});
+      /* Tienda = pedidos de negocios que hace el cliente · Servicios = recojos, compras y encomiendas que crea el admin */
+      ev=ev.map(x=>{let cat='motorizado';if(x.k==='ped'&&/^(Nuev|Pedido cancelado)/.test(String(x.tit||''))){const o=L().find(y=>String(y.id)===String(x.id));cat=o&&!o.negocio_id?'servicios':'pedidos'}return Object.assign({},x,{cat})});
       L().forEach(o=>{if(!o.negocio_id)return;const n=NEG(o.negocio_id).nombre||'El negocio',c=String(o.nombre_cliente||'').trim(),sub=ref(o.id)+(c?' · '+c:'');
         const add=(t,tit,s2,ic)=>{if(t>lim)ev.push({cat:'negocio',k:'neg',t,tit,sub:s2,id:o.id,icN:ic})};
         add(T(o.negocio_aceptado_en),n+' aceptó el pedido',sub,'store');
@@ -2062,7 +2063,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       return ev.sort((a,b)=>b.t-a.t).slice(0,120)},
     v(){const k='__avisos',c=datos(k,this.load),f=SF[k];f.c=f.c||'todos';if(!c.data)return {body:cargando(c)};
       const ev=this.evs(),vis=f.vis||0;const n=x=>x==='todos'?ev.length:ev.filter(e=>e.cat===x).length;
-      const CH=[['todos','Todos'],['pedidos','Tienda'],['motorizado','Motorizado'],['negocio','Negocio']];
+      const CH=[['todos','Todos'],['pedidos','Tienda'],['servicios','Servicios'],['motorizado','Motorizado'],['negocio','Negocio']];
       let h=`<div class="chips">${CH.map(x=>`<button type="button" data-sa="c:${x[0]}" class="${f.c===x[0]?'on':''}">${x[1]}${n(x[0])?' · '+n(x[0]):''}</button>`).join('')}</div>`;
       const Lv=f.c==='todos'?ev:ev.filter(e=>e.cat===f.c);
       /* mismos íconos del menú inferior: Pedidos, Motorizados y Negocios (caja y sueldos son de Motorizados) */
