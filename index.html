@@ -41,7 +41,8 @@ window.pdQuitarCarga=salir;
 (function sondeo(){
   if(fin)return;
   var base=document.readyState==="complete"&&fuentes;
-  var listo=base&&(ve("appView")||(!ses&&ve("loginView"))||(ses&&ve("loginView")&&Date.now()-t0>4000)||!!document.getElementById("pdPermGate"));
+  /* con sesión se espera el panel nuevo (html.pdaApp), no el viejo que aparece un instante antes */
+  var listo=base&&((ve("appView")&&(!window.__pdAppAdm||h.classList.contains("pdaApp")))||(!ses&&ve("loginView"))||(ses&&ve("loginView")&&Date.now()-t0>4000)||!!document.getElementById("pdPermGate"));
   if(listo&&!q)q=Date.now();if(!listo)q=0;
   if((q&&Date.now()-q>350)||Date.now()-t0>10000){salir();return}
   setTimeout(sondeo,80)
