@@ -102,7 +102,7 @@
     const titulos=t==='enc'?['Pedido recibido','Asignar motorizado','Recoger los paquetes','Agencia y guía','Cerrado']:['Pedido recibido','Asignar motorizado',t==='compra'?'Hacer la compra':'Recoger','Entrega y cobro','Cerrado'];
     const steps=titulos.map((tt,i)=>({title:tt,state:e===-1?'locked':e===4||i<e?'done':i===e?'active':'locked'}));
     const cobra=o.pago_confirmado===true&&!(Number(o.monto_recibido)>0)?0:Number(o.total||0);
-    const notas=limpiar(o.observaciones).filter(x=>!/^(Compra solicitada|Comprobante|DNI\/RUC|Lugar de compra|¿De dónde|¿Qué desea|Monto entregado|Cambio para|Pago por Yape|Pago en efectivo|Paga quien|Servicio marcado como PAGADO|Pedido a nombre de)/i.test(x));
+    const notas=limpiar(o.observaciones).filter(x=>!/^(Compra solicitada|Comprobante|DNI\/RUC|Lugar de compra|¿De dónde|¿Qué desea|Monto entregado|Cambio para|Pago por Yape|Pago en efectivo|Paga quien|Servicio marcado como PAGADO|Pedido a nombre de|Pide el servicio)/i.test(x));
     const aNom=t!=='compra'?(o.recojo_a_nombre||campo(o,'Pedido a nombre de')):'';
     const subQ=(base)=>E(base)+(aNom?`<div style="margin-top:2px">A nombre de <b style="color:#1F1A17">${E(aNom)}</b></div>`:'');
     /* Cada paso muestra solo lo de su etapa (mismo diseño que el motorizado): nada se repite */
@@ -119,7 +119,8 @@
       let h=`<div class="amt" style="padding:14px"><div class="k">${t==='compra'?'Costo del servicio':'Total del servicio'}</div><div class="n" style="font-size:36px">${M(serv0)}</div><div class="pill">${E(pagoTx)}</div></div>`;
       if(pagaCon>0&&!pagado&&metodo==='Efectivo')h+=U.note(t==='compra'&&!(sub0>0)?'El cliente pagará con <b>'+M(pagaCon)+'</b>. El vuelto se sabe cuando el motorizado registre la compra.':'El cliente paga con <b>'+M(pagaCon)+'</b>'+(pagaCon-tot0>0.004?' · vuelto '+M(pagaCon-tot0):' · paga exacto'));
       /* solo el resumen: los datos de contacto salen en el paso donde se usan */
-      h+=sumBox('Resumen',(t==='compra'?li('Cliente',E(remN)):li('Envía',E(remN))+(aNom?li('A nombre de',E(aNom)):'')+li(t==='enc'?'Recibe en destino':'Recibe',E(recN)))+(o.creado_en?li('Pedido a las',E(U.hora(o.creado_en))):''));
+      const pideR=t==='recojo'&&/quien recibe/i.test(campo(o,'Pide el servicio')||'');
+      h+=sumBox('Resumen',(t==='compra'?li('Cliente',E(remN)):li('Pide el servicio',pideR?'Quien recibe':'Quien envía')+li('Envía',E(remN))+(aNom?li('A nombre de',E(aNom)):'')+li(t==='enc'?'Recibe en destino':'Recibe',E(recN)))+(o.creado_en?li('Pedido a las',E(U.hora(o.creado_en))):''));
       s.body=h;}
     /* 1 · Asignar */
     {const s=steps[1];s.sum='Asignado a '+mn;

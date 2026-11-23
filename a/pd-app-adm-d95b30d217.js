@@ -988,7 +988,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const b={id:o.id,sv,tipo:sv==='Recojo y entrega'?'recojo':sv==='Compra'?'compra':'enc',msg:'',costo:String(Number(sv==='Compra'?o.costo_delivery:o.total)||0)};
     if(b.tipo==='recojo')Object.assign(b,{anom:o.recojo_a_nombre||tagDe(obs,'Pedido a nombre de'),rnom:o.nombre_remitente||o.nombre_cliente||'',rtel:o.telefono_remitente||o.telefono_cliente||'',rdir:o.direccion_recojo||'',rref:o.referencia_recojo||tagDe(obs,'Referencia de recojo'),rubi:o.ubicacion_recojo||tagDe(obs,'Ubicación de recojo','Ubicacion de recojo'),
       enom:o.nombre_receptor||'',etel:o.telefono_receptor||'',edir:o.direccion_entrega||'',eref:o.referencia_entrega||'',eubi:o.ubicacion_entrega||tagDe(obs,'Ubicación de entrega','Ubicacion de entrega'),lleva:o.que_se_lleva||tagDe(obs,'Qué se lleva'),
-      pago:met,quien:o.quien_paga||(/^recojo_/.test(String(o.pago_servicio_momento||''))?'envia':'recibe')});
+      pago:met,quien:o.quien_paga||(/^recojo_/.test(String(o.pago_servicio_momento||''))?'envia':'recibe'),
+      pide:/quien recibe/i.test(tagDe(obs,'Pide el servicio'))?'recibe':'envia'});
     else if(b.tipo==='compra')Object.assign(b,{nom:o.nombre_cliente||'',tel:o.telefono_cliente||'',dir:o.direccion_entrega||'',ref:o.referencia_entrega||'',ubi:o.ubicacion_entrega||tagDe(obs,'Ubicación','Ubicación del cliente'),
       lugar:o.direccion_recojo||o.lugar_compra||tagDe(obs,'Lugar de compra'),detalle:o.detalle_compra||tagDe(obs,'Compra solicitada'),obs:libreDe(obs),comp:o.tipo_comprobante||tagDe(obs,'Comprobante').replace(/^No especificado$/i,''),doc:o.documento_comprobante||tagDe(obs,'DNI/RUC'),pago:met});
     if(b.tipo==='compra'){const mu=String(b.lugar||'').match(/https?:\/\/\S+/);b.lugarUrl=mu?mu[0]:'';b.lugar=String(b.lugar||'').replace(/https?:\/\/\S+/g,'').replace(/[\s·–-]+$/,'').trim()}
@@ -1084,10 +1085,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(f.tipo==='recojo'){
       if(!f.rnom.trim()){f.msg='Escribe el nombre de quien envía.';return false}
       const mom=pagado?'pagado':(f.quien==='envia'?(f.pago==='yape'?'recojo_yape':'recojo_efectivo'):null);
-      p={nombre_cliente:f.rnom.trim(),telefono_cliente:f.rtel.trim(),nombre_remitente:f.rnom.trim(),telefono_remitente:f.rtel.trim(),direccion_recojo:f.rdir.trim(),referencia_recojo:f.rref.trim()||null,recojo_a_nombre:String(f.anom||'').trim()||null,ubicacion_recojo:f.rubi.trim()||null,
+      const pideR=f.pide==='recibe'&&String(f.enom||'').trim();
+      p={nombre_cliente:(pideR?f.enom:f.rnom).trim(),telefono_cliente:(pideR?f.etel:f.rtel).trim(),nombre_remitente:f.rnom.trim(),telefono_remitente:f.rtel.trim(),direccion_recojo:f.rdir.trim(),referencia_recojo:f.rref.trim()||null,recojo_a_nombre:String(f.anom||'').trim()||null,ubicacion_recojo:f.rubi.trim()||null,
         nombre_receptor:f.enom.trim(),telefono_receptor:f.etel.trim(),direccion_entrega:f.edir.trim(),referencia_entrega:f.eref.trim()||null,ubicacion_entrega:f.eubi.trim()||null,que_se_lleva:f.lleva.trim()||null,
         costo_delivery:costo,subtotal:0,total:costo,metodo_pago:pagado?'efectivo':f.pago,pago_servicio_momento:mom,quien_paga:pagado?null:f.quien};
-      obs=rehacerObs(obs,{'Ubicación de recojo':f.rubi,'Ubicación de entrega':f.eubi,'Referencia de recojo':f.rref,'Pedido a nombre de':f.anom,'Qué se lleva':f.lleva});
+      obs=rehacerObs(obs,{'Pide el servicio':pideR?'Quien recibe':'','Ubicación de recojo':f.rubi,'Ubicación de entrega':f.eubi,'Referencia de recojo':f.rref,'Pedido a nombre de':f.anom,'Qué se lleva':f.lleva});
       obs=[pagado?'Servicio marcado como PAGADO; no cobrar monto al cliente':(f.pago==='efectivo'?'Pago en efectivo: S/ '+costo.toFixed(2):'Pago por Yape: pendiente de captura y confirmación del administrador'),pagado?'':(f.quien==='envia'?'Paga quien envía, al recoger':'Paga quien recibe, al entregar')].filter(Boolean).concat(segs(obs)).join(' | ');
       const cr=coordsDe(f.rubi),ce=coordsDe(f.eubi);if(cr){p.latitud_recojo=cr.lat;p.longitud_recojo=cr.lng}if(ce){p.latitud_entrega=ce.lat;p.longitud_entrega=ce.lng}
     }else if(f.tipo==='compra'){
@@ -1151,7 +1153,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const form=svcForm(f).replace(/<div class="err">[\s\S]*?<\/div>$/,'');
     const cards={};form.split('<!--cd:').slice(1).forEach(x=>{const j=x.indexOf('-->');const t=x.slice(0,j);cards[t]=x.slice(j+3).replace(/^<div class="cd"><div class="lbl">[^<]*<\/div>/,'<div class="cd">')});
     let h=`<div class="cd" style="gap:8px"><div class="lbl" style="margin:0">Paso ${i+1} de ${P.length}</div><b style="font-size:18px">${E(paso)}</b>${f.frec&&i>0?`<span style="font-size:13px;color:#6B5E55">Envía <b style="color:#1F1A17">${E(f.frec)}</b> · cliente frecuente</span>`:''}<div style="display:grid;grid-template-columns:repeat(${P.length},minmax(0,1fr));gap:6px">${P.map((_,k)=>`<span style="height:5px;border-radius:9px;background:${k<=i?'#C4410C':'#EADFD6'}"></span>`).join('')}</div></div>`;
-    if(i===0)h+=busca;
+    const pideR=f.tipo==='recojo'&&f.pide==='recibe';
+    if(f.tipo==='recojo'&&i===0){if(!f.pide)f.pide='envia';
+      const bQ=(v,t)=>`<button type="button" style="height:58px;border-radius:16px;border:1.5px solid ${f.pide===v?'#C4410C':'#F1E4DA'};background:${f.pide===v?'#FFF4EC':'#FFFFFF'};color:#1F1A17;font:inherit;font-size:17px;font-weight:${f.pide===v?800:700};cursor:pointer${f.pide===v?';box-shadow:inset 0 0 0 1px #C4410C':''}" aria-pressed="${f.pide===v}" data-a="pe:set:pide:${v}">${t}</button>`;
+      h+=`<div class="cd"><div class="lbl">¿Quién manda a recoger?</div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${bQ('envia','Quien envía')}${bQ('recibe','Quien recibe')}</div><span style="font-size:13px;color:#6B5E55;line-height:1.45">${pideR?'El cliente es <b style="color:#1F1A17">quien recibe</b>: pide que vayan a recoger donde otra persona y se lo lleven.':'El cliente es <b style="color:#1F1A17">quien envía</b>: pide que recojan en su lugar y lo lleven a otra persona.'}</span></div>`}
+    if(pideR?paso==='Información de quien recibe':i===0)h+=pideR?busca.replace('los datos de quien envía','los datos de quien recibe'):busca;
     if(paso==='Asignar motorizado'){
       const ms=PE.motos,ini=n=>String(n||'?').trim().split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
       h+=`<div class="cd"><div class="lbl">Seleccionar motorizado</div>${ms==null?'<div class="load">Cargando motorizados…</div>':ms.length?`<div class="mob">${ms.map(m=>`<button type="button" class="${String(f.moto)===String(m.id)?'on':''}" data-a="pe:mo:${E(m.id)}" aria-pressed="${String(f.moto)===String(m.id)}"><i>${E(ini(m.nombre_completo))}</i><span>${E(m.nombre_completo||'Motorizado')}</span></button>`).join('')}</div>`:'<span style="font-size:14px;color:#6B5E55">No hay motorizados activos.</span>'}<span style="font-size:13px;color:#6B5E55">${f.moto?'Le avisamos por la app y se abre WhatsApp con el mensaje listo. Toca otra vez para quitarlo.':'Si no eliges ninguno, el pedido queda en Pedidos como «sin motorizado» para asignarlo luego.'}</span></div>`;
@@ -1182,6 +1188,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const paso=nsPasos(f)[f.paso||0],t=v=>String(v||'').trim();
     if(paso==='Información del cliente'){if(!t(f.nom))return 'Escribe el nombre del cliente.';if(!t(f.tel))return 'Escribe el teléfono del cliente.'}
     if(paso==='Información de quien envía'){if(!t(f.rnom))return 'Escribe el nombre de quien envía.';if(!t(f.rtel))return 'Escribe el teléfono de quien envía.'}
+    if(paso==='Información de quien recibe'&&f.tipo==='recojo'&&f.pide==='recibe'){if(!t(f.enom))return 'Escribe el nombre de quien recibe (es quien pide el servicio).';if(!t(f.etel))return 'Escribe el teléfono de quien recibe (es quien pide el servicio).'}
     if(paso==='Información de la compra'&&!t(f.detalle))return 'Escribe qué hay que comprar.';
     if(paso==='Paquetes de la encomienda'){if(!t(f.ag)||!t(f.dest))return 'Escribe la agencia y el destino del paquete 1.';if(!f.tpago)return 'Elige la modalidad de pago del paquete 1.';
       const k=f.paqs.findIndex(q=>!q.tpago||!t(q.ag)||!t(q.dest));if(k>=0)return 'Completa agencia, destino y modalidad de pago del paquete '+(k+2)+'.'}
@@ -1196,6 +1203,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const c=((C2.cli&&C2.cli.data)||[]).find(x=>String(x.id)===String(id));if(!c)return;
     f.cli=c.id;f.cq='';
     if(f.tipo==='compra')Object.assign(f,{nom:cliN(c),tel:cliT(c),dir:c.direccion||f.dir,ubi:cliU(c)||f.ubi});
+    else if(f.tipo==='recojo'&&f.pide==='recibe')Object.assign(f,{enom:cliN(c),etel:cliT(c),edir:c.direccion||f.edir,eubi:cliU(c)||f.eubi});
     else Object.assign(f,{rnom:cliN(c),rtel:cliT(c),rdir:c.direccion||f.rdir,rubi:cliU(c)||f.rubi},f.tipo==='enc'?{rdni:c.documento||c.dni||f.rdni}:{});
   }
   async function svcCrear(f,win){
@@ -2535,7 +2543,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
       if(PE.f&&/^pe:pq(ag|ds):\d+:\d+$/.test(a.dataset.a)){const [,t,i,k]=a.dataset.a.split(':'),q=PE.f.paqs[+i];
         if(q){if(t==='pqag'){const x=(PE.ags||[])[+k];if(x){if(String(q.ag).trim().toLowerCase()!==String(x.nombre).trim().toLowerCase())q.dest='';q.ag=x.nombre}}else{const x=nsDsL(q.ag)[+k];if(x)q.dest=x.destino_final}}
         key='';pintar();return}
-      if(PE.f&&a.dataset.a.startsWith('pe:set:')){const [,,k,...v]=a.dataset.a.split(':');PE.f[k]=v.join(':');key='';pintar();return}
+      if(PE.f&&a.dataset.a.startsWith('pe:set:')){const [,,k,...v]=a.dataset.a.split(':');PE.f[k]=v.join(':');if(k==='pide'&&PE.f.tipo==='recojo'){PE.f.quien=PE.f.pide;PE.f.cli=null}key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:met:')){PE.f.metodo=a.dataset.a.slice(7);key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:quitar:')){const i=+a.dataset.a.slice(10),x=PE.f.items[i];if(x&&PE.f.items.length>1){PE.f.quitar.push(x.id);PE.f.items.splice(i,1);key='';pintar()}else if(x){(window.pdAviso||alert)('El pedido debe tener al menos un producto.')}return}
     switch(a.dataset.a){
