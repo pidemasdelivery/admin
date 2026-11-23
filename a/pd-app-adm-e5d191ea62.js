@@ -2075,18 +2075,16 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     clave(){const f=SF['__perfil'],t=f.ver?'text':'password';
       const ojo='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
       const cmp=(id,l,c,ac)=>`<div class="fld"><label for="${id}">${l}</label><input id="${id}" type="${t}" autocomplete="${ac}" maxlength="72" value="${E(f[c]||'')}" data-in="sf:${c}"></div>`;
-      let h=`<div class="cd">${cmp('pfP0','Contraseña actual','p0','current-password')}${cmp('pfP1','Nueva contraseña','p1','new-password')}${cmp('pfP2','Repite la nueva contraseña','p2','new-password')}<button type="button" class="b" style="height:42px" data-sa="clave:ver">${ojo}${f.ver?'Ocultar contraseñas':'Mostrar contraseñas'}</button><span style="font-size:13px;color:#6B5E55">Usa al menos 6 caracteres. Al cambiarla, entrarás con la nueva clave en todos tus teléfonos.</span></div>`;
+      let h=`<div class="cd">${cmp('pfP1','Nueva contraseña','p1','new-password')}${cmp('pfP2','Repite la nueva contraseña','p2','new-password')}<button type="button" class="b" style="height:42px" data-sa="clave:ver">${ojo}${f.ver?'Ocultar contraseñas':'Mostrar contraseñas'}</button><span style="font-size:13px;color:#6B5E55">Usa al menos 6 caracteres. Al cambiarla, entrarás con la nueva clave en todos tus teléfonos.</span></div>`;
       if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
       return {head:top3('Seguridad','Cambiar contraseña').replace('data-a="volver"','data-sa="clave:salir"'),body:h,foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="clave:guardar">Guardar contraseña</button>`}},
     async a(x){const k='__perfil',f=SF[k],d=C2['s:'+k]&&C2['s:'+k].data;f.msg='';
       if(x==='clave:abrir'){f.vista='clave';f.p0='';f.p1='';f.p2='';f.ver=false;try{history.pushState({pdApp:1,pdClave:1},'')}catch(_){}return}
       if(x==='clave:salir'){f.vista=null;f.p0='';f.p1='';f.p2='';if(history.state&&history.state.pdClave){ignorarPop=true;history.back()}return}
       if(x==='clave:ver'){f.ver=!f.ver;return}
-      if(x==='clave:guardar'){const a0=String(f.p0||''),n=String(f.p1||''),r=String(f.p2||'');
-        if(!a0){f.msg='Escribe tu contraseña actual.';return}if(n.length<6){f.msg='La nueva contraseña debe tener al menos 6 caracteres.';return}if(n!==r){f.msg='Las contraseñas nuevas no coinciden.';return}if(n===a0){f.msg='La nueva contraseña debe ser diferente a la actual.';return}
-        const {data:u}=await D().auth.getUser();const email=u&&u.user&&u.user.email;if(!email){f.msg='Tu sesión expiró. Vuelve a ingresar.';return}
-        const e1=(await D().auth.signInWithPassword({email,password:a0})).error;if(e1){f.msg='La contraseña actual no es correcta.';return}
-        const e2=(await D().auth.updateUser({password:n})).error;if(e2){const t=String(e2.message||'');f.msg=/different/i.test(t)?'La nueva contraseña debe ser diferente a la actual.':/weak|short|least/i.test(t)?'La nueva contraseña es muy débil. Usa una más larga.':'No se pudo cambiar: '+t;return}
+      if(x==='clave:guardar'){const n=String(f.p1||''),r=String(f.p2||'');
+        if(n.length<6){f.msg='La nueva contraseña debe tener al menos 6 caracteres.';return}if(n!==r){f.msg='Las contraseñas no coinciden.';return}
+        try{await accInvocar('cambiar-mi-password',{password:n})}catch(e){f.msg=e.message||String(e);return}
         f.p0='';f.p1='';f.p2='';f.vista=null;if(history.state&&history.state.pdClave){ignorarPop=true;history.back()}ok('Contraseña actualizada');return}
       if(x==='guardar'){const n=String(f.nom||'').trim();if(!n){f.msg='Escribe tu nombre.';return}const w=String(f.wa||'').replace(/\D/g,'');if(w&&w.length!==9&&w.length!==11){f.msg='El WhatsApp de administración debe tener 9 dígitos.';return}
         if(d.uid){const q=await D().from('perfiles').update({nombre_completo:n}).eq('id',d.uid).select('id').maybeSingle();if(q.error){f.msg='No se pudo guardar: '+q.error.message;return}}
@@ -2094,7 +2092,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         const cfg=await leerCfg();if(cfg&&(cfg.whatsapp_admin||'')!==w){cfg.whatsapp_admin=w;cfg.actualizado_en=new Date().toISOString();try{await guardarCfg(cfg)}catch(e){f.msg='Se guardó tu nombre, pero no el WhatsApp: '+(e.message||e);return}}
         ok('Cambios guardados');recargar(k);f.nom=null;return}
       if(x==='clave'){if(String(f.p1).length<6){f.msg='La contraseña debe tener al menos 6 caracteres.';return}if(f.p1!==f.p2){f.msg='Las dos contraseñas no coinciden.';return}
-        const q=await D().auth.updateUser({password:f.p1});if(q.error){f.msg='No se pudo cambiar: '+q.error.message;return}f.p1='';f.p2='';ok('Contraseña actualizada')}}};
+        try{await accInvocar('cambiar-mi-password',{password:f.p1})}catch(e){f.msg=e.message||String(e);return}f.p1='';f.p2='';ok('Contraseña actualizada')}}};
 
   /* --- Planilla de sueldos --- */
   SEC['planilla de sueldos']={g:'Control de caja y sueldos',t:'Planilla de sueldos',rf:1,
