@@ -914,7 +914,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const Es=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const bs=[];if(wa)bs.push({k:'wa',t:'Enviar por WhatsApp',sub:tel?'Al '+tel:'',c:'g',queda:true});bs.push({k:'copiar',t:'Copiar mensaje',c:wa?'':'o',queda:true});
     if(!window.pdVentana){try{await navigator.clipboard.writeText(txt)}catch(_){}(window.pdAviso||alert)('Cuenta creada. Copiamos el mensaje para enviarlo.');return}
-    window.pdVentana({ic:'ok',titulo:'Cuenta creada',cancelar:'Cerrar',
+    window.pdVentana({ic:'ok',titulo:o.titulo||'Cuenta creada',cancelar:'Cerrar',
       html:`<p>Envíale este mensaje ${neg?'al negocio':'al motorizado'}. Puedes editarlo antes de enviarlo.</p><label for="pdMaTx" style="position:absolute;width:1px;height:1px;overflow:hidden">Mensaje</label><textarea id="pdMaTx" rows="11">${Es(txt)}</textarea>`,
       botones:bs,
       alTocar:async(k,r,x)=>{const t=r.getElementById('pdMaTx').value;
@@ -1698,7 +1698,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       return `<div class="cd"><div class="row" style="align-items:center"><span style="flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#FDEBDF;color:#C4410C;display:flex;align-items:center;justify-content:center;font-weight:800">${E(nom.charAt(0).toUpperCase())}</span><span style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:16px;overflow-wrap:anywhere">${E(nom)}</b><span style="font-size:13px;color:#6B5E55;overflow-wrap:anywhere">${E(x.email||'Correo no disponible')}</span></span><span class="pl${off?' r':' g'}">${off?'Inactiva':'Activa'}</span></div>
         ${ab?`<div class="fld"><label>Nueva contraseña</label><input type="${f.ver?'text':'password'}" autocomplete="new-password" data-in="acc:npw" value="${E(f.npw||'')}" data-sin-pegar></div><span id="pwCnt" style="font-size:13px;font-weight:600;color:${pwColor(String(f.npw||'').length)}">${pwTxt(String(f.npw||'').length)}</span>
           <div class="row"><button type="button" class="b" style="flex:1;height:44px" data-sa="ngen">Generar</button><button type="button" class="b" style="flex:1;height:44px" data-sa="pwx">Cancelar</button><button type="button" class="b o" style="flex:1.4;height:44px" data-sa="pwok:${i}">Guardar</button></div>`
-        :`<div class="row"><button type="button" class="b" style="flex:1;height:42px" data-sa="pw:${i}">Contraseña</button><button type="button" class="b" style="flex:1;height:42px" data-sa="mail:${i}">Correo</button></div>`}</div>`}).join('')}
+        :`<div class="row"><button type="button" class="b" style="flex:1;height:42px" data-sa="pw:${i}">Contraseña</button><button type="button" class="b" style="flex:1;height:42px" data-sa="mail:${i}">Correo</button></div><button type="button" class="b" style="width:100%;height:42px;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px" data-sa="reenv:${i}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>Reenviar acceso y bienvenida</button>`}</div>`}).join('')}
   async function accAccion(tipo,f,op,arg,recargarLista){
     if(op==='gen'){f.pw=genPw();f.ver=true;return true}
     if(op==='ver'){f.ver=!f.ver;return true}
@@ -1709,6 +1709,13 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(op==='pwok'&&x){if(String(f.npw||'').length<12){mal('La contraseña debe tener al menos 12 caracteres.');return true}
       const uid=await accUidDe(tipo,x);if(!uid){mal('No se identificó la cuenta. Actualiza la lista y vuelve a intentarlo.');return true}
       try{await accInvocar('cambiar-password-'+tipo,{user_id:uid,password:f.npw});ok('Contraseña actualizada. Comunícala de forma privada.');f.pwi=null;f.npw=''}catch(e){mal('No se pudo cambiar la contraseña: '+(e.message||e))}return true}
+    if(op==='reenv'&&x){const uid=await accUidDe(tipo,x);if(!uid){mal('No se identificó la cuenta. Actualiza la lista y vuelve a intentarlo.');return true}
+      const nom=accNom(tipo,x);
+      if(!await pregunta('Reenviar acceso a '+nom+'\nPor seguridad no guardamos las contraseñas, así que se creará una contraseña nueva y la anterior dejará de funcionar.\n\nLuego podrás enviarle el mensaje de bienvenida con su correo y su nueva contraseña.'))return true;
+      const pw=genPw();
+      try{await accInvocar('cambiar-password-'+tipo,{user_id:uid,password:pw})}catch(e){mal('No se pudo preparar el acceso: '+(e.message||e));return true}
+      try{window.pdMensajeAcceso&&window.pdMensajeAcceso({tipo,id:tipo==='negocio'?(x.negocio_id||x.negocioId||''):(x.motorizado_id||x.motorizadoId||''),nombre:tipo==='negocio'?nom:'',email:x.email||'',password:pw,titulo:'Acceso listo para reenviar'})}catch(_){}
+      return true}
     if(op==='mail'&&x){const uid=await accUidDe(tipo,x);if(!uid){mal('No se identificó la cuenta. Actualiza la lista y vuelve a intentarlo.');return true}
       const n=await pedirL('Nuevo correo de acceso para '+accNom(tipo,x)+':',x.email||'');if(n==null)return true;const em=String(n).trim().toLowerCase();
       if(!emailOk(em)){mal('Escribe un correo válido.');return true}if(em===String(x.email||'').toLowerCase())return true;
