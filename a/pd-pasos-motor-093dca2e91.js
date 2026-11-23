@@ -42,7 +42,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .card.d{background:#FFFFFF;opacity:1}
 .card.a{background:#FFFFFF;border:1.5px solid #C4410C;box-shadow:0 6px 18px rgba(196,65,12,.10);opacity:1}
 .head{width:100%;display:flex;align-items:center;gap:12px;padding:14px;background:transparent;border:0;text-align:left;color:inherit;cursor:pointer}
-.card.l .head{cursor:default}
+.card.l .head{cursor:default}.card.l.v .head{cursor:pointer}
 .dot{flex:0 0 34px;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;background:#EADFD6;color:#6B5E55}
 .card.d .dot{background:#15803D;color:#FFFFFF}.card.a .dot{background:#C4410C;color:#FFFFFF}
 .hx{flex:1 1 0%;min-width:0}
@@ -124,8 +124,8 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 
   function head(s,i,open){
     const cls=s.state==='done'?'d':s.state==='active'?'a':'l';
-    const sub=s.state==='locked'?s.locked:(s.state==='done'&&!open?s.sum:'');
-    return `<div class="card ${cls}${open?' open':''}" data-i="${i}"><button type="button" class="head" data-toggle="${i}" aria-expanded="${open}"><span class="dot">${s.state==='done'?I.check:(i+1)}</span><span class="hx"><span class="ht">${E(s.title)}</span>${sub?`<span class="hs">${E(sub)}</span>`:''}</span>${s.state==='locked'?I.lock:I.chev}</button>${open&&s.state!=='locked'?`<div class="body">${s.body||''}</div>`:''}</div>`;
+    const sub=s.state==='locked'?(s.ver?(open?'':'Aún no llega · toca para revisar'):s.locked):(s.state==='done'&&!open?s.sum:'');
+    return `<div class="card ${cls}${s.ver?' v':''}${open?' open':''}" data-i="${i}"><button type="button" class="head" data-toggle="${i}" aria-expanded="${open}"><span class="dot">${s.state==='done'?I.check:(i+1)}</span><span class="hx"><span class="ht">${E(s.title)}</span>${sub?`<span class="hs">${E(sub)}</span>`:''}</span>${s.state==='locked'&&!s.ver?I.lock:I.chev}</button>${open&&(s.state!=='locked'||s.ver)?`<div class="body">${s.body||''}</div>`:''}</div>`;
   }
 
   function render(){
@@ -134,7 +134,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
     if(!m){close();return}
     cur.m=m;
     const ai=m.steps.findIndex(s=>s.state==='active');
-    const key=ai+'|'+JSON.stringify([m.title,m.chip,m.steps.map(s=>[s.state,s.title,s.sum,s.body]),m.cta&&[m.cta.label,m.cta.off,m.cta.green,m.cta.hint],m.fin,m.alt&&m.alt.map(a=>a.label),m.err,cur.open]);
+    const key=ai+'|'+JSON.stringify([m.title,m.chip,m.steps.map(s=>[s.state,s.title,s.sum,s.body,!!s.ver]),m.cta&&[m.cta.label,m.cta.off,m.cta.green,m.cta.hint],m.fin,m.alt&&m.alt.map(a=>a.label),m.err,cur.open]);
     if(key===cur.key)return;
     const act=cur.root.activeElement;
     if(act&&act.tagName==='INPUT'&&cur.lastActive===ai)return;
@@ -161,7 +161,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
   function wire(){
     const r=cur.root,m=cur.m;
     r.querySelector('.back').onclick=()=>close();
-    r.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>{const i=+b.dataset.toggle;const s=m.steps[i];if(!s||s.state==='locked')return;cur.open[i]=!cur.open[i];cur.key=null;render()});
+    r.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>{const i=+b.dataset.toggle;const s=m.steps[i];if(!s||(s.state==='locked'&&!s.ver))return;cur.open[i]=!cur.open[i];cur.key=null;render()});
     r.querySelectorAll('[data-alt]').forEach(b=>b.onclick=()=>{const a=m.alt[+b.dataset.alt];if(a&&a.run)a.run()});
     r.querySelectorAll('[data-act]').forEach(b=>{const f=m.acts&&m.acts[b.dataset.act];if(!f)return;const ev=b.tagName==='INPUT'?'input':'click';b.addEventListener(ev,e=>f(b,e))});
     const sl=r.querySelector('.sl');if(!sl||!m.cta)return;

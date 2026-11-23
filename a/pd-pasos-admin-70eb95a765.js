@@ -89,6 +89,8 @@
       m.mounted=root=>PM.montar(root,{pedidoId:String(o.id),motoId:o.motorizado_id,motoNombre:String(mn||'').split(' ')[0]||'El motorizado',fase,rec:pto(rec,rL),ent:pto(ent,eL),recLink:lnk(rL),entLink:lnk(eL),...(txt||{})});
     }catch(_){}
   }
+  /* Solo admin: los pasos del motorizado que aún no llegan se pueden abrir para revisar los datos */
+  function verPasos(steps){[2,3].forEach(i=>{const s=steps[i];if(s&&s.state==='locked'&&s.body){s.ver=true;s.body=U.note('Todavía no llega a este paso. Revisa que los datos estén bien.')+s.body}})}
   function modeloSvc(o){
     const id=String(o.id),t=svc(o),e=etapaSvc(o),s0=st(o),mo=moto(o),mn=o.motorizado_nombre||mo.nombre_completo||'El motorizado';
     const NOM={enc:'Encomienda',compra:'Compra',recojo:'Recojo y entrega'}[t]||'Pedido';
@@ -172,6 +174,7 @@
     m.alt=[];
     if(e===2&&s0==='asignado')m.alt.push({label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}});
     m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()}};
+    verPasos(steps);
     if(e===2||(e===3&&t!=='enc'))ponerMapa(m,steps,e,o,e===2?'recojo':'entrega',[o.latitud_recojo,o.longitud_recojo],[o.latitud_entrega,o.longitud_entrega],mn,
       t==='recojo'?{recPin:'Envía · '+String(remN).split(' ')[0],entPin:'Recibe · '+String(recN).split(' ')[0],recTx:'de quien envía',entTx:'de quien recibe',recQuien:'Quien envía',entQuien:'Quien recibe'}
       :t==='compra'?{recPin:'Compra',recTx:'del lugar de compra',recQuien:'El lugar de compra'}
@@ -248,6 +251,7 @@
     m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()},
       tiempo:b=>{tiempoSel[id]=Number(b.dataset.n);PdPasos.render()},
       pago:b=>{if(b.disabled)return;pagoSel[id]=b.dataset.k;PdPasos.render()}};
+    verPasos(steps);
     if(!finCerrado&&(e===2||e===3))ponerMapa(m,steps,e,o,e===2?'recojo':'entrega',[n.latitud,n.longitud,n.google_maps_url],[o.latitud_entrega,o.longitud_entrega],mn,{recPin:String(negNom).slice(0,18),recTx:'del local',recQuien:'El negocio'});
     return m;
   }
