@@ -1676,7 +1676,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   const accUid=c=>{for(const k of ACC_K){const v=c&&c[k];if(v!=null&&String(v).trim())return String(v)}return ''};
   const genPw=()=>{const ch='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%*';const a=new Uint32Array(14);crypto.getRandomValues(a);return [...a].map(n=>ch[n%ch.length]).join('')};
   const emailOk=v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||'').trim());
-  async function accInvocar(fn,body){const {data,error}=await D().functions.invoke(fn,{body});if(error)throw error;if(data&&data.error)throw new Error(data.error);return data}
+  async function accInvocar(fn,body){const {data,error}=await D().functions.invoke(fn,{body});if(error){let m='';try{const c=error.context;if(c&&c.json){const j=await c.clone().json();m=j&&(j.error||j.message)||''}}catch(_){}throw new Error(m||error.message||'Error desconocido')}if(data&&data.error)throw new Error(data.error);return data}
   async function accListar(tipo){const d=await accInvocar('listar-accesos-'+tipo,{});return Array.isArray(d&&d.cuentas)?d.cuentas:(Array.isArray(d)?d:[])}
   const accNom=(tipo,c)=>tipo==='negocio'?(c.negocio_nombre||c.nombre_negocio||c.nombre||'Negocio'):(c.motorizado_nombre||c.nombre_motorizado||c.nombre_completo||c.nombre||'Motorizado');
   async function accUidDe(tipo,c){const u=accUid(c);if(u||tipo!=='negocio')return u;const nid=c.negocio_id||c.negocioId;if(!nid)return '';
