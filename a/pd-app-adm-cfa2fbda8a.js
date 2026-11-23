@@ -2068,12 +2068,16 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     load:async()=>{const {data:{session}}=await D().auth.getSession();const uid=session&&session.user&&session.user.id;let p={};if(uid){const r=await D().from('perfiles').select('*').eq('id',uid).maybeSingle();p=r.data||{}}const cfg=await leerCfg();return {uid,email:session&&session.user&&session.user.email,p,wa:(cfg&&cfg.whatsapp_admin)||'986233533'}},
     v(){const k='__perfil',c=datos(k,this.load),f=SF[k];if(f.vista==='clave')return this.clave();if(!c.data)return {body:cargando(c)};const d=c.data;if(f.nom==null){f.nom=d.p.nombre_completo||d.p.nombre||'';f.wa=d.wa;f.p1='';f.p2=''}
       const foto=f.prev||d.p.foto_url||window.__pdAdminFoto||'';
-      let h=`<div class="ph"><div style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:20px">${E(f.nom||'Administrador')}</b><span style="font-size:13px;color:#6B5E55">Administrador · ${E(d.email||'')}</span></div></div>`;
-      h+=`<div class="cd"><div class="lbl">Tus datos</div><div class="fld"><label for="pfN">Tu nombre</label><input id="pfN" maxlength="40" value="${E(f.nom)}" data-in="sf:nom"></div><div class="fld"><label for="pfW">WhatsApp de administración</label><input id="pfW" type="tel" inputmode="numeric" maxlength="15" value="${E(f.wa)}" data-in="sf:wa"></div><span style="font-size:13px;color:#6B5E55">A este número los motorizados envían la guía y clave de las encomiendas y los avisos de problemas.</span><button type="button" class="b o" data-sa="guardar">Guardar cambios</button></div>`;
-      if(window.PdAvisos)h+=window.PdAvisos.card('data-sa','Suena cuando entra un pedido nuevo.');
-      h+=`<div class="cd"><div class="lbl">Seguridad</div><button type="button" class="b" data-sa="clave:abrir">${IC.lock||''}Cambiar contraseña</button></div>`;
+      const CAM='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+      const CAN='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+      let h=`<div class="ph"><span class="ava"${foto?` style="background-image:url('${E(foto)}')"`:''}>${foto?'':E(String(f.nom||'A').trim().charAt(0).toUpperCase()||'A')}</span><div style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:20px;overflow-wrap:anywhere">${E(f.nom||'Administrador')}</b><span class="pl g" style="margin-top:4px">Administrador</span></div><label class="b" style="height:44px;cursor:pointer">${f.subiendo?'Subiendo…':CAM+'Foto'}<input type="file" accept="image/png,image/jpeg,image/webp" data-in="pfoto" style="display:none"${f.subiendo?' disabled':''}></label></div>`;
+      if(foto&&!f.prev)h+=`<button type="button" class="b" style="height:40px;color:#B42318;border-color:#F4C7C3" data-sa="foto:quitar">Quitar foto</button>`;
+      h+=`<div class="cd"><div class="lbl">Tus datos</div><div class="fld"><label for="pfN">Tu nombre</label><input id="pfN" maxlength="40" value="${E(f.nom)}" data-in="sf:nom"></div><div class="fld"><label for="pfW">WhatsApp de administración</label><input id="pfW" type="tel" inputmode="numeric" maxlength="15" value="${E(f.wa)}" data-in="sf:wa"></div><span style="font-size:13px;color:#6B5E55">A este número los motorizados envían la guía y clave de las encomiendas y los avisos de problemas.</span><div class="fld"><label>Correo</label><input value="${E(d.email||'')}" disabled></div></div>`;
       if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
-      h+=`<button type="button" class="b" style="color:#B42318;border-color:#F4C7C3" data-a="salir">${IC.logout}Cerrar sesión</button>`;
+      h+=`<button type="button" class="b o" data-sa="guardar">Guardar cambios</button>`;
+      h+=`<button type="button" class="tl" data-sa="clave:abrir"><span class="ic">${CAN}</span><span class="tx"><b>Contraseña</b><span>Cambia la clave de tu panel</span></span>${IC.chev}</button>`;
+      if(window.PdAvisos)h+=window.PdAvisos.card('data-sa','Suena cuando entra un pedido nuevo.');
+      h+=`<button type="button" class="b" style="height:54px;font-size:16px;color:#B42318;border-color:#F4C7C3;background:#FFFFFF" data-a="salir">${IC.logout}Cerrar sesión</button>`;
       return {body:h}},
     /* Cambiar contraseña: página propia, igual que en el panel del negocio */
     clave(){const f=SF['__perfil'],t=f.ver?'text':'password';
@@ -2084,6 +2088,9 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       return {head:top3('Seguridad','Cambiar contraseña').replace('data-a="volver"','data-sa="clave:salir"'),body:h,foot:`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="clave:guardar">Guardar contraseña</button>`}},
     async a(x){const k='__perfil',f=SF[k],d=C2['s:'+k]&&C2['s:'+k].data;f.msg='';
       if(x.startsWith('avs:')){if(window.PdAvisos)await window.PdAvisos.accion(x.slice(4));return}
+      if(x==='foto:quitar'){if(!(await conf('¿Quitar tu foto de perfil?')))return;const uid=d&&d.uid;if(!uid)return;
+        const q=await D().from('perfiles').update({foto_url:null}).eq('id',uid).select('id').maybeSingle();if(q.error){f.msg='No se pudo quitar la foto: '+q.error.message;return}
+        if(d.p)d.p.foto_url=null;f.prev='';window.__pdAdminFoto='';try{localStorage.setItem('pdAdminFoto','')}catch(_){}ok('Foto eliminada');return}
       if(x==='clave:abrir'){f.vista='clave';f.p0='';f.p1='';f.p2='';f.ver=false;try{history.pushState({pdApp:1,pdClave:1},'')}catch(_){}return}
       if(x==='clave:salir'){f.vista=null;f.p0='';f.p1='';f.p2='';if(history.state&&history.state.pdClave){ignorarPop=true;history.back()}return}
       if(x==='clave:ver'){f.ver=!f.ver;return}
@@ -2455,7 +2462,14 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
       C[p[0]]=tNum(v);return}
     if(k.startsWith('sf:')){SF[secK][k.slice(3)]=el.value;const vv=el.dataset.vivo;if(vv&&SEC[secK].lista){clearTimeout(entrada.t);entrada.t=setTimeout(()=>{const b=root.getElementById(vv);if(b)b.innerHTML=SEC[secK].lista()},250)}return}
     if(k==='qrfile'){const fl=el.files&&el.files[0];el.value='';if(!fl)return;if(!/^image\//.test(fl.type)||fl.size>5*1024*1024){mal('Elige una imagen (PNG o JPG) de menos de 5 MB.');return}SF['qr yape'].file=fl;SF['qr yape'].prev=URL.createObjectURL(fl);key='';pintar();return}
-    if(k==='pfoto'){const fl=el.files&&el.files[0];el.value='';const i=$('pdhFotoFile');if(!fl||!i)return;try{const dt=new DataTransfer();dt.items.add(fl);i.files=dt.files;i.dispatchEvent(new Event('change',{bubbles:true}))}catch(_){}SF['__perfil'].prev=URL.createObjectURL(fl);key='';pintar();return}
+    if(k==='pfoto'){const fl=el.files&&el.files[0];el.value='';if(!fl)return;const f=SF['__perfil'],c=C2['s:__perfil'],d=c&&c.data;if(!f||!d||!d.uid)return;
+      if(!/^image\/(jpeg|png|webp)$/i.test(fl.type)||fl.size>5*1024*1024){mal('La foto debe ser JPG, PNG o WEBP y pesar máximo 5 MB.');return}
+      f.prev=URL.createObjectURL(fl);f.subiendo=1;f.msg='';key='';pintar();
+      (async()=>{try{const ext=({'image/jpeg':'jpg','image/png':'png','image/webp':'webp'})[fl.type]||'jpg',path=d.uid+'/perfil-'+Date.now()+'.'+ext,bk=D().storage.from('fotos-motorizados');
+        const up=await bk.upload(path,fl,{cacheControl:'3600',upsert:false,contentType:fl.type});if(up.error)throw up.error;
+        const url=bk.getPublicUrl(path).data.publicUrl;const q=await D().from('perfiles').update({foto_url:url}).eq('id',d.uid).select('id').maybeSingle();if(q.error)throw q.error;
+        if(d.p)d.p.foto_url=url;window.__pdAdminFoto=url;try{localStorage.setItem('pdAdminFoto',url)}catch(_){}ok('Foto actualizada')}
+        catch(e){f.msg='No se pudo subir la foto: '+(e.message||e)}finally{f.prev='';f.subiendo=0;key='';pintar()}})();return}
     if(k.startsWith('hr:')){const [,d,c]=k.split(':');SF['horario'].C.dias[d][c]=el.value;return}
     if(k.startsWith('dc:')){const f=SF['códigos de descuento'];if(f&&f.ed){let v=el.value;if(k==='dc:codigo'){v=v.toUpperCase().replace(/\s+/g,'');el.value=v}f.ed[k.slice(3)]=v;clearTimeout(entrada.d);entrada.d=setTimeout(()=>{const t=document.createElement('template');t.innerHTML=SEC['códigos de descuento'].form().body;const n=t.content.querySelector('.note'),o=root.querySelector('.list .note:last-of-type');const all=root.querySelectorAll('.list .note');if(n&&all.length)all[all.length-1].innerHTML=n.innerHTML},200)}return}
     if(k.startsWith('cf:')){CL.f[k.slice(3)]=el.value;return}
