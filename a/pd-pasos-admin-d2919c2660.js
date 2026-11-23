@@ -90,6 +90,25 @@
     }catch(_){}
   }
   /* Solo admin: los pasos del motorizado que aún no llegan se pueden abrir para revisar los datos */
+  /* Ubicación de las agencias (la que se marca en Más › Agencias o en el formulario de encomienda) */
+  const AGU={d:null,p:null};
+  const agClaveU=n=>String(n||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+  function agUbi(nom){
+    if(!AGU.d&&!AGU.p)AGU.p=fetch('https://escxesvzndmyfuteawey.supabase.co/storage/v1/object/public/restaurantes/config/agencias.json?t='+Date.now(),{cache:'no-store'})
+      .then(r=>r.ok?r.json():{}).then(j=>{AGU.d=(j&&j.agencias)||j||{};try{if(PdPasos.isOpen())PdPasos.render()}catch(_){}}).catch(()=>{AGU.d={}});
+    const u=(AGU.d||{})[agClaveU(nom)];return u&&Number.isFinite(+u.lat)&&Number.isFinite(+u.lng)&&+u.lat!==0?{lat:+u.lat,lng:+u.lng}:null;
+  }
+  /* punto de cada agencia: el paquete 1 usa el punto de entrega del pedido si lo tiene */
+  function agPunto(o,nom,primero){const la=Number(o.latitud_entrega),lo=Number(o.longitud_entrega);if(primero&&la&&lo)return {lat:la,lng:lo};return agUbi(nom)}
+  function agBotones(o,lista){
+    const vistos=new Set();let h='';
+    lista.forEach((nom,i)=>{nom=String(nom||'').trim();if(!nom||vistos.has(agClaveU(nom)))return;vistos.add(agClaveU(nom));
+      const pt=agPunto(o,nom,i===0);
+      h+=pt?`<a class="b o" style="display:flex;width:100%;box-sizing:border-box;justify-content:center" href="https://www.google.com/maps/dir/?api=1&destination=${pt.lat},${pt.lng}" target="_blank" rel="noopener">${(U.I&&U.I.nav)||''}Ir a la agencia ${E(nom)}</a>`
+        :(AGU.d?U.note('La agencia '+E(nom)+' no tiene ubicación guardada. Márcala en Más › Agencias.'):'');
+    });
+    return h;
+  }
   function verPasos(steps){[2,3].forEach(i=>{const s=steps[i];if(s&&s.state==='locked'&&s.body){s.ver=true;s.body=U.note('Todavía no llega a este paso. Revisa que los datos estén bien.')+s.body}})}
   function modeloSvc(o){
     const id=String(o.id),t=svc(o),e=etapaSvc(o),s0=st(o),mo=moto(o),mn=o.motorizado_nombre||mo.nombre_completo||'El motorizado';
@@ -153,6 +172,7 @@
       if(t==='enc'){s.sum=guias?'Guías enviadas':'En agencia';
         s.body=(enAg?U.st('Paquetes en la agencia '+E(o.agencia_destino||''),'ok'):U.st(E(mn)+' va a la agencia '+E(o.agencia_destino||'')))+
           sumBox('Envío',li('Agencia',E(o.agencia_destino||'—'))+li('Destino',E(o.destino_final||o.direccion_entrega||'—'))+li('Pago del envío',o.tipo_pago_encomienda==='pago_en_agencia'?'En agencia':'A destino'))+
+          agBotones(o,[o.agencia_destino].concat(paq.map(p=>p&&p.agencia)))+
           (guias?U.st('Guías y claves enviadas por el motorizado. Mándalas al cliente.','ok'):enAg?U.st('Esperando la foto de la guía y la clave'):'')+
           U.who(o.nombre_receptor||'—','Recibe en destino · '+E(o.destino_final||o.direccion_entrega||''),'',true)+U.contact(null,o.telefono_receptor,'');}
       else{const cob=t==='compra'?(o.pago_confirmado===true&&!(Number(o.monto_recibido)>0)?0:tot0):cobra;
@@ -175,6 +195,7 @@
     if(e===2&&s0==='asignado')m.alt.push({label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}});
     m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()}};
     verPasos(steps);
+    if(e===3&&t==='enc'&&!enAg){const ap=agPunto(o,o.agencia_destino,true);ponerMapa(m,steps,e,o,'entrega',[o.latitud_recojo,o.longitud_recojo],ap?[ap.lat,ap.lng]:[null,null],mn,{recPin:'Envía · '+String(remN).split(' ')[0],entPin:'Agencia '+String(o.agencia_destino||'').slice(0,16),recTx:'de quien envía',entTx:'de la agencia',recQuien:'Quien envía',entQuien:'La agencia'})}
     if(e===2||(e===3&&t!=='enc'))ponerMapa(m,steps,e,o,e===2?'recojo':'entrega',[o.latitud_recojo,o.longitud_recojo],[o.latitud_entrega,o.longitud_entrega],mn,
       t==='recojo'?{recPin:'Envía · '+String(remN).split(' ')[0],entPin:'Recibe · '+String(recN).split(' ')[0],recTx:'de quien envía',entTx:'de quien recibe',recQuien:'Quien envía',entQuien:'Quien recibe'}
       :t==='compra'?{recPin:'Compra',recTx:'del lugar de compra',recQuien:'El lugar de compra'}
