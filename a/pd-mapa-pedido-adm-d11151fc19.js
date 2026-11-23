@@ -186,7 +186,7 @@
 
   function pintar(v){
     const d=v.d,el=v.el,ir=s=>el.querySelector(s);
-    const obj=d.fase==='recojo'?d.rec:d.ent,dondeTx=d.fase==='recojo'?'del recojo':'del cliente';
+    const obj=d.fase==='recojo'?d.rec:d.ent,dondeTx=d.fase==='recojo'?(d.recTx||'del recojo'):(d.entTx||'del cliente');
     const link=d.fase==='recojo'?d.recLink:d.entLink,soloLink=!obj&&!!link;
     const edad=v.ts?Date.now()-v.ts:null;
     const sinSenal=!v.pos||edad==null||edad>SIN_SENAL_MS;
@@ -197,7 +197,7 @@
     if(!v.pos){l1='Aún no llega la ubicación';l2=nom+' todavía no compartió su ubicación';aviso='Se mostrará apenas '+nom+' abra su app con el GPS encendido.'}
     else if(sinSenal){l1='Sin señal desde las '+fHora(v.ts);l2=fHace(edad).replace(/^h/,'H')+(k!=null?' · estaba a '+fDist(k)+' '+dondeTx:'');eta='—';aviso='La app de '+nom+' está cerrada o sin internet. Se muestra su última ubicación conocida.'}
     else{l1=k!=null?'A '+fDist(k)+' '+dondeTx:'Ubicación en vivo';l2='Actualizado '+fHace(edad);if(k!=null)eta='~'+Math.max(1,Math.round(k*1.3/VEL_KMH*60))+' min'}
-    if(v.pos&&!obj)aviso=(aviso?aviso+' ':'')+(soloLink?(d.fase==='recojo'?'El recojo':'El cliente')+' mandó su ubicación solo como enlace, por eso no sale en el mapa ni se calcula la distancia. «Google Maps» abre ese enlace.':'Este pedido no tiene el punto '+(d.fase==='recojo'?'de recojo':'de entrega')+' en el mapa.');
+    if(v.pos&&!obj)aviso=(aviso?aviso+' ':'')+(soloLink?(d.fase==='recojo'?(d.recQuien||'El recojo'):(d.entQuien||'El cliente'))+' mandó su ubicación solo como enlace, por eso no sale en el mapa ni se calcula la distancia. «Google Maps» abre ese enlace.':'Este pedido no tiene el punto '+(d.fase==='recojo'?'de recojo':'de entrega')+' en el mapa.');
     ir('.pmL1').textContent=l1;ir('.pmL2').textContent=l2;ir('.pmEta').textContent=eta;
     const av=ir('.pmAviso');av.textContent=aviso;av.hidden=!aviso;
     const gm=ir('.pmGm');
@@ -209,8 +209,8 @@
     const pin=(letra,color,label,tenue)=>icono(`<div class="pmPin${tenue?' tenue':''}"><span class="g" style="background:${color}"><b>${letra}</b></span><span class="l">${E(label)}</span></div>`,70,62,35,40);
     const pone=(key,p,ic,z)=>{if(!p){if(v.mk[key]){v.mk[key].remove();delete v.mk[key]}return}
       if(v.mk[key]){v.mk[key].setLatLng([p.lat,p.lng]);v.mk[key].setIcon(ic)}else v.mk[key]=L.marker([p.lat,p.lng],{icon:ic,zIndexOffset:z||0,keyboard:false}).addTo(v.map)};
-    pone('rec',d.rec,pin('R','#1F1A17','Recojo',d.fase!=='recojo'),100);
-    pone('ent',d.ent,pin('E',G,'Cliente',d.fase!=='entrega'),100);
+    pone('rec',d.rec,pin('R','#1F1A17',d.recPin||'Recojo',d.fase!=='recojo'),100);
+    pone('ent',d.ent,pin('E',G,d.entPin||'Cliente',d.fase!=='entrega'),100);
     pone('moto',v.pos,icono(`<div class="pmMoto" title="${E(nom)}">${IC.moto}</div>`,44,44,22,22),1000);
     const lin=v.pos&&obj?[[v.pos.lat,v.pos.lng],[obj.lat,obj.lng]]:null;
     if(lin){if(v.linea)v.linea.setLatLngs(lin);else v.linea=L.polyline(lin,{color:O,weight:4,dashArray:'2 9',lineCap:'round',opacity:.9}).addTo(v.map)}

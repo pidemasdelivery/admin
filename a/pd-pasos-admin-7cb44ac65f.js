@@ -77,7 +77,7 @@
     return 2;
   }
   /* Mapa en vivo del motorizado dentro del paso «Recoger» y «Entrega y cobro» (justo debajo del estado) */
-  function ponerMapa(m,steps,e,o,fase,rec,ent,mn){
+  function ponerMapa(m,steps,e,o,fase,rec,ent,mn,txt){
     try{
       const PM=window.pdMapaPedido;if(!PM||!o.motorizado_id||(e!==2&&e!==3))return;
       const s=steps[e];if(!s||!s.body)return;
@@ -86,7 +86,7 @@
       const P=PM.puntos.pt,PL=PM.puntos.ptDeLink||(()=>null),LD=PM.puntos.linkDe||(()=>'');
       const pto=(c,ls)=>P(c&&c[0],c&&c[1])||ls.map(PL).find(Boolean)||null,lnk=ls=>ls.map(LD).find(Boolean)||'';
       const rL=[rec&&rec[2],o.ubicacion_recojo,o.direccion_recojo],eL=[o.ubicacion_entrega,o.direccion_entrega];
-      m.mounted=root=>PM.montar(root,{pedidoId:String(o.id),motoId:o.motorizado_id,motoNombre:String(mn||'').split(' ')[0]||'El motorizado',fase,rec:pto(rec,rL),ent:pto(ent,eL),recLink:lnk(rL),entLink:lnk(eL)});
+      m.mounted=root=>PM.montar(root,{pedidoId:String(o.id),motoId:o.motorizado_id,motoNombre:String(mn||'').split(' ')[0]||'El motorizado',fase,rec:pto(rec,rL),ent:pto(ent,eL),recLink:lnk(rL),entLink:lnk(eL),...(txt||{})});
     }catch(_){}
   }
   function modeloSvc(o){
@@ -171,7 +171,10 @@
     m.alt=[];
     if(e===2&&s0==='asignado')m.alt.push({label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}});
     m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()}};
-    if(e===2||(e===3&&t!=='enc'))ponerMapa(m,steps,e,o,e===2?'recojo':'entrega',[o.latitud_recojo,o.longitud_recojo],[o.latitud_entrega,o.longitud_entrega],mn);
+    if(e===2||(e===3&&t!=='enc'))ponerMapa(m,steps,e,o,e===2?'recojo':'entrega',[o.latitud_recojo,o.longitud_recojo],[o.latitud_entrega,o.longitud_entrega],mn,
+      t==='recojo'?{recPin:'Envía · '+String(remN).split(' ')[0],entPin:'Recibe · '+String(recN).split(' ')[0],recTx:'de quien envía',entTx:'de quien recibe',recQuien:'Quien envía',entQuien:'Quien recibe'}
+      :t==='compra'?{recPin:'Compra',recTx:'del lugar de compra',recQuien:'El lugar de compra'}
+      :{recPin:'Envía · '+String(remN).split(' ')[0],recTx:'de quien envía',recQuien:'Quien envía'});
     return m;
   }
   function modelo(){
@@ -244,7 +247,7 @@
     m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()},
       tiempo:b=>{tiempoSel[id]=Number(b.dataset.n);PdPasos.render()},
       pago:b=>{if(b.disabled)return;pagoSel[id]=b.dataset.k;PdPasos.render()}};
-    if(!finCerrado&&(e===2||e===3))ponerMapa(m,steps,e,o,e===2?'recojo':'entrega',[n.latitud,n.longitud,n.google_maps_url],[o.latitud_entrega,o.longitud_entrega],mn);
+    if(!finCerrado&&(e===2||e===3))ponerMapa(m,steps,e,o,e===2?'recojo':'entrega',[n.latitud,n.longitud,n.google_maps_url],[o.latitud_entrega,o.longitud_entrega],mn,{recPin:String(negNom).slice(0,18),recTx:'del local',recQuien:'El negocio'});
     return m;
   }
   function abrir(id){abierto=String(id);error='';PdPasos.open(modelo,{onClose:()=>{abierto=null}})}
