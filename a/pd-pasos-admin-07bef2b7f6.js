@@ -119,7 +119,14 @@
     const recN=t==='compra'?(o.nombre_cliente||remN):(o.nombre_receptor||o.nombre_cliente||'Quien recibe'),recT=t==='compra'?(o.telefono_cliente||remT):(o.telefono_receptor||o.telefono_cliente);
     const enAg=o.pedido_en_agencia===true||String(o.pedido_en_agencia||'').toLowerCase()==='true';
     let paq=[];try{paq=Array.isArray(o.paquetes_envio)?o.paquetes_envio:JSON.parse(o.paquetes_envio||'[]')}catch(_){}
-    const guias=!!o.guia_url||paq.some(p=>p&&(p.enviado_whatsapp||p.guia_url));
+    /* paquetes de la encomienda (agencia y destino) y la guía que subió el motorizado por cada uno */
+    const pks=[{numero:1,agencia:o.agencia_destino||'',destino:o.destino_final||o.direccion_entrega||''}];
+    {const m=String(o.observaciones||'').match(/PAQUETES ADICIONALES:\s*([^|]*(?:\|\|[^|]*)*)/);if(m)m[1].split('||').forEach(z=>{const r=z.match(/Paquete\s*(\d+)\s*:\s*Agencia\s*([^;]*);\s*destino\s*([^;]*)/i);if(r)pks.push({numero:+r[1],agencia:r[2].trim(),destino:r[3].trim()})})}
+    const gs=paq.filter(x=>x&&Number(x.numero)>0);
+    if(!gs.some(x=>Number(x.numero)===1)&&o.guia_url&&o.guia_url!=='whatsapp')gs.push({numero:1,guia_url:o.guia_url,clave:String(o.clave_guia||'')==='SIN_CLAVE'?'':o.clave_guia,sin_clave:String(o.clave_guia||'')==='SIN_CLAVE'});
+    const gDe=n=>gs.find(x=>Number(x.numero)===n);
+    const okG=x=>!!(x&&(x.enviado_whatsapp||(x.guia_url&&x.guia_url!=='whatsapp'&&(x.sin_clave||String(x.clave||'').trim()))));
+    const guias=pks.every(p=>okG(gDe(p.numero)));
     const titulos=t==='enc'?['Pedido recibido','Asignar motorizado','Recoger los paquetes','Agencia y guía','Cerrado']:['Pedido recibido','Asignar motorizado',t==='compra'?'Hacer la compra':'Recoger','Entrega y cobro','Cerrado'];
     const steps=titulos.map((tt,i)=>({title:tt,state:e===-1?'locked':e===4||i<e?'done':i===e?'active':'locked'}));
     const cobra=o.pago_confirmado===true&&!(Number(o.monto_recibido)>0)?0:Number(o.total||0);
@@ -163,7 +170,7 @@
         s.sum=(t==='enc'?'Recogido':'Recogido')+(o.en_camino_en?' · '+U.hora(o.en_camino_en):'');
         h+=U.who(remN,subQ('Recoge aquí · pedido '+U.ref(id)),'',true)+U.addr(o.direccion_recojo,o.referencia_recojo)+U.contact(U.maps(o.latitud_recojo,o.longitud_recojo,o.direccion_recojo,LK(o.ubicacion_recojo)),remT,'');
         if(t==='recojo'&&notas.length)h+=sumBox('Notas del servicio',txt(notas.join(' · ')));
-        if(t==='enc'){const det=paq.length?paq.map((p,i)=>li('Paquete '+(i+1),E([p&&p.agencia,p&&p.destino].filter(Boolean).join(' → ')||'—'))).join(''):li('Paquete 1',E([o.agencia_destino,o.destino_final].filter(Boolean).join(' → ')||'—'));h+=sumBox('Paquetes',det)}
+        if(t==='enc'){h+=sumBox('Paquetes',pks.map(p=>li('Paquete '+p.numero,E([p.agencia,p.destino].filter(Boolean).join(' → ')||'—'))).join(''))}
         if(alRec)h+=o.pago_confirmado===true?U.st('Cobro al recoger registrado · '+M(o.total)+' · '+metodo,'ok'):U.st('Cobra '+M(o.total)+' al recoger ('+(mom==='recojo_yape'?'Yape':'efectivo')+')');
       }
       s.body=h;}
@@ -172,8 +179,18 @@
       if(t==='enc'){s.sum=guias?'Guías enviadas':'En agencia';
         s.body=(enAg?U.st('Paquetes en la agencia '+E(o.agencia_destino||''),'ok'):U.st(E(mn)+' va a la agencia '+E(o.agencia_destino||'')))+
           sumBox('Envío',li('Agencia',E(o.agencia_destino||'—'))+li('Destino',E(o.destino_final||o.direccion_entrega||'—'))+li('Pago del envío',o.tipo_pago_encomienda==='pago_en_agencia'?'En agencia':'A destino'))+
-          agBotones(o,[o.agencia_destino].concat(paq.map(p=>p&&p.agencia)))+
-          (guias?U.st('Guías y claves enviadas por el motorizado. Mándalas al cliente.','ok'):enAg?U.st('Esperando la foto de la guía y la clave'):'')+
+          agBotones(o,pks.map(p=>p.agencia))+
+          (guias?U.st('El motorizado subió todas las guías y claves. Mándalas al cliente.','ok'):enAg?U.st('Esperando la foto de la guía y la clave'):'')+
+          pks.map(p=>{const g=gDe(p.numero),ruta=E([p.agencia,p.destino].filter(Boolean).join(' → ')||'Paquete'),foto=g&&g.guia_url&&g.guia_url!=='whatsapp'?g.guia_url:'';
+            if(!okG(g))return sumBox('Guía · paquete '+p.numero,li(ruta,'Aún no la sube'));
+            const clv=g.sin_clave?'La agencia no dio clave':String(g.clave||'—');
+            if(!foto)return sumBox('Guía · paquete '+p.numero,li(ruta,'Enviada por WhatsApp')+li('Clave','Revisa tu WhatsApp'));
+            const cliT=o.telefono_cliente||o.telefono_remitente,cliN=o.nombre_cliente||o.nombre_remitente||'';
+            const txt='Hola'+(cliN?' '+String(cliN).split(' ')[0]:'')+', te escribimos de Pidemás. Tu encomienda '+U.ref(id)+(pks.length>1?' (paquete '+p.numero+')':'')+' ya está en la agencia '+(p.agencia||'')+'.\nDestino: '+(p.destino||'—')+'\nClave de recojo: '+clv+'\nFoto de la guía: '+foto;
+            const tel=String(cliT||'').replace(/\D/g,''),wa=tel?'https://wa.me/'+(tel.length===9?'51'+tel:tel)+'?text='+encodeURIComponent(txt):'';
+            return `<div class="sum"><div class="lbl">Guía · paquete ${p.numero}</div><a href="${E(foto)}" target="_blank" rel="noopener"><img src="${E(foto)}" alt="Guía del paquete ${p.numero}" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;display:block"></a>`+
+              li('Ruta',ruta)+li('Clave de recojo',E(clv))+(g.subido_en?li('Subida',E(U.hora(g.subido_en))):'')+
+              (wa?`<a class="b o" style="display:flex;width:100%;box-sizing:border-box;justify-content:center;margin-top:6px" href="${E(wa)}" target="_blank" rel="noopener">Enviar al cliente por WhatsApp</a>`:U.note('El cliente no tiene teléfono registrado.'))+`</div>`}).join('')+
           U.who(o.nombre_receptor||'—','Recibe en destino · '+E(o.destino_final||o.direccion_entrega||''),'',true)+U.contact(null,o.telefono_receptor,'');}
       else{const cob=t==='compra'?(o.pago_confirmado===true&&!(Number(o.monto_recibido)>0)?0:tot0):cobra;
         s.sum=cob>0&&!alRec?'Cobrado '+M(cob)+' · '+metodo:'Entregado';
