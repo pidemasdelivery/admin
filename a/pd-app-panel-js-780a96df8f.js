@@ -18,10 +18,10 @@
   /* 3 · Login fijo a la pantalla */
   function loginVisible(){var l=document.getElementById('loginView');if(!l)return false;if(l.classList.contains('hidden')||l.hidden)return false;var cs=getComputedStyle(l);return cs.display!=='none'&&cs.visibility!=='hidden'}
   var antes=null;
-  function revisarLogin(){var v=loginVisible();if(v===antes)return;antes=v;document.documentElement.classList.toggle('pdLoginFijo',v);if(v)window.scrollTo(0,0)}
+  function revisarLogin(){var v=loginVisible();if(!v&&document.documentElement.classList.contains('pdCarga'))return;if(v===antes)return;antes=v;document.documentElement.classList.toggle('pdLoginFijo',v);if(v)window.scrollTo(0,0)}
   function iniciarLogin(){revisarLogin();var l=document.getElementById('loginView');
     if(l)new MutationObserver(revisarLogin).observe(l,{attributes:true,attributeFilter:['class','hidden','style']});
-    new MutationObserver(revisarLogin).observe(document.body,{attributes:true,attributeFilter:['class']});
+    new MutationObserver(revisarLogin).observe(document.body,{attributes:true,attributeFilter:['class']});new MutationObserver(revisarLogin).observe(document.documentElement,{attributes:true,attributeFilter:['class']});
     setInterval(revisarLogin,1000)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciarLogin);else iniciarLogin();
 
