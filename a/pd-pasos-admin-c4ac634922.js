@@ -76,6 +76,17 @@
     if(['en_camino','en_entrega','camino_entrega','confirmando_pago'].includes(s))return 3;
     return 2;
   }
+  /* Mapa en vivo del motorizado dentro del paso «Recoger» y «Entrega y cobro» (justo debajo del estado) */
+  function ponerMapa(m,steps,e,o,fase,rec,ent,mn){
+    try{
+      const PM=window.pdMapaPedido;if(!PM||!o.motorizado_id||(e!==2&&e!==3))return;
+      const s=steps[e];if(!s||!s.body)return;
+      const i=s.body.indexOf('</div>');
+      s.body=i<0?PM.slot()+s.body:s.body.slice(0,i+6)+PM.slot()+s.body.slice(i+6);
+      const P=PM.puntos.pt;
+      m.mounted=root=>PM.montar(root,{pedidoId:String(o.id),motoId:o.motorizado_id,motoNombre:String(mn||'').split(' ')[0]||'El motorizado',fase,rec:P(rec&&rec[0],rec&&rec[1]),ent:P(ent&&ent[0],ent&&ent[1])});
+    }catch(_){}
+  }
   function modeloSvc(o){
     const id=String(o.id),t=svc(o),e=etapaSvc(o),s0=st(o),mo=moto(o),mn=o.motorizado_nombre||mo.nombre_completo||'El motorizado';
     const NOM={enc:'Encomienda',compra:'Compra',recojo:'Recojo y entrega'}[t]||'Pedido';
@@ -158,6 +169,7 @@
     m.alt=[];
     if(e===2&&s0==='asignado')m.alt.push({label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}});
     m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()}};
+    if(e===2||(e===3&&t!=='enc'))ponerMapa(m,steps,e,o,e===2?'recojo':'entrega',[o.latitud_recojo,o.longitud_recojo],[o.latitud_entrega,o.longitud_entrega],mn);
     return m;
   }
   function modelo(){
@@ -230,6 +242,7 @@
     m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()},
       tiempo:b=>{tiempoSel[id]=Number(b.dataset.n);PdPasos.render()},
       pago:b=>{if(b.disabled)return;pagoSel[id]=b.dataset.k;PdPasos.render()}};
+    if(!finCerrado&&(e===2||e===3))ponerMapa(m,steps,e,o,e===2?'recojo':'entrega',[n.latitud,n.longitud],[o.latitud_entrega,o.longitud_entrega],mn);
     return m;
   }
   function abrir(id){abierto=String(id);error='';PdPasos.open(modelo,{onClose:()=>{abierto=null}})}
