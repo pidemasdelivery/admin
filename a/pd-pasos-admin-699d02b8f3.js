@@ -83,8 +83,10 @@
       const s=steps[e];if(!s||!s.body)return;
       const i=s.body.indexOf('</div>');
       s.body=i<0?PM.slot()+s.body:s.body.slice(0,i+6)+PM.slot()+s.body.slice(i+6);
-      const P=PM.puntos.pt;
-      m.mounted=root=>PM.montar(root,{pedidoId:String(o.id),motoId:o.motorizado_id,motoNombre:String(mn||'').split(' ')[0]||'El motorizado',fase,rec:P(rec&&rec[0],rec&&rec[1]),ent:P(ent&&ent[0],ent&&ent[1])});
+      const P=PM.puntos.pt,PL=PM.puntos.ptDeLink||(()=>null),LD=PM.puntos.linkDe||(()=>'');
+      const pto=(c,ls)=>P(c&&c[0],c&&c[1])||ls.map(PL).find(Boolean)||null,lnk=ls=>ls.map(LD).find(Boolean)||'';
+      const rL=[rec&&rec[2],o.ubicacion_recojo,o.direccion_recojo],eL=[o.ubicacion_entrega,o.direccion_entrega];
+      m.mounted=root=>PM.montar(root,{pedidoId:String(o.id),motoId:o.motorizado_id,motoNombre:String(mn||'').split(' ')[0]||'El motorizado',fase,rec:pto(rec,rL),ent:pto(ent,eL),recLink:lnk(rL),entLink:lnk(eL)});
     }catch(_){}
   }
   function modeloSvc(o){
@@ -242,7 +244,7 @@
     m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()},
       tiempo:b=>{tiempoSel[id]=Number(b.dataset.n);PdPasos.render()},
       pago:b=>{if(b.disabled)return;pagoSel[id]=b.dataset.k;PdPasos.render()}};
-    if(!finCerrado&&(e===2||e===3))ponerMapa(m,steps,e,o,e===2?'recojo':'entrega',[n.latitud,n.longitud],[o.latitud_entrega,o.longitud_entrega],mn);
+    if(!finCerrado&&(e===2||e===3))ponerMapa(m,steps,e,o,e===2?'recojo':'entrega',[n.latitud,n.longitud,n.google_maps_url],[o.latitud_entrega,o.longitud_entrega],mn);
     return m;
   }
   function abrir(id){abierto=String(id);error='';PdPasos.open(modelo,{onClose:()=>{abierto=null}})}

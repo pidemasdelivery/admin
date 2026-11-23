@@ -39,7 +39,7 @@
   const CSS=`
 .pmW{display:flex;flex-direction:column;gap:12px}
 .pmMapBox{position:relative;height:230px;border-radius:18px;overflow:hidden;border:1px solid ${B};background:#ECEFE6}
-.pmMap{position:absolute;inset:0;z-index:0}
+.pmMap{position:absolute!important;inset:0;width:100%;height:100%;z-index:0}
 .pmW.gris .pmMap{filter:grayscale(.85)}
 .pmChip{position:absolute;left:10px;top:10px;z-index:500;display:flex;align-items:center;gap:6px;background:#FFFFFF;border:1px solid ${B};border-radius:999px;padding:6px 11px;font-size:13px;font-weight:800;color:${G}}
 .pmChip i{width:8px;height:8px;border-radius:50%;background:#22C55E;display:block}
@@ -102,7 +102,7 @@
     if(!v){v=VIVOS[k]=crear(d)}else{v.d=d}
     /* si está a pantalla completa, el hueco nuevo queda guardado para devolverlo ahí al cerrar */
     if(v.full){v.ph=hueco;hueco.style.display='none';root.appendChild(v.el)}else hueco.replaceWith(v.el);
-    if(v.nuevo){v.nuevo=false;tick(v)}
+    if(v.nuevo){v.nuevo=false;iniciarMapa(v);tick(v)}
     if(v.map)setTimeout(()=>{try{v.map.invalidateSize()}catch(_){}},30);
     pintar(v);
   }
@@ -134,20 +134,23 @@
     ir('.pmBig').onclick=()=>grande(true);ir('.pmExp').onclick=()=>grande(true);
     ir('.pmCerrar').onclick=()=>grande(false);
     ir('.pmCentrar').onclick=()=>{if(v.map&&v.pos)v.map.setView([v.pos.lat,v.pos.lng],Math.max(v.map.getZoom(),16))};
-    if(window.L){
-      try{
-        const map=v.map=L.map(ir('.pmMap'),{zoomControl:false,attributionControl:true,tap:true});
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
-        map.setView([-5.1945,-80.6328],14);
-      }catch(e){v.map=null}
-    }
-    if(!v.map){ir('.pmMapBox').style.display='none'}
+    if(!window.L){ir('.pmMapBox').style.display='none'}
     v.timer=setInterval(()=>tick(v),CADA_MS);
     v.reloj=setInterval(()=>{if(!v.el.isConnected)return;pintar(v)},5000);
     v.nuevo=true;
     return v;
   }
 
+  /* El mapa se crea ya puesto en la pantalla (si se crea fuera, Leaflet lo deja con alto 0 y no se ve) */
+  function iniciarMapa(v){
+    if(v.map||!window.L)return;
+    try{
+      const map=v.map=L.map(v.el.querySelector('.pmMap'),{zoomControl:false,attributionControl:true});
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+      map.setView([-5.1945,-80.6328],14);
+      setTimeout(()=>{try{map.invalidateSize();ajustar(v,true)}catch(_){}},120);
+    }catch(e){v.map=null;v.el.querySelector('.pmMapBox').style.display='none'}
+  }
   function apagar(k){const v=VIVOS[k];if(!v)return;clearInterval(v.timer);clearInterval(v.reloj);try{v.map&&v.map.remove()}catch(_){}delete VIVOS[k]}
 
   async function tick(v){
@@ -184,6 +187,7 @@
   function pintar(v){
     const d=v.d,el=v.el,ir=s=>el.querySelector(s);
     const obj=d.fase==='recojo'?d.rec:d.ent,dondeTx=d.fase==='recojo'?'del recojo':'del cliente';
+    const link=d.fase==='recojo'?d.recLink:d.entLink,soloLink=!obj&&!!link;
     const edad=v.ts?Date.now()-v.ts:null;
     const sinSenal=!v.pos||edad==null||edad>SIN_SENAL_MS;
     el.classList.toggle('gris',sinSenal);
@@ -193,10 +197,12 @@
     if(!v.pos){l1='Aún no llega la ubicación';l2=nom+' todavía no compartió su ubicación';aviso='Se mostrará apenas '+nom+' abra su app con el GPS encendido.'}
     else if(sinSenal){l1='Sin señal desde las '+fHora(v.ts);l2=fHace(edad).replace(/^h/,'H')+(k!=null?' · estaba a '+fDist(k)+' '+dondeTx:'');eta='—';aviso='La app de '+nom+' está cerrada o sin internet. Se muestra su última ubicación conocida.'}
     else{l1=k!=null?'A '+fDist(k)+' '+dondeTx:'Ubicación en vivo';l2='Actualizado '+fHace(edad);if(k!=null)eta='~'+Math.max(1,Math.round(k*1.3/VEL_KMH*60))+' min'}
+    if(v.pos&&!obj)aviso=(aviso?aviso+' ':'')+(soloLink?(d.fase==='recojo'?'El recojo':'El cliente')+' mandó su ubicación solo como enlace, por eso no sale en el mapa ni se calcula la distancia. «Google Maps» abre ese enlace.':'Este pedido no tiene el punto '+(d.fase==='recojo'?'de recojo':'de entrega')+' en el mapa.');
     ir('.pmL1').textContent=l1;ir('.pmL2').textContent=l2;ir('.pmEta').textContent=eta;
     const av=ir('.pmAviso');av.textContent=aviso;av.hidden=!aviso;
     const gm=ir('.pmGm');
     if(v.pos&&obj)gm.href='https://www.google.com/maps/dir/?api=1&origin='+v.pos.lat+','+v.pos.lng+'&destination='+obj.lat+','+obj.lng+'&travelmode=driving';
+    else if(soloLink)gm.href=link;
     else if(v.pos)gm.href='https://www.google.com/maps/search/?api=1&query='+v.pos.lat+','+v.pos.lng;
     else if(obj)gm.href='https://www.google.com/maps/search/?api=1&query='+obj.lat+','+obj.lng;
     if(!v.map)return;
@@ -212,5 +218,8 @@
     if(v.primera&&(v.pos||obj)){v.primera=false;ajustar(v,true)}
   }
 
-  window.pdMapaPedido={slot,montar,puntos:{pt}};
+  /* saca coordenadas de un enlace largo de Google Maps (…/@-5.18,-80.63… o ?q=-5.18,-80.63); los enlaces cortos no las traen */
+  function ptDeLink(u){u=String(u||'');let m=u.match(/@(-?\d{1,2}\.\d+),\s*(-?\d{1,3}\.\d+)/)||u.match(/[?&](?:q|query|ll|destination|daddr)=(-?\d{1,2}\.\d+)(?:,|%2C)\s*(-?\d{1,3}\.\d+)/i)||u.match(/!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)/)||u.match(/^\s*(-?\d{1,2}\.\d{3,}),\s*(-?\d{1,3}\.\d{3,})\s*$/);return m?pt(m[1],m[2]):null}
+  const linkDe=u=>{const m=String(u||'').match(/https?:\/\/\S+/);return m?m[0]:''};
+  window.pdMapaPedido={slot,montar,puntos:{pt,ptDeLink,linkDe}};
 })();
