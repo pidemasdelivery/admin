@@ -13,7 +13,32 @@
   const svc=o=>{const t=String(o?.tipo_servicio||'').toLowerCase();return t.includes('encomienda')?'enc':t.includes('compra')?'compra':t.includes('recojo')?'recojo':'pedido'};
   const esNegocio=o=>!!o&&svc(o)==='pedido'&&!!o.negocio_id;
   const st=o=>String(o?.estado||'').toLowerCase();
-  const elegido={};let abierto=null,error='';
+  const elegido={},tiempoSel={},pagoSel={};let abierto=null,error='';
+  /* Opciones de tiempo: las mismas que ve el negocio al aceptar */
+  function opcTiempo(n){const ops=['10–20 min','20–30 min','30–40 min'].map(t=>({t,n:t.match(/\d+/g).map(Number)[1]}));
+    const ns=(String(n.tiempo_estimado||'').match(/\d+/g)||[]).map(Number),hi=ns.length?ns[ns.length-1]:0;let def=ops[0];if(hi)ops.forEach(x=>{if(Math.abs(x.n-hi)<Math.abs(def.n-hi))def=x});return {ops,def}}
+  /* Cómo cobra el motorizado (pago_acordado): igual que cuando acepta el negocio */
+  function opcPago(o,n){
+    if(String(o.metodo_pago||'').toLowerCase()==='efectivo')return [['efectivo','Paga en efectivo al recibir','El motorizado cobra '+M(o.total)]];
+    return [['yape','Paga todo con el Yape de Pidemás','El motorizado muestra el QR de Pidemás · cobra '+M(o.total)],
+      ['yape_negocio','Paga todo con el Yape del negocio',n.yape_qr_url?'El motorizado muestra el QR del negocio · luego se le cobra el delivery':'El negocio no tiene QR de Yape subido',!n.yape_qr_url],
+      ['solo_delivery','Ya pagó los productos al negocio','El motorizado cobra solo el delivery · '+M(o.costo_delivery)],
+      ['pagado','Ya pagó todo','El motorizado no cobra nada · el negocio debe el delivery']];
+  }
+  /* El admin acepta el pedido en nombre del negocio (mismos datos que guarda la app del negocio) */
+  async function aceptarPorNegocio(o,n){
+    error='';const id=String(o.id),pago=pagoSel[id],min=tiempoSel[id]||opcTiempo(n).def.n;
+    if(!pago){error='Elige cómo cobra el motorizado.';return}
+    const now=new Date().toISOString();
+    const patch={estado:'confirmado',pago_acordado:pago,
+      metodo_pago:pago==='yape_negocio'?'yape':pago==='pagado'?(o.metodo_pago||'yape'):pago==='solo_delivery'?(String(o.metodo_pago||'').toLowerCase()==='efectivo'?'efectivo':'yape'):pago,
+      pago_confirmado:pago==='pagado',pago_negocio_confirmado:true,pago_negocio_confirmado_en:now,negocio_aceptado_en:now,tiempo_preparacion_min:min};
+    const {data,error:e}=await D().from('pedidos').update(patch).eq('id',o.id).eq('estado','pendiente').select('id');
+    if(e){error='No se pudo aceptar: '+e.message;return}
+    if(!data||!data.length){error='El pedido ya no está pendiente: quizá el negocio ya lo aceptó o se anuló. Actualiza la lista.';return}
+    Object.assign(o,patch);
+    try{(window.loadOrders||(typeof loadOrders==='function'?loadOrders:null))?.()}catch(_){}
+  }
   const km=(a,b,c,d)=>{if([a,b,c,d].some(v=>v==null||v===''||isNaN(v)))return null;const R=6371,r=x=>x*Math.PI/180,dl=r(c-a),dn=r(d-b);const h=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
   function etapa(o){
     const s=st(o);
@@ -150,7 +175,11 @@
     /* 1 */
     {const s=steps[0];s.sum=negNom+' aceptó'+(o.tiempo_preparacion_min?' · listo en '+o.tiempo_preparacion_min+' min':'');
       s.body=U.who(negNom,'Negocio'+(n.direccion?' · '+E(n.direccion):''),n.logo_url||n.imagen_url||'')+resumen+
-        (st(o)==='pendiente'?U.st('Esperando que el negocio acepte y coordine el pago'):U.st('El negocio aceptó'+(o.tiempo_preparacion_min?' · listo en '+o.tiempo_preparacion_min+' min':'')+(pa?' · '+E(metodo):''),'ok'))+
+        (st(o)==='pendiente'?U.st('Esperando que el negocio acepte. También puedes aceptarlo tú por el negocio.')+
+          (()=>{const OT=opcTiempo(n);if(!tiempoSel[id])tiempoSel[id]=OT.def.n;const PO=opcPago(o,n);if(PO.length===1)pagoSel[id]=PO[0][0];
+            return `<div><div class="lbl">¿En cuánto estará listo?</div><div class="grid4" style="grid-template-columns:repeat(${OT.ops.length},minmax(0,1fr))">${OT.ops.map(x=>`<button type="button" data-act="tiempo" data-n="${x.n}" class="${x.n===tiempoSel[id]?'on':''}">${E(x.t)}</button>`).join('')}</div></div>`+
+              `<div><div class="lbl">¿Cómo cobra el motorizado?</div><div class="opts">${PO.map(x=>`<button type="button" data-act="pago" class="opt${x[0]===pagoSel[id]?' on':''}" data-k="${x[0]}"${x[3]?' disabled style="opacity:.5"':''}><b>${E(x[1])}</b><span>${E(x[2])}</span></button>`).join('')}</div></div>`+
+              U.note('Llama o escribe al negocio para confirmar que puede atenderlo antes de aceptarlo.')})():U.st('El negocio aceptó'+(o.tiempo_preparacion_min?' · listo en '+o.tiempo_preparacion_min+' min':'')+(pa?' · '+E(metodo):''),'ok'))+
         U.contact(U.maps(n.latitud,n.longitud,n.direccion,LK(n.google_maps_url)),n.telefono,'Hola, te escribimos de Pidemás por el pedido '+U.ref(id)+'.');}
     /* 2 */
     {const s=steps[1];s.locked='Se muestra cuando el negocio confirme';s.sum='Asignado a '+mn;
@@ -194,10 +223,13 @@
     const titles=['Esperando al negocio','Asigna un motorizado',st(o)==='asignado'?'Esperando al motorizado':'Recojo en curso','Entrega y cobro','Cierra el pedido'];
     m.title=finCerrado?'Pedido cerrado':titles[e];m.chip=finCerrado?'Listo':'Paso '+(e+1)+' de 5';if(finCerrado)m.chipCls='ok';
     if(finCerrado)m.fin={title:'Pedido cerrado',text:'Entregado'+(o.entregado_en?' a las '+U.hora(o.entregado_en):'')+'.',lines:[E(steps[3].sum),E(steps[4].sum)]};
-    if(e===1){const mm=MOTOS().find(x=>String(x.id)===elegido[id]);m.cta={label:mm?'Asignar a '+String(mm.nombre_completo||'').split(' ')[0]:'Asignar',off:!mm,hint:mm?'':'Elige un motorizado de la lista',busy:'Asignando…',run:()=>asignar(id)}}
+    if(e===0)m.cta={label:'Aceptar por el negocio',off:!pagoSel[id],hint:pagoSel[id]?'':'Elige cómo cobra el motorizado',busy:'Aceptando…',run:()=>aceptarPorNegocio(o,n)};
+    else if(e===1){const mm=MOTOS().find(x=>String(x.id)===elegido[id]);m.cta={label:mm?'Asignar a '+String(mm.nombre_completo||'').split(' ')[0]:'Asignar',off:!mm,hint:mm?'':'Elige un motorizado de la lista',busy:'Asignando…',run:()=>asignar(id)}}
     else if(e===4&&!finCerrado)m.cta={label:'Delivery cobrado al negocio',green:true,busy:'Guardando…',run:()=>deliveryCobrado(o)};
     else if(e===2&&st(o)==='asignado')m.alt=[{label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}}];
-    m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()}};
+    m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()},
+      tiempo:b=>{tiempoSel[id]=Number(b.dataset.n);PdPasos.render()},
+      pago:b=>{if(b.disabled)return;pagoSel[id]=b.dataset.k;PdPasos.render()}};
     return m;
   }
   function abrir(id){abierto=String(id);error='';PdPasos.open(modelo,{onClose:()=>{abierto=null}})}
