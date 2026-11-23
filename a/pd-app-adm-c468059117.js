@@ -996,7 +996,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     else{const m=String(o.pago_servicio_momento||'').toLowerCase();
       Object.assign(b,{rnom:o.nombre_remitente||o.nombre_cliente||'',rdni:o.dni_remitente||tagDe(obs,'DNI de quien envía'),rtel:o.telefono_remitente||o.telefono_cliente||'',rdir:o.direccion_recojo||'',rref:o.referencia_recojo||tagDe(obs,'Referencia de recojo'),rubi:o.ubicacion_recojo||tagDe(obs,'Ubicación de recojo'),
       enom:o.nombre_receptor||'',edni:o.dni_receptor||tagDe(obs,'DNI de quien recibe'),etel:o.telefono_receptor||'',tenv:o.tipo_encomienda||tagDe(obs,'Tipo de encomienda'),obs:libreDe(obs),
-      ag:o.agencia_destino||'',dest:o.destino_final||o.direccion_entrega||'',tpago:o.tipo_pago_encomienda||'',
+      ag:o.agencia_destino||'',agubi:o.ubicacion_entrega||(o.latitud_entrega&&o.longitud_entrega?'https://maps.google.com/?q='+o.latitud_entrega+','+o.longitud_entrega:''),dest:o.destino_final||o.direccion_entrega||'',tpago:o.tipo_pago_encomienda||'',
       pago:pagado?'pagado':m==='al_final'?'al_final':m==='recojo_yape'?'yape':String(o.metodo_pago||'efectivo').toLowerCase()==='yape'?'yape':'efectivo'})}
     return b;
   }
@@ -1072,7 +1072,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const ot=optsDe('encTipoEnvio');
       h+=card('Información de la encomienda',sg('Tipo de encomienda','tenv',ot)+ta('peOb','Observaciones','obs','Describe el contenido u otras indicaciones'));
       const tp=optsDe('encTipoPago');
-      h+=card('Paquetes de la encomienda',fl('peAg','Agencia','ag','Ej. Olva Courier',' autocomplete="off"')+nsAgChips(f.ag,'pe:ag')+fl('peDs','Destino','dest','Ej. Lima')+nsDsChips(f.ag,f.dest,'pe:ds')+sg('Modalidad de pago de encomienda','tpago',tp.length?tp:[['pago_en_agencia','Pago en agencia'],['pago_a_destino','Pago a destino']]));
+      h+=card('Paquetes de la encomienda',fl('peAg','Agencia','ag','Ej. Olva Courier',' autocomplete="off"')+nsAgChips(f.ag,'pe:ag')+nsAgUbiFld(f)+fl('peAgu','Ubicación de la agencia (Google Maps)','agubi','Pega el enlace de Google Maps')+mp('agubi','','Agencia '+String(f.ag||'').trim())+fl('peDs','Destino','dest','Ej. Lima')+nsDsChips(f.ag,f.dest,'pe:ds')+sg('Modalidad de pago de encomienda','tpago',tp.length?tp:[['pago_en_agencia','Pago en agencia'],['pago_a_destino','Pago a destino']]));
       h+=costo;
     }
     if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
@@ -1110,6 +1110,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       obs=rehacerObs(obs,{'Tipo de encomienda':f.tenv,'DNI de quien envía':f.rdni,'DNI de quien recibe':f.edni,'Ubicación de recojo':f.rubi,'Referencia de recojo':f.rref},f.obs);
       obs=[pagado?'Servicio marcado como PAGADO; no cobrar monto al cliente':'',f.pago==='al_final'?'El cliente paga al final por Yape, después de recibir la guía y la clave; no cobrar al recoger':''].filter(Boolean).concat(segs(obs)).join(' | ');
       const cr=coordsDe(f.rubi);if(cr){p.latitud_recojo=cr.lat;p.longitud_recojo=cr.lng}
+      /* ubicación de la agencia: es el punto de entrega del motorizado */
+      const ca=coordsDe(f.agubi)||coordsDe(nsAgU(f.ag));if(ca){p.latitud_entrega=ca.lat;p.longitud_entrega=ca.lng;p.ubicacion_entrega=String(f.agubi||'').trim()||nsAgU(f.ag)}
     }
     if(!yaCobro)p.pago_confirmado=pagado;
     p.observaciones=obs;
@@ -1121,7 +1123,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     let r=await D().from('pedidos').update(p).eq('id',o.id).select('id').maybeSingle();
     if(r.error&&/column|schema cache|PGRST204|42703/i.test(String(r.error.message)+String(r.error.code))){SVC_OPC.forEach(k=>delete p[k]);r=await D().from('pedidos').update(p).eq('id',o.id).select('id').maybeSingle()}
     if(r.error)throw r.error;if(!r.data)throw new Error('Supabase no guardó el cambio. Revisa los permisos.');
-    const metAntes=o.metodo_pago;Object.assign(o,p);await cajaPorCambioPago(o,metAntes,p.metodo_pago);return true;
+    const metAntes=o.metodo_pago;Object.assign(o,p);await cajaPorCambioPago(o,metAntes,p.metodo_pago);
+    if(f.tipo==='enc'){nsAgRegistrar(f).catch(()=>{})}
+    nsGuardarClientes(f).catch(()=>{});
+    return true;
   }
 
   /* =============== NUEVO SERVICIO (recojo, compra, encomienda) =============== */
@@ -1225,6 +1230,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(!f.tpago){f.msg='Elige la modalidad de pago del paquete 1: «Pago en agencia» o «Pago a destino».';return false}
       const sinTp=f.paqs.findIndex(q=>!q.tpago||!String(q.ag||'').trim()||!String(q.dest||'').trim());if(sinTp>=0){f.msg='Completa agencia, destino y modalidad de pago del paquete '+(sinTp+2)+'.';return false}
       const agId=await nsAgencia(f.ag,f.dest);if(agId){p.agencia_id=agId}
+      if(coordsDe(f.agubi))try{await nsAgRegistrar(f)}catch(_){}
       const ex=[];for(const [i,q] of f.paqs.entries()){const id2=await nsAgencia(q.ag,q.dest);ex.push({n:i+2,q,id2})}
       const tpN=v=>(OPS.encTipoPago.find(x=>x[0]===v)||[,v])[1],teN=v=>(OPS.encTipoEnvio.find(x=>x[0]===v)||[,v])[1];
       let extra='';if(String(f.ind1||'').trim())extra+=' | Indicación paquete 1: '+String(f.ind1).replace(/[|]/g,'/').trim();
@@ -1258,6 +1264,21 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(!a){const r=await D().from('agencias').insert({nombre:nom,activo:true}).select('id,nombre,activo').single();if(r.error)return null;a=r.data;(PE.ags=PE.ags||[]).push(a)}
     if(dest){try{const d=await D().from('agencia_destinos').select('id,destino_final').eq('agencia_id',a.id);if(!d.error&&!(d.data||[]).some(x=>String(x.destino_final||'').trim().toLowerCase()===dest.toLowerCase()))await D().from('agencia_destinos').insert({agencia_id:a.id,destino_final:dest,activo:true})}catch(_){}}
     return a.id;
+  }
+  /* ubicación guardada de cada agencia (la misma que se marca en Más › Agencias) */
+  function nsAgU(nom){const u=(PE.agU||{})[agClave(nom)];return u&&Number.isFinite(+u.lat)&&Number.isFinite(+u.lng)?'https://maps.google.com/?q='+Number(u.lat).toFixed(6)+','+Number(u.lng).toFixed(6):''}
+  function nsAgUbiFld(f){
+    if(PE.agU===undefined){PE.agU=null;agUbis().then(u=>{PE.agU=u||{};const F=PE.f;if(F&&F.tipo==='enc'&&!coordsDe(F.agubi)){const x=nsAgU(F.ag);if(x)F.agubi=x}key='';pintar()}).catch(()=>{PE.agU={}})}
+    const nom=String(f.ag||'').trim();if(!nom)return '';const reg=(PE.ags||[]).some(x=>agClave(x.nombre)===agClave(nom)),u=nsAgU(nom);
+    return `<span style="font-size:13px;color:#6B5E55;margin-top:-4px;line-height:1.45">${reg?(u?'Agencia registrada · su ubicación ya está guardada.':'Agencia registrada sin ubicación: márcala y se guarda para la próxima vez.'):'Agencia nueva: se registra en Agencias al guardar el pedido, con su ubicación.'}</span>`}
+  /* registra agencia(s) y destino(s) nuevos y guarda la ubicación de la agencia */
+  async function nsAgRegistrar(f){
+    const id=await nsAgencia(f.ag,f.dest);
+    for(const q of (f.paqs||[]))try{await nsAgencia(q.ag,q.dest)}catch(_){}
+    const ca=coordsDe(f.agubi),nom=String(f.ag||'').trim();
+    if(ca&&nom){const u=(PE.agU||{})[agClave(nom)];
+      if(!u||Math.abs(+u.lat-ca.lat)>1e-5||Math.abs(+u.lng-ca.lng)>1e-5){PE.agU=await agGuardarUbi(nom,id,{lat:ca.lat,lng:ca.lng,direccion:(u&&u.direccion)||''})}}
+    return id;
   }
   /* quien envía y quien recibe quedan en Clientes (si su número aún no está) */
   async function nsGuardarClientes(f){
@@ -2543,7 +2564,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
       if(PE.f&&a.dataset.a.startsWith('pe:mo:')){const v=a.dataset.a.slice(6);PE.f.moto=String(PE.f.moto)===v?'':v;key='';pintar();return}
       if(PE.f&&a.dataset.a.startsWith('pe:pqs:')){const [,,i,k,...v]=a.dataset.a.split(':');const q=PE.f.paqs[+i];if(q)q[k]=v.join(':');key='';pintar();return}
       if(PE.f&&/^pe:(ag|ds):\d+$/.test(a.dataset.a)){const [,t,k]=a.dataset.a.split(':'),f=PE.f;
-        if(t==='ag'){const x=(PE.ags||[])[+k];if(x){if(String(f.ag).trim().toLowerCase()!==String(x.nombre).trim().toLowerCase())f.dest='';f.ag=x.nombre}}
+        if(t==='ag'){const x=(PE.ags||[])[+k];if(x){if(String(f.ag).trim().toLowerCase()!==String(x.nombre).trim().toLowerCase()){f.dest='';f.agubi=''}f.ag=x.nombre;const u=nsAgU(x.nombre);if(u&&!coordsDe(f.agubi))f.agubi=u}}
         else{const x=nsDsL(f.ag)[+k];if(x)f.dest=x.destino_final}
         key='';pintar();return}
       if(PE.f&&/^pe:pq(ag|ds):\d+:\d+$/.test(a.dataset.a)){const [,t,i,k]=a.dataset.a.split(':'),q=PE.f.paqs[+i];
