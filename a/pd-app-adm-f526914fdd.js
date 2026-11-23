@@ -1157,7 +1157,9 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(f.tipo==='recojo'&&i===0){if(!f.pide)f.pide='envia';
       const bQ=(v,t)=>`<button type="button" style="height:58px;border-radius:16px;border:1.5px solid ${f.pide===v?'#C4410C':'#F1E4DA'};background:${f.pide===v?'#FFF4EC':'#FFFFFF'};color:#1F1A17;font:inherit;font-size:17px;font-weight:${f.pide===v?800:700};cursor:pointer${f.pide===v?';box-shadow:inset 0 0 0 1px #C4410C':''}" aria-pressed="${f.pide===v}" data-a="pe:set:pide:${v}">${t}</button>`;
       h+=`<div class="cd"><div class="lbl">¿Quién manda a recoger?</div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${bQ('envia','Quien envía')}${bQ('recibe','Quien recibe')}</div><span style="font-size:13px;color:#6B5E55;line-height:1.45">${pideR?'El cliente es <b style="color:#1F1A17">quien recibe</b>: pide que vayan a recoger donde otra persona y se lo lleven.':'El cliente es <b style="color:#1F1A17">quien envía</b>: pide que recojan en su lugar y lo lleven a otra persona.'}</span></div>`}
-    if(pideR?paso==='Información de quien recibe':i===0)h+=pideR?busca.replace('los datos de quien envía','los datos de quien recibe'):busca;
+    /* Recojo y entrega: buscar cliente en los dos pasos (cada uno llena su lado) */
+    if(f.tipo==='recojo'){if(paso==='Información de quien envía')h+=busca;else if(paso==='Información de quien recibe')h+=busca.replace('los datos de quien envía','los datos de quien recibe')}
+    else if(i===0)h+=busca;
     if(paso==='Asignar motorizado'){
       const ms=PE.motos,ini=n=>String(n||'?').trim().split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
       h+=`<div class="cd"><div class="lbl">Seleccionar motorizado</div>${ms==null?'<div class="load">Cargando motorizados…</div>':ms.length?`<div class="mob">${ms.map(m=>`<button type="button" class="${String(f.moto)===String(m.id)?'on':''}" data-a="pe:mo:${E(m.id)}" aria-pressed="${String(f.moto)===String(m.id)}"><i>${E(ini(m.nombre_completo))}</i><span>${E(m.nombre_completo||'Motorizado')}</span></button>`).join('')}</div>`:'<span style="font-size:14px;color:#6B5E55">No hay motorizados activos.</span>'}<span style="font-size:13px;color:#6B5E55">${f.moto?'Le avisamos por la app y se abre WhatsApp con el mensaje listo. Toca otra vez para quitarlo.':'Si no eliges ninguno, el pedido queda en Pedidos como «sin motorizado» para asignarlo luego.'}</span></div>`;
@@ -1201,9 +1203,12 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function nsDsChips(ag,v,acc){const L=nsDsL(ag);if(!L.length)return '';return `<div class="opc" style="margin-top:-4px">${L.map((d,k)=>`<button type="button" class="${String(v||'').trim().toLowerCase()===String(d.destino_final||'').trim().toLowerCase()?'on':''}" data-a="${acc}:${k}">${E(d.destino_final)}</button>`).join('')}</div>`}
   function nsUsarCli(f,id){
     const c=((C2.cli&&C2.cli.data)||[]).find(x=>String(x.id)===String(id));if(!c)return;
-    f.cli=c.id;f.cq='';
+    f.cq='';
+    const ladoR=f.tipo==='recojo'&&nsPasos(f)[f.paso||0]==='Información de quien recibe';
+    /* el cliente del pedido es solo quien manda a recoger */
+    if(f.tipo!=='recojo'||ladoR===(f.pide==='recibe'))f.cli=c.id;
     if(f.tipo==='compra')Object.assign(f,{nom:cliN(c),tel:cliT(c),dir:c.direccion||f.dir,ubi:cliU(c)||f.ubi});
-    else if(f.tipo==='recojo'&&f.pide==='recibe')Object.assign(f,{enom:cliN(c),etel:cliT(c),edir:c.direccion||f.edir,eubi:cliU(c)||f.eubi});
+    else if(ladoR)Object.assign(f,{enom:cliN(c),etel:cliT(c),edir:c.direccion||f.edir,eubi:cliU(c)||f.eubi});
     else Object.assign(f,{rnom:cliN(c),rtel:cliT(c),rdir:c.direccion||f.rdir,rubi:cliU(c)||f.rubi},f.tipo==='enc'?{rdni:c.documento||c.dni||f.rdni}:{});
   }
   async function svcCrear(f,win){
