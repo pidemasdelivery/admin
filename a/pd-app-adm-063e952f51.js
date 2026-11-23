@@ -2053,7 +2053,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     evs(){const A=window.pdaAvisos;let ev=[];try{ev=(A&&A.eventos()||[]).slice()}catch(_){}
       const lim=Date.now()-48*3600e3;
       /* Tienda = pedidos de negocios que hace el cliente · Servicios = recojos, compras y encomiendas que crea el admin */
-      ev=ev.map(x=>{let cat='motorizado';if(x.k==='ped'&&/^(Nuev|Pedido cancelado)/.test(String(x.tit||''))){const o=L().find(y=>String(y.id)===String(x.id));cat=o&&!o.negocio_id?'servicios':'pedidos'}return Object.assign({},x,{cat})});
+      ev=ev.map(x=>{let cat='motorizado';if(x.k==='ped'&&/^(Nuev|Pedido cancelado)/.test(String(x.tit||''))){const o=L().find(y=>String(y.id)===String(x.id)),t=String(x.tit||'');cat=o?(o.negocio_id?'pedidos':'servicios'):(/^Nuevo pedido de tienda/.test(t)?'pedidos':/^Nuev/.test(t)?'servicios':'pedidos')}return Object.assign({},x,{cat})});
       L().forEach(o=>{if(!o.negocio_id)return;const n=NEG(o.negocio_id).nombre||'El negocio',c=String(o.nombre_cliente||'').trim(),sub=ref(o.id)+(c?' · '+c:'');
         const add=(t,tit,s2,ic)=>{if(t>lim)ev.push({cat:'negocio',k:'neg',t,tit,sub:s2,id:o.id,icN:ic})};
         add(T(o.negocio_aceptado_en),n+' aceptó el pedido',sub,'store');
