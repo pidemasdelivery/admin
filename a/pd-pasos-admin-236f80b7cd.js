@@ -200,30 +200,51 @@
       }else s.body=U.who(mn,'Motorizado asignado'+(o.asignado_en?' · '+U.hora(o.asignado_en):''),mo.foto_url||'',true)+U.contact(null,mo.telefono,'');}
     /* 2 · Hacer la compra / recoger: dónde, qué y cuánto se gastó */
     {const s=steps[2];s.locked='Se muestra al asignar el motorizado';
-      let h=s0==='asignado'?U.st('Esperando que '+E(mn)+' acepte el pedido'):U.st(E(mn)+(e>2?(t==='compra'?' hizo la compra':' recogió el pedido'):(t==='compra'?' está haciendo la compra':' va a recoger')),e>2?'ok':'');
+      /* ordenado y sin repetir: estado arriba, luego cada lugar (sitio o punto) con lo suyo, el comprobante y el cobro */
+      const PRa=Array.isArray(o.puntos_recojo)?o.puntos_recojo.filter(Boolean):[],hr=v=>v?' · '+U.hora(v):'';
+      const cap=v=>{v=String(v||'');return v.charAt(0).toUpperCase()+v.slice(1)};
+      const sub2=v=>`<div style="font-weight:500;font-size:13.5px;color:#6B5E55">${v}</div>`;
+      const compBox=()=>{const cmp=campo(o,'Comprobante')||o.tipo_comprobante||'',doc=campo(o,'DNI/RUC')||o.documento_comprobante||'',cnm=campo(o,'Nombre comprobante'),crz=campo(o,'Razón social'),cdf=campo(o,'Dirección fiscal');
+        if(!((cmp&&!/no especificado/i.test(cmp))||doc))return '';
+        return sumBox('Comprobante',(cmp?li('Tipo',E(cap(cmp))):'')+(doc?li(/factura/i.test(cmp)?'RUC':'DNI',E(doc)):'')+(cnm?li('Nombre',E(cnm)):'')+(crz?li('Razón social',E(crz)):'')+(cdf?li('Dirección fiscal',E(cdf)):''))};
+      const cobroRec=()=>{if(!alRec)return '';
+        if(o.pago_confirmado===true)return U.st('Cobró '+M(o.total)+' al recoger · '+E(metodo),'ok');
+        const q=PRa.find(x=>x.paga_aqui),donde=t==='recojo'&&PRa.length?'Cobra todo en el punto '+(q?q.n:1)+' ('+E((q?q.nombre:remN)||'')+')':t==='enc'?'Le cobra a quien envía al recoger los paquetes':'Cobra al recoger, antes de salir a entregar';
+        return `<div class="amt"><div class="k">Cobro al cliente</div><div class="n">${M(o.total)}</div><div class="pill">${mom==='recojo_yape'?'Yape':'Efectivo'}</div></div>`+U.note(donde+'.')};
+      let h=s0==='asignado'?U.st('Esperando que '+E(mn)+' acepte el pedido'):'';
       if(t==='compra'){
         const lr=String(o.direccion_recojo||campo(o,'Lugar de compra','¿De dónde desea la compra?')||''),lugar=lr.replace(/https?:\/\/\S+/g,'').replace(/[\s·,|-]+$/,'').trim();
-        const det=campo(o,'Compra solicitada','¿Qué desea que compremos?'),cmp=campo(o,'Comprobante'),doc=campo(o,'DNI/RUC'),cnm=campo(o,'Nombre comprobante'),crz=campo(o,'Razón social'),cdf=campo(o,'Dirección fiscal');
-        s.sum=(lugar||'Compra')+(sub0>0?' · gastó '+M(sub0):'');
-        h+=U.who(lugar||'Lugar no indicado','Compra aquí · pedido '+E(U.ref(id)),'')+btnIr(lugar||LK(lr)||LK(o.ubicacion_recojo)?U.maps(o.latitud_recojo,o.longitud_recojo,lugar,LK(lr)||LK(o.ubicacion_recojo)):'','Ir al lugar de compra')+
-          sumBox((Array.isArray(o.puntos_recojo)&&o.puntos_recojo.length?'Sitio 1 · ':'')+'Qué comprar',txt(det||'—'))+(Array.isArray(o.puntos_recojo)?o.puntos_recojo.filter(Boolean):[]).map(x=>sumBox('Sitio '+E(x.n)+' · '+E(x.nombre||'')+(x.recogido_en?' · comprado '+E(U.hora(x.recogido_en)):''),txt(x.que||'—')+(x.lat&&x.lng||x.ubicacion?btnIr(U.maps(x.lat,x.lng,x.nombre,LK(x.ubicacion)),'Ir al sitio '+E(x.n)):''))).join('')+(cmp||doc?sumBox('Comprobante',(cmp?li('Tipo',E(cmp)):'')+(doc?li(/factura/i.test(cmp)?'RUC':'DNI',E(doc)):'')+(cnm?li('Nombre',E(cnm)):'')+(crz?li('Razón social',E(crz)):'')+(cdf?li('Dirección fiscal',E(cdf)):'')):'')+(notas.length?U.note(E(notas.join(' · '))):'')+
-          (sub0>0?U.st('Compra registrada · gastó '+M(sub0),'ok'):U.note('El motorizado registra aquí cuánto gastó en la compra.'));
+        const det=campo(o,'Compra solicitada','¿Qué desea que compremos?');
+        s.sum=(lugar||'Compra')+(PRa.length?' + '+PRa.length+' sitio'+(PRa.length>1?'s':''):'')+(sub0>0?' · gastó '+M(sub0):'');
+        if(!h)h=U.st(E(mn)+(e>2||sub0>0?' hizo la compra'+(sub0>0?' · gastó '+M(sub0):''):' está haciendo la compra'+(PRa.length?' · '+PRa.filter(x=>x.recogido_en).length+' de '+PRa.length+' sitios adicionales listos':'')),e>2||sub0>0?'ok':'');
+        const L=[{n:1,nombre:lugar||'Lugar no indicado',que:det,url:lugar||LK(lr)||LK(o.ubicacion_recojo)?U.maps(o.latitud_recojo,o.longitud_recojo,lugar,LK(lr)||LK(o.ubicacion_recojo)):''}]
+          .concat(PRa.map(x=>({n:x.n,nombre:x.nombre||'Sitio '+x.n,que:x.que,hecho:x.recogido_en,url:x.lat&&x.lng||x.ubicacion?U.maps(x.lat,x.lng,x.nombre,LK(x.ubicacion)):''})));
+        L.forEach(q=>{h+=`<div class="sum" style="gap:10px"><div class="lbl">${L.length>1?'Sitio '+q.n+' de '+L.length+(q.hecho?' · comprado'+E(hr(q.hecho)):''):'Lugar de compra'}</div>`+
+          U.who(q.nombre,'Compra aquí'+(q.n===1?' · pedido '+E(U.ref(id)):''),'')+`<div class="lbl" style="margin-top:4px">Qué comprar</div>`+txt(q.que||'—')+
+          (q.n===1&&notas.length?`<div class="lbl" style="margin-top:4px">Observaciones</div>`+txt(notas.join(' · ')):'')+btnIr(q.url,L.length>1?'Ir al sitio '+q.n:'Ir al lugar de compra')+`</div>`});
+        h+=compBox();
+        if(!(sub0>0)&&e>=2)h+=U.note('El motorizado registra aquí cuánto gastó en la compra.');
+      }else if(t==='enc'){
+        s.sum='Recogido'+hr(o.en_camino_en);
+        if(!h)h=U.st(E(mn)+(e>2?' recogió los paquetes'+hr(o.en_camino_en):' va a recoger los paquetes'),e>2?'ok':'');
+        h+=U.who(remN,subQ('Quien envía · pedido '+U.ref(id)),'',true)+U.addr(o.direccion_recojo,o.referencia_recojo)+U.contact(U.maps(o.latitud_recojo,o.longitud_recojo,o.direccion_recojo,LK(o.ubicacion_recojo)),remT,'');
+        h+=pks.map(p=>sumBox('Paquete '+p.numero+(pks.length>1?' de '+pks.length:''),li('Ruta',E([p.agencia,p.destino].filter(Boolean).join(' → ')||'—'))+li('Pago del envío',pagoTx(p.pago))+
+          li('Recibe',E(p.recibe||'—')+([p.dni?'DNI '+E(p.dni):'',p.tel?E(p.tel):''].filter(Boolean).length?sub2([p.dni?'DNI '+E(p.dni):'',p.tel?E(p.tel):''].filter(Boolean).join(' · ')):'')))).join('');
+        h+=compBox()+cobroRec();
       }else{
-        s.sum=(t==='enc'?'Recogido':'Recogido')+(o.en_camino_en?' · '+U.hora(o.en_camino_en):'');
-        h+=U.who(remN,subQ((t==='enc'?'Quien envía':'Recojo aquí')+' · pedido '+U.ref(id)),'',true)+U.addr(o.direccion_recojo,o.referencia_recojo)+U.contact(U.maps(o.latitud_recojo,o.longitud_recojo,o.direccion_recojo,LK(o.ubicacion_recojo)),remT,'');
-        /* más puntos de recojo (el punto 1 es quien envía) */
-        const PR=t==='recojo'&&Array.isArray(o.puntos_recojo)?o.puntos_recojo.filter(Boolean):[];
-        if(PR.length){h=h.replace(subQ((t==='enc'?'Quien envía':'Recojo aquí')+' · pedido '+U.ref(id)),subQ('Punto 1 de '+(PR.length+1)+' · recojo aquí · pedido '+U.ref(id)));
-          const listos=PR.filter(x=>x.recogido_en).length;
-          h+=U.st(listos===PR.length?'Recogió en los '+(PR.length+1)+' puntos':'Recogido en '+listos+' de '+PR.length+' puntos adicionales',listos===PR.length?'ok':'');
-          PR.forEach(x=>{h+=`<div class="sum" style="gap:10px"><div class="lbl">Punto ${E(x.n)} de ${PR.length+1}${x.recogido_en?' · recogido '+E(U.hora(x.recogido_en)):''}</div>`+
-            U.who(x.nombre||'Punto '+x.n,'Recojo aquí'+(x.que?' · '+E(x.que):''),'',true)+U.addr(x.direccion,x.referencia)+(x.a_nombre?`<div class="li"><span>Pedido a nombre de</span><b>${E(x.a_nombre)}</b></div>`:'')+(x.costo_delivery!=null&&x.costo_delivery!==''?`<div class="li"><span>Delivery de este punto</span><b>${E(U.money(x.costo_delivery))}</b></div>`:'')+
-            U.contact(U.maps(x.lat,x.lng,x.direccion,LK(x.ubicacion)),x.telefono,'')+(x.recogido_en?U.st('Recogido aquí','ok'):'')+`</div>`});
-          s.sum=(listos===PR.length&&e>2?'Recogido en '+(PR.length+1)+' puntos':s.sum)}
-        if(t==='recojo'&&notas.length)h+=sumBox('Notas del servicio',txt(notas.join(' · ')));
-        if(t==='enc'){h+=pks.map(pkgBox).join('');const cmp=campo(o,'Comprobante')||o.tipo_comprobante||'',doc=campo(o,'DNI/RUC')||o.documento_comprobante||'',cnm=campo(o,'Nombre comprobante'),crz=campo(o,'Razón social'),cdf=campo(o,'Dirección fiscal');
-          if((cmp&&!/no especificado/i.test(cmp))||doc)h+=sumBox('Comprobante',(cmp?li('Tipo',E(cmp)):'')+(doc?li(/factura/i.test(cmp)?'RUC':'DNI',E(doc)):'')+(cnm?li('Nombre',E(cnm)):'')+(crz?li('Razón social',E(crz)):'')+(cdf?li('Dirección fiscal',E(cdf)):''))}
-        if(alRec)h+=`<div class="amt"><div class="k">Cobro al cliente</div><div class="n">${M(o.total)}</div><div class="pill">${o.pago_confirmado===true?E(metodo):mom==='recojo_yape'?'Yape':'Efectivo'}</div></div>`+(o.pago_confirmado===true?U.st('El motorizado confirmó el cobro al recoger','ok'):U.note(t==='enc'?'El motorizado le cobra a quien envía al recoger los paquetes.':(()=>{const PRx=Array.isArray(o.puntos_recojo)?o.puntos_recojo.filter(Boolean):[],q=PRx.find(x=>x.paga_aqui);return PRx.length?'El motorizado cobra todo en el punto '+(q?q.n:1)+((q?q.nombre:o.nombre_remitente)?' ('+E(q?q.nombre:o.nombre_remitente)+')':'')+', al recoger.':'El motorizado cobra al recoger, antes de salir a entregar.'})()));
+        const listos=PRa.filter(x=>x.recogido_en).length;
+        s.sum=PRa.length?(e>2?'Recogido en '+(PRa.length+1)+' puntos':listos+' de '+PRa.length+' puntos adicionales'):'Recogido'+hr(o.en_camino_en);
+        if(!h)h=U.st(E(mn)+(e>2?' recogió '+(PRa.length?'en los '+(PRa.length+1)+' puntos':'el pedido')+hr(o.en_camino_en):' va a recoger'+(PRa.length?' · '+listos+' de '+PRa.length+' puntos adicionales listos':'')),e>2?'ok':'');
+        if(PRa.length){
+          const exOk=PRa.every(x=>x.costo_delivery!=null&&x.costo_delivery!==''),ex=PRa.reduce((a,x)=>a+(Number(x.costo_delivery)||0),0),pg=PRa.find(x=>x.paga_aqui);
+          const L=[{n:1,nombre:remN,direccion:o.direccion_recojo,referencia:o.referencia_recojo,a_nombre:aNom,telefono:remT,costo_delivery:exOk?Math.max(0,Math.round(((Number(o.total)||0)-ex)*100)/100):null,lat:o.latitud_recojo,lng:o.longitud_recojo,ubicacion:o.ubicacion_recojo,hecho:e>2?o.en_camino_en||'ok':null,paga:!pg}].concat(PRa.map(x=>Object.assign({},x,{hecho:x.recogido_en,paga:!!x.paga_aqui})));
+          L.forEach(q=>{h+=`<div class="sum" style="gap:10px"><div class="lbl">Punto ${E(q.n)} de ${L.length}${q.hecho?' · recogido'+(q.hecho!=='ok'?E(hr(q.hecho)):''):''}</div>`+
+            U.who(q.nombre||'Punto '+q.n,'Recojo aquí'+(q.n===1?' · pedido '+E(U.ref(id)):''),'',true)+U.addr(q.direccion,q.referencia)+
+            (q.a_nombre?li('Pedido a nombre de',E(q.a_nombre)):'')+(q.costo_delivery!=null&&q.costo_delivery!==''?li('Delivery de este punto',M(q.costo_delivery)):'')+(alRec&&q.paga?li('Paga el servicio','Aquí · '+M(o.total)):'')+
+            U.contact(U.maps(q.lat,q.lng,q.direccion,LK(q.ubicacion)),q.telefono,'')+`</div>`});
+        }else h+=U.who(remN,subQ('Recojo aquí · pedido '+U.ref(id)),'',true)+U.addr(o.direccion_recojo,o.referencia_recojo)+U.contact(U.maps(o.latitud_recojo,o.longitud_recojo,o.direccion_recojo,LK(o.ubicacion_recojo)),remT,'');
+        if(notas.length)h+=sumBox('Notas del servicio',txt(notas.join(' · ')));
+        h+=cobroRec();
       }
       s.body=h;}
     /* Yape a Pidemás: la captura (o el n.° de operación) se guarda con el pedido. En encomiendas que se pagan
