@@ -206,7 +206,7 @@
           s.sum=(listos===PR.length&&e>2?'Recogido en '+(PR.length+1)+' puntos':s.sum)}
         if(t==='recojo'&&notas.length)h+=sumBox('Notas del servicio',txt(notas.join(' · ')));
         if(t==='enc'){h+=pks.map(pkgBox).join('')}
-        if(alRec)h+=o.pago_confirmado===true?U.st('Cobro al recoger registrado · '+M(o.total)+' · '+metodo,'ok'):U.st('Cobra '+M(o.total)+' al recoger ('+(mom==='recojo_yape'?'Yape':'efectivo')+')');
+        if(alRec)h+=`<div class="amt"><div class="k">Cobro al cliente</div><div class="n">${M(o.total)}</div><div class="pill">${o.pago_confirmado===true?E(metodo):mom==='recojo_yape'?'Yape':'Efectivo'}</div></div>`+(o.pago_confirmado===true?U.st('El motorizado confirmó el cobro al recoger','ok'):U.note(t==='enc'?'El motorizado le cobra a quien envía al recoger los paquetes.':'El motorizado cobra al recoger, antes de salir a entregar.'));
       }
       s.body=h;}
     /* Yape a Pidemás: la captura (o el n.° de operación) se guarda con el pedido. En encomiendas que se pagan

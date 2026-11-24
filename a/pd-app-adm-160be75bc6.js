@@ -1083,7 +1083,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const tb=(l,k,ops,opc)=>`<div class="fld"><label>${l}</label><div style="display:grid;grid-template-columns:repeat(${ops.length},minmax(0,1fr));gap:10px">${ops.map(x=>{const on=String(f[k]??'').toLowerCase()===String(x[0]).toLowerCase();return bG(on,x[1],'pe:set:'+k+':'+(on&&opc?'':x[0]))}).join('')}</div></div>`;
     /* Efectivo: con cuánto paga y vuelto. Yape: el QR de Pidemás (el que se configura en Más › QR Yape) */
     const pagoExtra=()=>{
-      if(f.pago==='efectivo')return `<div class="fld"><label for="pePc">¿Con cuánto paga? (para el vuelto)</label><input id="pePc" inputmode="decimal" placeholder="Ej. 50" value="${E(f.pagacon??'')}" data-in="pe:pagacon"></div><div id="peVu" style="font-size:14px;line-height:1.4">${vueltoTxt(f)}</div>`;
+      if(f.pago==='efectivo'){const c=Number(String(f.costo||'').replace(',','.'))||0,vals=[];if(f.tipo!=='compra'&&c>0)[10,20,50,100,200].forEach(z=>{const r=Math.ceil(c/z)*z;if(r>c+0.004&&!vals.includes(r))vals.push(r)});
+        const qv=f.tipo==='compra'||!(c>0)?[]:[c].concat(vals.slice(0,3));
+        return `<div class="fld"><label for="pePc">¿Con cuánto paga?</label><input id="pePc" inputmode="decimal" placeholder="${c>0&&f.tipo!=='compra'?E(M(c)):'Ej. 50'}" value="${E(f.pagacon??'')}" data-in="pe:pagacon"></div>`+
+          (qv.length?`<div class="chips" style="flex-wrap:wrap;margin-top:-4px">${qv.map((z,i)=>`<button type="button" class="${String(f.pagacon??'')!==''&&Number(f.pagacon)===z?'on':''}" data-a="pe:set:pagacon:${z.toFixed(2)}">${i?'S/ '+z:'Exacto'}</button>`).join('')}</div>`:'')+
+          `<div id="peVu" style="font-size:14px;line-height:1.4">${vueltoTxt(f)}</div>`}
       if(f.pago==='yape'){const y=yapeCfg();
         return `<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px;border-radius:16px;background:#FFFFFF;border:1px dashed #E3CFC2;text-align:center"><img src="${E(y.url||'a/yape-qr-d656e70b4f.png')}" alt="QR de Yape de ${E(y.titular)}" style="width:200px;max-width:100%;height:auto;border-radius:12px"><b style="font-size:15px">Yape a ${E(y.titular)}</b><span style="font-size:14px;color:#6B5E55">${E(y.numero)} · el cliente paga al QR de Pidemás</span></div>`}
       return ''};
