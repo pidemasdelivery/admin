@@ -293,8 +293,8 @@
     {const s=steps[3];s.locked=t==='compra'?'Se muestra al terminar la compra':'Se muestra al recoger';
       if(t==='enc'){s.sum=guias?'Guías enviadas':'En agencia';
         const agsL=[...new Set(pks.map(p=>p.agencia).filter(Boolean))];
-        s.body=(enAg?U.st(procAg.length?'Llegó a '+E(procAg.filter(x=>x.llegada_en).map(x=>x.agencia).join(' y '))+(procAg.length<agsL.length?' · falta '+E(agsL.filter(a=>!procAg.some(x=>String(x.agencia).toLowerCase()===String(a).toLowerCase())).join(' y ')):''):'Paquetes en la agencia '+E(o.agencia_destino||''),'ok'):U.st(E(mn)+(agsL.length>1?' va a las agencias '+E(agsL.join(' y ')):' va a la agencia '+E(o.agencia_destino||''))))+
-          (guias?U.st('Guías completas · mándalas al cliente','ok'):enAg?U.st('Esperando la foto de la guía y la clave'):'')+
+        s.body=(enAg?U.st(procAg.length?'Llegó a '+E(procAg.filter(x=>x.llegada_en).map(x=>x.agencia).join(' y '))+(procAg.length<agsL.length?' · falta '+E(agsL.filter(a=>!procAg.some(x=>String(x.agencia).toLowerCase()===String(a).toLowerCase())).join(' y ')):''):'Paquetes en la agencia '+E(o.agencia_destino||''),'ok'):U.st(E(mn)+(agsL.length>1?' va a las agencias '+E(agsL.join(' y ')):' va a la agencia '+E(o.agencia_destino||''))))
+            .replace(/<\/span>(<\/div>)?$/,m=>(guias?' · guías completas, mándalas al cliente':enAg?' · esperando la guía y la clave':'')+m)+
           pks.map(p=>{const g=gDe(p.numero),ruta=E([p.agencia,p.destino].filter(Boolean).join(' → ')||'Paquete'),foto=g&&g.guia_url&&g.guia_url!=='whatsapp'?g.guia_url:'';
             if(!okG(g))return sumBox('Paquete '+p.numero+' · '+ruta,li('Guía','Aún no la sube'));
             const clv=g.sin_clave?'La agencia no dio clave':String(g.clave||'—');
@@ -309,22 +309,21 @@
             const txt='Hola'+(cliN?' '+String(cliN).split(' ')[0]:'')+', te escribimos de Pidemás. Tu encomienda '+U.ref(id)+(pks.length>1?' (paquete '+p.numero+')':'')+' ya está en la agencia '+(p.agencia||'')+'.\nDestino: '+(p.destino||'—')+'\nClave de recojo: '+clv+'\nFoto de la guía: '+foto+montos;
             const tel=String(cliT||'').replace(/\D/g,''),wa=tel?'https://wa.me/'+(tel.length===9?'51'+tel:tel)+'?text='+encodeURIComponent(txt):'';
             return `<div class="sum"><div class="lbl">Paquete ${p.numero} · ${ruta}</div><div style="display:flex;gap:12px;align-items:center"><a href="${E(foto)}" target="_blank" rel="noopener" style="flex:0 0 84px"><img src="${E(foto)}" alt="Guía del paquete ${p.numero}" style="width:84px;height:84px;object-fit:cover;border-radius:12px;display:block"></a>`+
-              `<div style="flex:1;min-width:0;display:flex;flex-direction:column">`+li('Clave',E(clv))+((paLinea||del!=null)?li('Por pagar',pendG>0.004?M(pendG):'Pagado ✓'):'')+`</div></div>`+
+              `<div style="flex:1;min-width:0;display:flex;flex-direction:column">`+li('Clave',g.sin_clave?'No dio clave':E(clv))+((paLinea||del!=null)?li('Por pagar',pendG>0.004?M(pendG):'Pagado ✓'):'')+`</div></div>`+
               (del==null&&pks.length>1?U.note('Este pedido se creó sin el delivery de cada paquete; el mensaje no lo incluye.'):'')+
               (wa?`<a class="b o" style="display:flex;width:100%;box-sizing:border-box;justify-content:center;margin-top:6px" href="${E(wa)}" target="_blank" rel="noopener">Enviar al cliente por WhatsApp</a>`:U.note('El cliente no tiene teléfono registrado.'))+`</div>`}).join('')+
           pagosAgHtml()+yapeAdm();}
       else{const cob=t==='compra'?(o.pago_confirmado===true&&!(Number(o.monto_recibido)>0)?0:tot0):cobra;
         s.sum=cob>0&&!alRec?'Cobrado '+M(cob)+' · '+metodo:'Entregado';
-        let h=['en_entrega','confirmando_pago'].includes(s0)?U.st(E(mn)+' llegó donde '+E(recN),'ok'):U.st(E(mn)+' va camino donde '+E(recN));
+        let h=e>=4||s0==='entregado'?U.st(E(mn)+' entregó a '+E(recN)+(o.entregado_en?' · '+U.hora(o.entregado_en):''),'ok'):['en_entrega','confirmando_pago'].includes(s0)?U.st(E(mn)+' llegó donde '+E(recN),'ok'):U.st(E(mn)+' va camino donde '+E(recN));
         if(mom==='al_final'){/* paga al final a Pidemás: el motorizado no cobra; queda en Cobros pendientes */
           h+=`<div class="amt"><div class="k">Paga al final a Pidemás</div><div class="n">${t==='compra'&&!(sub0>0)?'S/ —':M(tot0)}</div><div class="pill">${o.pago_confirmado===true?'Pagado':'Pendiente'}</div></div>`+(t==='compra'&&sub0>0?sumBox('Montos',li('Compra',M(sub0))+li('Servicio',M(serv0))+li('Total',M(tot0),1)):'');
           if(o.pago_confirmado===true)h+=U.st('El cliente ya pagó a Pidemás','ok');
           else if(t==='compra'&&!(sub0>0))h+=U.note('El monto sale cuando el motorizado registre la compra.');
           else h+=cobroSvcWa()+U.note('Si no paga, vuelve a enviarle el cobro. Cuando llegue el pago, confírmalo en <b>Caja › Cobros pendientes y Yape</b>.');}
         else if(t==='compra'&&!(sub0>0))h+=U.note('El monto a cobrar sale cuando el motorizado registre la compra.');
-        else if(!alRec&&cob>0)h+=`<div class="amt"><div class="k">Cobro al cliente</div><div class="n">${M(cob)}</div><div class="pill">${E(metodo)}</div></div>`+(t==='compra'?sumBox('Montos',li('Compra',M(sub0))+li('Servicio',M(serv0))+li('Total',M(tot0),1)):'');
-        else h+=U.st('Ya está pagado: no se cobra al entregar','ok');
-        if(o.pago_confirmado===true&&!alRec&&cob>0)h+=U.st('El motorizado confirmó el cobro','ok');
+        else if(!alRec&&cob>0)h+=(o.pago_confirmado===true?U.st('Cobró '+M(cob)+' · '+E(metodo),'ok'):`<div class="amt"><div class="k">Cobro al cliente</div><div class="n">${M(cob)}</div><div class="pill">${E(metodo)}</div></div>`)+(t==='compra'?sumBox('Montos',li('Compra',M(sub0))+li('Servicio',M(serv0))+li('Total',M(tot0),1)):'');
+        else h+=U.st(alRec?'Se cobró al recoger: no se cobra al entregar':'Ya está pagado: no se cobra al entregar','ok');
         h+=yapeAdm();
         h+=U.who(recN,(t==='compra'?'Cliente':'Quien recibe')+' · entrega aquí','',true)+U.addr(o.direccion_entrega,o.referencia_entrega)+U.contact(U.maps(o.latitud_entrega,o.longitud_entrega,o.direccion_entrega,LK(o.ubicacion_entrega)),recT,'Hola, te escribimos de Pidemás por tu pedido '+U.ref(id)+'.');
         s.body=h;}}
