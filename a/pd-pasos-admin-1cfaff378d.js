@@ -170,7 +170,7 @@
     /* 0 · Pedido recibido: quién lo pidió, cuánto cuesta el servicio y cómo paga */
     {const s=steps[0];s.sum=NOM+' · '+M(serv0)+(o.creado_en?' · '+U.hora(o.creado_en):'');
       const pagoTx=pagado?'Ya pagado':metodo+(alRec?' al recoger':'')+(t==='recojo'&&(qp==='envia'||qp==='recibe')?' · paga quien '+(qp==='envia'?'envía':'recibe'):'');
-      let h=`<div class="amt" style="padding:14px"><div class="k">${t==='compra'?'Costo del servicio':'Total del servicio'}</div><div class="n" style="font-size:36px">${M(serv0)}</div><div class="pill">${E(pagoTx)}</div></div>`;
+      let h=`<div class="amt"><div class="k">${t==='compra'?'Costo del servicio':'Total del servicio'}</div><div class="n">${M(serv0)}</div><div class="pill">${E(pagoTx)}</div></div>`;
       if(pagaCon>0&&!pagado&&metodo==='Efectivo')h+=t==='compra'&&!(sub0>0)?'<div class="vto info"><span>Pagará con · el vuelto sale con la compra</span><b>'+M(pagaCon)+'</b></div>':(pagaCon-tot0>0.004?'<div class="vto"><span>Vuelto · paga con '+M(pagaCon)+'</span><b>'+M(pagaCon-tot0)+'</b></div>':'<div class="vto"><span>Paga con '+M(pagaCon)+'</span><b>Sin vuelto</b></div>');
       /* solo el resumen: los datos de contacto salen en el paso donde se usan */
       const pideR=t==='recojo'&&/quien recibe/i.test(campo(o,'Pide el servicio')||'');
@@ -314,10 +314,10 @@
     const steps=['Negocio confirma','Asignar motorizado','Recojo en el local','Entrega y cobro','Cierre y pagos'].map((t,i)=>({title:t,state:e===-1?'locked':i<e?'done':i===e?'active':'locked'}));
     const finCerrado=e===4&&!((pa==='yape_negocio'||pa==='pagado')&&!o.delivery_negocio_cobrado_en);
     if(finCerrado)steps[4].state='done';
-    const resumen=`<div class="box"><div class="k">Resumen</div><div class="li"><span>Cliente</span><b>${E(cli)}</b></div><div class="li"><span>Productos</span><b>${M(o.subtotal)}</b></div><div class="li"><span>Delivery</span><b>${M(o.costo_delivery)}</b></div><div class="li t"><span>Total · ${E(yape?'Yape':'Efectivo')}</span><b>${M(o.total)}</b></div></div>`;
+    const resumen=`<div class="sum"><div class="lbl">Resumen</div><div class="li"><span>Cliente</span><b>${E(cli)}</b></div><div class="li"><span>Productos</span><b>${M(o.subtotal)}</b></div><div class="li"><span>Delivery</span><b>${M(o.costo_delivery)}</b></div><div class="li t"><span>Total · ${E(yape?'Yape':'Efectivo')}</span><b>${M(o.total)}</b></div></div>`;
     /* 1 */
     {const s=steps[0];s.sum=negNom+' aceptó'+(o.tiempo_preparacion_min?' · listo en '+o.tiempo_preparacion_min+' min':'');
-      s.body=U.who(negNom,'Negocio'+(n.direccion?' · '+E(n.direccion):''),n.logo_url||n.imagen_url||'')+resumen+
+      s.body=U.who(negNom,'Recojo aquí · pedido '+E(U.ref(id)),n.logo_url||n.imagen_url||'')+U.addr(n.direccion,'')+resumen+
         (st(o)==='pendiente'?U.st('Esperando que el negocio acepte. También puedes aceptarlo tú por el negocio.')+
           (()=>{const OT=opcTiempo(n);if(!tiempoSel[id])tiempoSel[id]=OT.def.n;const PO=opcPago(o,n);if(PO.length===1)pagoSel[id]=PO[0][0];
             return `<div><div class="lbl">¿En cuánto estará listo?</div><div class="grid4" style="grid-template-columns:repeat(${OT.ops.length},minmax(0,1fr))">${OT.ops.map(x=>`<button type="button" data-act="tiempo" data-n="${x.n}" class="${x.n===tiempoSel[id]?'on':''}">${E(x.t)}</button>`).join('')}</div></div>`+
@@ -342,11 +342,12 @@
     {const s=steps[3];s.locked='Se muestra cuando recoja el pedido';s.sum=cobra>0?'Cobrado '+M(cobra)+' · '+metodo:'Sin cobro al cliente';
       const qn=pa==='yape_negocio';
       s.body=(o.en_entrega_en?U.st(E(mn)+' llegó donde '+E(cli)+' · '+U.hora(o.en_entrega_en),'ok'):U.st(E(mn)+' va camino donde '+E(cli)))+
-        (cobra>0?`<div class="amt"><div class="k">Cobro al cliente</div><div class="n">${M(cobra)}</div><div class="pill">${E(metodo)}</div></div>`:U.st('El cliente ya pagó: no se cobra nada','ok'))+
+        (cobra>0?`<div class="amt"><div class="k">${pa==='solo_delivery'?'Cobro solo del delivery':'Cobro al cliente'}</div><div class="n">${M(cobra)}</div><div class="pill">${E(metodo)}</div></div>`+
+          `<div class="sum"><div class="lbl">Montos</div><div class="li"><span>Productos</span><b>${pa==='solo_delivery'?'Pagado':M(o.subtotal)}</b></div><div class="li"><span>Delivery</span><b>${M(o.costo_delivery)}</b></div></div>`:U.st('El cliente ya pagó: no se cobra nada','ok'))+
         (qn?`<div class="qr" style="cursor:default"><span class="im"${n.yape_qr_url?` style="background-image:url('${E(n.yape_qr_url)}')"`:''}>${n.yape_qr_url?'':'QR'}</span><span class="t"><span class="k">Yape del negocio</span><span class="a">${E(n.yape_titular||negNom)}</span><span class="b2">${E(n.yape_numero||'')}</span></span></div>`+
           (o.yape_negocio_estado==='esperando'?U.st('Esperando que el negocio confirme el Yape'):o.yape_negocio_estado==='llego'?U.st('El negocio confirmó el Yape','ok'):o.yape_negocio_estado==='no_llego'?U.st('Al negocio no le llegó el Yape','mal'):''):'')+
         (o.pago_confirmado===true&&cobra>0?U.st('El motorizado confirmó el cobro','ok'):'')+
-        U.addr(o.direccion_entrega,o.referencia_entrega)+U.contact(U.maps(o.latitud_entrega,o.longitud_entrega,o.direccion_entrega,LK(o.ubicacion_entrega)),o.telefono_cliente,'');}
+        U.who(cli,'Cliente · entrega aquí','',true)+U.addr(o.direccion_entrega,o.referencia_entrega)+U.contact(U.maps(o.latitud_entrega,o.longitud_entrega,o.direccion_entrega,LK(o.ubicacion_entrega)),o.telefono_cliente,'');}
     /* 5 */
     {const s=steps[4];s.locked='Se muestra cuando el pedido se entregue';
       const sub=Number(o.subtotal)||0,del=Number(o.costo_delivery)||0;
