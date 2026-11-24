@@ -2052,7 +2052,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   /* --- Crear negocio --- */
   const CATS_NEG=['Restaurantes','Comida criolla','Pizzerías','Pollerías','Hamburgueserías','Comida rápida','Sangucherías','Paviferías','Cevicherías','Chifas','Sushi y comida japonesa','Parrillas y anticuchos','Heladerías','Cafeterías','Juguerías','Dulcerías y pastelerías','Panaderías','Bodegas y minimarkets','Fruterías y verdulerías','Carnicerías','Licorerías','Farmacias y boticas','Ropa y moda','Calzado y zapatillas','Accesorios y bisutería','Tecnología','Celulares y accesorios','Belleza y cuidado personal','Hogar y decoración','Ferreterías','Deportes','Bebés y maternidad','Florerías y regalos','Mascotas','Librerías y útiles escolares','Jugueterías','Lavanderías'];
   const PASOS_NEG=['Datos del negocio','Ubicación','En la tienda','Imágenes','Acceso al panel del negocio'];
-  function cnNuevo(pre){return Object.assign({p:'nuevo',paso:0,nombre:'',cat:'',tel:'',desc:'',dir:'',maps:'',lat:'',lng:'',tiempo:'',activo:true,logo:null,portada:null,logoPrev:'',portadaPrev:''},pre||{})}
+/* sede: se guarda dentro del nombre como «Nombre (Sede)»; la tienda la muestra como pastilla */
+  const sedeSep=n=>{const t=String(n||'').trim(),m=t.match(/^(.*\S)\s*\(([^()]+)\)\s*$/);return m?[m[1],m[2].trim()]:[t,'']};
+  const sedeJun=(n,se)=>{n=String(n||'').trim().replace(/\s+/g,' ');se=String(se||'').replace(/[()]/g,'').trim().replace(/\s+/g,' ');return n&&se?n+' ('+se+')':n};
+  const SEDE_NOTA='<span style="display:block;font-size:13px;color:#6B5E55;margin:-4px 2px 4px">Si el negocio tiene varios locales, escribe aquí cuál es (ej. Jr. Arequipa). En la tienda se ve como una pastilla al lado del nombre.</span>';
+  function cnNuevo(pre){return Object.assign({p:'nuevo',paso:0,nombre:'',sede:'',cat:'',tel:'',desc:'',dir:'',maps:'',lat:'',lng:'',tiempo:'',activo:true,logo:null,portada:null,logoPrev:'',portadaPrev:''},pre||{})}
   window.pdAdmCrearNegocio=function(pre){SF['crear negocio']=cnNuevo(pre);abrirSec('crear negocio')};
   SEC['crear negocio']={g:'Negocios',t:'Crear negocio',
     v(){const k='crear negocio';if(!SF[k].p)SF[k]=cnNuevo();const f=SF[k];
@@ -2067,7 +2071,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const bar=`<div class="cd" style="gap:8px"><div class="lbl" style="margin:0">Paso ${f.paso+1} de 5</div><b style="font-size:18px">${PASOS_NEG[f.paso]}</b><div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px">${PASOS_NEG.map((_,i)=>`<span style="height:5px;border-radius:9px;background:${i<f.paso?'#15803D':i===f.paso?'#C4410C':'#EADFD6'}"></span>`).join('')}</div></div>`;
       const fi=(l,c,o)=>`<div class="fld"><label>${l}</label><input data-in="cn:${c}" value="${E(f[c]??'')}"${o||''}></div>`;
       let b='';
-      if(f.paso===0)b=`<div class="cd">${fi('Nombre del negocio','nombre',' placeholder="Ej. Nuevo restaurante" autocomplete="organization"')}
+      if(f.paso===0)b=`<div class="cd">${fi('Nombre del negocio','nombre',' placeholder="Ej. Nuevo restaurante" autocomplete="organization"')}${fi('Sede (opcional)','sede',' placeholder="Ej. Jr. Arequipa" maxlength="40" autocomplete="off"')}${SEDE_NOTA}
         <div class="fld"><label>Categoría del negocio</label><select data-in="cn:cat" style="height:56px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px;font-weight:700;width:100%;background:#fff"><option value="">Selecciona una categoría</option>${CATS_NEG.map(c=>`<option${f.cat===c?' selected':''}>${E(c)}</option>`).join('')}${f.cat&&!CATS_NEG.includes(f.cat)?`<option selected>${E(f.cat)}</option>`:''}</select></div>
         ${fi('Teléfono / WhatsApp','tel',' type="tel" inputmode="tel" maxlength="15" placeholder="Número de contacto"')}
         <div class="fld"><label>Descripción</label><textarea data-in="cn:desc" placeholder="Descripción breve del negocio" style="min-height:96px;padding:14px 16px;border-radius:14px;border:1.5px solid #F1E4DA;font:inherit;font-size:16px;width:100%;box-sizing:border-box">${E(f.desc)}</textarea></div></div>`;
@@ -2102,7 +2106,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         if(f.paso===1){const c=coordsDe(f.maps);if(c&&(f.lat===''||f.lng==='')){f.lat=String(c.lat);f.lng=String(c.lng)}f.paso=2;return}
         if(f.paso===2){f.paso=3;return}
         if(f.paso===3){const lat=f.lat===''?null:Number(f.lat),lng=f.lng===''?null:Number(f.lng);
-          const p={nombre:String(f.nombre).trim(),categoria_negocio:f.cat||null,telefono:String(f.tel).trim()||null,descripcion:String(f.desc).trim()||null,direccion:String(f.dir).trim()||null,google_maps_url:String(f.maps).trim()||null,
+          const p={nombre:sedeJun(f.nombre,f.sede),categoria_negocio:f.cat||null,telefono:String(f.tel).trim()||null,descripcion:String(f.desc).trim()||null,direccion:String(f.dir).trim()||null,google_maps_url:String(f.maps).trim()||null,
             latitud:Number.isFinite(lat)?lat:null,longitud:Number.isFinite(lng)?lng:null,tiempo_estimado:String(f.tiempo).trim()||null,activo:!!f.activo};
           let r=await D().from('negocios').insert(p).select('id').single();
           if(r.error){mal('No se pudo guardar el negocio: '+r.error.message);return}
@@ -2135,7 +2139,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   const cxSel=(k,ops,v,ph)=>`<select data-in="cx:${k}" style="height:56px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px;font-weight:700;width:100%;background:#fff">${ph?`<option value="">${E(ph)}</option>`:''}${ops.map(x=>`<option value="${E(x[0])}"${String(v)===String(x[0])?' selected':''}>${E(x[1])}</option>`).join('')}</select>`;
   const cxImg=(u,t,w)=>`<span style="flex:0 0 ${w?112:72}px;width:${w?112:72}px;height:72px;border-radius:16px;background:#FDEBDF center/cover no-repeat${u?` url('${E(u)}')`:''};display:flex;align-items:center;justify-content:center;color:#9A330A;font-size:12px;font-weight:700;text-align:center">${u?'':t}</span>`;
   function cxDatos(n){const H=cxHor(n.horario);const H2={};CX_DIAS.forEach(([k])=>{H2[k]=H[k]?{on:true,a:H[k].a,c:H[k].c,t2:!!H[k].t2,a2:H[k].a2||'18:00',c2:H[k].c2||'22:00'}:{on:false,a:'09:00',c:'22:00',t2:false,a2:'18:00',c2:'22:00'}});
-    return {nombre:n.nombre||'',cat:n.categoria_negocio||'',desc:n.descripcion||'',tel:n.telefono||'',ruc:n.ruc||'',dir:n.direccion||'',maps:n.google_maps_url||'',lat:n.latitud??'',lng:n.longitud??'',pub:n.ubicacion_publica!==false,tiempo:cxTiempo(n),ttoc:false,H:H2,ynum:n.yape_numero||'',ytit:n.yape_titular||''}}
+    return {nombre:sedeSep(n.nombre)[0],sede:sedeSep(n.nombre)[1],cat:n.categoria_negocio||'',desc:n.descripcion||'',tel:n.telefono||'',ruc:n.ruc||'',dir:n.direccion||'',maps:n.google_maps_url||'',lat:n.latitud??'',lng:n.longitud??'',pub:n.ubicacion_publica!==false,tiempo:cxTiempo(n),ttoc:false,H:H2,ynum:n.yape_numero||'',ytit:n.yape_titular||''}}
   SEC['configurar negocios']={g:'Negocios',t:'Configurar negocios',
     load:async()=>{const r=await D().from('negocios').select('*').order('nombre',{ascending:true});if(r.error)throw r.error;return r.data||[]},
     v(){const k='configurar negocios',c=datos(k,this.load),f=SF[k];f.tab=f.tab||'perfil';f.open=f.open||{};f.more=f.more||{};
@@ -2153,7 +2157,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const url='https://pidemas.pe/?negocio='+encodeURIComponent(n.id);
       const imgCard=(t,col,u,w,quit,kind)=>`<div class="row" style="align-items:center">${cxImg(u,'Sin '+t.toLowerCase(),w)}<span style="flex:1 1 0%;display:flex;flex-direction:column;gap:6px"><b>${t}</b><span class="row"><label class="b soft" style="flex:1;height:46px;cursor:pointer">${u?'Cambiar':'Subir'}<input type="file" accept="image/png,image/jpeg,image/webp" data-in="cxf:${kind}" style="display:none"></label>${u?`<button type="button" class="b" style="height:42px;padding:0 12px;color:#B42318;border-color:#F4C7C3" data-sa="iq:${kind}">Quitar</button>`:''}</span></span></div>`;
       h+=`<div class="cd"><div class="lbl">Imagen del negocio</div>${imgCard('Logo','logo_url',n.logo_url,false,1,'logo')}${imgCard('Portada','imagen_url',n.imagen_url,true,1,'portada')}</div>`;
-      h+=`<div class="cd"><div class="lbl">Datos del negocio</div>${cxIn('Nombre del negocio','nombre',d.nombre)}<div class="fld"><label>Categoría del negocio</label>${cxSel('cat',(d.cat&&!CATS_NEG.includes(d.cat)?[d.cat]:[]).concat(CATS_NEG).map(x=>[x,x]),d.cat,'Selecciona una categoría')}</div>
+      h+=`<div class="cd"><div class="lbl">Datos del negocio</div>${cxIn('Nombre del negocio','nombre',d.nombre)}${cxIn('Sede (opcional)','sede',d.sede,' placeholder="Ej. Jr. Arequipa" maxlength="40" autocomplete="off"')}${SEDE_NOTA}<div class="fld"><label>Categoría del negocio</label>${cxSel('cat',(d.cat&&!CATS_NEG.includes(d.cat)?[d.cat]:[]).concat(CATS_NEG).map(x=>[x,x]),d.cat,'Selecciona una categoría')}</div>
         <div class="fld"><label>Descripción</label><textarea data-in="cx:desc" style="min-height:90px;padding:14px 16px;border-radius:14px;border:1.5px solid #F1E4DA;font:inherit;font-size:16px;width:100%;box-sizing:border-box">${E(d.desc)}</textarea></div>
         <div class="g2">${cxIn('WhatsApp','tel',d.tel,' type="tel" inputmode="tel"')}${cxIn('RUC','ruc',d.ruc,' inputmode="numeric"')}</div></div>`;
       h+=`<div class="cd"><div class="lbl">Ubicación</div>${cxIn('Dirección del local','dir',d.dir)}<button type="button" class="b" style="height:46px" data-sa="mapa">${okc?'Cambiar en el mapa':'Marcar en el mapa'}</button>
@@ -2233,7 +2237,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(op==='pz'){const m=Number(arg)||0;const base=n.pausado_hasta&&new Date(n.pausado_hasta).getTime()>Date.now()?new Date(n.pausado_hasta).getTime():Date.now();await upd({pausado_hasta:m?new Date(base+m*60000).toISOString():null},m?'Pedidos en pausa':'El negocio ya recibe pedidos');return}
       if(op==='copiar'){const u='https://pidemas.pe/?negocio='+encodeURIComponent(n.id);try{await navigator.clipboard.writeText(u);ok('Enlace copiado')}catch(_){mal(u)}return}
       if(op==='iq'){const col={logo:'logo_url',portada:'imagen_url',yape:'yape_qr_url'}[arg];if(!(await conf('¿Quitar '+(arg==='logo'?'el logo':arg==='portada'?'la portada':'el QR de Yape')+' del negocio?')))return;await upd({[col]:null},'Imagen quitada');return}
-      if(op==='guardar'){const nombre=String(d.nombre).trim();if(!nombre){mal('El nombre es obligatorio.');return}
+      if(op==='guardar'){const nombre=sedeJun(d.nombre,d.sede);if(!nombre){mal('El nombre es obligatorio.');return}
         const la=d.lat===''?null:Number(d.lat),ln=d.lng===''?null:Number(d.lng);if((d.lat!==''&&!Number.isFinite(la))||(d.lng!==''&&!Number.isFinite(ln))){mal('La ubicación no es válida.');return}
         const yn=String(d.ynum).replace(/\D/g,'');if(yn&&yn.length!==9){mal('El número de Yape debe tener 9 dígitos.');return}
         const parts=[];for(const [k2,,nm] of CX_DIAS){const y=d.H[k2];if(!y.on)continue;if(!y.a||!y.c){mal(nm+': completa la hora de apertura y cierre.');return}if(y.a===y.c){mal(nm+': la apertura y el cierre no pueden ser iguales.');return}
