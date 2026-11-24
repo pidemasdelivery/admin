@@ -199,6 +199,12 @@
         if(alRec)h+=o.pago_confirmado===true?U.st('Cobro al recoger registrado · '+M(o.total)+' · '+metodo,'ok'):U.st('Cobra '+M(o.total)+' al recoger ('+(mom==='recojo_yape'?'Yape':'efectivo')+')');
       }
       s.body=h;}
+    /* Yape a Pidemás: la captura (o el n.° de operación) se guarda con el pedido. En encomiendas que se pagan
+       al final, aquí se registra el Yape del cliente. */
+    const PY=window.PdYapeP;
+    const yapeAdm=()=>{if(!PY)return '';
+      if(t==='enc'&&mom==='al_final'&&o.pago_confirmado!==true&&!pagado)return `<div class="amt"><div class="k">El cliente paga por Yape a Pidemás</div><div class="n">${M(o.total)}</div><div class="pill">Después de recibir la guía y la clave</div></div>`+PY.html(o)+`<button type="button" class="b o" data-act="yfReg">Registrar pago por Yape</button>`;
+      return PY.yaTiene(o)?PY.html(o):''};
     /* 3 · Entrega y cobro (o agencia): a dónde se lleva y cuánto se cobra */
     {const s=steps[3];s.locked=t==='compra'?'Se muestra al terminar la compra':'Se muestra al recoger';
       if(t==='enc'){s.sum=guias?'Guías enviadas':'En agencia';
@@ -226,7 +232,7 @@
               (paLinea?li('Pagado en '+E(p.agencia||'agencia'),M(pa)):'')+(del!=null?li('Delivery Pidemás',M(del)):'')+((paLinea||del!=null)?li('Total de esta guía',M(totG),1):'')+
               (del==null&&pks.length>1?U.note('Este pedido se creó sin el delivery de cada paquete; el mensaje no lo incluye.'):'')+
               (wa?`<a class="b o" style="display:flex;width:100%;box-sizing:border-box;justify-content:center;margin-top:6px" href="${E(wa)}" target="_blank" rel="noopener">Enviar al cliente por WhatsApp</a>`:U.note('El cliente no tiene teléfono registrado.'))+`</div>`}).join('')+
-          pks.filter((p,i,a)=>p.tel&&a.findIndex(y=>y.tel===p.tel)===i).map(p=>U.who(p.recibe||'—','Recibe paquete'+(pks.filter(y=>y.tel===p.tel).length>1?'s '+pks.filter(y=>y.tel===p.tel).map(y=>y.numero).join(' y '):' '+p.numero)+' · '+E(p.destino||''),'',true)+U.contact(null,p.tel,'')).join('');}
+          pks.filter((p,i,a)=>p.tel&&a.findIndex(y=>y.tel===p.tel)===i).map(p=>U.who(p.recibe||'—','Recibe paquete'+(pks.filter(y=>y.tel===p.tel).length>1?'s '+pks.filter(y=>y.tel===p.tel).map(y=>y.numero).join(' y '):' '+p.numero)+' · '+E(p.destino||''),'',true)+U.contact(null,p.tel,'')).join('')+yapeAdm();}
       else{const cob=t==='compra'?(o.pago_confirmado===true&&!(Number(o.monto_recibido)>0)?0:tot0):cobra;
         s.sum=cob>0&&!alRec?'Cobrado '+M(cob)+' · '+metodo:'Entregado';
         let h=['en_entrega','confirmando_pago'].includes(s0)?U.st(E(mn)+' llegó donde '+E(recN),'ok'):U.st(E(mn)+' va camino donde '+E(recN));
@@ -234,6 +240,7 @@
         else if(!alRec&&cob>0)h+=`<div class="amt"><div class="k">Cobro al cliente</div><div class="n">${M(cob)}</div><div class="pill">${E(metodo)}</div></div>`+(t==='compra'?sumBox('Montos',li('Compra',M(sub0))+li('Servicio',M(serv0))+li('Total',M(tot0),1)):'');
         else h+=U.st('Ya está pagado: no se cobra al entregar','ok');
         if(o.pago_confirmado===true&&!alRec&&cob>0)h+=U.st('El motorizado confirmó el cobro','ok');
+        h+=yapeAdm();
         h+=U.who(recN,(t==='compra'?'Cliente':'Quien recibe')+' · entrega aquí','',true)+U.addr(o.direccion_entrega,o.referencia_entrega)+U.contact(U.maps(o.latitud_entrega,o.longitud_entrega,o.direccion_entrega,LK(o.ubicacion_entrega)),recT,'Hola, te escribimos de Pidemás por tu pedido '+U.ref(id)+'.');
         s.body=h;}}
     /* 4 · Cerrado */
@@ -246,6 +253,11 @@
     m.alt=[];
     if(e===2&&s0==='asignado')m.alt.push({label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}});
     m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()}};
+    if(PY){Object.assign(m.acts,PY.acts(o));m.acts.yfReg=async b=>{if(b.disabled)return;error='';const f=PY.falta(o);if(f){error=f;PdPasos.render();return}
+      b.disabled=true;b.textContent='Registrando…';
+      try{await PY.guardar(o);const {error:e2}=await D().from('pedidos').update({pago_confirmado:true}).eq('id',o.id);if(e2)throw e2;o.pago_confirmado=true;
+        try{(window.pdExito||window.pdAviso||(()=>{}))('Pago por Yape registrado.')}catch(_){}try{(window.loadOrders||(typeof loadOrders==='function'?loadOrders:null))?.()}catch(_){}}
+      catch(x){error='No se pudo registrar: '+(x.message||x)}PdPasos.render()}}
     verPasos(steps);
     if(e===3&&t==='enc'&&!enAg){const ap=agPunto(o,o.agencia_destino,true);ponerMapa(m,steps,e,o,'entrega',[o.latitud_recojo,o.longitud_recojo],ap?[ap.lat,ap.lng]:[null,null],mn,{recPin:'Envía · '+String(remN).split(' ')[0],entPin:'Agencia '+String(o.agencia_destino||'').slice(0,16),recTx:'de quien envía',entTx:'de la agencia',recQuien:'Quien envía',entQuien:'La agencia'})}
     if(e===2||(e===3&&t!=='enc'))ponerMapa(m,steps,e,o,e===2?'recojo':'entrega',[o.latitud_recojo,o.longitud_recojo],[o.latitud_entrega,o.longitud_entrega],mn,
