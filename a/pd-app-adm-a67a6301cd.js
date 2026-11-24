@@ -1539,7 +1539,9 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
 
   /* --- Por cobrar a negocios --- */
   SEC['por cobrar a negocios']={g:'Control de caja y sueldos',t:'Por cobrar a negocios',rf:1,
-    load:async()=>{const b=await baseCtl();const {data,error}=await D().from('pedidos').select('id,negocio_id,costo_delivery,nombre_cliente,entregado_en,creado_en,pago_acordado').in('pago_acordado',['pagado','yape_negocio']).eq('estado','entregado').is('delivery_negocio_cobrado_en',null).order('creado_en',{ascending:true}).limit(1000);if(error)throw error;return {b,P:data||[]}},
+    load:async()=>{const b=await baseCtl();const {data,error}=await D().from('pedidos').select('id,negocio_id,costo_delivery,nombre_cliente,entregado_en,creado_en,pago_acordado,metodo_pago').in('pago_acordado',['pagado','yape_negocio']).eq('estado','entregado').is('delivery_negocio_cobrado_en',null).order('creado_en',{ascending:true}).limit(1000);if(error)throw error;
+      /* Yape del negocio que terminó en efectivo al motorizado: el negocio no recibió nada, no debe el delivery */
+      return {b,P:(data||[]).filter(p=>!(p.pago_acordado==='yape_negocio'&&String(p.metodo_pago||'').toLowerCase()==='efectivo'))}},
     v(){const c=datos('por cobrar a negocios',this.load);if(!c.data)return {body:cargando(c)};const {b,P}=c.data,f=SF['por cobrar a negocios'];f.off=f.off||{};f.quien=f.quien||{};
       const g=new Map();P.forEach(p=>{const k=String(p.negocio_id||'');if(!g.has(k))g.set(k,[]);g.get(k).push(p)});const tot=P.reduce((s,p)=>s+(Number(p.costo_delivery)||0),0);
       let h=`<div class="amt"><div class="k">Total por cobrar</div><div class="n">${M(tot)}</div><div class="pill">${g.size} negocio${g.size===1?'':'s'}</div></div>`+U.note('Pedidos donde el cliente pagó todo al negocio: el negocio le debe el delivery a Pidemás.');
@@ -1577,7 +1579,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   /* --- Por pagar a negocios --- */
   SEC['por pagar a negocios']={g:'Control de pedidos',t:'Por pagar a negocios',rf:1,
     load:async()=>{const b=await baseCtl();const {data,error}=await D().from('pedidos').select('id,negocio_id,subtotal,total,pago_acordado,metodo_pago,nombre_cliente,entregado_en,creado_en,motorizado_id').not('negocio_id','is',null).eq('estado','entregado').is('negocio_pagado_en',null).order('creado_en',{ascending:true}).limit(1000);if(error)throw error;
-      return {b,P:(data||[]).filter(p=>!['solo_delivery','pagado','yape_negocio'].includes(String(p.pago_acordado||''))&&Number(p.subtotal)>0)}},
+      return {b,P:(data||[]).filter(p=>{const pa=String(p.pago_acordado||'');if(pa==='yape_negocio')return String(p.metodo_pago||'').toLowerCase()==='efectivo'&&Number(p.subtotal)>0;return !['solo_delivery','pagado'].includes(pa)&&Number(p.subtotal)>0})}},
     v(){const k='por pagar a negocios',c=datos(k,this.load);if(!c.data)return {body:cargando(c)};const {b,P}=c.data,f=SF[k];f.off=f.off||{};f.quien=f.quien||{};f.met=f.met||{};
       const g=new Map();P.forEach(p=>{const x=String(p.negocio_id);if(!g.has(x))g.set(x,[]);g.get(x).push(p)});const tot=P.reduce((s,p)=>s+(Number(p.subtotal)||0),0);
       let h=`<div class="amt"><div class="k">Total por pagar</div><div class="n">${M(tot)}</div><div class="pill">${g.size} negocio${g.size===1?'':'s'}</div></div>`+U.note('Pedidos donde el cliente le pagó todo a Pidemás (al motorizado o por Yape): le debes al negocio el valor de los productos.');
