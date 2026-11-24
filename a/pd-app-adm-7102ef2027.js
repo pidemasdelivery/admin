@@ -2204,6 +2204,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       try{
       if(op==='tab'){f.tab=arg;f.e=null;return}
       if(op==='vis'){const q=n.visible_admin===false;if(!q&&!(await conf('¿Ocultar «'+(n.nombre||'este negocio')+'» de la tienda? El negocio no podrá volver a activarlo: le saldrá un aviso para que se ponga en contacto contigo.')))return;await upd({visible_admin:q},q?'Negocio visible en la tienda':'Negocio oculto en la tienda');return}
+      /* --- acceso --- */
+      if(op==='ver'){f.ver=!f.ver;return}
+      if(op==='pw'){const i=+arg,a=String((f.pw||{})[i+'a']||''),b=String((f.pw||{})[i+'b']||''),cu=(f.acc||[])[i];if(!cu)return;if(a.length<6){mal('La contraseña debe tener al menos 6 caracteres.');return}if(a!==b){mal('Las contraseñas no coinciden.');return}
+        const r=await D().rpc('admin_cambiar_clave_negocio',{p_usuario:cu.usuario_id,p_clave:a});if(r.error)throw r.error;f.pw={};ok('Contraseña cambiada');return}
       /* --- perfil --- */
       const d=f.d;
       if(op==='mapa'){const el2=window.pdMapa&&pdMapa.elegir;if(!el2)return;const c0=d.lat!==''&&Number.isFinite(Number(d.lat))?{lat:Number(d.lat),lng:Number(d.lng)}:null;const r=await el2({titulo:'Ubicación del local',centro:c0});if(!r)return;d.lat=Number(r.lat).toFixed(6);d.lng=Number(r.lng).toFixed(6);d.maps='https://maps.google.com/?q='+d.lat+','+d.lng;const lin=[r.linea,r.sub].filter(Boolean).join(', ');if(!String(d.dir).trim()&&lin)d.dir=lin;return}
@@ -2268,10 +2272,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         const cfg=Object.assign({},cxDsCfg(n)),prod=Object.assign({},cfg.prod||{}),nu={};if(e.ds.taper)nu.taper=e.ds.taper;if(e.ds.vaso)nu.vaso=e.ds.vaso;if(e.ds.ex.length)nu.ex=e.ds.ex.slice();
         if(JSON.stringify(nu)!==JSON.stringify(prod[String(id)]||{})){if(Object.keys(nu).length)prod[String(id)]=nu;else delete prod[String(id)];cfg.prod=prod;try{await upd({descartables_config:cfg})}catch(err){av+=' (los descartables no se guardaron)'}}
         f.e=null;(av?mal:ok)('Producto guardado'+av);return cxCargarCarta(f,n)}
-      /* --- acceso --- */
-      if(op==='ver'){f.ver=!f.ver;return}
-      if(op==='pw'){const i=+arg,a=String((f.pw||{})[i+'a']||''),b=String((f.pw||{})[i+'b']||''),cu=(f.acc||[])[i];if(!cu)return;if(a.length<6){mal('La contraseña debe tener al menos 6 caracteres.');return}if(a!==b){mal('Las contraseñas no coinciden.');return}
-        const r=await D().rpc('admin_cambiar_clave_negocio',{p_usuario:cu.usuario_id,p_clave:a});if(r.error)throw r.error;f.pw={};ok('Contraseña cambiada');return}
+
       }catch(err){mal('No se pudo completar: '+(err&&err.message||err))}}};
   async function cxCargarCarta(f,n){f.cargando=true;try{const [c,p]=await Promise.all([D().from('categorias_negocio').select('*').eq('negocio_id',n.id),D().from('productos_negocio').select('*').eq('negocio_id',n.id).order('orden',{ascending:true})]);if(c.error)throw c.error;if(p.error)throw p.error;
     f.C=(c.data||[]).sort((a,b)=>(Number(a.orden)||0)-(Number(b.orden)||0)||String(a.nombre||'').localeCompare(String(b.nombre||'')));f.P=p.data||[];f.pId=n.id}catch(e){mal('No se pudo cargar la carta: '+(e.message||e));f.P=[];f.C=[];f.pId=n.id}f.cargando=false;key='';pintar()}
