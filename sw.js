@@ -9,7 +9,9 @@ self.addEventListener('push',e=>{
   let d={};
   try{d=e.data?e.data.json():{}}catch(_){d={title:'Pidemás',body:e.data?e.data.text():''}}
   e.waitUntil((async()=>{
-    const list=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    // Solo a las ventanas de ESTE panel: admin, motorizado y negocio comparten pidemas.pe,
+    // y sin este filtro el aviso de un motorizado salía también en el Admin abierto.
+    const list=(await self.clients.matchAll({type:'window',includeUncontrolled:true})).filter(c=>String(c.url||'').startsWith(self.registration.scope));
     // Siempre se muestra el aviso (también con el panel abierto) y se avisa al panel.
     list.forEach(c=>c.postMessage({type:'pd-push',data:d}));
     await self.registration.showNotification(d.title||'Pidemás',{
@@ -28,7 +30,7 @@ self.addEventListener('notificationclick',e=>{
   e.notification.close();
   const id=e.notification.data&&e.notification.data.pedidoId;
   e.waitUntil((async()=>{
-    const list=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    const list=(await self.clients.matchAll({type:'window',includeUncontrolled:true})).filter(c=>String(c.url||'').startsWith(self.registration.scope));
     for(const c of list){c.postMessage({type:'pd-open',pedidoId:id});if('focus' in c)return c.focus();}
     if(self.clients.openWindow)return self.clients.openWindow(self.registration.scope+(id?'?pedido='+encodeURIComponent(id):''));
   })());

@@ -828,7 +828,7 @@ try{
     try{window.loadOrders&&window.loadOrders()}catch(_){}
   }
   window.pdTarjetaAviso=tarjetaAviso;
-  try{navigator.serviceWorker.addEventListener('message',e=>{const m=e.data||{};if(m.type==='pd-push')tarjetaAviso(m.data)})}catch(_){}
+  try{navigator.serviceWorker.addEventListener('message',e=>{const m=e.data||{};if(m.type==='pd-push'&&!(m.data&&m.data.rol&&m.data.rol!=='administrador'))tarjetaAviso(m.data)})}catch(_){}
 })();
 
 /* ===== pidemas-campana-pedidos-js ===== */
