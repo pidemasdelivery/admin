@@ -67,7 +67,7 @@
 
 
   /* ---------- Servicios (recojo y entrega, compra, encomienda) ---------- */
-  const limpiar=t=>String(t||'').replace(/__PIDEMAS_[A-Z_]+__\s*\{[^{}]*\}/g,'').replace(/\[COMPROBANTE_YAPE:[^\]]*\]/gi,'').replace(/\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+){2,}\b/g,'').replace(/(?:^|[|·])\s*Ubicaci[oó]n[^:|·]*:\s*[^|·]*/gi,'').split(/[|·]/).map(x=>x.trim()).filter(Boolean);
+  const limpiar=t=>String(t||'').replace(/__PIDEMAS_[A-Z_]+__\s*\{[^{}]*\}/g,'').replace(/\[COMPROBANTE_YAPE:[^\]]*\]/gi,'').replace(/\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+){2,}\b/g,'').replace(/(?:^|[|·])\s*Ubicaci[oó]n[^:|·]*:\s*[^|·]*/gi,'').split(/[|·]/).map(x=>x.replace(/https?:\/\/\S+/g,'').trim()).filter(Boolean);
   const campo=(o,...ls)=>{const raw=String(o.observaciones||'');for(const l of ls){const x=l.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const m=raw.match(new RegExp('(?:^|[|·]\\s*)'+x+'\\s*:\\s*([^|·]*)','i'));if(m&&m[1].trim())return m[1].trim()}return ''};
   const link=v=>{const t=String(v||'').trim();if(!t)return '';return /^https?:\/\//i.test(t)?t:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(t)};
   function etapaSvc(o){
