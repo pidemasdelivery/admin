@@ -122,9 +122,19 @@
     /* paquetes de la encomienda (agencia y destino) y la guía que subió el motorizado por cada uno */
     const pks=[{numero:1,agencia:o.agencia_destino||'',destino:o.destino_final||o.direccion_entrega||'',pago:o.tipo_pago_encomienda,recibe:o.nombre_receptor||'',tel:o.telefono_receptor||'',dni:o.dni_receptor||''}];
     const PX=(Array.isArray(o.paquetes_extra)?o.paquetes_extra:[]).filter(x=>x&&Number(x.numero)>1);
-    if(PX.length)PX.forEach(x=>pks.push({numero:+x.numero,agencia:x.agencia||'',destino:x.destino||'',pago:x.tipo_pago,recibe:x.recibe_nombre||'',tel:x.recibe_telefono||'',dni:x.recibe_dni||''}));
+    if(PX.length)PX.forEach(x=>pks.push({numero:+x.numero,agencia:x.agencia||'',destino:x.destino||'',pago:x.tipo_pago,recibe:x.recibe_nombre||'',tel:x.recibe_telefono||'',dni:x.recibe_dni||'',cd:x.costo_delivery}));
     else{const m=String(o.observaciones||'').match(/PAQUETES ADICIONALES:\s*([^|]*(?:\|\|[^|]*)*)/);if(m)m[1].split('||').forEach(z=>{const r=z.match(/Paquete\s*(\d+)\s*:\s*Agencia\s*([^;]*);\s*destino\s*([^;]*)/i);if(r){const mp=z.match(/modalidad\s+([a-z_]+)/i);pks.push({numero:+r[1],agencia:r[2].trim(),destino:r[3].trim(),pago:mp?mp[1]:'',recibe:o.nombre_receptor||'',tel:o.telefono_receptor||''})}})}
     const pagoTx=v=>v==='pago_en_agencia'?'Pago en agencia':v==='pago_a_destino'?'Pago a destino':'—';
+    /* delivery de cada paquete (guía): los adicionales lo guardan en paquetes_extra; el paquete 1 es el resto del total */
+    {const nn=v=>v===null||v===undefined||v===''?NaN:Number(v);const tot=Number(o.costo_delivery)||0;
+      if(pks.length===1)pks[0].cd=tot;
+      else if(pks.slice(1).every(p=>Number.isFinite(nn(p.cd)))){const ex=pks.slice(1).reduce((a,p)=>a+nn(p.cd),0);pks[0].cd=Math.max(0,Math.round((tot-ex)*100)/100);pks.slice(1).forEach(p=>p.cd=nn(p.cd))}
+      else pks.forEach(p=>p.cd=null)}
+    const agK=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+    /* lo que se pagó en la agencia de ese paquete (lo registra el motorizado al pagar) */
+    const pagoAg=p=>{if(p.pago!=='pago_en_agencia')return null;const L=Array.isArray(o.agencias_proceso)?o.agencias_proceso:[];const x=L.find(y=>agK(y.agencia)===agK(p.agencia)&&y.pago_en);
+      if(x)return Number(x.pago_monto)||0;if(pks.length===1&&Number(o.monto_pagado_agencia)>0)return Number(o.monto_pagado_agencia);return null};
+    const mismaAg=p=>pks.filter(y=>agK(y.agencia)===agK(p.agencia));
     const pkgBox=p=>sumBox('Paquete '+p.numero,li('Ruta',E([p.agencia,p.destino].filter(Boolean).join(' → ')||'—'))+li('Pago del envío',pagoTx(p.pago))+li('Recibe',E(p.recibe||'—'))+(p.tel?li('Teléfono',E(p.tel)):'')+(p.dni?li('DNI',E(p.dni)):''));
     const procAg=Array.isArray(o.agencias_proceso)?o.agencias_proceso:[];
     const gs=paq.filter(x=>x&&Number(x.numero)>0);
@@ -202,10 +212,18 @@
             const clv=g.sin_clave?'La agencia no dio clave':String(g.clave||'—');
             if(!foto)return sumBox('Guía · paquete '+p.numero,li(ruta,'Enviada por WhatsApp')+li('Clave','Revisa tu WhatsApp'));
             const cliT=o.telefono_cliente||o.telefono_remitente,cliN=o.nombre_cliente||o.nombre_remitente||'';
-            const txt='Hola'+(cliN?' '+String(cliN).split(' ')[0]:'')+', te escribimos de Pidemás. Tu encomienda '+U.ref(id)+(pks.length>1?' (paquete '+p.numero+')':'')+' ya está en la agencia '+(p.agencia||'')+'.\nDestino: '+(p.destino||'—')+'\nClave de recojo: '+clv+'\nFoto de la guía: '+foto;
+            const pa=pagoAg(p),grp=mismaAg(p),primero=grp[0]===p,paLinea=pa!=null&&primero,del=p.cd,ya=pagado||mom==='pagado'||(o.pago_confirmado===true&&mom!=='al_final');
+            const totG=Math.round(((paLinea?pa:0)+(del!=null?del:0))*100)/100;
+            const mL=[];if(p.pago==='pago_en_agencia'){if(paLinea)mL.push('• Envío pagado en '+(p.agencia||'la agencia')+(grp.length>1?' (paquetes '+grp.map(y=>y.numero).join(' y ')+')':'')+': '+M(pa));else if(pa!=null)mL.push('• Envío: ya incluido en la guía del paquete '+grp[0].numero);}
+              else if(p.pago==='pago_a_destino')mL.push('• Envío: se paga al recoger en destino');
+            if(del!=null)mL.push('• Delivery Pidemás: '+M(del));
+            const montos=mL.length?'\n\n*Montos de esta guía*\n'+mL.join('\n')+((paLinea||del!=null)?'\n*Total: '+M(totG)+'*'+(ya?' (ya pagado)':''):''):'';
+            const txt='Hola'+(cliN?' '+String(cliN).split(' ')[0]:'')+', te escribimos de Pidemás. Tu encomienda '+U.ref(id)+(pks.length>1?' (paquete '+p.numero+')':'')+' ya está en la agencia '+(p.agencia||'')+'.\nDestino: '+(p.destino||'—')+'\nClave de recojo: '+clv+'\nFoto de la guía: '+foto+montos;
             const tel=String(cliT||'').replace(/\D/g,''),wa=tel?'https://wa.me/'+(tel.length===9?'51'+tel:tel)+'?text='+encodeURIComponent(txt):'';
             return `<div class="sum"><div class="lbl">Guía · paquete ${p.numero}</div><a href="${E(foto)}" target="_blank" rel="noopener"><img src="${E(foto)}" alt="Guía del paquete ${p.numero}" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;display:block"></a>`+
               li('Ruta',ruta)+li('Clave de recojo',E(clv))+(g.subido_en?li('Subida',E(U.hora(g.subido_en))):'')+
+              (paLinea?li('Pagado en '+E(p.agencia||'agencia'),M(pa)):'')+(del!=null?li('Delivery Pidemás',M(del)):'')+((paLinea||del!=null)?li('Total de esta guía',M(totG),1):'')+
+              (del==null&&pks.length>1?U.note('Este pedido se creó sin el delivery de cada paquete; el mensaje no lo incluye.'):'')+
               (wa?`<a class="b o" style="display:flex;width:100%;box-sizing:border-box;justify-content:center;margin-top:6px" href="${E(wa)}" target="_blank" rel="noopener">Enviar al cliente por WhatsApp</a>`:U.note('El cliente no tiene teléfono registrado.'))+`</div>`}).join('')+
           pks.filter((p,i,a)=>p.tel&&a.findIndex(y=>y.tel===p.tel)===i).map(p=>U.who(p.recibe||'—','Recibe paquete'+(pks.filter(y=>y.tel===p.tel).length>1?'s '+pks.filter(y=>y.tel===p.tel).map(y=>y.numero).join(' y '):' '+p.numero)+' · '+E(p.destino||''),'',true)+U.contact(null,p.tel,'')).join('');}
       else{const cob=t==='compra'?(o.pago_confirmado===true&&!(Number(o.monto_recibido)>0)?0:tot0):cobra;
