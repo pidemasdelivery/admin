@@ -218,10 +218,10 @@
         s.sum=(lugar||'Compra')+(PRa.length?' + '+PRa.length+' sitio'+(PRa.length>1?'s':''):'')+(sub0>0?' · gastó '+M(sub0):'');
         if(!h)h=U.st(E(mn)+(e>2||sub0>0?' hizo la compra'+(sub0>0?' · gastó '+M(sub0):''):' está haciendo la compra'+(PRa.length?' · '+PRa.filter(x=>x.recogido_en).length+' de '+PRa.length+' sitios adicionales listos':'')),e>2||sub0>0?'ok':'');
         const L=[{n:1,nombre:lugar||'Lugar no indicado',que:det,url:lugar||LK(lr)||LK(o.ubicacion_recojo)?U.maps(o.latitud_recojo,o.longitud_recojo,lugar,LK(lr)||LK(o.ubicacion_recojo)):''}]
-          .concat(PRa.map(x=>({n:x.n,nombre:x.nombre||'Sitio '+x.n,que:x.que,hecho:x.recogido_en,url:x.lat&&x.lng||x.ubicacion?U.maps(x.lat,x.lng,x.nombre,LK(x.ubicacion)):''})));
+          .concat(PRa.map(x=>({n:x.n,nombre:x.nombre||'Sitio '+x.n,que:x.que,obs:x.obs,hecho:x.recogido_en,url:x.lat&&x.lng||x.ubicacion?U.maps(x.lat,x.lng,x.nombre,LK(x.ubicacion)):''})));
         L.forEach(q=>{h+=`<div class="sum" style="gap:10px"><div class="lbl">${L.length>1?'Sitio '+q.n+' de '+L.length+(q.hecho?' · comprado'+E(hr(q.hecho)):''):'Lugar de compra'}</div>`+
           U.who(q.nombre,'Compra aquí'+(q.n===1?' · pedido '+E(U.ref(id)):''),'')+`<div class="lbl" style="margin-top:4px">Qué comprar</div>`+txt(q.que||'—')+
-          (q.n===1&&notas.length?`<div class="lbl" style="margin-top:4px">Observaciones</div>`+txt(notas.join(' · ')):'')+btnIr(q.url,L.length>1?'Ir al sitio '+q.n:'Ir al lugar de compra')+`</div>`});
+          ((q.n===1?notas.join(' · '):q.obs)?`<div class="lbl" style="margin-top:4px">Observaciones</div>`+txt(q.n===1?notas.join(' · '):q.obs):'')+btnIr(q.url,L.length>1?'Ir al sitio '+q.n:'Ir al lugar de compra')+`</div>`});
         h+=compBox();
         if(!(sub0>0)&&e>=2)h+=U.note('El motorizado registra aquí cuánto gastó en la compra.');
       }else if(t==='enc'){
