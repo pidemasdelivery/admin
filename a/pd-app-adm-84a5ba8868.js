@@ -1021,6 +1021,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       pago:met,quien:o.quien_paga||(/^recojo_/.test(String(o.pago_servicio_momento||''))?'envia':'recibe'),
       pide:/quien recibe/i.test(tagDe(obs,'Pide el servicio'))?'recibe':'envia',
       pts:(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).map(x=>({nom:x.nombre||'',tel:x.telefono||'',dir:x.direccion||'',ref:x.referencia||'',ubi:x.ubicacion||'',que:x.que||'',anom:x.a_nombre||'',cd:x.costo_delivery==null?'':String(x.costo_delivery)}))});
+    if(b.tipo==='recojo'){const k=(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).findIndex(x=>x&&x.paga_aqui);b.pagapt=String(k>=0?k+2:1)}
     else if(b.tipo==='compra')Object.assign(b,{nom:o.nombre_cliente||'',tel:o.telefono_cliente||'',dir:o.direccion_entrega||'',ref:o.referencia_entrega||'',ubi:o.ubicacion_entrega||tagDe(obs,'Ubicación','Ubicación del cliente'),
       lugar:o.direccion_recojo||o.lugar_compra||tagDe(obs,'Lugar de compra'),detalle:o.detalle_compra||tagDe(obs,'Compra solicitada'),obs:libreDe(obs),comp:o.tipo_comprobante||tagDe(obs,'Comprobante').replace(/^No especificado$/i,''),doc:o.documento_comprobante||tagDe(obs,'DNI/RUC'),cnom:tagDe(obs,'Nombre comprobante'),craz:tagDe(obs,'Razón social'),cdir:tagDe(obs,'Dirección fiscal'),pago:met});
     if(b.tipo==='compra'&&b.pago==='pagado')b.pago='efectivo';
@@ -1110,7 +1111,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       (f.tipo==='enc'?sg('¿Cómo paga el servicio?','pago',[['efectivo','Efectivo al recoger'],['yape','Yape al recoger'],['al_final','Al final a Pidemás · al recibir la guía']])
        :tb(f.tipo==='compra'?'¿Cómo paga el cliente la compra y el servicio?':'¿Cómo paga el servicio?','pago',[['efectivo','Efectivo'],['yape','Yape']])+`<div style="display:grid;margin-top:-4px">${bG(f.pago==='al_final','Al final a Pidemás','pe:set:pago:'+(f.pago==='al_final'?'efectivo':'al_final'))}</div>`)+
       (f.pago==='al_final'?U.note(f.tipo==='enc'?'El motorizado no cobra: el cliente le paga a Pidemás después de recibir la guía y la clave.':f.tipo==='compra'?'El motorizado compra con su caja y no cobra al entregar. El cliente le paga a Pidemás la compra y el servicio; queda en Cobros pendientes.':'El motorizado no cobra. El cliente le paga el servicio a Pidemás; queda en Cobros pendientes.'):pagoExtra())+
-      (f.tipo==='recojo'&&f.pago!=='pagado'&&f.pago!=='al_final'?sg('¿Quién paga el servicio?','quien',[['envia','Quien envía'],['recibe','Quien recibe']]):''));
+      (f.tipo==='recojo'&&f.pago!=='pagado'&&f.pago!=='al_final'?sg('¿Quién paga el servicio?','quien',[['envia','Quien envía'],['recibe','Quien recibe']])+
+        (ptMulti(f)&&f.quien==='envia'?sg('¿En qué punto de recojo paga?','pagapt',[[ '1','Punto 1 · '+(String(f.rnom||'').trim()||'quien envía')]].concat((f.pts||[]).map((q,i)=>[String(i+2),'Punto '+(i+2)+(String(q.nom||'').trim()?' · '+String(q.nom).trim():'')])))+`<span style="font-size:13px;color:#6B5E55;margin-top:-4px">Ahí el motorizado cobra el total del servicio (${Number.isFinite(ptSuma(f))?M(ptSuma(f)):'S/ —'}).</span>`:''):''));
     let h='';
     if(f.tipo==='recojo'){
       h+=card('Información de quien envía',fl('peRn','Nombre y apellido','rnom','')+fl('peRt','Teléfono','rtel','',tel)+fl('peRd','Dirección','rdir','')+fl('peRr','Referencia','rref','Ej. frente al parque, portón negro')+fl('peRa','¿A nombre de quién está el pedido?','anom','Ej. Juan Pérez · si es distinto de quien entrega')+fl('peRu','Ubicación (Google Maps)','rubi','Pega el enlace de Google Maps')+mp('rubi','rdir','Lugar de recojo'));
@@ -1154,7 +1156,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         nombre_receptor:f.enom.trim(),telefono_receptor:f.etel.trim(),direccion_entrega:f.edir.trim(),referencia_entrega:f.eref.trim()||null,ubicacion_entrega:f.eubi.trim()||null,que_se_lleva:f.lleva.trim()||null,
         costo_delivery:costo,subtotal:0,total:costo,metodo_pago:pagado?'efectivo':finalP?'yape':f.pago,pago_servicio_momento:mom,quien_paga:pagado||finalP?null:f.quien};
       obs=rehacerObs(obs,{'Pide el servicio':pideR?'Quien recibe':'','Ubicación de recojo':f.rubi,'Ubicación de entrega':f.eubi,'Referencia de recojo':f.rref,'Pedido a nombre de':f.anom,'Qué se lleva':f.lleva});
-      obs=[pagado?'Servicio marcado como PAGADO; no cobrar monto al cliente':finalP?'El cliente paga al final a Pidemás; el motorizado no cobra':(f.pago==='efectivo'?'Pago en efectivo: S/ '+costo.toFixed(2):'Pago por Yape: pendiente de captura y confirmación del administrador'),pagado||finalP?'':(f.quien==='envia'?'Paga quien envía, al recoger':'Paga quien recibe, al entregar')].filter(Boolean).concat(segs(obs)).join(' | ');
+      obs=[pagado?'Servicio marcado como PAGADO; no cobrar monto al cliente':finalP?'El cliente paga al final a Pidemás; el motorizado no cobra':(f.pago==='efectivo'?'Pago en efectivo: S/ '+costo.toFixed(2):'Pago por Yape: pendiente de captura y confirmación del administrador'),pagado||finalP?'':(f.quien==='envia'?'Paga quien envía, al recoger'+(ptMulti(f)?(()=>{const n=+f.pagapt||1,q=n>1?(f.pts||[])[n-2]:null,nm=String(n>1?(q&&q.nom)||'':f.rnom||'').trim();return ', en el punto '+n+(nm?' ('+nm.replace(/[|·]/g,' ')+')':'')})():''):'Paga quien recibe, al entregar')].filter(Boolean).concat(segs(obs)).join(' | ');
       const cr=coordsDe(f.rubi),ce=coordsDe(f.eubi);if(cr){p.latitud_recojo=cr.lat;p.longitud_recojo=cr.lng}if(ce){p.latitud_entrega=ce.lat;p.longitud_entrega=ce.lng}
       p.puntos_recojo=nsPuntosPayload(f,o);
     }else if(f.tipo==='compra'){
@@ -1281,10 +1283,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function ptSuma(f){const L=[f.cdp].concat((f.pts||[]).map(q=>q.cd)).map(cdN);return L.every(Number.isFinite)?Math.round(L.reduce((a,b)=>a+b,0)*100)/100:NaN}
   function nsPuntosPayload(f,o){
     const antes=Array.isArray(o.puntos_recojo)?o.puntos_recojo:[];
-    return (f.pts||[]).map(q=>({nom:String(q.nom||'').trim(),tel:String(q.tel||'').trim(),dir:String(q.dir||'').trim(),ref:String(q.ref||'').trim(),ubi:String(q.ubi||'').trim(),que:String(q.que||'').trim(),anom:String(q.anom||'').trim(),cd:cdN(q.cd)}))
+    return (f.pts||[]).map(q=>({nom:String(q.nom||'').trim(),tel:String(q.tel||'').trim(),dir:String(q.dir||'').trim(),ref:String(q.ref||'').trim(),ubi:String(q.ubi||'').trim(),que:String(q.que||'').trim(),anom:String(q.anom||'').trim(),cd:cdN(q.cd),paga:f.tipo==='recojo'&&f.quien==='envia'&&f.pago!=='al_final'&&f.pago!=='pagado'&&String(f.pagapt||'1')===String((f.pts||[]).indexOf(q)+2)}))
       .filter(q=>q.nom||q.tel||q.dir||q.ubi)
       .map((q,i)=>{const c=coordsDe(q.ubi),ya=antes.find(x=>Number(x.n)===i+2&&x.recogido_en&&String(x.direccion||'')===q.dir&&String(x.ubicacion||'')===q.ubi);
-        return {n:i+2,nombre:q.nom||null,telefono:q.tel||null,direccion:q.dir||null,referencia:q.ref||null,ubicacion:q.ubi||null,lat:c?c.lat:null,lng:c?c.lng:null,que:q.que||null,a_nombre:q.anom||null,costo_delivery:Number.isFinite(q.cd)?q.cd:null,recogido_en:ya?ya.recogido_en:null}});
+        return {n:i+2,nombre:q.nom||null,telefono:q.tel||null,direccion:q.dir||null,referencia:q.ref||null,ubicacion:q.ubi||null,lat:c?c.lat:null,lng:c?c.lng:null,que:q.que||null,a_nombre:q.anom||null,costo_delivery:Number.isFinite(q.cd)?q.cd:null,paga_aqui:q.paga||null,recogido_en:ya?ya.recogido_en:null}});
   }
   /* ---------- Paquete de encomienda: el mismo formulario para el 1, 2, 3… ---------- */
   const PK_MAP={ind:'ind1',rn:'enom',rd:'edni',rt:'etel'};
@@ -1352,6 +1354,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(false){
       const k=f.paqs.findIndex(q=>!q.tpago||!t(q.ag)||!t(q.dest));if(k>=0)return 'Completa agencia, destino y modalidad de pago del paquete '+(k+2)+'.';
       const r=f.paqs.findIndex(q=>!q.igual&&!(t(q.rn)&&t(q.rt)));if(r>=0)return 'Escribe nombre y teléfono de quien recibe el paquete '+(r+2)+', o marca que lo recibe la misma persona del paquete 1.'}
+    if(paso==='Información de pago del servicio'&&ptMulti(f)&&f.quien==='envia'&&f.pago!=='al_final'&&!(+f.pagapt>=1&&+f.pagapt<=1+f.pts.length))return 'Elige en qué punto de recojo paga el servicio.';
     if(paso==='Información de pago del servicio'&&ptMulti(f)){if(!Number.isFinite(cdN(f.cdp)))return 'Escribe el delivery del punto 1.';const k=f.pts.findIndex(q=>!Number.isFinite(cdN(q.cd)));if(k>=0)return 'Escribe el delivery del punto '+(k+2)+'.';f.costo=String(ptSuma(f))}
     if(paso==='Información de pago del servicio'&&cdMulti(f)){const n=1+f.paqs.length;for(let k=0;k<n;k++)if(!Number.isFinite(cdN(pkGet(f,k,'cd'))))return 'Escribe el delivery del paquete '+(k+1)+'.';f.costo=String(cdSuma(f))}
     if(paso==='Información de pago del servicio'&&!(Number(String(f.costo).replace(',','.'))>=0&&t(f.costo)))return 'Escribe el costo del servicio.';
@@ -2764,7 +2767,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
           f.tf={t:'<b>'+M(t.total)+'</b>'+(km?' · '+km.toFixed(2)+' km'+(aprox?' (aprox.)':''):'')+(t.zona?' · Zona '+E(t.zona):'')+(orig?'':' · Sin ubicación de '+(f.tipo==='compra'?'la compra':'recojo')+': tarifa base o de zona')}}}
       catch(err){f.tf={mal:1,t:'No se pudo calcular: '+E(err?.message||err)}}key='';pintar();return}
     if(PE.f&&a.dataset.a==='pe:pt+'){const f=PE.f;f.pts=f.pts||[];if(f.pts.length<5){f.pts.push({nom:'',tel:'',dir:'',ref:'',ubi:'',que:'',anom:'',cd:''});if(f.nuevo)f.paso=nsPasos(f).indexOf('Punto de recojo '+(f.pts.length+1));f.msg=''}key='';pintar();return}
-    if(PE.f&&a.dataset.a.startsWith('pe:ptx:')){(PE.f.pts||[]).splice(+a.dataset.a.slice(7),1);if(!PE.f.pts.length)PE.f.cdp='';PE.f.paso=Math.min(PE.f.paso||0,nsPasos(PE.f).length-1);key='';pintar();return}
+    if(PE.f&&a.dataset.a.startsWith('pe:ptx:')){(PE.f.pts||[]).splice(+a.dataset.a.slice(7),1);if(!PE.f.pts.length)PE.f.cdp='';if(+PE.f.pagapt>1+PE.f.pts.length)PE.f.pagapt='1';PE.f.paso=Math.min(PE.f.paso||0,nsPasos(PE.f).length-1);key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:ptmapa:')){const q=(PE.f.pts||[])[+a.dataset.a.slice(10)];const el2=window.pdMapa&&pdMapa.elegir;if(!q||!el2)return;
       const r=await el2({titulo:'Punto de recojo '+(+a.dataset.a.slice(10)+2),centro:coordsDe(q.ubi)||coordsDe(PE.f.rubi)});if(!r)return;
       q.ubi='https://maps.google.com/?q='+Number(r.lat).toFixed(6)+','+Number(r.lng).toFixed(6);const lin=[r.linea,r.sub].filter(Boolean).join(', ');if(!String(q.dir||'').trim()&&lin)q.dir=lin;key='';pintar();return}
