@@ -969,6 +969,30 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       try{C2.caja&&(C2.caja.t=0)}catch(_){}
     }catch(e){console.warn('[caja] corrección de pago',e)}
   }
+  /* Si se edita el monto de un pedido ya cobrado, la caja se corrige para que cuadre:
+     - cobrado en efectivo: movimiento «Corrección de monto (Pidemás)» por la diferencia en la caja del motorizado
+     - cobrado por Yape y aún no confirmado: se actualiza el monto del cobro en «Yape por confirmar» */
+  const aCobrarDe=x=>{const pg=String(x.pago_servicio_momento||'').toLowerCase()==='pagado'||x.pago_acordado==='pagado'||/servicio marcado como pagado/i.test(String(x.observaciones||''));if(pg)return 0;
+    return Math.round((x.pago_acordado==='solo_delivery'?Number(x.costo_delivery)||0:Number(x.total)||0)*100)/100};
+  async function cajaPorCambioMonto(o,antes,metAntes){
+    try{
+      /* compra: si cambia lo que se gastó y el motorizado ya registró el pago de la compra, se corrige ese gasto en su caja */
+      const sA=Math.round((Number(antes.subtotal)||0)*100)/100,sD=Math.round((Number(o.subtotal)||0)*100)/100;
+      if(/compra/i.test(String(o.tipo_servicio||''))&&o.motorizado_id&&Math.abs(sD-sA)>=0.005){
+        const {data:g}=await D().from('movimientos_caja').select('id').eq('pedido_id',o.id).eq('motorizado_id',o.motorizado_id).eq('tipo','retiro').ilike('descripcion','PAGO DE COMPRA%').limit(1);
+        if(g&&g.length){const dg=Math.round((sD-sA)*100)/100;const {error}=await D().from('movimientos_caja').insert({motorizado_id:o.motorizado_id,pedido_id:o.id,tipo:dg>0?'retiro':'ingreso',monto:Math.abs(dg),descripcion:'Corrección de gasto de compra (Pidemás) · Pedido '+ref(o.id)+' · antes S/ '+sA.toFixed(2)+' · ahora S/ '+sD.toFixed(2)});if(error)throw error}}
+      if(String(metAntes||'').toLowerCase()!==String(o.metodo_pago||'').toLowerCase())return;/* el cambio de método ya se corrige aparte */
+      const a=aCobrarDe(antes),d=aCobrarDe(o),dif=Math.round((d-a)*100)/100;if(Math.abs(dif)<0.005)return;
+      const cobrado=(o.pago_confirmado===true&&antes.pago_confirmado===true)||String(o.estado||'').toLowerCase()==='entregado';if(!cobrado)return;
+      if(String(o.metodo_pago||'').toLowerCase()==='efectivo'&&o.motorizado_id){
+        const {data:mv}=await D().from('movimientos_caja').select('id').eq('pedido_id',o.id).eq('motorizado_id',o.motorizado_id).eq('tipo','ingreso').not('descripcion','ilike','INGRESO MANUAL%').limit(1);
+        if(mv&&mv.length){const {error}=await D().from('movimientos_caja').insert({motorizado_id:o.motorizado_id,pedido_id:o.id,tipo:dif>0?'ingreso':'retiro',monto:Math.abs(dif),descripcion:'Corrección de monto (Pidemás) · Pedido '+ref(o.id)+' · antes S/ '+a.toFixed(2)+' · ahora S/ '+d.toFixed(2)});if(error)throw error}}
+      else{const {data:c}=await D().from('cobros').select('id,yape_recibido_en').eq('pedido_id',o.id).maybeSingle();
+        if(c&&!c.yape_recibido_en){const {error}=await D().from('cobros').update({monto:d}).eq('id',c.id);if(error)throw error}
+        else if(c&&c.yape_recibido_en)(window.pdAviso||alert)('Ojo: el Yape de este pedido ya se confirmó por '+M(a)+'. El nuevo monto es '+M(d)+': cobra o devuelve la diferencia de '+M(Math.abs(dif))+'.')}
+      try{C2.caja&&(C2.caja.t=0)}catch(_){}
+    }catch(e){console.warn('[caja] corrección de monto',e);(window.pdAviso||alert)('El pedido se guardó, pero no se pudo corregir la caja: '+(e.message||e))}
+  }
   const PE={f:null};
   const conTiempo=(p,ms)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error('No hubo respuesta del servidor. Revisa tu internet y vuelve a intentar.')),ms||20000))]);
   /* --- servicios: mismos campos y mismo orden que el formulario con el que se crean --- */
@@ -1002,7 +1026,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       Object.assign(b,{rnom:o.nombre_remitente||o.nombre_cliente||'',rdni:o.dni_remitente||tagDe(obs,'DNI de quien envía'),rtel:o.telefono_remitente||o.telefono_cliente||'',rdir:o.direccion_recojo||'',rref:o.referencia_recojo||tagDe(obs,'Referencia de recojo'),rubi:o.ubicacion_recojo||tagDe(obs,'Ubicación de recojo'),
       enom:o.nombre_receptor||'',edni:o.dni_receptor||tagDe(obs,'DNI de quien recibe'),etel:o.telefono_receptor||'',tenv:o.tipo_encomienda||tagDe(obs,'Tipo de encomienda'),obs:libreDe(obs),
       ag:o.agencia_destino||'',agubi:o.ubicacion_entrega||(o.latitud_entrega&&o.longitud_entrega?'https://maps.google.com/?q='+o.latitud_entrega+','+o.longitud_entrega:''),dest:o.destino_final||o.direccion_entrega||'',tpago:o.tipo_pago_encomienda||'',
-      pago:pagado?'pagado':m==='al_final'?'al_final':m==='recojo_yape'?'yape':String(o.metodo_pago||'efectivo').toLowerCase()==='yape'?'yape':'efectivo'})}
+      pago:pagado?'pagado':m==='al_final'?'al_final':m==='recojo_yape'?'yape':String(o.metodo_pago||'efectivo').toLowerCase()==='yape'?'yape':'efectivo'});
+      /* al editar: delivery de cada paquete (el paquete 1 es lo que resta del total) */
+      const px=(Array.isArray(o.paquetes_extra)?o.paquetes_extra:[]).filter(x=>x&&Number(x.numero)>1);
+      if(o.id&&px.length){const nn=v=>v===null||v===undefined||v===''?NaN:Number(v),ok=px.every(x=>Number.isFinite(nn(x.costo_delivery))),ex=ok?px.reduce((a,x)=>a+nn(x.costo_delivery),0):0,tot=Number(o.costo_delivery)||Number(o.total)||0;
+        b.cdx=[{n:1,ag:o.agencia_destino||'',dest:o.destino_final||'',v:ok?String(Math.max(0,Math.round((tot-ex)*100)/100)):''}].concat(px.map(x=>({n:+x.numero,ag:x.agencia||'',dest:x.destino||'',v:ok?String(nn(x.costo_delivery)):''})))}}
     return b;
   }
   /* Pedir un texto y avisar con ventanas propias: no esperan en la cola de avisos viejos, así nunca quedan escondidas */
@@ -1059,7 +1087,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       for(let k=0;k<n;k++){const ag=String(pkGet(f,k,'ag')||'').trim(),ds=String(pkGet(f,k,'dest')||'').trim();
         x+=`<div class="fld"><label>Delivery · paquete ${k+1}${ag||ds?' · '+E([ag,ds].filter(Boolean).join(' → ')):''}</label><input data-in="pe:pk:${k}:cd" value="${E(pkGet(f,k,'cd')||'')}" placeholder="S/ 0.00" inputmode="decimal"></div>`}
       return x+`<div id="peCdTot" style="font-size:15px;font-weight:800">Total del servicio: ${Number.isFinite(su)?M(su):'S/ —'}</div>`};
-    const costo=card('Información de pago del servicio',(cdMulti(f)?cdForm():fl('peCo','Costo del servicio','costo','S/ 0.00',' inputmode="decimal"')+`<div class="chips" style="flex-wrap:wrap">${[5,6,7,8,10,12,15].map(v=>`<button type="button" class="${Number(f.costo)===v?'on':''}" data-a="pe:set:costo:${v}">S/ ${v}</button>`).join('')}</div>`)+(f.tipo!=='enc'?`<button type="button" class="b" style="height:44px" data-a="pe:tarifa">Calcular con la tarifa</button>${f.tf?`<div style="font-size:13px;color:${f.tf.mal?'#B42318':'#6B5E55'};line-height:1.45">${f.tf.t}</div>`:''}`:'')+
+    const cdxForm=()=>{const su=cdxSuma(f);return '<span style="font-size:14px;color:#6B5E55">Delivery de cada paquete. El total del servicio es la suma.</span>'+
+      f.cdx.map((x,i)=>`<div class="fld"><label>Delivery · paquete ${x.n}${x.ag||x.dest?' · '+E([x.ag,x.dest].filter(Boolean).join(' → ')):''}</label><input data-in="pe:cdx:${i}" value="${E(x.v||'')}" placeholder="S/ 0.00" inputmode="decimal"></div>`).join('')+
+      `<div id="peCdTot" style="font-size:15px;font-weight:800">Total del servicio: ${Number.isFinite(su)?M(su):'S/ —'}</div>`};
+    const costo=card('Información de pago del servicio',(cdMulti(f)?cdForm():f.cdx&&f.tipo==='enc'?cdxForm():fl('peCo','Costo del servicio','costo','S/ 0.00',' inputmode="decimal"')+`<div class="chips" style="flex-wrap:wrap">${[5,6,7,8,10,12,15].map(v=>`<button type="button" class="${Number(f.costo)===v?'on':''}" data-a="pe:set:costo:${v}">S/ ${v}</button>`).join('')}</div>`)+(f.tipo!=='enc'?`<button type="button" class="b" style="height:44px" data-a="pe:tarifa">Calcular con la tarifa</button>${f.tf?`<div style="font-size:13px;color:${f.tf.mal?'#B42318':'#6B5E55'};line-height:1.45">${f.tf.t}</div>`:''}`:'')+
       (f.tipo==='enc'?sg('¿Cómo paga el servicio?','pago',[['efectivo','Efectivo al recoger'],['yape','Yape al recoger'],['pagado','Pagado'],['al_final','Al recibir la guía']])
        :tb(f.tipo==='compra'?'¿Cómo paga el cliente la compra y el servicio?':'¿Cómo paga el servicio?','pago',[['efectivo','Efectivo'],['yape','Yape']])+`<div style="display:grid;margin-top:-4px">${bG(f.pago==='pagado','Ya está pagado','pe:set:pago:'+(f.pago==='pagado'?'efectivo':'pagado'))}</div>`)+
       pagoExtra()+
@@ -1092,6 +1123,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function svcPayload(f,o){
     const n=v=>{const x=Number(String(v??'').replace(',','.'));return Number.isFinite(x)&&x>=0?Math.round(x*100)/100:0};
     if(cdMulti(f)){const su=cdSuma(f);if(!Number.isFinite(su)){f.msg='Escribe el delivery de cada paquete.';return false}f.costo=String(su)}
+    if(f.tipo==='enc'&&!f.nuevo&&f.cdx){const su=cdxSuma(f);if(!Number.isFinite(su)){f.msg='Escribe el delivery de cada paquete.';return false}f.costo=String(su)}
     const costo=n(f.costo),pagado=f.pago==='pagado',yaCobro=o.pago_confirmado===true&&Number(o.monto_recibido)>0;
     let p={},obs=o.observaciones||'';
     if(f.tipo==='recojo'){
@@ -1128,6 +1160,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     }
     if(!yaCobro)p.pago_confirmado=pagado;
     p.observaciones=obs;
+    if(f.tipo==='enc'&&!f.nuevo&&f.cdx&&Array.isArray(o.paquetes_extra))p.paquetes_extra=o.paquetes_extra.map(x=>{const c=f.cdx.find(y=>y.n===Number(x&&x.numero));return c?Object.assign({},x,{costo_delivery:cdN(c.v)}):x});
     return p;
   }
   const SVC_OPC=['puntos_recojo','referencia_recojo','recojo_a_nombre','ubicacion_recojo','ubicacion_entrega','que_se_lleva','quien_paga','tipo_comprobante','documento_comprobante','tipo_encomienda'];
@@ -1136,7 +1169,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     let r=await D().from('pedidos').update(p).eq('id',o.id).select('id').maybeSingle();
     if(r.error&&/column|schema cache|PGRST204|42703/i.test(String(r.error.message)+String(r.error.code))){SVC_OPC.forEach(k=>delete p[k]);r=await D().from('pedidos').update(p).eq('id',o.id).select('id').maybeSingle()}
     if(r.error)throw r.error;if(!r.data)throw new Error('Supabase no guardó el cambio. Revisa los permisos.');
-    const metAntes=o.metodo_pago;Object.assign(o,p);await cajaPorCambioPago(o,metAntes,p.metodo_pago);
+    const metAntes=o.metodo_pago,antes=Object.assign({},o);Object.assign(o,p);await cajaPorCambioPago(o,metAntes,p.metodo_pago);await cajaPorCambioMonto(o,antes,metAntes);
     if(f.tipo==='enc'){nsAgRegistrar(f).catch(()=>{})}
     nsGuardarClientes(f).catch(()=>{});
     return true;
@@ -1227,6 +1260,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   /* delivery por paquete (una guía por paquete): con 2 o más paquetes el costo del servicio es la suma */
   const cdN=v=>{const x=Number(String(v??'').replace(',','.'));return String(v??'').trim()!==''&&Number.isFinite(x)&&x>=0?Math.round(x*100)/100:NaN};
   const cdMulti=f=>f.tipo==='enc'&&f.nuevo&&(f.paqs||[]).length>0;
+  const cdxSuma=f=>{const L=(f.cdx||[]).map(x=>cdN(x.v));return L.length&&L.every(Number.isFinite)?Math.round(L.reduce((a,b)=>a+b,0)*100)/100:NaN};
   function cdSuma(f){const L=[f.cd].concat((f.paqs||[]).map(q=>q.cd)).map(cdN);return L.every(Number.isFinite)?Math.round(L.reduce((a,b)=>a+b,0)*100)/100:NaN}
   function nsPaqForm(f,k,cant){
     const g=c=>pkGet(f,k,c),o=pkObj(f,k)||{};
@@ -1445,7 +1479,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         for(const id of f.quitar){const r=await D().from('detalle_pedidos').delete().eq('id',id);if(r.error)throw r.error}}
       const r=await conTiempo(D().from('pedidos').update(patch).eq('id',o.id).select('id').maybeSingle());if(r.error)throw r.error;if(!r.data)throw new Error('Supabase no guardó el cambio. Revisa los permisos.');
       try{if(typeof notifyMotoOrderChange==='function')notifyMotoOrderChange(o,'Pedido actualizado por Pidemás',`El pedido ${ref(o.id)} fue corregido. Revisa los datos antes de seguir.`).catch(()=>{})}catch(_){}
-      {const metAntes=o.metodo_pago;Object.assign(o,patch);await cajaPorCambioPago(o,metAntes,patch.metodo_pago)}try{window.loadOrders().catch(()=>{})}catch(_){}
+      {const metAntes=o.metodo_pago,antes=Object.assign({},o);Object.assign(o,patch);await cajaPorCambioPago(o,metAntes,patch.metodo_pago);await cajaPorCambioMonto(o,antes,metAntes)}try{window.loadOrders().catch(()=>{})}catch(_){}
       (window.pdExito||window.pdAviso||alert)('Pedido actualizado');PE.f=null;volverSub();
     }catch(err){f.msg='No se pudo guardar: '+(err?.message||err)}
   }
@@ -2633,6 +2667,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
     if(k.startsWith('dc:')){const f=SF['códigos de descuento'];if(f&&f.ed){let v=el.value;if(k==='dc:codigo'){v=v.toUpperCase().replace(/\s+/g,'');el.value=v}f.ed[k.slice(3)]=v;clearTimeout(entrada.d);entrada.d=setTimeout(()=>{const t=document.createElement('template');t.innerHTML=SEC['códigos de descuento'].form().body;const n=t.content.querySelector('.note'),o=root.querySelector('.list .note:last-of-type');const all=root.querySelectorAll('.list .note');if(n&&all.length)all[all.length-1].innerHTML=n.innerHTML},200)}return}
     if(k.startsWith('cf:')){CL.f[k.slice(3)]=el.value;return}
     if(PE.f&&k==='pe:cq'){PE.f.cq=el.value;const b=root.getElementById('peCl');if(b)b.innerHTML=nsCli(PE.f);return}
+    if(PE.f&&k.startsWith('pe:cdx:')){const x=(PE.f.cdx||[])[+k.slice(7)];if(x)x.v=el.value;const su=cdxSuma(PE.f);if(Number.isFinite(su))PE.f.costo=String(su);try{const t=root.getElementById('peCdTot');if(t)t.textContent='Total del servicio: '+(Number.isFinite(su)?M(su):'S/ —')}catch(_){}return}
     if(PE.f&&k.startsWith('pe:pk:')){const [,,i,c]=k.split(':');pkSet(PE.f,+i,c,el.value);if(c==='cd'){const su=cdSuma(PE.f);if(Number.isFinite(su))PE.f.costo=String(su);try{const t=(root.getElementById?root:document).getElementById('peCdTot');if(t)t.textContent='Total del servicio: '+(Number.isFinite(su)?M(su):'S/ —')}catch(_){}}return}
      if(PE.f&&k.startsWith('pe:pkag:')){const i=+k.slice(8),f=PE.f,o=pkObj(f,i),v=el.value;if(!o)return;
        if(v==='__otra'){o.agOtra=1;pkSet(f,i,'ag','');pkSet(f,i,'dest','');pkSet(f,i,'agubi','');o.dsOtro=0}
