@@ -1240,7 +1240,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(dsTxt)h+=`<div class="fld"><label>${dsL.length?'Destino nuevo':'Destino'}</label>${inp('dest','Ej. Lima')}</div>`;
     h+=`<div class="fld"><label>Modalidad de pago</label>${chips('tpago',tp)}</div><div class="fld"><label>Tipo de encomienda</label>${chips('tenv',optsDe('encTipoEnvio'))}</div>`+
       `<div class="fld"><label>Indicación para este paquete (opcional)</label>${inp('ind','Ej. entregar a nombre de la empresa')}</div>`+
-      `<div style="height:1px;background:#F1E4DA;margin:4px 0"></div><div class="lbl" style="margin:0">Quien recibe el paquete ${k+1}</div>`;
+      `<div style="height:1px;background:#F1E4DA;margin:4px 0"></div><div class="lbl" style="margin:0">Quien recibe el paquete ${k+1} (opcional)</div><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si no lo tienes, sigue: estos datos van en el rotulado del paquete.</span>`;
     if(k>0)h+=`<button type="button" class="b" style="height:44px${o.igual?';border-color:#C4410C;background:#FFF4EC;color:#9A330A':''}" data-a="pe:pks:${k}:igual:${o.igual?'':'1'}">${o.igual?'✓ ':''}Lo recibe la misma persona del paquete 1${String(f.enom||'').trim()?' ('+E(String(f.enom).trim())+')':''}</button>`;
     if(!(k>0&&o.igual))h+=`<div class="fld"><label>Nombre y apellido</label>${inp('rn','')}</div><div class="fld"><label>DNI</label>${inp('rd','',' inputmode="numeric" maxlength="12"')}</div><div class="fld"><label>Teléfono</label>${inp('rt','',' type="tel" inputmode="tel" maxlength="20"')}</div>`;
     return h;
@@ -1269,8 +1269,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(f.tipo==='recojo'){const k=(f.pts||[]).findIndex(q=>(t(q.nom)||t(q.tel)||t(q.que)||t(q.ref))&&!t(q.dir)&&!t(q.ubi));if(k>=0)return 'Escribe la dirección o la ubicación del punto de recojo '+(k+2)+'.'}}
     if(paso==='Información de quien recibe'&&f.tipo==='recojo'&&f.pide==='recibe'){if(!t(f.enom))return 'Escribe el nombre de quien recibe (es quien pide el servicio).';if(!t(f.etel))return 'Escribe el teléfono de quien recibe (es quien pide el servicio).'}
     if(paso==='Información de la compra'&&!t(f.detalle))return 'Escribe qué hay que comprar.';
-    if(f.tipo==='enc'&&paso==='Paquete 1'){if(!t(f.ag)||!t(f.dest))return 'Escribe la agencia y el destino del paquete 1.';if(!f.tpago)return 'Elige la modalidad de pago del paquete 1.';if(!t(f.enom)||!t(f.etel))return 'Escribe nombre y teléfono de quien recibe el paquete 1.'}
-    {const mq=f.tipo==='enc'&&/^Paquete (\d+)$/.exec(paso);if(mq&&+mq[1]>1){const i=+mq[1]-2,q=(f.paqs||[])[i];if(q){if(!t(q.ag)||!t(q.dest))return 'Escribe la agencia y el destino del paquete '+mq[1]+'.';if(!q.tpago)return 'Elige la modalidad de pago del paquete '+mq[1]+'.';if(!q.igual&&!(t(q.rn)&&t(q.rt)))return 'Escribe nombre y teléfono de quien recibe el paquete '+mq[1]+', o marca que lo recibe la misma persona del paquete 1.'}}}
+    if(f.tipo==='enc'&&paso==='Paquete 1'){if(!t(f.ag)||!t(f.dest))return 'Escribe la agencia y el destino del paquete 1.';if(!f.tpago)return 'Elige la modalidad de pago del paquete 1.';}
+    {const mq=f.tipo==='enc'&&/^Paquete (\d+)$/.exec(paso);if(mq&&+mq[1]>1){const i=+mq[1]-2,q=(f.paqs||[])[i];if(q){if(!t(q.ag)||!t(q.dest))return 'Escribe la agencia y el destino del paquete '+mq[1]+'.';if(!q.tpago)return 'Elige la modalidad de pago del paquete '+mq[1]+'.';}}}
     if(false){
       const k=f.paqs.findIndex(q=>!q.tpago||!t(q.ag)||!t(q.dest));if(k>=0)return 'Completa agencia, destino y modalidad de pago del paquete '+(k+2)+'.';
       const r=f.paqs.findIndex(q=>!q.igual&&!(t(q.rn)&&t(q.rt)));if(r>=0)return 'Escribe nombre y teléfono de quien recibe el paquete '+(r+2)+', o marca que lo recibe la misma persona del paquete 1.'}
