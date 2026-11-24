@@ -1078,10 +1078,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const ot=optsDe('encTipoEnvio'),tp0=optsDe('encTipoPago'),tp=tp0.length?tp0:[['pago_en_agencia','Pago en agencia'],['pago_a_destino','Pago a destino']];
       const cant=1+(f.paqs||[]).length;
       const masPaq=n=>n===cant&&cant<5?`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:pqadd">${IC.plus}Agregar otro paquete</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si no hay más paquetes, toca «Siguiente».</span>`:'';
-      h+=card('Paquete 1',(cant>1?'<span style="font-size:13px;color:#6B5E55">Paquete 1 de '+cant+'</span>':'')+fl('peAg','Agencia','ag','Ej. Olva Courier',' autocomplete="off"')+nsAgChips(f.ag,'pe:ag')+nsAgUbiFld(f)+fl('peAgu','Ubicación de la agencia (Google Maps)','agubi','Pega el enlace de Google Maps')+mp('agubi','','Agencia '+String(f.ag||'').trim())+
-        fl('peDs','Destino','dest','Ej. Lima')+nsDsChips(f.ag,f.dest,'pe:ds')+sg('Modalidad de pago','tpago',tp)+sg('Tipo de encomienda','tenv',ot)+fl('peI1','Indicación para este paquete (opcional)','ind1','Ej. entregar a nombre de la empresa')+
-        `<div style="height:1px;background:#F1E4DA;margin:4px 0"></div><div class="lbl" style="margin:0">Quien recibe el paquete 1</div>`+fl('peEn','Nombre y apellido','enom','')+fl('peEi','DNI','edni','',' inputmode="numeric" maxlength="12"')+fl('peEt','Teléfono','etel','',tel)+masPaq(1));
-      (f.paqs||[]).forEach((q,i2)=>{h+=card('Paquete '+(i2+2),nsPaqCampos(f,q,i2,cant)+`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:pqx:${i2}">Quitar este paquete</button>`+masPaq(i2+2))});
+      /* todos los paquetes con el mismo formulario (agencia y destino con selector de los registrados) */
+      for(let k=0;k<cant;k++)h+=card('Paquete '+(k+1),nsPaqForm(f,k,cant)+(k>0?`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:pqx:${k-1}">Quitar este paquete</button>`:'')+masPaq(k+1));
       h+=costo;
     }
     if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
@@ -1215,6 +1213,37 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       .filter(q=>q.nom||q.tel||q.dir||q.ubi)
       .map((q,i)=>{const c=coordsDe(q.ubi),ya=antes.find(x=>Number(x.n)===i+2&&x.recogido_en&&String(x.direccion||'')===q.dir&&String(x.ubicacion||'')===q.ubi);
         return {n:i+2,nombre:q.nom||null,telefono:q.tel||null,direccion:q.dir||null,referencia:q.ref||null,ubicacion:q.ubi||null,lat:c?c.lat:null,lng:c?c.lng:null,que:q.que||null,recogido_en:ya?ya.recogido_en:null}});
+  }
+  /* ---------- Paquete de encomienda: el mismo formulario para el 1, 2, 3… ---------- */
+  const PK_MAP={ind:'ind1',rn:'enom',rd:'edni',rt:'etel'};
+  function pkObj(f,k){return k===0?f:(f.paqs||[])[k-1]}
+  function pkGet(f,k,c){const o=pkObj(f,k);if(!o)return '';return k===0?(o[PK_MAP[c]||c]??''):(o[c]??'')}
+  function pkSet(f,k,c,v){const o=pkObj(f,k);if(!o)return;if(k===0)o[PK_MAP[c]||c]=v;else o[c]=v}
+  function nsPaqForm(f,k,cant){
+    const g=c=>pkGet(f,k,c),o=pkObj(f,k)||{};
+    const ag=String(g('ag')||'').trim(),ags=(PE.ags||[]).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
+    const agReg=ags.find(x=>agClave(x.nombre)===agClave(ag));
+    if(ag&&!String(g('agubi')||'').trim()){const u=nsAgU(ag);if(u)pkSet(f,k,'agubi',u)}
+    const agTxt=o.agOtra||(ag&&!agReg);
+    const dsL=agReg?nsDsL(agReg.nombre):[],dest=String(g('dest')||'').trim(),dsReg=dsL.find(x=>agClave(x.destino_final)===agClave(dest));
+    const dsTxt=o.dsOtro||!dsL.length||(dest&&!dsReg);
+    const selSt='height:56px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px;font-weight:700;width:100%;background:#fff;color:#1F1A17';
+    const inp=(c,ph,at)=>`<input data-in="pe:pk:${k}:${c}" value="${E(g(c)||'')}" placeholder="${E(ph||'')}"${at||''}>`;
+    const chips=(c,ops)=>`<div class="opc">${ops.map(x=>`<button type="button" class="${String(g(c)||'')===String(x[0])?'on':''}" data-a="pe:pks:${k}:${c}:${E(x[0])}">${E(x[1])}</button>`).join('')}</div>`;
+    const tp0=optsDe('encTipoPago'),tp=tp0.length?tp0:[['pago_en_agencia','Pago en agencia'],['pago_a_destino','Pago a destino']];
+    let h=cant>1?`<span style="font-size:13px;color:#6B5E55">Paquete ${k+1} de ${cant}</span>`:'';
+    h+=`<div class="fld"><label>Agencia</label><select data-in="pe:pkag:${k}" style="${selSt}"><option value="">${ags.length?'Elige una agencia registrada':'No hay agencias registradas'}</option>${ags.map(x=>`<option value="${E(x.nombre)}"${agReg&&!o.agOtra&&x===agReg?' selected':''}>${E(x.nombre)}</option>`).join('')}<option value="__otra"${agTxt?' selected':''}>➕ Otra agencia (escribir)</option></select></div>`;
+    if(agTxt)h+=`<div class="fld"><label>Nombre de la agencia nueva</label>${inp('ag','Ej. Olva Courier',' autocomplete="off"')}</div>`;
+    h+=nsAgUbiFld({ag})+`<div class="fld"><label>Ubicación de la agencia (Google Maps)</label>${inp('agubi','Pega el enlace de Google Maps')}</div>`+
+      `<button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:pkmapa:${k}">${coordsDe(g('agubi'))?'Cambiar en el mapa':'Marcar en el mapa'}</button>`;
+    if(dsL.length)h+=`<div class="fld"><label>Destino</label><select data-in="pe:pkds:${k}" style="${selSt}"><option value="">Elige un destino de ${E(agReg.nombre)}</option>${dsL.map(x=>`<option value="${E(x.destino_final)}"${dsReg&&!o.dsOtro&&x===dsReg?' selected':''}>${E(x.destino_final)}</option>`).join('')}<option value="__otro"${dsTxt?' selected':''}>➕ Otro destino (escribir)</option></select></div>`;
+    if(dsTxt)h+=`<div class="fld"><label>${dsL.length?'Destino nuevo':'Destino'}</label>${inp('dest','Ej. Lima')}</div>`;
+    h+=`<div class="fld"><label>Modalidad de pago</label>${chips('tpago',tp)}</div><div class="fld"><label>Tipo de encomienda</label>${chips('tenv',optsDe('encTipoEnvio'))}</div>`+
+      `<div class="fld"><label>Indicación para este paquete (opcional)</label>${inp('ind','Ej. entregar a nombre de la empresa')}</div>`+
+      `<div style="height:1px;background:#F1E4DA;margin:4px 0"></div><div class="lbl" style="margin:0">Quien recibe el paquete ${k+1}</div>`;
+    if(k>0)h+=`<button type="button" class="b" style="height:44px${o.igual?';border-color:#C4410C;background:#FFF4EC;color:#9A330A':''}" data-a="pe:pks:${k}:igual:${o.igual?'':'1'}">${o.igual?'✓ ':''}Lo recibe la misma persona del paquete 1${String(f.enom||'').trim()?' ('+E(String(f.enom).trim())+')':''}</button>`;
+    if(!(k>0&&o.igual))h+=`<div class="fld"><label>Nombre y apellido</label>${inp('rn','')}</div><div class="fld"><label>DNI</label>${inp('rd','',' inputmode="numeric" maxlength="12"')}</div><div class="fld"><label>Teléfono</label>${inp('rt','',' type="tel" inputmode="tel" maxlength="20"')}</div>`;
+    return h;
   }
   /* campos de un paquete adicional (2 o 3) de la encomienda */
   function nsPaqCampos(f,q,i2,cant){
@@ -2575,7 +2604,15 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
     if(k.startsWith('dc:')){const f=SF['códigos de descuento'];if(f&&f.ed){let v=el.value;if(k==='dc:codigo'){v=v.toUpperCase().replace(/\s+/g,'');el.value=v}f.ed[k.slice(3)]=v;clearTimeout(entrada.d);entrada.d=setTimeout(()=>{const t=document.createElement('template');t.innerHTML=SEC['códigos de descuento'].form().body;const n=t.content.querySelector('.note'),o=root.querySelector('.list .note:last-of-type');const all=root.querySelectorAll('.list .note');if(n&&all.length)all[all.length-1].innerHTML=n.innerHTML},200)}return}
     if(k.startsWith('cf:')){CL.f[k.slice(3)]=el.value;return}
     if(PE.f&&k==='pe:cq'){PE.f.cq=el.value;const b=root.getElementById('peCl');if(b)b.innerHTML=nsCli(PE.f);return}
-    if(PE.f&&k.startsWith('pe:pt:')){const [,,i,c]=k.split(':');const q=(PE.f.pts||[])[+i];if(q)q[c]=el.value;return}
+    if(PE.f&&k.startsWith('pe:pk:')){const [,,i,c]=k.split(':');pkSet(PE.f,+i,c,el.value);return}
+     if(PE.f&&k.startsWith('pe:pkag:')){const i=+k.slice(8),f=PE.f,o=pkObj(f,i),v=el.value;if(!o)return;
+       if(v==='__otra'){o.agOtra=1;pkSet(f,i,'ag','');pkSet(f,i,'dest','');pkSet(f,i,'agubi','');o.dsOtro=0}
+       else if(v){const antes=String(pkGet(f,i,'ag')||'');o.agOtra=0;pkSet(f,i,'ag',v);if(agClave(antes)!==agClave(v)){pkSet(f,i,'dest','');o.dsOtro=0;pkSet(f,i,'agubi',nsAgU(v)||'')}}
+       f.msg='';key='';pintar();return}
+     if(PE.f&&k.startsWith('pe:pkds:')){const i=+k.slice(8),f=PE.f,o=pkObj(f,i),v=el.value;if(!o)return;
+       if(v==='__otro'){o.dsOtro=1;pkSet(f,i,'dest','')}else if(v){o.dsOtro=0;pkSet(f,i,'dest',v)}
+       f.msg='';key='';pintar();return}
+     if(PE.f&&k.startsWith('pe:pt:')){const [,,i,c]=k.split(':');const q=(PE.f.pts||[])[+i];if(q)q[c]=el.value;return}
      if(PE.f&&k.startsWith('pe:pq:')){const [,,i,c]=k.split(':');const q=PE.f.paqs[+i];if(q)q[c]=el.value;return}
     if(PE.f&&k==='pe:moto'){PE.f.moto=el.value;key='';pintar();return}
     if(PE.f&&k.startsWith('pe:')){PE.f[k.slice(3)]=el.value;peVivo();return}
@@ -2623,6 +2660,10 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
     if(PE.f&&a.dataset.a.startsWith('pe:pqmapa:')){const q=PE.f.paqs[+a.dataset.a.slice(10)];const el2=window.pdMapa&&pdMapa.elegir;if(!q||!el2)return;
       const r=await el2({titulo:'Agencia '+String(q.ag||'').trim(),centro:coordsDe(q.agubi)||coordsDe(nsAgU(q.ag))});if(!r)return;
       q.agubi='https://maps.google.com/?q='+Number(r.lat).toFixed(6)+','+Number(r.lng).toFixed(6);key='';pintar();return}
+    if(PE.f&&a.dataset.a.startsWith('pe:pks:')){const [,,i,c,...v]=a.dataset.a.split(':');pkSet(PE.f,+i,c,v.join(':'));key='';pintar();return}
+    if(PE.f&&a.dataset.a.startsWith('pe:pkmapa:')){const i=+a.dataset.a.slice(10),f=PE.f;const el2=window.pdMapa&&pdMapa.elegir;if(!el2||!pkObj(f,i))return;
+      const r=await el2({titulo:'Agencia '+String(pkGet(f,i,'ag')||'').trim(),centro:coordsDe(pkGet(f,i,'agubi'))||coordsDe(nsAgU(pkGet(f,i,'ag')))});if(!r)return;
+      pkSet(f,i,'agubi','https://maps.google.com/?q='+Number(r.lat).toFixed(6)+','+Number(r.lng).toFixed(6));key='';pintar();return}
     if(PE.f&&a.dataset.a==='pe:pqadd'){const f=PE.f;f.paqs=f.paqs||[];if(f.paqs.length<4){f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:'',igual:'',rn:'',rd:'',rt:''});f.paso=nsPasos(f).indexOf('Paquete '+(f.paqs.length+1));f.msg=''}key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:cant:')){const n=Math.max(1,Math.min(3,+a.dataset.a.slice(8)||1)),f=PE.f;f.paqs=f.paqs||[];
       while(f.paqs.length<n-1)f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:'',igual:'',rn:'',rd:'',rt:''});
