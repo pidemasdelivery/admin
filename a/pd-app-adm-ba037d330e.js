@@ -966,6 +966,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const enCaja=Math.round((cobro+(corr<0?corr:0))*100)/100;
       if(d==='efectivo'&&enCaja<0.005)await D().from('movimientos_caja').insert({motorizado_id:o.motorizado_id,pedido_id:o.id,tipo:'ingreso',monto:tot,descripcion:'Cobro de pedido · Corrección de pago: Yape → Efectivo (administración) · total S/ '+tot.toFixed(2)});
       else if(d!=='efectivo'&&enCaja>0.004)await D().from('movimientos_caja').insert({motorizado_id:o.motorizado_id,pedido_id:o.id,tipo:'retiro',monto:enCaja,descripcion:'Corrección de pago: Efectivo → Yape (administración) · ese cobro no fue en efectivo'});
+      /* el cobro registrado también cambia de método: así un pago que pasó a efectivo ya no queda en «Yape por confirmar» */
+      try{await D().from('cobros').update({metodo_pago:d==='efectivo'?'efectivo':d}).eq('pedido_id',o.id).is('yape_recibido_en',null)}catch(_){}
       try{C2.caja&&(C2.caja.t=0)}catch(_){}
     }catch(e){console.warn('[caja] corrección de pago',e)}
   }
