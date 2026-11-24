@@ -194,15 +194,15 @@
           (sub0>0?U.st('Compra registrada · gastó '+M(sub0),'ok'):U.note('El motorizado registra aquí cuánto gastó en la compra.'));
       }else{
         s.sum=(t==='enc'?'Recogido':'Recogido')+(o.en_camino_en?' · '+U.hora(o.en_camino_en):'');
-        h+=U.who(remN,subQ('Recoge aquí · pedido '+U.ref(id)),'',true)+U.addr(o.direccion_recojo,o.referencia_recojo)+U.contact(U.maps(o.latitud_recojo,o.longitud_recojo,o.direccion_recojo,LK(o.ubicacion_recojo)),remT,'');
+        h+=U.who(remN,subQ((t==='enc'?'Quien envía':'Recojo aquí')+' · pedido '+U.ref(id)),'',true)+U.addr(o.direccion_recojo,o.referencia_recojo)+U.contact(U.maps(o.latitud_recojo,o.longitud_recojo,o.direccion_recojo,LK(o.ubicacion_recojo)),remT,'');
         /* más puntos de recojo (el punto 1 es quien envía) */
         const PR=t==='recojo'&&Array.isArray(o.puntos_recojo)?o.puntos_recojo.filter(Boolean):[];
-        if(PR.length){h=h.replace(subQ('Recoge aquí · pedido '+U.ref(id)),subQ('Punto 1 de '+(PR.length+1)+' · pedido '+U.ref(id)));
+        if(PR.length){h=h.replace(subQ((t==='enc'?'Quien envía':'Recojo aquí')+' · pedido '+U.ref(id)),subQ('Punto 1 de '+(PR.length+1)+' · recojo aquí · pedido '+U.ref(id)));
           const listos=PR.filter(x=>x.recogido_en).length;
           h+=U.st(listos===PR.length?'Recogió en los '+(PR.length+1)+' puntos':'Recogido en '+listos+' de '+PR.length+' puntos adicionales',listos===PR.length?'ok':'');
-          PR.forEach(x=>{h+=`<div class="sum"><div class="lbl">Punto ${E(x.n)} de ${PR.length+1}${x.recogido_en?' · recogido '+E(U.hora(x.recogido_en)):''}</div>`+
-            (x.nombre?li('Entrega',E(x.nombre)):'')+(x.direccion?li('Dirección',E(x.direccion)):'')+(x.referencia?li('Referencia',E(x.referencia)):'')+(x.que?li('Se recoge',E(x.que)):'')+`</div>`+
-            U.contact(U.maps(x.lat,x.lng,x.direccion,LK(x.ubicacion)),x.telefono,'')});
+          PR.forEach(x=>{h+=`<div class="sum" style="gap:10px"><div class="lbl">Punto ${E(x.n)} de ${PR.length+1}${x.recogido_en?' · recogido '+E(U.hora(x.recogido_en)):''}</div>`+
+            U.who(x.nombre||'Punto '+x.n,'Recojo aquí'+(x.que?' · '+E(x.que):''),'',true)+U.addr(x.direccion,x.referencia)+
+            U.contact(U.maps(x.lat,x.lng,x.direccion,LK(x.ubicacion)),x.telefono,'')+(x.recogido_en?U.st('Recogido aquí','ok'):'')+`</div>`});
           s.sum=(listos===PR.length&&e>2?'Recogido en '+(PR.length+1)+' puntos':s.sum)}
         if(t==='recojo'&&notas.length)h+=sumBox('Notas del servicio',txt(notas.join(' · ')));
         if(t==='enc'){h+=pks.map(pkgBox).join('')}
