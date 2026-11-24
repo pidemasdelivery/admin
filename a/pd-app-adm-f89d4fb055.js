@@ -1123,9 +1123,9 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       h+=costo;
     }else if(f.tipo==='compra'){
       h+=card('Información del cliente',fl('peN','Nombre y apellido','nom','')+fl('peT','Teléfono','tel','',tel)+fl('peD','Dirección','dir','')+fl('peR','Referencia','ref','Ej. frente a la bodega, casa verde')+fl('peU','Ubicación (Google Maps)','ubi','Pega el enlace de Google Maps')+mp('ubi','dir','Lugar de entrega de la compra'));
-      {const nS=(f.pts||[]).length;const masSit=k=>k===nS&&nS<5?`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:pt+">${IC.plus}Agregar otro sitio de compra</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si se compra en un solo lugar, toca «Siguiente».</span>`:'';
-        h+=card('Información de la compra',(nS?`<span style="font-size:13px;color:#6B5E55">Sitio 1 de ${nS+1}</span>`:'')+fl('peLg','¿De dónde desea la compra?','lugar','')+fl('peLu','Ubicación del lugar (Google Maps)','lugarUrl','Pega el enlace de Google Maps')+mp('lugarUrl','lugar','Dónde se hace la compra')+ta('peDt','¿Qué desea que compremos?','detalle','')+ta('peOb','Observaciones','obs','')+masSit(0));
-        (f.pts||[]).forEach((q,i)=>{h+=card('Información de la compra · sitio '+(i+2),nsSitioForm(f,i)+`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:ptx:${i}">Quitar este sitio</button>`+masSit(i+1))})}
+      {const nS=(f.pts||[]).length;const masSit=k=>k===nS&&nS<5?`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:pt+">${IC.plus}Agregar otro lugar de compra</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si se compra en un solo lugar, toca «Siguiente».</span>`:'';
+        h+=card('Información de la compra',(nS?`<span style="font-size:13px;color:#6B5E55">Lugar 1 de ${nS+1}</span>`:'')+fl('peLg','¿De dónde desea la compra?','lugar','')+fl('peLu','Ubicación del lugar (Google Maps)','lugarUrl','Pega el enlace de Google Maps')+mp('lugarUrl','lugar','Dónde se hace la compra')+ta('peDt','¿Qué desea que compremos?','detalle','')+ta('peOb','Observaciones','obs','')+masSit(0));
+        (f.pts||[]).forEach((q,i)=>{h+=card('Información de la compra · lugar '+(i+2),nsSitioForm(f,i)+`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:ptx:${i}">Quitar este lugar</button>`+masSit(i+1))})}
       h+=compCard();
       h+=costo;
     }else{
@@ -1250,7 +1250,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   }
   function nsPasos(f){
     if(f.tipo==='recojo')return ['Información de quien envía'].concat((f.pts||[]).map((_,i)=>'Punto de recojo '+(i+2))).concat(['Información de quien recibe','Información de pago del servicio','Asignar motorizado']);
-    if(f.tipo==='compra')return ['Información del cliente','Información de la compra'].concat((f.pts||[]).map((_,i)=>'Información de la compra · sitio '+(i+2))).concat(['Información del comprobante','Información de pago del servicio','Asignar motorizado']);
+    if(f.tipo==='compra')return ['Información del cliente','Información de la compra'].concat((f.pts||[]).map((_,i)=>'Información de la compra · lugar '+(i+2))).concat(['Información del comprobante','Información de pago del servicio','Asignar motorizado']);
     return ['Información de quien envía'].concat(Array.from({length:1+(f.paqs||[]).length},(_,i)=>'Paquete '+(i+1))).concat(['Información del comprobante','Información de pago del servicio','Asignar motorizado']);
   }
   /* Recojo y entrega con varios puntos de recojo: el punto 1 es «quien envía»; aquí van los demás */
@@ -1281,13 +1281,13 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       fld('¿A nombre de quién está el pedido?','anom','Ej. Juan Pérez · si es distinto de quien entrega')+fld('Ubicación (Google Maps)','ubi','Pega el enlace de Google Maps')+
       `<button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:ptmapa:${i}">${coordsDe(q.ubi)?'Cambiar en el mapa':'Marcar en el mapa'}</button>`;
   }
-  /* compra en varios sitios: cada sitio con el mismo formulario que el sitio 1 */
+  /* compra en varios lugares: cada lugar con el mismo formulario que el lugar 1 */
   function nsSitioForm(f,i){
-    /* mismo formulario y diseño que el sitio 1 */
+    /* mismo formulario y diseño que el lugar 1 */
     const q=(f.pts||[])[i]||{},n=i+2,TA='min-height:96px;padding:14px 16px;border-radius:14px;border:1.5px solid #F1E4DA;font:inherit;font-size:16px;width:100%;box-sizing:border-box';
     const fl2=(l,k,ph)=>`<div class="fld"><label>${l}</label><input data-in="pe:pt:${i}:${k}" value="${E(q[k]||'')}"${ph?` placeholder="${E(ph)}"`:''}></div>`;
     const ta2=(l,k,ph)=>`<div class="fld"><label>${l}</label><textarea data-in="pe:pt:${i}:${k}" placeholder="${E(ph||'')}" style="${TA}">${E(q[k]||'')}</textarea></div>`;
-    return `<span style="font-size:13px;color:#6B5E55">Sitio ${n} de ${1+(f.pts||[]).length}</span>`+
+    return `<span style="font-size:13px;color:#6B5E55">Lugar ${n} de ${1+(f.pts||[]).length}</span>`+
       fl2('¿De dónde desea la compra?','nom','')+fl2('Ubicación del lugar (Google Maps)','ubi','Pega el enlace de Google Maps')+
       `<button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:ptmapa:${i}">${coordsDe(q.ubi)?'Cambiar en el mapa':'Marcar en el mapa'}</button>`+
       ta2('¿Qué desea que compremos?','que','')+ta2('Observaciones','obs','');
@@ -1369,7 +1369,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     {const mp=f.tipo==='recojo'&&/^Punto de recojo (\d+)$/.exec(paso);if(mp){const q=(f.pts||[])[+mp[1]-2]||{};if(!t(q.nom))return 'Escribe el nombre del punto de recojo '+mp[1]+'.';if(!t(q.tel))return 'Escribe el teléfono del punto de recojo '+mp[1]+'.';if(!t(q.dir)&&!t(q.ubi))return 'Escribe la dirección o la ubicación del punto de recojo '+mp[1]+'.'}}
     if(paso==='Información de quien recibe'&&f.tipo==='recojo'&&f.pide==='recibe'){if(!t(f.enom))return 'Escribe el nombre de quien recibe (es quien pide el servicio).';if(!t(f.etel))return 'Escribe el teléfono de quien recibe (es quien pide el servicio).'}
     if(paso==='Información de la compra'&&!t(f.detalle))return 'Escribe qué hay que comprar.';
-    {const ms=f.tipo==='compra'&&/^Información de la compra · sitio (\d+)$/.exec(paso);if(ms){const q=(f.pts||[])[+ms[1]-2]||{};if(!t(q.nom))return 'Escribe de dónde es la compra del sitio '+ms[1]+'.';if(!t(q.que))return 'Escribe qué hay que comprar en el sitio '+ms[1]+'.'}}
+    {const ms=f.tipo==='compra'&&/^Información de la compra · lugar (\d+)$/.exec(paso);if(ms){const q=(f.pts||[])[+ms[1]-2]||{};if(!t(q.nom))return 'Escribe de dónde es la compra del lugar '+ms[1]+'.';if(!t(q.que))return 'Escribe qué hay que comprar en el lugar '+ms[1]+'.'}}
     if(f.tipo==='enc'&&paso==='Paquete 1'){if(!t(f.ag)||!t(f.dest))return 'Escribe la agencia y el destino del paquete 1.';if(!f.tpago)return 'Elige la modalidad de pago del paquete 1.';}
     {const mq=f.tipo==='enc'&&/^Paquete (\d+)$/.exec(paso);if(mq&&+mq[1]>1){const i=+mq[1]-2,q=(f.paqs||[])[i];if(q){if(!t(q.ag)||!t(q.dest))return 'Escribe la agencia y el destino del paquete '+mq[1]+'.';if(!q.tpago)return 'Elige la modalidad de pago del paquete '+mq[1]+'.';}}}
     if(false){
@@ -2787,10 +2787,10 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
           const t=T.calcular({km,destino:dest,aproximado:aprox});f.costo=t.total.toFixed(2);
           f.tf={t:'<b>'+M(t.total)+'</b>'+(km?' · '+km.toFixed(2)+' km'+(aprox?' (aprox.)':''):'')+(t.zona?' · Zona '+E(t.zona):'')+(orig?'':' · Sin ubicación de '+(f.tipo==='compra'?'la compra':'recojo')+': tarifa base o de zona')}}}
       catch(err){f.tf={mal:1,t:'No se pudo calcular: '+E(err?.message||err)}}key='';pintar();return}
-    if(PE.f&&a.dataset.a==='pe:pt+'){const f=PE.f;f.pts=f.pts||[];if(f.pts.length<5){f.pts.push({nom:'',tel:'',dir:'',ref:'',ubi:'',que:'',anom:'',cd:''});if(f.nuevo)f.paso=nsPasos(f).indexOf((f.tipo==='compra'?'Información de la compra · sitio ':'Punto de recojo ')+(f.pts.length+1));f.msg=''}key='';pintar();return}
+    if(PE.f&&a.dataset.a==='pe:pt+'){const f=PE.f;f.pts=f.pts||[];if(f.pts.length<5){f.pts.push({nom:'',tel:'',dir:'',ref:'',ubi:'',que:'',anom:'',cd:''});if(f.nuevo)f.paso=nsPasos(f).indexOf((f.tipo==='compra'?'Información de la compra · lugar ':'Punto de recojo ')+(f.pts.length+1));f.msg=''}key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:ptx:')){(PE.f.pts||[]).splice(+a.dataset.a.slice(7),1);if(!PE.f.pts.length)PE.f.cdp='';if(+PE.f.pagapt>1+PE.f.pts.length)PE.f.pagapt='1';PE.f.paso=Math.min(PE.f.paso||0,nsPasos(PE.f).length-1);key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:ptmapa:')){const q=(PE.f.pts||[])[+a.dataset.a.slice(10)];const el2=window.pdMapa&&pdMapa.elegir;if(!q||!el2)return;
-      const r=await el2({titulo:(PE.f.tipo==='compra'?'Sitio de compra ':'Punto de recojo ')+(+a.dataset.a.slice(10)+2),centro:coordsDe(q.ubi)||coordsDe(PE.f.tipo==='compra'?PE.f.lugarUrl:PE.f.rubi)});if(!r)return;
+      const r=await el2({titulo:(PE.f.tipo==='compra'?'Lugar de compra ':'Punto de recojo ')+(+a.dataset.a.slice(10)+2),centro:coordsDe(q.ubi)||coordsDe(PE.f.tipo==='compra'?PE.f.lugarUrl:PE.f.rubi)});if(!r)return;
       q.ubi='https://maps.google.com/?q='+Number(r.lat).toFixed(6)+','+Number(r.lng).toFixed(6);const lin=[r.linea,r.sub].filter(Boolean).join(', ');if(PE.f.tipo==='compra'){if(!String(q.nom||'').trim()&&lin)q.nom=lin}else if(!String(q.dir||'').trim()&&lin)q.dir=lin;key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:pqmapa:')){const q=PE.f.paqs[+a.dataset.a.slice(10)];const el2=window.pdMapa&&pdMapa.elegir;if(!q||!el2)return;
       const r=await el2({titulo:'Agencia '+String(q.ag||'').trim(),centro:coordsDe(q.agubi)||coordsDe(nsAgU(q.ag))});if(!r)return;

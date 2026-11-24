@@ -156,7 +156,7 @@
     const titulos=t==='enc'?['Pedido recibido','Asignar motorizado','Recoger los paquetes','Agencia y guía','Cerrado']:['Pedido recibido','Asignar motorizado',t==='compra'?'Hacer la compra':'Recoger','Entrega y cobro','Cerrado'];
     const steps=titulos.map((tt,i)=>({title:tt,state:e===-1?'locked':e===4||i<e?'done':i===e?'active':'locked'}));
     const cobra=o.pago_confirmado===true&&!(Number(o.monto_recibido)>0)?0:Number(o.total||0);
-    const notas=limpiar(o.observaciones).filter(x=>!/^(Compra solicitada|Comprobante|DNI\/RUC|Nombre comprobante|Razón social|Dirección fiscal|Lugar de compra|¿De dónde|¿Qué desea|Monto entregado|Cambio para|Pago por Yape|Pago en efectivo|Paga quien|Servicio marcado como PAGADO|Pedido a nombre de|Pide el servicio)/i.test(x));
+    const notas=limpiar(o.observaciones).filter(x=>!/^(Compra solicitada|Comprobante|DNI\/RUC|Nombre comprobante|Razón social|Dirección fiscal|Lugar de compra|¿De dónde|¿Qué desea|Monto entregado|Cambio para|Pago por Yape|Pago en efectivo|Paga quien|Servicio marcado como PAGADO|Pedido a nombre de|Pide el servicio|El cliente paga al final)/i.test(x));
     const aNom=t!=='compra'?(o.recojo_a_nombre||campo(o,'Pedido a nombre de')):'';
     const subQ=(base)=>E(base)+(aNom?`<div style="margin-top:2px">A nombre de <b style="color:#1F1A17">${E(aNom)}</b></div>`:'');
     /* Cada paso muestra solo lo de su etapa (mismo diseño que el motorizado): nada se repite */
@@ -174,13 +174,13 @@
       if(pagaCon>0&&!pagado&&metodo==='Efectivo')h+=t==='compra'&&!(sub0>0)?'<div class="vto info"><span>El motorizado lleva sencillo<small style="display:block;margin-top:2px;font-size:13.5px;font-weight:600;opacity:.85">El cliente paga con un billete de '+M(pagaCon)+'. El vuelto exacto sale al registrar la compra.</small></span></div>':(()=>{const sb=t=>'<small style="display:block;margin-top:2px;font-size:13.5px;font-weight:600;opacity:.85">'+t+'</small>';return pagaCon-tot0>0.004?'<div class="vto"><span>El motorizado lleva '+M(pagaCon-tot0)+' de sencillo para el vuelto'+sb('Cobra '+M(tot0)+' y el cliente paga con un billete de '+M(pagaCon))+'</span></div>':'<div class="vto"><span>No necesita sencillo'+sb('Cobra '+M(tot0)+' y el cliente paga exacto')+'</span></div>'})();
       /* solo el resumen: los datos de contacto salen en el paso donde se usan */
       const pideR=t==='recojo'&&/quien recibe/i.test(campo(o,'Pide el servicio')||'');
-      /* resumen completo: quién envía, dónde se recoge (todos los puntos), a dónde va (todos los destinos) y dónde se compra (todos los sitios) */
+      /* resumen completo: quién envía, dónde se recoge (todos los puntos), a dónde va (todos los destinos) y dónde se compra (todos los lugares) */
       {const PRr=Array.isArray(o.puntos_recojo)?o.puntos_recojo.filter(Boolean):[],dc=v=>String(v||'').replace(/https?:\/\/\S+/g,'').replace(/[\s·,|-]+$/,'').trim();
         const q2=(n,d)=>E(n||'—')+(dc(d)&&dc(d)!==String(n||'').trim()?`<div style="font-weight:500;font-size:13.5px;color:#6B5E55">${E(dc(d))}</div>`:'');
         let r='';
         if(t==='compra'){const lug=dc(o.direccion_recojo||campo(o,'Lugar de compra','¿De dónde desea la compra?'));
           r+=li('Cliente',E(remN));
-          r+=li(PRr.length?'Compra · sitio 1':'Compra en',q2(lug||'—',''));PRr.forEach(x=>{r+=li('Compra · sitio '+E(x.n),q2(x.nombre,''))});
+          r+=li(PRr.length?'Compra · lugar 1':'Compra en',q2(lug||'—',''));PRr.forEach(x=>{r+=li('Compra · lugar '+E(x.n),q2(x.nombre,''))});
           r+=li('Entrega en',q2(recN,o.direccion_entrega))}
         else if(t==='enc'){
           r+=li('Pide el servicio',pideR?'Quien recibe':'Quien envía')+li('Envía',q2(remN,o.direccion_recojo))+(aNom?li('A nombre de',E(aNom)):'');
@@ -200,7 +200,7 @@
       }else s.body=U.who(mn,'Motorizado asignado'+(o.asignado_en?' · '+U.hora(o.asignado_en):''),mo.foto_url||'',true)+U.contact(null,mo.telefono,'');}
     /* 2 · Hacer la compra / recoger: dónde, qué y cuánto se gastó */
     {const s=steps[2];s.locked='Se muestra al asignar el motorizado';
-      /* ordenado y sin repetir: estado arriba, luego cada lugar (sitio o punto) con lo suyo, el comprobante y el cobro */
+      /* ordenado y sin repetir: estado arriba, luego cada lugar (lugar o punto) con lo suyo, el comprobante y el cobro */
       const PRa=Array.isArray(o.puntos_recojo)?o.puntos_recojo.filter(Boolean):[],hr=v=>v?' · '+U.hora(v):'';
       const cap=v=>{v=String(v||'');return v.charAt(0).toUpperCase()+v.slice(1)};
       const sub2=v=>`<div style="font-weight:500;font-size:13.5px;color:#6B5E55">${v}</div>`;
@@ -215,13 +215,13 @@
       if(t==='compra'){
         const lr=String(o.direccion_recojo||campo(o,'Lugar de compra','¿De dónde desea la compra?')||''),lugar=lr.replace(/https?:\/\/\S+/g,'').replace(/[\s·,|-]+$/,'').trim();
         const det=campo(o,'Compra solicitada','¿Qué desea que compremos?');
-        s.sum=(lugar||'Compra')+(PRa.length?' + '+PRa.length+' sitio'+(PRa.length>1?'s':''):'')+(sub0>0?' · gastó '+M(sub0):'');
-        if(!h)h=U.st(E(mn)+(e>2||sub0>0?' hizo la compra'+(sub0>0?' · gastó '+M(sub0):''):' está haciendo la compra'+(PRa.length?' · '+PRa.filter(x=>x.recogido_en).length+' de '+PRa.length+' sitios adicionales listos':'')),e>2||sub0>0?'ok':'');
+        s.sum=(lugar||'Compra')+(PRa.length?' + '+PRa.length+' lugar'+(PRa.length>1?'es':''):'')+(sub0>0?' · gastó '+M(sub0):'');
+        if(!h)h=U.st(E(mn)+(e>2||sub0>0?' hizo la compra'+(sub0>0?' · gastó '+M(sub0):''):' está haciendo la compra'+(PRa.length?' · '+PRa.filter(x=>x.recogido_en).length+' de '+PRa.length+' lugares adicionales listos':'')),e>2||sub0>0?'ok':'');
         const L=[{n:1,nombre:lugar||'Lugar no indicado',que:det,url:lugar||LK(lr)||LK(o.ubicacion_recojo)?U.maps(o.latitud_recojo,o.longitud_recojo,lugar,LK(lr)||LK(o.ubicacion_recojo)):''}]
-          .concat(PRa.map(x=>({n:x.n,nombre:x.nombre||'Sitio '+x.n,que:x.que,obs:x.obs,hecho:x.recogido_en,url:x.lat&&x.lng||x.ubicacion?U.maps(x.lat,x.lng,x.nombre,LK(x.ubicacion)):''})));
-        L.forEach(q=>{h+=`<div class="sum" style="gap:10px"><div class="lbl">${L.length>1?'Sitio '+q.n+' de '+L.length+(q.hecho?' · comprado'+E(hr(q.hecho)):''):'Lugar de compra'}</div>`+
+          .concat(PRa.map(x=>({n:x.n,nombre:x.nombre||'Lugar '+x.n,que:x.que,obs:x.obs,hecho:x.recogido_en,url:x.lat&&x.lng||x.ubicacion?U.maps(x.lat,x.lng,x.nombre,LK(x.ubicacion)):''})));
+        L.forEach(q=>{h+=`<div class="sum" style="gap:10px"><div class="lbl">${L.length>1?'Lugar '+q.n+' de '+L.length+(q.hecho?' · comprado'+E(hr(q.hecho)):''):'Lugar de compra'}</div>`+
           U.who(q.nombre,'Compra aquí'+(q.n===1?' · pedido '+E(U.ref(id)):''),'')+`<div class="lbl" style="margin-top:4px">Qué comprar</div>`+txt(q.que||'—')+
-          ((q.n===1?notas.join(' · '):q.obs)?`<div class="lbl" style="margin-top:4px">Observaciones</div>`+txt(q.n===1?notas.join(' · '):q.obs):'')+btnIr(q.url,L.length>1?'Ir al sitio '+q.n:'Ir al lugar de compra')+`</div>`});
+          ((q.n===1?notas.join(' · '):q.obs)?`<div class="lbl" style="margin-top:4px">Observaciones</div>`+txt(q.n===1?notas.join(' · '):q.obs):'')+btnIr(q.url,L.length>1?'Ir al lugar '+q.n:'Ir al lugar de compra')+`</div>`});
         h+=compBox();
         if(!(sub0>0)&&e>=2)h+=U.note('El motorizado registra aquí cuánto gastó en la compra.');
       }else if(t==='enc'){
