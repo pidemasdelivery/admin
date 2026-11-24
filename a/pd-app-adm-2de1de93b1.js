@@ -1028,7 +1028,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     else{const m=String(o.pago_servicio_momento||'').toLowerCase();
       Object.assign(b,{rnom:o.nombre_remitente||o.nombre_cliente||'',rdni:o.dni_remitente||tagDe(obs,'DNI de quien envía'),rtel:o.telefono_remitente||o.telefono_cliente||'',rdir:o.direccion_recojo||'',rref:o.referencia_recojo||tagDe(obs,'Referencia de recojo'),rubi:o.ubicacion_recojo||tagDe(obs,'Ubicación de recojo'),
       enom:o.nombre_receptor||'',edni:o.dni_receptor||tagDe(obs,'DNI de quien recibe'),etel:o.telefono_receptor||'',tenv:o.tipo_encomienda||tagDe(obs,'Tipo de encomienda'),obs:libreDe(obs),
-      ag:o.agencia_destino||'',agubi:o.ubicacion_entrega||(o.latitud_entrega&&o.longitud_entrega?'https://maps.google.com/?q='+o.latitud_entrega+','+o.longitud_entrega:''),dest:o.destino_final||o.direccion_entrega||'',tpago:o.tipo_pago_encomienda||'',
+      ag:o.agencia_destino||'',agubi:o.ubicacion_entrega||(o.latitud_entrega&&o.longitud_entrega?'https://maps.google.com/?q='+o.latitud_entrega+','+o.longitud_entrega:''),dest:o.destino_final||o.direccion_entrega||'',tpago:o.tipo_pago_encomienda||'',comp:o.tipo_comprobante||tagDe(obs,'Comprobante').replace(/^No especificado$/i,''),doc:o.documento_comprobante||tagDe(obs,'DNI/RUC'),cnom:tagDe(obs,'Nombre comprobante'),craz:tagDe(obs,'Razón social'),cdir:tagDe(obs,'Dirección fiscal'),
       pago:pagado?'pagado':m==='al_final'?'al_final':m==='recojo_yape'?'yape':String(o.metodo_pago||'efectivo').toLowerCase()==='yape'?'yape':'efectivo'});
       /* al editar: delivery de cada paquete (el paquete 1 es lo que resta del total) */
       const px=(Array.isArray(o.paquetes_extra)?o.paquetes_extra:[]).filter(x=>x&&Number(x.numero)>1);
@@ -1076,6 +1076,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const sl=(id,l,k,ops,ph)=>`<div class="fld"><label for="${id}">${l}</label><select id="${id}" data-in="pe:${k}" style="height:56px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px;font-weight:700;width:100%;background:#fff">${ph?`<option value="">${E(ph)}</option>`:''}${ops.map(x=>`<option value="${E(x[0])}"${String(f[k])===String(x[0])?' selected':''}>${E(x[1])}</option>`).join('')}${f[k]&&!ops.some(x=>String(x[0])===String(f[k]))?`<option value="${E(f[k])}" selected>${E(f[k])}</option>`:''}</select></div>`;
     const sg=(l,k,ops)=>`<div class="fld"><label>${l}</label><div class="opc">${ops.map(x=>`<button type="button" class="${String(f[k]??'').toLowerCase()===String(x[0]).toLowerCase()?'on':''}" data-a="pe:set:${k}:${E(x[0])}">${E(x[1])}</button>`).join('')}</div></div>`;
     const card=(t,h)=>`<!--cd:${t}--><div class="cd"><div class="lbl">${t}</div>${h}</div>`;
+    /* igual que en la Tienda: Boleta pide DNI y nombre; Factura pide RUC, razón social y dirección fiscal (uno debajo del otro) */
+    const compCard=()=>{const oc=optsDe('admCompraComprobante'),cp=String(f.comp||'').toLowerCase();
+      return card('Información del comprobante',tb('Comprobante (opcional)','comp',(oc.length?oc:[['boleta','Boleta'],['factura','Factura']]).filter(x=>x[0]),true)+
+        (cp==='boleta'?fl('peDc','DNI','doc','',' inputmode="numeric" maxlength="8"')+fl('peCn','Nombre','cnom','')
+        :cp==='factura'?fl('peDc','RUC','doc','',' inputmode="numeric" maxlength="11"')+fl('peCz','Razón social','craz','')+fl('peCf','Dirección fiscal','cdir',''):''))};
     const mp=(k,dk,t)=>`<button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:mapa:${k}:${dk}:${encodeURIComponent(t)}">${coordsDe(f[k])?'Cambiar en el mapa':'Marcar en el mapa'}</button>`;
     const tel=' type="tel" inputmode="tel" maxlength="20"';
     /* Botones grandes como en la tienda (dos por fila) */
@@ -1117,12 +1122,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     }else if(f.tipo==='compra'){
       h+=card('Información del cliente',fl('peN','Nombre y apellido','nom','')+fl('peT','Teléfono','tel','',tel)+fl('peD','Dirección','dir','')+fl('peR','Referencia','ref','Ej. frente a la bodega, casa verde')+fl('peU','Ubicación (Google Maps)','ubi','Pega el enlace de Google Maps')+mp('ubi','dir','Lugar de entrega de la compra'));
       h+=card('Información de la compra',fl('peLg','¿De dónde desea la compra?','lugar','')+fl('peLu','Ubicación del lugar (Google Maps)','lugarUrl','Pega el enlace de Google Maps')+mp('lugarUrl','lugar','Dónde se hace la compra')+ta('peDt','¿Qué desea que compremos?','detalle','')+ta('peOb','Observaciones','obs',''));
-      const oc=optsDe('admCompraComprobante');
-      /* igual que en la Tienda: Boleta pide DNI y nombre; Factura pide RUC, razón social y dirección fiscal */
-      const cp=String(f.comp||'').toLowerCase();
-      h+=card('Información del comprobante',tb('Comprobante (opcional)','comp',(oc.length?oc:[['boleta','Boleta'],['factura','Factura']]).filter(x=>x[0]),true)+
-        (cp==='boleta'?`<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${fl('peDc','DNI','doc','',' inputmode="numeric" maxlength="8"')}${fl('peCn','Nombre','cnom','')}</div>`
-        :cp==='factura'?fl('peDc','RUC','doc','',' inputmode="numeric" maxlength="11"')+fl('peCz','Razón social','craz','')+fl('peCf','Dirección fiscal','cdir',''):''));
+      h+=compCard();
       h+=costo;
     }else{
       h+=card('Información de quien envía',fl('peRn','Nombre y apellido','rnom','')+fl('peRi','DNI','rdni','',' inputmode="numeric" maxlength="12"')+fl('peRt','Teléfono','rtel','',tel)+fl('peRd','Dirección de recojo','rdir','')+fl('peRr','Referencia','rref','Ej. casa de dos pisos, reja negra')+fl('peRu','Ubicación (Google Maps)','rubi','Pega el enlace de Google Maps')+mp('rubi','rdir','Lugar de recojo')+ta('peOb','¿Qué envía? / Observaciones (opcional)','obs','Describe el contenido u otras indicaciones'));
@@ -1132,6 +1132,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const masPaq=n=>n===cant&&cant<5?`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:pqadd">${IC.plus}Agregar otro paquete</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si no hay más paquetes, toca «Siguiente».</span>`:'';
       /* todos los paquetes con el mismo formulario (agencia y destino con selector de los registrados) */
       for(let k=0;k<cant;k++)h+=card('Paquete '+(k+1),nsPaqForm(f,k,cant)+(k>0?`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:pqx:${k-1}">Quitar este paquete</button>`:'')+masPaq(k+1));
+      h+=compCard();
       h+=costo;
     }
     if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
@@ -1170,10 +1171,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const mom=pagado?'pagado':f.pago==='al_final'?'al_final':f.pago==='yape'?'recojo_yape':'recojo_efectivo';
       p={nombre_cliente:f.rnom.trim(),telefono_cliente:f.rtel.trim(),nombre_remitente:f.rnom.trim(),telefono_remitente:f.rtel.trim(),dni_remitente:f.rdni.trim()||null,direccion_recojo:f.rdir.trim(),referencia_recojo:f.rref.trim()||null,ubicacion_recojo:f.rubi.trim()||null,
         nombre_receptor:f.enom.trim(),telefono_receptor:f.etel.trim(),dni_receptor:f.edni.trim()||null,tipo_encomienda:f.tenv||null,
-        agencia_destino:f.ag.trim(),referencia_entrega:f.ag.trim(),destino_final:f.dest.trim(),direccion_entrega:f.dest.trim(),tipo_pago_encomienda:f.tpago||null,
+        agencia_destino:f.ag.trim(),referencia_entrega:f.ag.trim(),destino_final:f.dest.trim(),direccion_entrega:f.dest.trim(),tipo_pago_encomienda:f.tpago||null,tipo_comprobante:f.comp||null,documento_comprobante:String(f.doc||'').trim()||null,
         costo_delivery:costo,subtotal:0,total:costo,metodo_pago:pagado?'efectivo':(f.pago==='al_final'?'yape':f.pago),pago_servicio_momento:mom};
       if(f.ag.trim()!==String(o.agencia_destino||'').trim()){const op=optsDe('encAgencia').find(x=>x[1].toLowerCase()===f.ag.trim().toLowerCase());p.agencia_id=op?op[0]:null}
-      obs=rehacerObs(obs,{'Tipo de encomienda':f.tenv,'DNI de quien envía':f.rdni,'DNI de quien recibe':f.edni,'Ubicación de recojo':f.rubi,'Referencia de recojo':f.rref},f.obs);
+      {const cpT=String(f.comp||'').toLowerCase();obs=rehacerObs(obs,{'Tipo de encomienda':f.tenv,'DNI de quien envía':f.rdni,'DNI de quien recibe':f.edni,'Ubicación de recojo':f.rubi,'Referencia de recojo':f.rref,'Comprobante':f.comp||'','DNI/RUC':cpT?f.doc:'','Nombre comprobante':cpT==='boleta'?f.cnom:'','Razón social':cpT==='factura'?f.craz:'','Dirección fiscal':cpT==='factura'?f.cdir:''},f.obs)}
       obs=[pagado?'Servicio marcado como PAGADO; no cobrar monto al cliente':'',f.pago==='al_final'?'El cliente paga al final por Yape, después de recibir la guía y la clave; no cobrar al recoger':''].filter(Boolean).concat(segs(obs)).join(' | ');
       const cr=coordsDe(f.rubi);if(cr){p.latitud_recojo=cr.lat;p.longitud_recojo=cr.lng}
       /* ubicación de la agencia: es el punto de entrega del motorizado */
@@ -1245,7 +1246,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function nsPasos(f){
     if(f.tipo==='recojo')return ['Información de quien envía'].concat((f.pts||[]).map((_,i)=>'Punto de recojo '+(i+2))).concat(['Información de quien recibe','Información de pago del servicio','Asignar motorizado']);
     if(f.tipo==='compra')return ['Información del cliente','Información de la compra','Información del comprobante','Información de pago del servicio','Asignar motorizado'];
-    return ['Información de quien envía'].concat(Array.from({length:1+(f.paqs||[]).length},(_,i)=>'Paquete '+(i+1))).concat(['Información de pago del servicio','Asignar motorizado']);
+    return ['Información de quien envía'].concat(Array.from({length:1+(f.paqs||[]).length},(_,i)=>'Paquete '+(i+1))).concat(['Información del comprobante','Información de pago del servicio','Asignar motorizado']);
   }
   /* Recojo y entrega con varios puntos de recojo: el punto 1 es «quien envía»; aquí van los demás */
   function nsPuntos(f){

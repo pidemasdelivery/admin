@@ -156,7 +156,7 @@
     const titulos=t==='enc'?['Pedido recibido','Asignar motorizado','Recoger los paquetes','Agencia y guía','Cerrado']:['Pedido recibido','Asignar motorizado',t==='compra'?'Hacer la compra':'Recoger','Entrega y cobro','Cerrado'];
     const steps=titulos.map((tt,i)=>({title:tt,state:e===-1?'locked':e===4||i<e?'done':i===e?'active':'locked'}));
     const cobra=o.pago_confirmado===true&&!(Number(o.monto_recibido)>0)?0:Number(o.total||0);
-    const notas=limpiar(o.observaciones).filter(x=>!/^(Compra solicitada|Comprobante|DNI\/RUC|Lugar de compra|¿De dónde|¿Qué desea|Monto entregado|Cambio para|Pago por Yape|Pago en efectivo|Paga quien|Servicio marcado como PAGADO|Pedido a nombre de|Pide el servicio)/i.test(x));
+    const notas=limpiar(o.observaciones).filter(x=>!/^(Compra solicitada|Comprobante|DNI\/RUC|Nombre comprobante|Razón social|Dirección fiscal|Lugar de compra|¿De dónde|¿Qué desea|Monto entregado|Cambio para|Pago por Yape|Pago en efectivo|Paga quien|Servicio marcado como PAGADO|Pedido a nombre de|Pide el servicio)/i.test(x));
     const aNom=t!=='compra'?(o.recojo_a_nombre||campo(o,'Pedido a nombre de')):'';
     const subQ=(base)=>E(base)+(aNom?`<div style="margin-top:2px">A nombre de <b style="color:#1F1A17">${E(aNom)}</b></div>`:'');
     /* Cada paso muestra solo lo de su etapa (mismo diseño que el motorizado): nada se repite */
@@ -205,7 +205,8 @@
             U.contact(U.maps(x.lat,x.lng,x.direccion,LK(x.ubicacion)),x.telefono,'')+(x.recogido_en?U.st('Recogido aquí','ok'):'')+`</div>`});
           s.sum=(listos===PR.length&&e>2?'Recogido en '+(PR.length+1)+' puntos':s.sum)}
         if(t==='recojo'&&notas.length)h+=sumBox('Notas del servicio',txt(notas.join(' · ')));
-        if(t==='enc'){h+=pks.map(pkgBox).join('')}
+        if(t==='enc'){h+=pks.map(pkgBox).join('');const cmp=campo(o,'Comprobante')||o.tipo_comprobante||'',doc=campo(o,'DNI/RUC')||o.documento_comprobante||'',cnm=campo(o,'Nombre comprobante'),crz=campo(o,'Razón social'),cdf=campo(o,'Dirección fiscal');
+          if((cmp&&!/no especificado/i.test(cmp))||doc)h+=sumBox('Comprobante',(cmp?li('Tipo',E(cmp)):'')+(doc?li(/factura/i.test(cmp)?'RUC':'DNI',E(doc)):'')+(cnm?li('Nombre',E(cnm)):'')+(crz?li('Razón social',E(crz)):'')+(cdf?li('Dirección fiscal',E(cdf)):''))}
         if(alRec)h+=`<div class="amt"><div class="k">Cobro al cliente</div><div class="n">${M(o.total)}</div><div class="pill">${o.pago_confirmado===true?E(metodo):mom==='recojo_yape'?'Yape':'Efectivo'}</div></div>`+(o.pago_confirmado===true?U.st('El motorizado confirmó el cobro al recoger','ok'):U.note(t==='enc'?'El motorizado le cobra a quien envía al recoger los paquetes.':'El motorizado cobra al recoger, antes de salir a entregar.'));
       }
       s.body=h;}
