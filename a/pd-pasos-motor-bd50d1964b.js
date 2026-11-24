@@ -60,6 +60,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .b:not([aria-label])>svg,a.b:not([aria-label])>svg,.bt:not([aria-label])>svg{display:none!important}
 .nvb{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:#FDEBDF;color:#9A330A;font-size:13px;font-weight:800;line-height:1.3;width:100%;box-sizing:border-box}.nvb i{flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:#C4410C}.nvb em{margin-left:auto;font-style:normal;font-variant-numeric:tabular-nums}
 .nvA{display:flex;gap:8px;margin-top:-4px}.nvA .b{flex:1 1 0;height:50px;font-size:15px}.st.mal{background:#FDE8E8;color:#9B1C1C;font-weight:700}
+.sum .st span{color:inherit}
 .addr{display:flex;gap:10px;align-items:flex-start}.addr svg{flex:0 0 22px;margin-top:2px}
 .at{font-size:18px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}.ar{font-size:14px;color:#6B5E55;margin-top:3px;overflow-wrap:anywhere}
 .btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.btns.b2{grid-template-columns:repeat(2,minmax(0,1fr))}
