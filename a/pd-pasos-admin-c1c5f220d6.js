@@ -217,7 +217,7 @@
         const det=campo(o,'Compra solicitada','¿Qué desea que compremos?');
         s.sum=(lugar||'Compra')+(PRa.length?' + '+PRa.length+' lugar'+(PRa.length>1?'es':''):'')+(sub0>0?' · gastó '+M(sub0):'');
         if(!h)h=U.st(E(mn)+(e>2||sub0>0?' hizo la compra'+(sub0>0?' · gastó '+M(sub0):''):' está haciendo la compra'+(PRa.length?' · '+PRa.filter(x=>x.recogido_en).length+' de '+PRa.length+' lugares adicionales listos':'')),e>2||sub0>0?'ok':'');
-        const L=[{n:1,nombre:lugar||'Lugar no indicado',que:det,url:lugar||LK(lr)||LK(o.ubicacion_recojo)?U.maps(o.latitud_recojo,o.longitud_recojo,lugar,LK(lr)||LK(o.ubicacion_recojo)):''}]
+        const L=[{n:1,nombre:lugar||'Lugar no indicado',que:det,hecho:o.punto1_listo_en,url:lugar||LK(lr)||LK(o.ubicacion_recojo)?U.maps(o.latitud_recojo,o.longitud_recojo,lugar,LK(lr)||LK(o.ubicacion_recojo)):''}]
           .concat(PRa.map(x=>({n:x.n,nombre:x.nombre||'Lugar '+x.n,que:x.que,obs:x.obs,cd:x.costo_delivery,hecho:x.recogido_en,url:x.lat&&x.lng||x.ubicacion?U.maps(x.lat,x.lng,x.nombre,LK(x.ubicacion)):''})));
         L.forEach(q=>{h+=`<div class="sum" style="gap:10px"><div class="lbl">${L.length>1?'Lugar '+q.n+' de '+L.length+(q.hecho?' · comprado'+E(hr(q.hecho)):''):'Lugar de compra'}</div>`+
           U.who(q.nombre,'Compra aquí'+(q.n===1?' · pedido '+E(U.ref(id)):''),'')+(L.length>1&&(()=>{const ok=PRa.every(x=>x.costo_delivery!=null&&x.costo_delivery!=='');if(!ok)return false;q.cd1=q.n===1?Math.max(0,Math.round((serv0-PRa.reduce((a,x)=>a+(Number(x.costo_delivery)||0),0))*100)/100):Number(q.cd);return true})()?li('Delivery de este lugar',M(q.cd1)):'')+`<div class="lbl" style="margin-top:4px">Qué comprar</div>`+txt(q.que||'—')+
@@ -237,7 +237,7 @@
         if(!h)h=U.st(E(mn)+(e>2?' recogió '+(PRa.length?'en los '+(PRa.length+1)+' puntos':'el pedido')+hr(o.en_camino_en):' va a recoger'+(PRa.length?' · '+listos+' de '+PRa.length+' puntos adicionales listos':'')),e>2?'ok':'');
         if(PRa.length){
           const exOk=PRa.every(x=>x.costo_delivery!=null&&x.costo_delivery!==''),ex=PRa.reduce((a,x)=>a+(Number(x.costo_delivery)||0),0),pg=PRa.find(x=>x.paga_aqui);
-          const L=[{n:1,nombre:remN,direccion:o.direccion_recojo,referencia:o.referencia_recojo,a_nombre:aNom,telefono:remT,costo_delivery:exOk?Math.max(0,Math.round(((Number(o.total)||0)-ex)*100)/100):null,lat:o.latitud_recojo,lng:o.longitud_recojo,ubicacion:o.ubicacion_recojo,hecho:e>2?o.en_camino_en||'ok':null,paga:!pg}].concat(PRa.map(x=>Object.assign({},x,{hecho:x.recogido_en,paga:!!x.paga_aqui})));
+          const L=[{n:1,nombre:remN,direccion:o.direccion_recojo,referencia:o.referencia_recojo,a_nombre:aNom,telefono:remT,costo_delivery:exOk?Math.max(0,Math.round(((Number(o.total)||0)-ex)*100)/100):null,lat:o.latitud_recojo,lng:o.longitud_recojo,ubicacion:o.ubicacion_recojo,hecho:o.punto1_listo_en||(e>2?o.en_camino_en||'ok':null),paga:!pg}].concat(PRa.map(x=>Object.assign({},x,{hecho:x.recogido_en,paga:!!x.paga_aqui})));
           L.forEach(q=>{h+=`<div class="sum" style="gap:10px"><div class="lbl">Punto ${E(q.n)} de ${L.length}${q.hecho?' · recogido'+(q.hecho!=='ok'?E(hr(q.hecho)):''):''}</div>`+
             U.who(q.nombre||'Punto '+q.n,'Recojo aquí'+(q.n===1?' · pedido '+E(U.ref(id)):''),'',true)+U.addr(q.direccion,q.referencia)+
             (q.a_nombre?li('Pedido a nombre de',E(q.a_nombre)):'')+(q.costo_delivery!=null&&q.costo_delivery!==''?li('Delivery de este punto',M(q.costo_delivery)):'')+(alRec&&q.paga?li('Paga el servicio','Aquí · '+M(o.total)):'')+
