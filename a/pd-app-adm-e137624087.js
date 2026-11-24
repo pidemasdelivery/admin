@@ -36,7 +36,7 @@
     'inicio':{t:'Pedidos',ic:'nvPed'},
     'h:moto':{t:'Motorizados',ic:'nvMoto',k:'Motorizados',sec:[
       ['Motorizados',[['motorizados / gps','Motorizados y GPS','pin'],['crear motorizado','Crear motorizado','plus'],['suspender / reactivar cuentas','Suspender o reactivar','shield']]],
-      ['Caja',[['t:caja','Cajas de motorizados','cash'],['yape por confirmar','Yape por confirmar','phone'],['alerta de caja alta','Alerta de caja alta','alert']]],
+      ['Caja',[['t:caja','Cajas de motorizados','cash'],['yape por confirmar','Cobros pendientes y Yape','phone'],['alerta de caja alta','Alerta de caja alta','alert']]],
       ['Sueldos',[['t:sueldo','Sueldos de motorizados','wallet'],['planilla de sueldos','Planilla de sueldos','list']]]]},
     'h:neg':{t:'Negocios',ic:'nvNeg',k:'Negocios',sec:[
       ['Negocios',[['configurar negocios','Configurar negocios','store'],['crear negocio','Crear negocio','plus'],['solicitudes de afiliación','Solicitudes de afiliación','tag']]],
@@ -1014,7 +1014,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   const optsDe=id=>id==='encAgencia'?(PE.ags||[]).map(a=>[a.id,a.nombre]):(OPS[id]||[]);
   function svcDatos(o,sv){
     const obs=o.observaciones||'',pagado=String(o.pago_servicio_momento||'').toLowerCase()==='pagado'||/Servicio marcado como PAGADO/i.test(obs);
-    const met=pagado?'pagado':String(o.metodo_pago||'efectivo').toLowerCase();
+    const met=pagado?'pagado':String(o.pago_servicio_momento||'').toLowerCase()==='al_final'?'al_final':String(o.metodo_pago||'efectivo').toLowerCase();
     const b={id:o.id,sv,tipo:sv==='Recojo y entrega'?'recojo':sv==='Compra'?'compra':'enc',msg:'',costo:String(Number(sv==='Compra'?o.costo_delivery:o.total)||0)};
     if(b.tipo==='recojo')Object.assign(b,{anom:o.recojo_a_nombre||tagDe(obs,'Pedido a nombre de'),rnom:o.nombre_remitente||o.nombre_cliente||'',rtel:o.telefono_remitente||o.telefono_cliente||'',rdir:o.direccion_recojo||'',rref:o.referencia_recojo||tagDe(obs,'Referencia de recojo'),rubi:o.ubicacion_recojo||tagDe(obs,'Ubicación de recojo','Ubicacion de recojo'),
       enom:o.nombre_receptor||'',etel:o.telefono_receptor||'',edir:o.direccion_entrega||'',eref:o.referencia_entrega||'',eubi:o.ubicacion_entrega||tagDe(obs,'Ubicación de entrega','Ubicacion de entrega'),lleva:o.que_se_lleva||tagDe(obs,'Qué se lleva'),
@@ -1094,10 +1094,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       f.cdx.map((x,i)=>`<div class="fld"><label>Delivery · paquete ${x.n}${x.ag||x.dest?' · '+E([x.ag,x.dest].filter(Boolean).join(' → ')):''}</label><input data-in="pe:cdx:${i}" value="${E(x.v||'')}" placeholder="S/ 0.00" inputmode="decimal"></div>`).join('')+
       `<div id="peCdTot" style="font-size:15px;font-weight:800">Total del servicio: ${Number.isFinite(su)?M(su):'S/ —'}</div>`};
     const costo=card('Información de pago del servicio',(cdMulti(f)?cdForm():f.cdx&&f.tipo==='enc'?cdxForm():fl('peCo','Costo del servicio','costo','S/ 0.00',' inputmode="decimal"')+`<div class="chips" style="flex-wrap:wrap">${[5,6,7,8,10,12,15].map(v=>`<button type="button" class="${Number(f.costo)===v?'on':''}" data-a="pe:set:costo:${v}">S/ ${v}</button>`).join('')}</div>`)+(f.tipo!=='enc'?`<button type="button" class="b" style="height:44px" data-a="pe:tarifa">Calcular con la tarifa</button>${f.tf?`<div style="font-size:13px;color:${f.tf.mal?'#B42318':'#6B5E55'};line-height:1.45">${f.tf.t}</div>`:''}`:'')+
-      (f.tipo==='enc'?sg('¿Cómo paga el servicio?','pago',[['efectivo','Efectivo al recoger'],['yape','Yape al recoger'],['pagado','Pagado'],['al_final','Al recibir la guía']])
-       :tb(f.tipo==='compra'?'¿Cómo paga el cliente la compra y el servicio?':'¿Cómo paga el servicio?','pago',[['efectivo','Efectivo'],['yape','Yape']])+(f.tipo==='compra'?'':`<div style="display:grid;margin-top:-4px">${bG(f.pago==='pagado','Ya está pagado','pe:set:pago:'+(f.pago==='pagado'?'efectivo':'pagado'))}</div>`))+
-      pagoExtra()+
-      (f.tipo==='recojo'&&f.pago!=='pagado'?sg('¿Quién paga el servicio?','quien',[['envia','Quien envía'],['recibe','Quien recibe']]):''));
+      (f.tipo==='enc'?sg('¿Cómo paga el servicio?','pago',[['efectivo','Efectivo al recoger'],['yape','Yape al recoger'],['al_final','Al final a Pidemás · al recibir la guía']])
+       :tb(f.tipo==='compra'?'¿Cómo paga el cliente la compra y el servicio?':'¿Cómo paga el servicio?','pago',[['efectivo','Efectivo'],['yape','Yape']])+`<div style="display:grid;margin-top:-4px">${bG(f.pago==='al_final','Al final a Pidemás','pe:set:pago:'+(f.pago==='al_final'?'efectivo':'al_final'))}</div>`)+
+      (f.pago==='al_final'?U.note(f.tipo==='enc'?'El motorizado no cobra: el cliente le paga a Pidemás después de recibir la guía y la clave.':f.tipo==='compra'?'El motorizado compra con su caja y no cobra al entregar. El cliente le paga a Pidemás la compra y el servicio; queda en Cobros pendientes.':'El motorizado no cobra. El cliente le paga el servicio a Pidemás; queda en Cobros pendientes.'):pagoExtra())+
+      (f.tipo==='recojo'&&f.pago!=='pagado'&&f.pago!=='al_final'?sg('¿Quién paga el servicio?','quien',[['envia','Quien envía'],['recibe','Quien recibe']]):''));
     let h='';
     if(f.tipo==='recojo'){
       h+=card('Información de quien envía',fl('peRn','Nombre y apellido','rnom','')+fl('peRt','Teléfono','rtel','',tel)+fl('peRd','Dirección','rdir','')+fl('peRr','Referencia','rref','Ej. frente al parque, portón negro')+fl('peRa','¿A nombre de quién está el pedido?','anom','Ej. Juan Pérez · si es distinto de quien entrega')+fl('peRu','Ubicación (Google Maps)','rubi','Pega el enlace de Google Maps')+mp('rubi','rdir','Lugar de recojo'));
@@ -1135,22 +1135,24 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     let p={},obs=o.observaciones||'';
     if(f.tipo==='recojo'){
       if(!f.rnom.trim()){f.msg='Escribe el nombre de quien envía.';return false}
-      const mom=pagado?'pagado':(f.quien==='envia'?(f.pago==='yape'?'recojo_yape':'recojo_efectivo'):null);
+      const finalP=f.pago==='al_final';
+      const mom=pagado?'pagado':finalP?'al_final':(f.quien==='envia'?(f.pago==='yape'?'recojo_yape':'recojo_efectivo'):null);
       const pideR=f.pide==='recibe'&&String(f.enom||'').trim();
       p={nombre_cliente:(pideR?f.enom:f.rnom).trim(),telefono_cliente:(pideR?f.etel:f.rtel).trim(),nombre_remitente:f.rnom.trim(),telefono_remitente:f.rtel.trim(),direccion_recojo:f.rdir.trim(),referencia_recojo:f.rref.trim()||null,recojo_a_nombre:String(f.anom||'').trim()||null,ubicacion_recojo:f.rubi.trim()||null,
         nombre_receptor:f.enom.trim(),telefono_receptor:f.etel.trim(),direccion_entrega:f.edir.trim(),referencia_entrega:f.eref.trim()||null,ubicacion_entrega:f.eubi.trim()||null,que_se_lleva:f.lleva.trim()||null,
-        costo_delivery:costo,subtotal:0,total:costo,metodo_pago:pagado?'efectivo':f.pago,pago_servicio_momento:mom,quien_paga:pagado?null:f.quien};
+        costo_delivery:costo,subtotal:0,total:costo,metodo_pago:pagado?'efectivo':finalP?'yape':f.pago,pago_servicio_momento:mom,quien_paga:pagado||finalP?null:f.quien};
       obs=rehacerObs(obs,{'Pide el servicio':pideR?'Quien recibe':'','Ubicación de recojo':f.rubi,'Ubicación de entrega':f.eubi,'Referencia de recojo':f.rref,'Pedido a nombre de':f.anom,'Qué se lleva':f.lleva});
-      obs=[pagado?'Servicio marcado como PAGADO; no cobrar monto al cliente':(f.pago==='efectivo'?'Pago en efectivo: S/ '+costo.toFixed(2):'Pago por Yape: pendiente de captura y confirmación del administrador'),pagado?'':(f.quien==='envia'?'Paga quien envía, al recoger':'Paga quien recibe, al entregar')].filter(Boolean).concat(segs(obs)).join(' | ');
+      obs=[pagado?'Servicio marcado como PAGADO; no cobrar monto al cliente':finalP?'El cliente paga al final a Pidemás; el motorizado no cobra':(f.pago==='efectivo'?'Pago en efectivo: S/ '+costo.toFixed(2):'Pago por Yape: pendiente de captura y confirmación del administrador'),pagado||finalP?'':(f.quien==='envia'?'Paga quien envía, al recoger':'Paga quien recibe, al entregar')].filter(Boolean).concat(segs(obs)).join(' | ');
       const cr=coordsDe(f.rubi),ce=coordsDe(f.eubi);if(cr){p.latitud_recojo=cr.lat;p.longitud_recojo=cr.lng}if(ce){p.latitud_entrega=ce.lat;p.longitud_entrega=ce.lng}
       p.puntos_recojo=nsPuntosPayload(f,o);
     }else if(f.tipo==='compra'){
       if(!f.nom.trim()){f.msg='Escribe el nombre del cliente.';return false}
       p={nombre_cliente:f.nom.trim(),telefono_cliente:f.tel.trim(),nombre_remitente:f.nom.trim(),telefono_remitente:f.tel.trim(),direccion_entrega:f.dir.trim(),referencia_entrega:f.ref.trim()||null,ubicacion_entrega:f.ubi.trim()||null,
-        direccion_recojo:[f.lugar.trim(),String(f.lugarUrl||'').trim()].filter(Boolean).join(' · '),tipo_comprobante:f.comp||null,documento_comprobante:f.doc.trim()||null,costo_delivery:costo,total:Math.round((n(o.subtotal)+costo)*100)/100,metodo_pago:pagado?'efectivo':f.pago};
+        direccion_recojo:[f.lugar.trim(),String(f.lugarUrl||'').trim()].filter(Boolean).join(' · '),tipo_comprobante:f.comp||null,documento_comprobante:f.doc.trim()||null,costo_delivery:costo,total:Math.round((n(o.subtotal)+costo)*100)/100,metodo_pago:f.pago==='al_final'?'yape':pagado?'efectivo':f.pago,pago_servicio_momento:f.pago==='al_final'?'al_final':null};
       const cpT=String(f.comp||'').toLowerCase();
       obs=rehacerObs(obs,{'Ubicación':f.ubi,'Compra solicitada':f.detalle,'Comprobante':f.comp||'No especificado','DNI/RUC':cpT?f.doc:'','Nombre comprobante':cpT==='boleta'?f.cnom:'','Razón social':cpT==='factura'?f.craz:'','Dirección fiscal':cpT==='factura'?f.cdir:''},f.obs);
       if(pagado)obs='Servicio marcado como PAGADO; no cobrar monto al cliente | '+obs;
+      if(f.pago==='al_final')obs='El cliente paga al final a Pidemás (compra y servicio); el motorizado no cobra | '+obs;
       const ce=coordsDe(f.ubi);if(ce){p.latitud_entrega=ce.lat;p.longitud_entrega=ce.lng}
     }else{
       if(!f.rnom.trim()){f.msg='Escribe el nombre de quien envía.';return false}
@@ -1512,7 +1514,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   const recargar=k=>{if(C2['s:'+k])C2['s:'+k].t=0;cargar('s:'+k,SEC[k].load,true)};
 
   /* --- Yape por confirmar --- */
-  SEC['yape por confirmar']={g:'Control de caja y sueldos',t:'Yape por confirmar',rf:1,
+  SEC['yape por confirmar']={g:'Control de caja y sueldos',t:'Cobros pendientes y Yape',rf:1,
     load:async()=>{const b=await baseCtl();const {data,error}=await D().from('cobros').select('id,pedido_id,motorizado_id,monto,confirmado_en,yape_recibido_en').eq('metodo_pago','yape').eq('confirmado',true).is('yape_recibido_en',null).gte('confirmado_en',new Date(Date.now()-45*864e5).toISOString()).order('confirmado_en',{ascending:false}).limit(300);if(error)throw error;
       const ids=[...new Set((data||[]).map(c=>c.pedido_id).filter(Boolean))];const peds={};if(ids.length){const r=await D().from('pedidos').select('id,nombre_cliente,telefono_cliente,total,estado,pago_acordado').in('id',ids);(r.data||[]).forEach(p=>peds[p.id]=p)}
       /* encomiendas entregadas con algo pendiente: lo que Pidemás pagó en las agencias y/o el delivery que se paga al final */
@@ -1520,13 +1522,16 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         EN=(r.data||[]).map(p=>{const ap=Array.isArray(p.agencias_proceso)?p.agencias_proceso:[];const ag=Math.round((ap.reduce((a,y)=>a+(y&&y.pago_en?Number(y.pago_monto)||0:0),0)||Number(p.monto_pagado_agencia)||0)*100)/100;
           const delPag=/servicio marcado como pagado/i.test(String(p.observaciones||''))||String(p.pago_servicio_momento||'').toLowerCase()==='pagado'||p.pago_confirmado===true;const del=delPag?0:Number(p.total)||0;
           return Object.assign({},p,{ag,del,pend:Math.round((ag+del)*100)/100,ags:ap.filter(y=>y&&y.pago_en&&Number(y.pago_monto)>0)})}).filter(p=>p.pend>0.004)}catch(_){}
+      /* recojos y compras que el cliente paga al final a Pidemás */
+      try{const r2=await D().from('pedidos').select('id,tipo_servicio,nombre_cliente,nombre_remitente,telefono_cliente,telefono_remitente,total,subtotal,costo_delivery,estado,entregado_en,creado_en,pago_confirmado').eq('pago_servicio_momento','al_final').eq('estado','entregado').eq('pago_confirmado',false).not('tipo_servicio','ilike','%encomienda%').gte('creado_en',new Date(Date.now()-45*864e5).toISOString()).order('creado_en',{ascending:false}).limit(200);
+        (r2.data||[]).forEach(p=>{const t=Math.round((Number(p.total)||0)*100)/100;if(t>0)EN.push(Object.assign({},p,{svc:/compra/i.test(p.tipo_servicio)?'compra':'recojo',ag:0,del:t,pend:t,ags:[]}))})}catch(_){}
       return {b,peds,EN,L:(data||[]).filter(c=>{const p=peds[c.pedido_id];/* el Yape al QR del negocio no llega a Pidemás: lo confirma el negocio */return !p||(!['cancelado','rechazado'].includes(est(p))&&p.pago_acordado!=='yape_negocio')})}},
     v(){const c=datos('yape por confirmar',this.load);if(!c.data)return {body:cargando(c)};const {b,peds,L}=c.data,EN=c.data.EN||[];const tot=L.reduce((s,x)=>s+(Number(x.monto)||0),0)+EN.reduce((s,x)=>s+x.pend,0);
-      let h=`<div class="amt"><div class="k">Yapes por confirmar</div><div class="n">${M(tot)}</div><div class="pill">${L.length+EN.length} cobro${L.length+EN.length===1?'':'s'}</div></div>`;
-      if(EN.length){h+=`<div class="lbl" style="margin-top:4px">Encomiendas por cobrar al cliente</div>`+U.note('Lo que Pidemás pagó en las agencias (y el delivery si se paga al final). Envía el cobro por WhatsApp y marca «Recibido» cuando llegue el Yape.')+
+      let h=`<div class="amt"><div class="k">Por confirmar o cobrar</div><div class="n">${M(tot)}</div><div class="pill">${L.length+EN.length} cobro${L.length+EN.length===1?'':'s'}</div></div>`;
+      if(EN.length){h+=`<div class="lbl" style="margin-top:4px">Cobros pendientes · pagan al final a Pidemás</div>`+U.note('Servicios que el cliente paga después: lo pagado en agencias, la compra y el servicio. Envía el cobro por WhatsApp y marca «Recibido» cuando llegue el pago.')+
         `<div class="cd">${EN.map(p=>{const n=p.nombre_cliente||p.nombre_remitente||'',w=telW(p.telefono_cliente||p.telefono_remitente),y=(typeof yapeCfg==='function'?yapeCfg():null)||{numero:'986233533',titular:'Grupo Pidemás EIRL'};
-          const det=[...p.ags.map(a=>'• Envío en '+a.agencia+': '+M(a.pago_monto)),...(p.ags.length||!(p.ag>0)?[]:['• Envío pagado en agencia: '+M(p.ag)]),...(p.del>0?['• Delivery Pidemás: '+M(p.del)]:[])];
-          const msg=['Hola'+(n?' '+String(n).trim().split(/\s+/)[0]:'')+' 👋','Te escribimos de *Pidemás* por tu encomienda *'+ref(p.id)+'*.','','Tienes pendiente de pago:',...det,'*Total a pagar: '+M(p.pend)+'*','','Puedes pagar por Yape a Pidemás:','📱 '+y.numero+(y.titular?' · '+y.titular:''),'','Cuando pagues, envíanos la captura del Yape por aquí. ¡Gracias!'].join('\n');
+          const det=p.svc==='compra'?['• Compra: '+M(p.subtotal),'• Servicio Pidemás: '+M(p.costo_delivery)]:p.svc==='recojo'?['• Servicio de recojo y entrega: '+M(p.del)]:[...p.ags.map(a=>'• Envío en '+a.agencia+': '+M(a.pago_monto)),...(p.ags.length||!(p.ag>0)?[]:['• Envío pagado en agencia: '+M(p.ag)]),...(p.del>0?['• Delivery Pidemás: '+M(p.del)]:[])];
+          const msg=['Hola'+(n?' '+String(n).trim().split(/\s+/)[0]:'')+' 👋','Te escribimos de *Pidemás* por tu '+(p.svc==='compra'?'compra':p.svc==='recojo'?'servicio de recojo y entrega':'encomienda')+' *'+ref(p.id)+'*.','','Tienes pendiente de pago:',...det,'*Total a pagar: '+M(p.pend)+'*','','Puedes pagar por Yape a Pidemás:','📱 '+y.numero+(y.titular?' · '+y.titular:''),'','Cuando pagues, envíanos la captura del Yape por aquí. ¡Gracias!'].join('\n');
           return fila(M(p.pend)+' · '+E(n||'Cliente'),E(ref(p.id))+' · '+E(det.map(x=>x.replace(/^• /,'')).join(' · '))+' · '+E(fch(p.entregado_en||p.creado_en)),`<span style="display:flex;gap:6px;flex:0 0 auto">${w?`<a class="b g" style="height:40px;width:44px;padding:0" target="_blank" rel="noopener" aria-label="Enviar cobro por WhatsApp" title="Enviar cobro por WhatsApp" href="https://wa.me/${w}?text=${encodeURIComponent(msg)}">${U.I.wa}</a>`:''}<button type="button" class="b" style="height:40px;padding:0 12px;color:#0F5E2E;border-color:#CFEBDA" data-sa="eok:${E(p.id)}">${IC.check}Recibido</button></span>`)}).join('')}</div>`;
         if(L.length)h+=`<div class="lbl" style="margin-top:8px">Cobros del motorizado</div>`}
       h+=U.note('Cobros que el motorizado marcó como pagados por Yape. Confirma cuando el dinero haya llegado al QR de Pidemás.');
@@ -1535,10 +1540,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       return {body:h,foot:L.length>1?`<button type="button" class="b o" style="height:54px;font-size:16px" data-sa="yall">Marcar todos como recibidos</button>`:''}},
     async a(x){const c=C2['s:yape por confirmar'];
       if(String(x).startsWith('eok:')){const id=x.slice(4),p=(c.data.EN||[]).find(y=>String(y.id)===id);if(!p)return;
-        if(!(await conf('¿El cliente ya te pagó '+M(p.pend)+' por Yape?\nEncomienda '+ref(p.id))))return;
-        const up={pago_agencia_cobrado_en:new Date().toISOString()};if(p.del>0)up.pago_confirmado=true;
+        if(!(await conf('¿El cliente ya te pagó '+M(p.pend)+'?\n'+(p.svc==='compra'?'Compra ':p.svc==='recojo'?'Recojo y entrega ':'Encomienda ')+ref(p.id))))return;
+        const up=p.svc?{pago_confirmado:true,monto_recibido:p.pend}:{pago_agencia_cobrado_en:new Date().toISOString()};if(!p.svc&&p.del>0)up.pago_confirmado=true;
         const q=await D().from('pedidos').update(up).eq('id',id);if(q.error){mal('No se pudo guardar: '+q.error.message);return}
-        ok('Cobro de la encomienda confirmado');recargar('yape por confirmar');return}
+        ok('Cobro confirmado');recargar('yape por confirmar');return}
       const ids=x==='yall'?c.data.L.map(y=>y.id):[x.split(':')[1]];if(x==='yall'&&!(await conf('¿Marcar '+ids.length+' Yapes como recibidos?')))return;
       const u=(await D().auth.getUser()).data.user;const q=await D().from('cobros').update({yape_recibido_en:new Date().toISOString(),yape_recibido_por:u&&u.id}).in('id',ids);if(q.error){mal('No se pudo guardar: '+q.error.message);return}
       ok(ids.length===1?'Yape confirmado':'Yapes confirmados');recargar('yape por confirmar');try{window.pdCtl&&pdCtl.contar()}catch(_){}}};

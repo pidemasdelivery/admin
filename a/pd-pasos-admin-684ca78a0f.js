@@ -169,7 +169,7 @@
     const btnIr=(url,lbl)=>`<a class="b o" style="display:flex;width:100%;box-sizing:border-box;justify-content:center${url?'':';opacity:.45;pointer-events:none'}"${url?` href="${E(url)}" target="_blank" rel="noopener"`:' aria-disabled="true"'}>${U.I.nav||''}${lbl}</a>`;
     /* 0 · Pedido recibido: quién lo pidió, cuánto cuesta el servicio y cómo paga */
     {const s=steps[0];s.sum=NOM+' · '+M(serv0)+(o.creado_en?' · '+U.hora(o.creado_en):'');
-      const pagoTx=pagado?'Ya pagado':metodo+(alRec?' al recoger':'')+(t==='recojo'&&(qp==='envia'||qp==='recibe')?' · paga quien '+(qp==='envia'?'envía':'recibe'):'');
+      const pagoTx=pagado?'Ya pagado':mom==='al_final'?(t==='enc'?'Al final a Pidemás · al recibir la guía':'Al final a Pidemás'):metodo+(alRec?' al recoger':'')+(t==='recojo'&&(qp==='envia'||qp==='recibe')?' · paga quien '+(qp==='envia'?'envía':'recibe'):'');
       let h=`<div class="amt"><div class="k">${t==='compra'?'Costo del servicio':'Total del servicio'}</div><div class="n">${M(serv0)}</div><div class="pill">${E(pagoTx)}</div></div>`;
       if(pagaCon>0&&!pagado&&metodo==='Efectivo')h+=t==='compra'&&!(sub0>0)?'<div class="vto info"><span>Pagará con · el vuelto sale con la compra</span><b>'+M(pagaCon)+'</b></div>':(pagaCon-tot0>0.004?'<div class="vto"><span>Vuelto · paga con '+M(pagaCon)+'</span><b>'+M(pagaCon-tot0)+'</b></div>':'<div class="vto"><span>Paga con '+M(pagaCon)+'</span><b>Sin vuelto</b></div>');
       /* solo el resumen: los datos de contacto salen en el paso donde se usan */
@@ -225,6 +225,12 @@
       const txt=['Hola'+(cliN?' '+String(cliN).split(' ')[0]:'')+', te escribimos de *Pidemás* por tu encomienda '+U.ref(id)+'.','','Tienes pendiente de pago:',...L,'*Total a pagar: '+M(pendTot)+'*','',
         'Puedes pagar por Yape a Pidemás:','📱 '+y.numero+(y.titular?' · '+y.titular:''),...(y.url?['QR: '+y.url]:[]),'','Cuando pagues, envíanos la captura del Yape por aquí. ¡Gracias!'].join('\n');
       return `<a class="b g" style="display:flex;width:100%;box-sizing:border-box;justify-content:center" href="https://wa.me/${tel.length===9?'51'+tel:tel}?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">Enviar cobro al cliente por WhatsApp</a>`};
+    /* recojo o compra que paga al final: mensaje de cobro por WhatsApp */
+    const cobroSvcWa=()=>{const tel=String(o.telefono_cliente||o.telefono_remitente||'').replace(/\D/g,''),cliN=o.nombre_cliente||o.nombre_remitente||'';
+      if(!tel)return U.note('El cliente no tiene teléfono registrado para enviarle el cobro.');const y=yapeCfgP();
+      const L=t==='compra'?['• Compra: '+M(sub0),'• Servicio Pidemás: '+M(serv0)]:['• Servicio de recojo y entrega: '+M(tot0)];
+      const txt=['Hola'+(cliN?' '+String(cliN).split(' ')[0]:'')+', te escribimos de *Pidemás* por tu '+(t==='compra'?'compra':'servicio de recojo y entrega')+' '+U.ref(id)+'.','','Tienes pendiente de pago:',...L,'*Total a pagar: '+M(tot0)+'*','','Puedes pagar por Yape a Pidemás:','📱 '+y.numero+(y.titular?' · '+y.titular:''),...(y.url?['QR: '+y.url]:[]),'','Cuando pagues, envíanos la captura del Yape por aquí. ¡Gracias!'].join('\n');
+      return `<a class="b g" style="display:flex;width:100%;box-sizing:border-box;justify-content:center" href="https://wa.me/${tel.length===9?'51'+tel:tel}?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">Enviar cobro al cliente por WhatsApp</a>`};
     const yapeAdm=()=>{if(!PY)return '';let h=PY.yaTiene(o)?PY.html(o):'';
       if(t==='enc'&&o.pago_agencia_prueba)h+=PY.html(o,{dest:'agencia',titulo:'Prueba del Yape del envío'});
       if(t==='enc'&&guias&&pendTot>0.004&&st(o)!=='cancelado')h+=`<div class="amt"><div class="k">El cliente debe pagar a Pidemás</div><div class="n">${M(pendTot)}</div><div class="pill">Por Yape · después de recibir la guía y la clave</div></div>`+
@@ -272,7 +278,12 @@
       else{const cob=t==='compra'?(o.pago_confirmado===true&&!(Number(o.monto_recibido)>0)?0:tot0):cobra;
         s.sum=cob>0&&!alRec?'Cobrado '+M(cob)+' · '+metodo:'Entregado';
         let h=['en_entrega','confirmando_pago'].includes(s0)?U.st(E(mn)+' llegó donde '+E(recN),'ok'):U.st(E(mn)+' va camino donde '+E(recN));
-        if(t==='compra'&&!(sub0>0))h+=U.note('El monto a cobrar sale cuando el motorizado registre la compra.');
+        if(mom==='al_final'){/* paga al final a Pidemás: el motorizado no cobra; queda en Cobros pendientes */
+          h+=`<div class="amt"><div class="k">Paga al final a Pidemás</div><div class="n">${t==='compra'&&!(sub0>0)?'S/ —':M(tot0)}</div><div class="pill">${o.pago_confirmado===true?'Pagado':'Pendiente'}</div></div>`+(t==='compra'&&sub0>0?sumBox('Montos',li('Compra',M(sub0))+li('Servicio',M(serv0))+li('Total',M(tot0),1)):'');
+          if(o.pago_confirmado===true)h+=U.st('El cliente ya pagó a Pidemás','ok');
+          else if(t==='compra'&&!(sub0>0))h+=U.note('El monto sale cuando el motorizado registre la compra.');
+          else h+=cobroSvcWa()+U.note('Si no paga, vuelve a enviarle el cobro. Cuando llegue el pago, confírmalo en <b>Caja › Cobros pendientes y Yape</b>.');}
+        else if(t==='compra'&&!(sub0>0))h+=U.note('El monto a cobrar sale cuando el motorizado registre la compra.');
         else if(!alRec&&cob>0)h+=`<div class="amt"><div class="k">Cobro al cliente</div><div class="n">${M(cob)}</div><div class="pill">${E(metodo)}</div></div>`+(t==='compra'?sumBox('Montos',li('Compra',M(sub0))+li('Servicio',M(serv0))+li('Total',M(tot0),1)):'');
         else h+=U.st('Ya está pagado: no se cobra al entregar','ok');
         if(o.pago_confirmado===true&&!alRec&&cob>0)h+=U.st('El motorizado confirmó el cobro','ok');
