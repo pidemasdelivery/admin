@@ -201,7 +201,7 @@
           const listos=PR.filter(x=>x.recogido_en).length;
           h+=U.st(listos===PR.length?'Recogió en los '+(PR.length+1)+' puntos':'Recogido en '+listos+' de '+PR.length+' puntos adicionales',listos===PR.length?'ok':'');
           PR.forEach(x=>{h+=`<div class="sum" style="gap:10px"><div class="lbl">Punto ${E(x.n)} de ${PR.length+1}${x.recogido_en?' · recogido '+E(U.hora(x.recogido_en)):''}</div>`+
-            U.who(x.nombre||'Punto '+x.n,'Recojo aquí'+(x.que?' · '+E(x.que):''),'',true)+U.addr(x.direccion,x.referencia)+
+            U.who(x.nombre||'Punto '+x.n,'Recojo aquí'+(x.que?' · '+E(x.que):''),'',true)+U.addr(x.direccion,x.referencia)+(x.a_nombre?`<div class="li"><span>Pedido a nombre de</span><b>${E(x.a_nombre)}</b></div>`:'')+(x.costo_delivery!=null&&x.costo_delivery!==''?`<div class="li"><span>Delivery de este punto</span><b>${E(U.money(x.costo_delivery))}</b></div>`:'')+
             U.contact(U.maps(x.lat,x.lng,x.direccion,LK(x.ubicacion)),x.telefono,'')+(x.recogido_en?U.st('Recogido aquí','ok'):'')+`</div>`});
           s.sum=(listos===PR.length&&e>2?'Recogido en '+(PR.length+1)+' puntos':s.sum)}
         if(t==='recojo'&&notas.length)h+=sumBox('Notas del servicio',txt(notas.join(' · ')));
