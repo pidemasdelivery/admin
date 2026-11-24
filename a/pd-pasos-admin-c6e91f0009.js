@@ -136,6 +136,12 @@
       if(x&&x.pago_paquetes&&x.pago_paquetes[p.numero]!=null)return {m:Number(x.pago_paquetes[p.numero])||0,solo:true};
       if(x)return {m:Number(x.pago_monto)||0,solo:mismaAg(p).filter(y=>y.pago==='pago_en_agencia').length<2};if(pks.length===1&&Number(o.monto_pagado_agencia)>0)return {m:Number(o.monto_pagado_agencia),solo:true};return null};
     const mismaAg=p=>pks.filter(y=>agK(y.agencia)===agK(p.agencia));
+    /* Qué ya pagó el cliente a Pidemás. El delivery (servicio) y lo que Pidemás adelantó en las agencias son cobros distintos:
+       que el delivery esté pagado NO significa que el envío de la agencia esté pagado. */
+    const delPag=/servicio marcado como pagado/i.test(String(o.observaciones||''))||String(o.pago_servicio_momento||'').toLowerCase()==='pagado'||o.pago_confirmado===true;
+    const agCob=!!o.pago_agencia_cobrado_en;
+    const agTot=(()=>{const L=Array.isArray(o.agencias_proceso)?o.agencias_proceso:[];const x=L.reduce((a,y)=>a+(y&&y.pago_en?Number(y.pago_monto)||0:0),0);return Math.round((x||Number(o.monto_pagado_agencia)||0)*100)/100})();
+    const pendTot=Math.round(((delPag?0:Number(o.total)||0)+(agCob?0:agTot))*100)/100;
     const pkgBox=p=>sumBox('Paquete '+p.numero,li('Ruta',E([p.agencia,p.destino].filter(Boolean).join(' → ')||'—'))+li('Pago del envío',pagoTx(p.pago))+li('Recibe · nombre',E(p.recibe||'—'))+li('DNI',E(p.dni||'—'))+li('Número',E(p.tel||'—')));
     const procAg=Array.isArray(o.agencias_proceso)?o.agencias_proceso:[];
     const gs=paq.filter(x=>x&&Number(x.numero)>0);
@@ -202,9 +208,14 @@
     /* Yape a Pidemás: la captura (o el n.° de operación) se guarda con el pedido. En encomiendas que se pagan
        al final, aquí se registra el Yape del cliente. */
     const PY=window.PdYapeP;
-    const yapeAdm=()=>{if(!PY)return '';
-      if(t==='enc'&&mom==='al_final'&&o.pago_confirmado!==true&&!pagado)return `<div class="amt"><div class="k">El cliente paga por Yape a Pidemás</div><div class="n">${M(o.total)}</div><div class="pill">Después de recibir la guía y la clave</div></div>`+PY.html(o)+`<button type="button" class="b o" data-act="yfReg">Registrar pago por Yape</button>`;
-      return PY.yaTiene(o)?PY.html(o):''};
+    const qY=t==='enc'&&delPag?{dest:'agencia',titulo:'Prueba del Yape del envío'}:null;
+    const yapeAdm=()=>{if(!PY)return '';let h=PY.yaTiene(o)?PY.html(o):'';
+      if(t==='enc'&&o.pago_agencia_prueba)h+=PY.html(o,{dest:'agencia',titulo:'Prueba del Yape del envío'});
+      if(t==='enc'&&guias&&pendTot>0.004&&st(o)!=='cancelado')h+=`<div class="amt"><div class="k">El cliente debe pagar a Pidemás</div><div class="n">${M(pendTot)}</div><div class="pill">Por Yape · después de recibir la guía y la clave</div></div>`+
+        sumBox('Detalle del cobro',(agTot>0&&!agCob?li('Envío pagado en agencias',M(agTot)):'')+(!delPag?li('Delivery Pidemás',M(o.total)):'')+li('Total a cobrar',M(pendTot),1))+
+        (agTot>0&&!agCob&&delPag?U.note('El delivery ya está pagado; falta lo que Pidemás pagó en la agencia.'):'')+
+        PY.html(o,qY)+`<button type="button" class="b o" data-act="yfReg">Registrar pago por Yape · ${M(pendTot)}</button>`;
+      return h};
     /* 3 · Entrega y cobro (o agencia): a dónde se lleva y cuánto se cobra */
     {const s=steps[3];s.locked=t==='compra'?'Se muestra al terminar la compra':'Se muestra al recoger';
       if(t==='enc'){s.sum=guias?'Guías enviadas':'En agencia';
@@ -219,17 +230,17 @@
             const clv=g.sin_clave?'La agencia no dio clave':String(g.clave||'—');
             if(!foto)return sumBox('Guía · paquete '+p.numero,li(ruta,'Enviada por WhatsApp')+li('Clave','Revisa tu WhatsApp'));
             const cliT=o.telefono_cliente||o.telefono_remitente,cliN=o.nombre_cliente||o.nombre_remitente||'';
-            const pq=pagoAg(p),grp=mismaAg(p).filter(y=>y.pago==='pago_en_agencia'),primero=grp[0]===p,pa=pq?pq.m:null,paLinea=!!pq&&(pq.solo||primero),del=p.cd,ya=pagado||mom==='pagado'||(o.pago_confirmado===true&&mom!=='al_final');
-            const totG=Math.round(((paLinea?pa:0)+(del!=null?del:0))*100)/100;
-            const mL=[];if(p.pago==='pago_en_agencia'){if(paLinea)mL.push('• Envío pagado en '+(p.agencia||'la agencia')+(!pq.solo&&grp.length>1?' (paquetes '+grp.map(y=>y.numero).join(' y ')+')':'')+': '+M(pa));else if(pa!=null)mL.push('• Envío: ya incluido en la guía del paquete '+grp[0].numero);}
-              else if(p.pago==='pago_a_destino')mL.push('• Envío: se paga al recoger en destino');
-            if(del!=null)mL.push('• Delivery Pidemás: '+M(del));
-            const montos=mL.length?'\n\n*Montos de esta guía*\n'+mL.join('\n')+((paLinea||del!=null)?'\n*Total: '+M(totG)+'*'+(ya?' (ya pagado)':''):''):'';
+            const pq=pagoAg(p),grp=mismaAg(p).filter(y=>y.pago==='pago_en_agencia'),primero=grp[0]===p,pa=pq?pq.m:null,paLinea=!!pq&&(pq.solo||primero),del=p.cd;
+            const pendG=Math.round(((paLinea&&!agCob?pa:0)+(del!=null&&!delPag?del:0))*100)/100,estado=ok=>ok?' ✅ pagado':' ⏳ pendiente';
+            const mL=[];if(p.pago==='pago_en_agencia'){if(paLinea)mL.push('• Envío en '+(p.agencia||'la agencia')+(!pq.solo&&grp.length>1?' (paquetes '+grp.map(y=>y.numero).join(' y ')+')':'')+', lo pagó Pidemás: '+M(pa)+estado(agCob));else if(pa!=null)mL.push('• Envío: ya va en la guía del paquete '+grp[0].numero);}
+              else if(p.pago==='pago_a_destino')mL.push('• Envío: se paga en la agencia al recoger en destino');
+            if(del!=null)mL.push('• Delivery Pidemás: '+M(del)+estado(delPag));
+            const montos=mL.length?'\n\n*Montos de esta guía*\n'+mL.join('\n')+((paLinea||del!=null)?(pendG>0.004?'\n*Por pagar a Pidemás: '+M(pendG)+'*':'\n*Esta guía ya está pagada* ✅'):''):'';
             const txt='Hola'+(cliN?' '+String(cliN).split(' ')[0]:'')+', te escribimos de Pidemás. Tu encomienda '+U.ref(id)+(pks.length>1?' (paquete '+p.numero+')':'')+' ya está en la agencia '+(p.agencia||'')+'.\nDestino: '+(p.destino||'—')+'\nClave de recojo: '+clv+'\nFoto de la guía: '+foto+montos;
             const tel=String(cliT||'').replace(/\D/g,''),wa=tel?'https://wa.me/'+(tel.length===9?'51'+tel:tel)+'?text='+encodeURIComponent(txt):'';
             return `<div class="sum"><div class="lbl">Guía · paquete ${p.numero}</div><a href="${E(foto)}" target="_blank" rel="noopener"><img src="${E(foto)}" alt="Guía del paquete ${p.numero}" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;display:block"></a>`+
               li('Ruta',ruta)+li('Clave de recojo',E(clv))+(g.subido_en?li('Subida',E(U.hora(g.subido_en))):'')+
-              (paLinea?li('Pagado en '+E(p.agencia||'agencia'),M(pa)):'')+(del!=null?li('Delivery Pidemás',M(del)):'')+((paLinea||del!=null)?li('Total de esta guía',M(totG),1):'')+
+              (paLinea?li('Envío en '+E(p.agencia||'agencia')+(agCob?' · pagado':' · pendiente'),M(pa)):'')+(del!=null?li('Delivery Pidemás'+(delPag?' · pagado':' · pendiente'),M(del)):'')+((paLinea||del!=null)?li('Por pagar de esta guía',pendG>0.004?M(pendG):'Pagado ✓',1):'')+
               (del==null&&pks.length>1?U.note('Este pedido se creó sin el delivery de cada paquete; el mensaje no lo incluye.'):'')+
               (wa?`<a class="b o" style="display:flex;width:100%;box-sizing:border-box;justify-content:center;margin-top:6px" href="${E(wa)}" target="_blank" rel="noopener">Enviar al cliente por WhatsApp</a>`:U.note('El cliente no tiene teléfono registrado.'))+`</div>`}).join('')+
           pks.filter((p,i,a)=>p.tel&&a.findIndex(y=>y.tel===p.tel)===i).map(p=>U.who(p.recibe||'—','Recibe paquete'+(pks.filter(y=>y.tel===p.tel).length>1?'s '+pks.filter(y=>y.tel===p.tel).map(y=>y.numero).join(' y '):' '+p.numero)+' · '+E(p.destino||''),'',true)+U.contact(null,p.tel,'')).join('')+yapeAdm();}
@@ -253,9 +264,10 @@
     m.alt=[];
     if(e===2&&s0==='asignado')m.alt.push({label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}});
     m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()}};
-    if(PY){Object.assign(m.acts,PY.acts(o));m.acts.yfReg=async b=>{if(b.disabled)return;error='';const f=PY.falta(o);if(f){error=f;PdPasos.render();return}
+    if(PY){Object.assign(m.acts,PY.acts(o,t==='enc'?qY:null));m.acts.yfReg=async b=>{if(b.disabled)return;error='';const f=PY.falta(o,qY);if(f){error=f;PdPasos.render();return}
       b.disabled=true;b.textContent='Registrando…';
-      try{await PY.guardar(o);const {error:e2}=await D().from('pedidos').update({pago_confirmado:true}).eq('id',o.id);if(e2)throw e2;o.pago_confirmado=true;
+      try{await PY.guardar(o,qY);const up={};if(!delPag)up.pago_confirmado=true;if(agTot>0&&!agCob)up.pago_agencia_cobrado_en=new Date().toISOString();
+        const {error:e2}=await D().from('pedidos').update(up).eq('id',o.id);if(e2)throw e2;Object.assign(o,up);
         try{(window.pdExito||window.pdAviso||(()=>{}))('Pago por Yape registrado.')}catch(_){}try{(window.loadOrders||(typeof loadOrders==='function'?loadOrders:null))?.()}catch(_){}}
       catch(x){error='No se pudo registrar: '+(x.message||x)}PdPasos.render()}}
     verPasos(steps);
