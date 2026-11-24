@@ -136,7 +136,7 @@
       if(x&&x.pago_paquetes&&x.pago_paquetes[p.numero]!=null)return {m:Number(x.pago_paquetes[p.numero])||0,solo:true};
       if(x)return {m:Number(x.pago_monto)||0,solo:mismaAg(p).filter(y=>y.pago==='pago_en_agencia').length<2};if(pks.length===1&&Number(o.monto_pagado_agencia)>0)return {m:Number(o.monto_pagado_agencia),solo:true};return null};
     const mismaAg=p=>pks.filter(y=>agK(y.agencia)===agK(p.agencia));
-    const pkgBox=p=>sumBox('Paquete '+p.numero,li('Ruta',E([p.agencia,p.destino].filter(Boolean).join(' → ')||'—'))+li('Pago del envío',pagoTx(p.pago))+li('Recibe',E(p.recibe||'—'))+(p.tel?li('Teléfono',E(p.tel)):'')+(p.dni?li('DNI',E(p.dni)):''));
+    const pkgBox=p=>sumBox('Paquete '+p.numero,li('Ruta',E([p.agencia,p.destino].filter(Boolean).join(' → ')||'—'))+li('Pago del envío',pagoTx(p.pago))+li('Recibe · nombre',E(p.recibe||'—'))+li('DNI',E(p.dni||'—'))+li('Número',E(p.tel||'—')));
     const procAg=Array.isArray(o.agencias_proceso)?o.agencias_proceso:[];
     const gs=paq.filter(x=>x&&Number(x.numero)>0);
     if(!gs.some(x=>Number(x.numero)===1)&&o.guia_url&&o.guia_url!=='whatsapp')gs.push({numero:1,guia_url:o.guia_url,clave:String(o.clave_guia||'')==='SIN_CLAVE'?'':o.clave_guia,sin_clave:String(o.clave_guia||'')==='SIN_CLAVE'});
