@@ -1073,16 +1073,15 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       h+=card('Información del comprobante',tb('Comprobante (opcional)','comp',(oc.length?oc:[['boleta','Boleta'],['factura','Factura']]).filter(x=>x[0]),true)+fl('peDc','DNI / RUC','doc','',' inputmode="numeric" maxlength="11"'));
       h+=costo;
     }else{
-      h+=card('Información de quien envía',fl('peRn','Nombre y apellido','rnom','')+fl('peRi','DNI','rdni','',' inputmode="numeric" maxlength="12"')+fl('peRt','Teléfono','rtel','',tel)+fl('peRd','Dirección de recojo','rdir','')+fl('peRr','Referencia','rref','Ej. casa de dos pisos, reja negra')+fl('peRu','Ubicación (Google Maps)','rubi','Pega el enlace de Google Maps')+mp('rubi','rdir','Lugar de recojo'));
+      h+=card('Información de quien envía',fl('peRn','Nombre y apellido','rnom','')+fl('peRi','DNI','rdni','',' inputmode="numeric" maxlength="12"')+fl('peRt','Teléfono','rtel','',tel)+fl('peRd','Dirección de recojo','rdir','')+fl('peRr','Referencia','rref','Ej. casa de dos pisos, reja negra')+fl('peRu','Ubicación (Google Maps)','rubi','Pega el enlace de Google Maps')+mp('rubi','rdir','Lugar de recojo')+ta('peOb','¿Qué envía? / Observaciones (opcional)','obs','Describe el contenido u otras indicaciones'));
       /* Encomienda en orden: primero cuántos paquetes, luego cada paquete con su agencia, destino y quien lo recibe */
       const ot=optsDe('encTipoEnvio'),tp0=optsDe('encTipoPago'),tp=tp0.length?tp0:[['pago_en_agencia','Pago en agencia'],['pago_a_destino','Pago a destino']];
       const cant=1+(f.paqs||[]).length;
-      h+=card('Paquetes a enviar',`<span style="font-size:14px;color:#6B5E55;line-height:1.45">¿Cuántos paquetes se van a enviar? Luego llenas cada uno con su agencia, destino y quien lo recibe.</span><div class="opc">${[1,2,3].map(n=>`<button type="button" class="${cant===n?'on':''}" data-a="pe:cant:${n}">${n} paquete${n>1?'s':''}</button>`).join('')}</div>`+
-        ta('peOb','Observaciones generales (opcional)','obs','Describe el contenido u otras indicaciones'));
+      const masPaq=n=>n===cant&&cant<5?`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:pqadd">${IC.plus}Agregar otro paquete</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si no hay más paquetes, toca «Siguiente».</span>`:'';
       h+=card('Paquete 1',(cant>1?'<span style="font-size:13px;color:#6B5E55">Paquete 1 de '+cant+'</span>':'')+fl('peAg','Agencia','ag','Ej. Olva Courier',' autocomplete="off"')+nsAgChips(f.ag,'pe:ag')+nsAgUbiFld(f)+fl('peAgu','Ubicación de la agencia (Google Maps)','agubi','Pega el enlace de Google Maps')+mp('agubi','','Agencia '+String(f.ag||'').trim())+
         fl('peDs','Destino','dest','Ej. Lima')+nsDsChips(f.ag,f.dest,'pe:ds')+sg('Modalidad de pago','tpago',tp)+sg('Tipo de encomienda','tenv',ot)+fl('peI1','Indicación para este paquete (opcional)','ind1','Ej. entregar a nombre de la empresa')+
-        `<div style="height:1px;background:#F1E4DA;margin:4px 0"></div><div class="lbl" style="margin:0">Quien recibe el paquete 1</div>`+fl('peEn','Nombre y apellido','enom','')+fl('peEi','DNI','edni','',' inputmode="numeric" maxlength="12"')+fl('peEt','Teléfono','etel','',tel));
-      (f.paqs||[]).forEach((q,i2)=>{h+=card('Paquete '+(i2+2),nsPaqCampos(f,q,i2,cant))});
+        `<div style="height:1px;background:#F1E4DA;margin:4px 0"></div><div class="lbl" style="margin:0">Quien recibe el paquete 1</div>`+fl('peEn','Nombre y apellido','enom','')+fl('peEi','DNI','edni','',' inputmode="numeric" maxlength="12"')+fl('peEt','Teléfono','etel','',tel)+masPaq(1));
+      (f.paqs||[]).forEach((q,i2)=>{h+=card('Paquete '+(i2+2),nsPaqCampos(f,q,i2,cant)+`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:pqx:${i2}">Quitar este paquete</button>`+masPaq(i2+2))});
       h+=costo;
     }
     if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
@@ -1190,7 +1189,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function nsPasos(f){
     if(f.tipo==='recojo')return ['Información de quien envía','Información de quien recibe','Información de pago del servicio','Asignar motorizado'];
     if(f.tipo==='compra')return ['Información del cliente','Información de la compra','Información del comprobante','Información de pago del servicio','Asignar motorizado'];
-    return ['Información de quien envía','Paquetes a enviar'].concat(Array.from({length:1+(f.paqs||[]).length},(_,i)=>'Paquete '+(i+1))).concat(['Información de pago del servicio','Asignar motorizado']);
+    return ['Información de quien envía'].concat(Array.from({length:1+(f.paqs||[]).length},(_,i)=>'Paquete '+(i+1))).concat(['Información de pago del servicio','Asignar motorizado']);
   }
   /* Recojo y entrega con varios puntos de recojo: el punto 1 es «quien envía»; aquí van los demás */
   function nsPuntos(f){
@@ -2624,6 +2623,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
     if(PE.f&&a.dataset.a.startsWith('pe:pqmapa:')){const q=PE.f.paqs[+a.dataset.a.slice(10)];const el2=window.pdMapa&&pdMapa.elegir;if(!q||!el2)return;
       const r=await el2({titulo:'Agencia '+String(q.ag||'').trim(),centro:coordsDe(q.agubi)||coordsDe(nsAgU(q.ag))});if(!r)return;
       q.agubi='https://maps.google.com/?q='+Number(r.lat).toFixed(6)+','+Number(r.lng).toFixed(6);key='';pintar();return}
+    if(PE.f&&a.dataset.a==='pe:pqadd'){const f=PE.f;f.paqs=f.paqs||[];if(f.paqs.length<4){f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:'',igual:'',rn:'',rd:'',rt:''});f.paso=nsPasos(f).indexOf('Paquete '+(f.paqs.length+1));f.msg=''}key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:cant:')){const n=Math.max(1,Math.min(3,+a.dataset.a.slice(8)||1)),f=PE.f;f.paqs=f.paqs||[];
       while(f.paqs.length<n-1)f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:'',igual:'',rn:'',rd:'',rt:''});
       if(f.paqs.length>n-1)f.paqs.splice(n-1);key='';pintar();return}
