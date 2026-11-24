@@ -229,7 +229,7 @@
         if(!h)h=U.st(E(mn)+(e>2?' recogió los paquetes'+hr(o.en_camino_en):' va a recoger los paquetes'),e>2?'ok':'');
         h+=U.who(remN,subQ('Quien envía · pedido '+U.ref(id)),'',true)+U.addr(o.direccion_recojo,o.referencia_recojo)+U.contact(U.maps(o.latitud_recojo,o.longitud_recojo,o.direccion_recojo,LK(o.ubicacion_recojo)),remT,'');
         h+=pks.map(p=>sumBox('Paquete '+p.numero+(pks.length>1?' de '+pks.length:''),li('Ruta',E([p.agencia,p.destino].filter(Boolean).join(' → ')||'—'))+li('Pago del envío',pagoTx(p.pago))+
-          li('Recibe',E(p.recibe||'—')+([p.dni?'DNI '+E(p.dni):'',p.tel?E(p.tel):''].filter(Boolean).length?sub2([p.dni?'DNI '+E(p.dni):'',p.tel?E(p.tel):''].filter(Boolean).join(' · ')):'')))).join('');
+          li('Recibe',E(p.recibe||'—')+([p.dni?'DNI '+E(p.dni):'',p.tel?E(p.tel):''].filter(Boolean).length?sub2([p.dni?'DNI: '+E(p.dni):'',p.tel?'Número: '+E(p.tel):''].filter(Boolean).join('<br>')):'')))).join('');
         h+=compBox()+cobroRec();
       }else{
         const listos=PRa.filter(x=>x.recogido_en).length;
