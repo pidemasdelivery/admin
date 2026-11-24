@@ -1023,7 +1023,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       pts:(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).map(x=>({nom:x.nombre||'',tel:x.telefono||'',dir:x.direccion||'',ref:x.referencia||'',ubi:x.ubicacion||'',que:x.que||'',anom:x.a_nombre||'',cd:x.costo_delivery==null?'':String(x.costo_delivery)}))});
     if(b.tipo==='recojo'){const k=(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).findIndex(x=>x&&x.paga_aqui);b.pagapt=String(k>=0?k+2:1)}
     else if(b.tipo==='compra')Object.assign(b,{nom:o.nombre_cliente||'',tel:o.telefono_cliente||'',dir:o.direccion_entrega||'',ref:o.referencia_entrega||'',ubi:o.ubicacion_entrega||tagDe(obs,'Ubicación','Ubicación del cliente'),
-      lugar:o.direccion_recojo||o.lugar_compra||tagDe(obs,'Lugar de compra'),detalle:o.detalle_compra||tagDe(obs,'Compra solicitada'),obs:libreDe(obs),comp:o.tipo_comprobante||tagDe(obs,'Comprobante').replace(/^No especificado$/i,''),doc:o.documento_comprobante||tagDe(obs,'DNI/RUC'),cnom:tagDe(obs,'Nombre comprobante'),craz:tagDe(obs,'Razón social'),cdir:tagDe(obs,'Dirección fiscal'),pago:met,pts:(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).filter(Boolean).map(x=>({nom:x.nombre||'',ubi:x.ubicacion||'',que:x.que||'',obs:x.obs||''}))});
+      lugar:o.direccion_recojo||o.lugar_compra||tagDe(obs,'Lugar de compra'),detalle:o.detalle_compra||tagDe(obs,'Compra solicitada'),obs:libreDe(obs),comp:o.tipo_comprobante||tagDe(obs,'Comprobante').replace(/^No especificado$/i,''),doc:o.documento_comprobante||tagDe(obs,'DNI/RUC'),cnom:tagDe(obs,'Nombre comprobante'),craz:tagDe(obs,'Razón social'),cdir:tagDe(obs,'Dirección fiscal'),pago:met,pts:(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).filter(Boolean).map(x=>({nom:x.nombre||'',ubi:x.ubicacion||'',que:x.que||'',obs:x.obs||'',cd:x.costo_delivery==null?'':String(x.costo_delivery)}))});
     if(b.tipo==='compra'&&b.pago==='pagado')b.pago='efectivo';
     if(b.tipo==='compra'){const mu=String(b.lugar||'').match(/https?:\/\/\S+/);b.lugarUrl=mu?mu[0]:'';b.lugar=String(b.lugar||'').replace(/https?:\/\/\S+/g,'').replace(/[\s·–-]+$/,'').trim()}
     else{const m=String(o.pago_servicio_momento||'').toLowerCase();
@@ -1035,7 +1035,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const px=(Array.isArray(o.paquetes_extra)?o.paquetes_extra:[]).filter(x=>x&&Number(x.numero)>1);
       if(o.id&&px.length){const nn=v=>v===null||v===undefined||v===''?NaN:Number(v),ok=px.every(x=>Number.isFinite(nn(x.costo_delivery))),ex=ok?px.reduce((a,x)=>a+nn(x.costo_delivery),0):0,tot=Number(o.costo_delivery)||Number(o.total)||0;
         b.cdx=[{n:1,ag:o.agencia_destino||'',dest:o.destino_final||'',v:ok?String(Math.max(0,Math.round((tot-ex)*100)/100)):''}].concat(px.map(x=>({n:+x.numero,ag:x.agencia||'',dest:x.destino||'',v:ok?String(nn(x.costo_delivery)):''})))}}
-    if(b.tipo==='recojo'&&b.pts.length){const ex=b.pts.map(q=>cdN(q.cd));if(ex.every(Number.isFinite))b.cdp=String(Math.max(0,Math.round((Number(b.costo)-ex.reduce((a,c)=>a+c,0))*100)/100));else if(b.pts.every(q=>q.cd===''))/* pedidos antiguos sin delivery por punto: todo en el punto 1 */{b.cdp=b.costo;b.pts.forEach(q=>q.cd='0')}else b.cdp=''}
+    if((b.tipo==='recojo'||b.tipo==='compra')&&b.pts&&b.pts.length){const ex=b.pts.map(q=>cdN(q.cd));if(ex.every(Number.isFinite))b.cdp=String(Math.max(0,Math.round((Number(b.costo)-ex.reduce((a,c)=>a+c,0))*100)/100));else if(b.pts.every(q=>q.cd===''))/* pedidos antiguos sin delivery por punto: todo en el punto 1 */{b.cdp=b.costo;b.pts.forEach(q=>q.cd='0')}else b.cdp=''}
     return b;
   }
   /* Pedir un texto y avisar con ventanas propias: no esperan en la cola de avisos viejos, así nunca quedan escondidas */
@@ -1104,8 +1104,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const cdxForm=()=>{const su=cdxSuma(f);return '<span style="font-size:14px;color:#6B5E55">Delivery de cada paquete. El total del servicio es la suma.</span>'+
       f.cdx.map((x,i)=>`<div class="fld"><label>Delivery · paquete ${x.n}${x.ag||x.dest?' · '+E([x.ag,x.dest].filter(Boolean).join(' → ')):''}</label><input data-in="pe:cdx:${i}" value="${E(x.v||'')}" placeholder="S/ 0.00" inputmode="decimal"></div>`).join('')+
       `<div id="peCdTot" style="font-size:15px;font-weight:800">Total del servicio: ${Number.isFinite(su)?M(su):'S/ —'}</div>`};
-    const ptForm=()=>{const su=ptSuma(f),L=[{n:1,nom:f.rnom,dir:f.rdir,v:f.cdp,k:'pe:ptcd1'}].concat((f.pts||[]).map((q,i)=>({n:i+2,nom:q.nom,dir:q.dir,v:q.cd,k:'pe:pt:'+i+':cd'})));
-      return '<span style="font-size:14px;color:#6B5E55">Escribe el delivery de cada punto de recojo. El total del servicio es la suma.</span>'+L.map(x=>`<div class="fld"><label>Delivery · punto ${x.n}${String(x.nom||x.dir||'').trim()?' · '+E(String(x.nom||x.dir).trim()):''}</label><input data-in="${x.k}" value="${E(x.v||'')}" placeholder="S/ 0.00" inputmode="decimal"></div>`).join('')+
+    const ptForm=()=>{const su=ptSuma(f),cmp=f.tipo==='compra',L=[{n:1,nom:cmp?f.lugar:f.rnom,dir:cmp?'':f.rdir,v:f.cdp,k:'pe:ptcd1'}].concat((f.pts||[]).map((q,i)=>({n:i+2,nom:q.nom,dir:q.dir,v:q.cd,k:'pe:pt:'+i+':cd'})));
+      return `<span style="font-size:14px;color:#6B5E55">Escribe el delivery de cada ${cmp?'lugar de compra':'punto de recojo'}. El total del servicio es la suma.</span>`+L.map(x=>`<div class="fld"><label>Delivery · ${cmp?'lugar':'punto'} ${x.n}${String(x.nom||x.dir||'').trim()?' · '+E(String(x.nom||x.dir).trim()):''}</label><input data-in="${x.k}" value="${E(x.v||'')}" placeholder="S/ 0.00" inputmode="decimal"></div>`).join('')+
         `<div id="peCdTot" style="font-size:15px;font-weight:800">Total del servicio: ${Number.isFinite(su)?M(su):'S/ —'}</div>`};
     const costo=card('Información de pago del servicio',(cdMulti(f)?cdForm():ptMulti(f)?ptForm():f.cdx&&f.tipo==='enc'?cdxForm():fl('peCo','Costo del servicio','costo','S/ 0.00',' inputmode="decimal"')+`<div class="chips" style="flex-wrap:wrap">${[5,6,7,8,10,12,15].map(v=>`<button type="button" class="${Number(f.costo)===v?'on':''}" data-a="pe:set:costo:${v}">S/ ${v}</button>`).join('')}</div>`)+(f.tipo!=='enc'&&!ptMulti(f)?`<button type="button" class="b" style="height:44px" data-a="pe:tarifa">Calcular con la tarifa</button>${f.tf?`<div style="font-size:13px;color:${f.tf.mal?'#B42318':'#6B5E55'};line-height:1.45">${f.tf.t}</div>`:''}`:'')+
       (f.tipo==='enc'?sg('¿Cómo paga el servicio?','pago',[['efectivo','Efectivo al recoger'],['yape','Yape al recoger'],['al_final','Al final a Pidemás · al recibir la guía']])
@@ -1145,7 +1145,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function svcPayload(f,o){
     const n=v=>{const x=Number(String(v??'').replace(',','.'));return Number.isFinite(x)&&x>=0?Math.round(x*100)/100:0};
     if(cdMulti(f)){const su=cdSuma(f);if(!Number.isFinite(su)){f.msg='Escribe el delivery de cada paquete.';return false}f.costo=String(su)}
-    if(ptMulti(f)){const su=ptSuma(f);if(!Number.isFinite(su)){f.msg='Escribe el delivery de cada punto de recojo.';return false}f.costo=String(su)}
+    if(ptMulti(f)){const su=ptSuma(f);if(!Number.isFinite(su)){f.msg='Escribe el delivery de cada '+(f.tipo==='compra'?'lugar de compra':'punto de recojo')+'.';return false}f.costo=String(su)}
     if(f.tipo==='enc'&&!f.nuevo&&f.cdx){const su=cdxSuma(f);if(!Number.isFinite(su)){f.msg='Escribe el delivery de cada paquete.';return false}f.costo=String(su)}
     const costo=n(f.costo),pagado=f.pago==='pagado',yaCobro=o.pago_confirmado===true&&Number(o.monto_recibido)>0;
     let p={},obs=o.observaciones||'';
@@ -1294,12 +1294,12 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   }
   function nsSitiosPayload(f,o){
     const antes=Array.isArray(o.puntos_recojo)?o.puntos_recojo:[];
-    return (f.pts||[]).map(q=>({nom:String(q.nom||'').trim(),ubi:String(q.ubi||'').trim(),que:String(q.que||'').trim(),obs:String(q.obs||'').trim()})).filter(q=>q.nom||q.que)
+    return (f.pts||[]).map(q=>({nom:String(q.nom||'').trim(),ubi:String(q.ubi||'').trim(),que:String(q.que||'').trim(),obs:String(q.obs||'').trim(),cd:cdN(q.cd)})).filter(q=>q.nom||q.que)
       .map((q,i)=>{const c=coordsDe(q.ubi),ya=antes.find(x=>Number(x.n)===i+2&&x.recogido_en&&String(x.nombre||'')===q.nom);
-        return {n:i+2,nombre:q.nom||null,direccion:q.nom||null,ubicacion:q.ubi||null,lat:c?c.lat:null,lng:c?c.lng:null,que:q.que||null,obs:q.obs||null,recogido_en:ya?ya.recogido_en:null}});
+        return {n:i+2,nombre:q.nom||null,direccion:q.nom||null,ubicacion:q.ubi||null,lat:c?c.lat:null,lng:c?c.lng:null,que:q.que||null,obs:q.obs||null,costo_delivery:Number.isFinite(q.cd)?q.cd:null,recogido_en:ya?ya.recogido_en:null}});
   }
   /* delivery por punto de recojo: con 2 o más puntos el costo del servicio es la suma (igual que en encomienda) */
-  const ptMulti=f=>f.tipo==='recojo'&&(f.pts||[]).length>0;
+  const ptMulti=f=>(f.tipo==='recojo'||f.tipo==='compra')&&(f.pts||[]).length>0;
   function ptSuma(f){const L=[f.cdp].concat((f.pts||[]).map(q=>q.cd)).map(cdN);return L.every(Number.isFinite)?Math.round(L.reduce((a,b)=>a+b,0)*100)/100:NaN}
   function nsPuntosPayload(f,o){
     const antes=Array.isArray(o.puntos_recojo)?o.puntos_recojo:[];
@@ -1375,8 +1375,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(false){
       const k=f.paqs.findIndex(q=>!q.tpago||!t(q.ag)||!t(q.dest));if(k>=0)return 'Completa agencia, destino y modalidad de pago del paquete '+(k+2)+'.';
       const r=f.paqs.findIndex(q=>!q.igual&&!(t(q.rn)&&t(q.rt)));if(r>=0)return 'Escribe nombre y teléfono de quien recibe el paquete '+(r+2)+', o marca que lo recibe la misma persona del paquete 1.'}
-    if(paso==='Información de pago del servicio'&&ptMulti(f)&&f.quien==='envia'&&f.pago!=='al_final'&&!(+f.pagapt>=1&&+f.pagapt<=1+f.pts.length))return 'Elige en qué punto de recojo paga el servicio.';
-    if(paso==='Información de pago del servicio'&&ptMulti(f)){if(!Number.isFinite(cdN(f.cdp)))return 'Escribe el delivery del punto 1.';const k=f.pts.findIndex(q=>!Number.isFinite(cdN(q.cd)));if(k>=0)return 'Escribe el delivery del punto '+(k+2)+'.';f.costo=String(ptSuma(f))}
+    if(paso==='Información de pago del servicio'&&f.tipo==='recojo'&&ptMulti(f)&&f.quien==='envia'&&f.pago!=='al_final'&&!(+f.pagapt>=1&&+f.pagapt<=1+f.pts.length))return 'Elige en qué punto de recojo paga el servicio.';
+    if(paso==='Información de pago del servicio'&&ptMulti(f)){const pl=f.tipo==='compra'?'lugar':'punto';if(!Number.isFinite(cdN(f.cdp)))return 'Escribe el delivery del '+pl+' 1.';const k=f.pts.findIndex(q=>!Number.isFinite(cdN(q.cd)));if(k>=0)return 'Escribe el delivery del '+pl+' '+(k+2)+'.';f.costo=String(ptSuma(f))}
     if(paso==='Información de pago del servicio'&&cdMulti(f)){const n=1+f.paqs.length;for(let k=0;k<n;k++)if(!Number.isFinite(cdN(pkGet(f,k,'cd'))))return 'Escribe el delivery del paquete '+(k+1)+'.';f.costo=String(cdSuma(f))}
     if(paso==='Información de pago del servicio'&&!(Number(String(f.costo).replace(',','.'))>=0&&t(f.costo)))return 'Escribe el costo del servicio.';
     return '';

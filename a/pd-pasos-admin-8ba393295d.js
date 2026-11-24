@@ -218,9 +218,9 @@
         s.sum=(lugar||'Compra')+(PRa.length?' + '+PRa.length+' lugar'+(PRa.length>1?'es':''):'')+(sub0>0?' · gastó '+M(sub0):'');
         if(!h)h=U.st(E(mn)+(e>2||sub0>0?' hizo la compra'+(sub0>0?' · gastó '+M(sub0):''):' está haciendo la compra'+(PRa.length?' · '+PRa.filter(x=>x.recogido_en).length+' de '+PRa.length+' lugares adicionales listos':'')),e>2||sub0>0?'ok':'');
         const L=[{n:1,nombre:lugar||'Lugar no indicado',que:det,url:lugar||LK(lr)||LK(o.ubicacion_recojo)?U.maps(o.latitud_recojo,o.longitud_recojo,lugar,LK(lr)||LK(o.ubicacion_recojo)):''}]
-          .concat(PRa.map(x=>({n:x.n,nombre:x.nombre||'Lugar '+x.n,que:x.que,obs:x.obs,hecho:x.recogido_en,url:x.lat&&x.lng||x.ubicacion?U.maps(x.lat,x.lng,x.nombre,LK(x.ubicacion)):''})));
+          .concat(PRa.map(x=>({n:x.n,nombre:x.nombre||'Lugar '+x.n,que:x.que,obs:x.obs,cd:x.costo_delivery,hecho:x.recogido_en,url:x.lat&&x.lng||x.ubicacion?U.maps(x.lat,x.lng,x.nombre,LK(x.ubicacion)):''})));
         L.forEach(q=>{h+=`<div class="sum" style="gap:10px"><div class="lbl">${L.length>1?'Lugar '+q.n+' de '+L.length+(q.hecho?' · comprado'+E(hr(q.hecho)):''):'Lugar de compra'}</div>`+
-          U.who(q.nombre,'Compra aquí'+(q.n===1?' · pedido '+E(U.ref(id)):''),'')+`<div class="lbl" style="margin-top:4px">Qué comprar</div>`+txt(q.que||'—')+
+          U.who(q.nombre,'Compra aquí'+(q.n===1?' · pedido '+E(U.ref(id)):''),'')+(L.length>1&&(()=>{const ok=PRa.every(x=>x.costo_delivery!=null&&x.costo_delivery!=='');if(!ok)return false;q.cd1=q.n===1?Math.max(0,Math.round((serv0-PRa.reduce((a,x)=>a+(Number(x.costo_delivery)||0),0))*100)/100):Number(q.cd);return true})()?li('Delivery de este lugar',M(q.cd1)):'')+`<div class="lbl" style="margin-top:4px">Qué comprar</div>`+txt(q.que||'—')+
           ((q.n===1?notas.join(' · '):q.obs)?`<div class="lbl" style="margin-top:4px">Observaciones</div>`+txt(q.n===1?notas.join(' · '):q.obs):'')+btnIr(q.url,L.length>1?'Ir al lugar '+q.n:'Ir al lugar de compra')+`</div>`});
         h+=compBox();
         if(!(sub0>0)&&e>=2)h+=U.note('El motorizado registra aquí cuánto gastó en la compra.');
