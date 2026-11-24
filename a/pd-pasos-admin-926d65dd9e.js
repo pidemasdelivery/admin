@@ -216,13 +216,26 @@
         (agTot>0&&!agCob&&delPag?U.note('El delivery ya está pagado; falta lo que Pidemás pagó en la agencia.'):'')+
         PY.html(o,qY)+`<button type="button" class="b o" data-act="yfReg">Registrar pago por Yape · ${M(pendTot)}</button>`;
       return h};
+    /* Pagos en agencias: una tarjeta por agencia (monto, paquetes, horas) y el total; dice si el cliente ya lo devolvió */
+    const pagosAgHtml=()=>{
+      const L=procAg.filter(x=>x&&x.agencia);if(!L.length)return Number(o.monto_pagado_agencia)>0?sumBox('Pagos en agencias',li('Total pagado',M(o.monto_pagado_agencia),1)):'';
+      const fila=x=>{const ps=pks.filter(p=>agK(p.agencia)===agK(x.agencia)),pp=x.pago_paquetes||{};
+        const sub=[x.llegada_en?'Llegó '+U.hora(x.llegada_en):'',x.pago_en?'Pagó '+U.hora(x.pago_en):'Aún no paga'].filter(Boolean).join(' · ');
+        return `<div style="display:flex;flex-direction:column;gap:4px;padding:10px 0;border-top:1px solid #F1E4DA">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><b style="font-size:16px">${E(x.agencia)}</b><b style="font-size:17px;color:${x.pago_en?'#1F1A17':'#9A330A'}">${x.pago_en?M(x.pago_monto):'—'}</b></div>
+          ${ps.map(p=>`<div style="display:flex;justify-content:space-between;gap:10px;font-size:14px;color:#6B5E55"><span>Paquete ${p.numero} → ${E(p.destino||'—')}</span><span>${pp[p.numero]!=null?M(pp[p.numero]):''}</span></div>`).join('')}
+          <span style="font-size:13px;color:#6B5E55">${E(sub)}</span></div>`};
+      const tot=L.reduce((a,x)=>a+(x.pago_en?Number(x.pago_monto)||0:0),0);
+      return `<div class="sum"><div class="lbl">Pagos en agencias</div>${L.map(fila).join('')}
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:10px;border-top:1.5px solid #E3CFC2"><b style="font-size:15px">Total pagado por Pidemás</b><b style="font-size:18px">${M(tot)}</b></div>
+        ${tot>0?(agCob?'<div class="vto"><span>El cliente ya lo devolvió</span><b>Pagado ✓</b></div>':'<div class="vto info"><span>Pendiente de cobrar al cliente</span><b>'+M(tot)+'</b></div>'):''}</div>`};
     /* 3 · Entrega y cobro (o agencia): a dónde se lleva y cuánto se cobra */
     {const s=steps[3];s.locked=t==='compra'?'Se muestra al terminar la compra':'Se muestra al recoger';
       if(t==='enc'){s.sum=guias?'Guías enviadas':'En agencia';
         const agsL=[...new Set(pks.map(p=>p.agencia).filter(Boolean))];
         s.body=(enAg?U.st(procAg.length?'Llegó a '+E(procAg.filter(x=>x.llegada_en).map(x=>x.agencia).join(' y '))+(procAg.length<agsL.length?' · falta '+E(agsL.filter(a=>!procAg.some(x=>String(x.agencia).toLowerCase()===String(a).toLowerCase())).join(' y ')):''):'Paquetes en la agencia '+E(o.agencia_destino||''),'ok'):U.st(E(mn)+(agsL.length>1?' va a las agencias '+E(agsL.join(' y ')):' va a la agencia '+E(o.agencia_destino||''))))+
           pks.map(pkgBox).join('')+
-          (procAg.length?sumBox('Avance en agencias',procAg.map(x=>li(E(x.agencia||'Agencia'),(x.llegada_en?'Llegó '+E(U.hora(x.llegada_en)):'')+(x.pago_en?' · pagó '+M(x.pago_monto):''))).join('')):(Number(o.monto_pagado_agencia)>0?sumBox('Pago en agencia',li('Pagado',M(o.monto_pagado_agencia))):''))+
+          pagosAgHtml()+
           agBotones(o,pks.map(p=>p.agencia))+
           (guias?U.st('El motorizado subió todas las guías y claves. Mándalas al cliente.','ok'):enAg?U.st('Esperando la foto de la guía y la clave'):'')+
           pks.map(p=>{const g=gDe(p.numero),ruta=E([p.agencia,p.destino].filter(Boolean).join(' → ')||'Paquete'),foto=g&&g.guia_url&&g.guia_url!=='whatsapp'?g.guia_url:'';
