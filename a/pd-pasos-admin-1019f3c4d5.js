@@ -161,7 +161,7 @@
     {const s=steps[0];s.sum=NOM+' · '+M(serv0)+(o.creado_en?' · '+U.hora(o.creado_en):'');
       const pagoTx=pagado?'Ya pagado':metodo+(alRec?' al recoger':'')+(t==='recojo'&&(qp==='envia'||qp==='recibe')?' · paga quien '+(qp==='envia'?'envía':'recibe'):'');
       let h=`<div class="amt" style="padding:14px"><div class="k">${t==='compra'?'Costo del servicio':'Total del servicio'}</div><div class="n" style="font-size:36px">${M(serv0)}</div><div class="pill">${E(pagoTx)}</div></div>`;
-      if(pagaCon>0&&!pagado&&metodo==='Efectivo')h+=U.note(t==='compra'&&!(sub0>0)?'El cliente pagará con <b>'+M(pagaCon)+'</b>. El vuelto se sabe cuando el motorizado registre la compra.':'El cliente paga con <b>'+M(pagaCon)+'</b>'+(pagaCon-tot0>0.004?' · vuelto '+M(pagaCon-tot0):' · paga exacto'));
+      if(pagaCon>0&&!pagado&&metodo==='Efectivo')h+=t==='compra'&&!(sub0>0)?'<div class="vto info"><span>Pagará con · el vuelto sale con la compra</span><b>'+M(pagaCon)+'</b></div>':(pagaCon-tot0>0.004?'<div class="vto"><span>Vuelto · paga con '+M(pagaCon)+'</span><b>'+M(pagaCon-tot0)+'</b></div>':'<div class="vto"><span>Paga con '+M(pagaCon)+'</span><b>Sin vuelto</b></div>');
       /* solo el resumen: los datos de contacto salen en el paso donde se usan */
       const pideR=t==='recojo'&&/quien recibe/i.test(campo(o,'Pide el servicio')||'');
       h+=sumBox('Resumen',(t==='compra'?li('Cliente',E(remN)):li('Pide el servicio',pideR?'Quien recibe':'Quien envía')+li('Envía',E(remN))+(aNom?li('A nombre de',E(aNom)):'')+li(t==='enc'?'Recibe en destino':'Recibe',E(recN)))+(o.creado_en?li('Pedido a las',E(U.hora(o.creado_en))):''));

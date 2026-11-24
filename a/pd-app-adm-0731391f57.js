@@ -1035,8 +1035,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function yapeCfg(){if(!YCFG&&!YCARGA){YCARGA=true;leerCfg().then(c=>{YCFG=Object.assign({url:'',numero:'986233533',titular:'Grupo Pidemás EIRL'},c||{});key='';pintar()}).catch(()=>{YCARGA=false})}
     return YCFG||{url:'',numero:'986233533',titular:'Grupo Pidemás EIRL'}}
   function vueltoTxt(f){const c=Number(String(f.costo||'').replace(',','.'))||0,pc=Number(String(f.pagacon||'').replace(',','.'))||0;
-    if(f.tipo!=='compra'&&pc>0&&c>0)return pc+0.004<c?`<span style="color:#B42318;font-weight:700">Es menos que el servicio (S/ ${c.toFixed(2)})</span>`:`<span style="color:#0F5E2E;font-weight:700">${pc-c>0.004?'Vuelto: S/ '+(pc-c).toFixed(2):'Paga exacto, sin vuelto'}</span>`;
-    if(f.tipo==='compra'&&pc>0)return `<span style="color:#6B5E55">El motorizado calcula el vuelto con el total de la compra.</span>`;
+    if(f.tipo!=='compra'&&pc>0&&c>0)return pc+0.004<c?`<div class="vto bad"><span>Es menos que el servicio</span><b>${M(c)}</b></div>`:(pc-c>0.004?`<div class="vto"><span>Su vuelto</span><b>${M(pc-c)}</b></div>`:`<div class="vto"><span>Paga exacto</span><b>Sin vuelto</b></div>`);
+    if(f.tipo==='compra'&&pc>0)return `<div class="vto info"><span>El vuelto sale con el total de la compra</span><b>${M(pc)}</b></div>`;
     return `<span style="color:#6B5E55">Así el motorizado sabe cuánto sencillo llevar.</span>`}
   function svcForm(f){
     const fl=(id,l,k,ph,o)=>`<div class="fld"><label for="${id}">${l}</label><input id="${id}" value="${E(f[k]??'')}" data-in="pe:${k}"${ph?` placeholder="${E(ph)}"`:''}${o||''}></div>`;

@@ -66,6 +66,10 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .b{height:48px;border-radius:12px;border:1px solid #F1E4DA;background:#FFFFFF;color:#1F1A17;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;padding:0 8px;text-decoration:none}
 .b.o{border:0;background:#C4410C;color:#FFFFFF}.b.g{border:0;background:#15803D;color:#FFFFFF}
 .b.soft{height:46px;border:1px solid #F1C9B6;background:#FFF4EC;color:#9A330A}
+.vto{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:#E9F6EE;color:#15803D;font-weight:700;font-size:15px}
+.vto b{font-size:17px;font-weight:800;color:#15803D;white-space:nowrap}
+.vto.bad{background:#FDE8E8;color:#B42318}.vto.bad b{color:#B42318}
+.vto.info{background:#FFF4EC;color:#9A330A}.vto.info b{color:#9A330A}
 .b[disabled]{opacity:.45;pointer-events:none}
 .code{padding:18px 14px;border-radius:16px;background:#1F1A17;color:#FFFFFF;text-align:center}
 .code .k{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#F6C7AE}
