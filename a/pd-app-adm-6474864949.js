@@ -300,11 +300,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   /* ---------- estado ---------- */
   window.pdEnPagina=()=>{try{return !!sub||tab!=='inicio'||!!paginaVieja()||!!(window.PdPasos&&PdPasos.isOpen())}catch(e){return false}};
   let host=null,root=null,topH=null,topR=null,tab='inicio',key='',keyTop='',scrollMem={},tocando=false;
-  let ultimo='',marca='inicio',kick='Administración',chip='',q='',selModo=false,limite=40,abiertoGr=null,mq='',movido=null;
+  let motoSel='';let ultimo='',marca='inicio',kick='Administración',chip='',q='',selModo=false,limite=40,abiertoGr=null,mq='',movido=null;
   const SEL=()=>{try{return selectedOrders}catch(e){return null}};
 
   /* =============== INICIO (pedidos) =============== */
-  const CH=[['','Todos',()=>true],['nuevo','Por atender',o=>['pendiente','confirmado','pedido_recibido','nuevo'].includes(est(o))],['asignado','Asignados',o=>est(o)==='asignado'],['camino','En camino',o=>['aceptado','pedido_aceptado','en_camino','camino_recojo'].includes(est(o))],['entrega','En entrega',o=>['en_entrega','camino_entrega','confirmando_pago'].includes(est(o))],['entregado','Entregados',o=>est(o)==='entregado'],['cancelado','Cancelados',o=>['cancelado','rechazado'].includes(est(o))]];
+  const CH=[['','Todos',()=>true],['nuevo','Por atender',o=>['pendiente','confirmado','pedido_recibido','nuevo'].includes(est(o))],['asignado','Asignados',o=>est(o)==='asignado'],['camino','En camino',o=>['aceptado','pedido_aceptado','en_camino','camino_recojo'].includes(est(o))],['entrega','En entrega',o=>['en_entrega','camino_entrega','confirmando_pago'].includes(est(o))],['entregado','Entregados',o=>est(o)==='entregado'],['cancelado','Cancelados',o=>['cancelado','rechazado'].includes(est(o))],['moto','Por motorizado',o=>!!o.motorizado_id]];
   const fase=o=>{try{if(window.pdUDatos&&pdUDatos.fase)return pdUDatos.fase(o)}catch(e){}const s=est(o);return s==='entregado'?{n:5,txt:'Entregado',k:'ok'}:s==='cancelado'?{n:0,txt:'Cancelado',k:'no'}:{n:1,txt:typeof orderStatusLabel==='function'?orderStatusLabel(s):s,k:'new'}};
   function tarjeta(o){
     const f=fase(o),n=NEG(o.negocio_id||o.restaurante_id),sv=svc(o)||(o.negocio_id?'Negocio':'Recojo y entrega'),s=SEL(),marc=selModo&&s&&s.has(String(o.id));
@@ -328,12 +328,16 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const con=sal&&sal.querySelector('.con');const nom=((sal&&sal.querySelector('.pmaTx strong'))||{}).textContent||'Hola, Admin';
     const av=document.querySelector('#pdMenu .m3Av');const foto=window.__pdAdminFoto||'';
     const todos=L(),cnt=CH.map(c=>todos.filter(c[2]).length);
-    const ql=q.trim().toLowerCase();const fil=todos.filter((CH.find(c=>c[0]===chip)||CH[0])[2]).filter(o=>!ql||[o.id,ref(o.id),o.nombre_cliente,o.telefono_cliente,o.nombre_remitente,NEG(o.negocio_id).nombre].join(' ').toLowerCase().includes(ql));
+    const ql=q.trim().toLowerCase();const fil=todos.filter((CH.find(c=>c[0]===chip)||CH[0])[2]).filter(o=>chip!=='moto'||!motoSel||String(o.motorizado_id)===motoSel).filter(o=>!ql||[o.id,ref(o.id),o.nombre_cliente,o.telefono_cliente,o.nombre_remitente,NEG(o.negocio_id).nombre].join(' ').toLowerCase().includes(ql));
     let h=`<div class="cols2"><button type="button" class="mt" data-t="sueldo"><span>Sueldos</span><b>${E(kp[1]||'—')}</b></button><button type="button" class="mt" data-t="caja"><span>Cajas</span><b>${E(kp[2]||'—')}</b></button></div>`;
     h+=`<div class="fld"><label for="aQ" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar pedido</label><input id="aQ" type="search" placeholder="N.º de pedido, cliente o teléfono" value="${E(q)}" data-in="q"></div>`;
     {const AT=[['asignación automática','Asignación automática',IC.swap],['calificaciones','Calificaciones',IC.star]];
      h+=`<div class="atj">${AT.map(([k,n,ic])=>{const x=bdOf(k);return `<button type="button" data-it="${E(k)}" data-gk="Pedidos">${ic}${E(n)}${x?`<span class="bd">${x}</span>`:''}</button>`}).join('')}</div>`}
     h+=`<div class="chW"><div class="chips">${CH.map((c,i)=>`<button type="button" data-c="${c[0]}" class="${chip===c[0]?'on':''}">${c[1]}${cnt[i]?' · '+cnt[i]:''}</button>`).join('')}</div></div>`;
+    if(chip==='moto'){const MS=MOTOS().map(mo=>({id:String(mo.id),n:mo.nombre_completo||'Motorizado',c:todos.filter(o=>String(o.motorizado_id)===String(mo.id)).length})).filter(x=>x.c).sort((a,b)=>b.c-a.c);
+      if(motoSel&&!MS.some(x=>x.id===motoSel))motoSel='';
+      h+=`<div class="chW"><div class="chips">${MS.map(x=>`<button type="button" data-mc="${E(x.id)}" class="${motoSel===x.id?'on':''}">${E(x.n.split(' ')[0])} · ${x.c}</button>`).join('')}</div></div>`;
+      if(!motoSel)h+=`<div class="lbl" style="margin:0">Elige un motorizado para ver solo sus pedidos</div>`}
     h+=`<div class="row" style="justify-content:space-between"><div class="lbl" style="margin:0">${fil.length} pedido${fil.length===1?'':'s'}</div><button type="button" class="b" style="height:40px;padding:0 14px" data-a="selmodo">${selModo?'Listo':'Seleccionar'}</button></div>`;
     h+=`<div id="aLista" style="display:flex;flex-direction:column;gap:10px">${lista(fil)}</div>`;
     /* El botón «Nuevo servicio» ahora vive en el centro del menú inferior (ver pintarNav) */
@@ -345,7 +349,13 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       body:h,foot:selModo?`<div style="display:flex;gap:10px"><button type="button" class="b" style="flex:1 1 0;height:54px;font-size:16px;${ns===1?'':'opacity:.45'}" data-a="seleditar"${ns===1?'':' disabled'}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg>Editar</button><button type="button" class="b o" style="flex:1.4 1 0;height:54px;font-size:16px;background:${ns?'#B42318':'#D8CBC1'}" data-a="borrar"${ns?'':' disabled'}>${IC.trash}Eliminar${ns?' '+ns:''}</button></div>${ns>1?'<div style="text-align:center;font-size:13px;color:#6B5E55;margin-top:6px">Para editar, marca un solo pedido</div>':''}`:''};
   }
   function lista(fil){const fin=o=>{const k=fase(o).k;return k==='ok'||k==='no'};const v=fil.slice(0,limite),ac=v.filter(o=>!fin(o)),te=v.filter(fin);
-    const secs=ac.length&&te.length?`<div class="oSec"><span>En curso · ${ac.length}</span></div>`+ac.map(tarjeta).join('')+`<div class="oSec"><span>Terminados · ${te.length}</span></div>`+te.map(tarjeta).join(''):v.map(tarjeta).join('');
+    /* terminados separados por fecha, igual que en el Motorizado */
+    const dia=o=>{const t=o.entregado_en||o.cancelado_en||o.creado_en;return t?new Date(t).toLocaleDateString('en-CA',{timeZone:'America/Lima'}):''};
+    const hoyK=new Date().toLocaleDateString('en-CA',{timeZone:'America/Lima'}),ayK=new Date(Date.now()-864e5).toLocaleDateString('en-CA',{timeZone:'America/Lima'});
+    const tit=k=>k===hoyK?'Hoy':k===ayK?'Ayer':k?new Date(k+'T12:00:00-05:00').toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'short',timeZone:'America/Lima'}).replace('.',''):'Sin fecha';
+    const grupos=[];te.forEach(o=>{const k=dia(o);let g=grupos.find(x=>x.k===k);if(!g)grupos.push(g={k,L:[]});g.L.push(o)});
+    const secs=(ac.length?`<div class="oSec"><span>En curso</span><span>${ac.length} pedido${ac.length===1?'':'s'}</span></div>`+ac.map(tarjeta).join(''):'')+
+      grupos.map(g=>`<div class="oSec" style="margin-top:10px"><span>${E(tit(g.k))}</span><span>${g.L.length} pedido${g.L.length===1?'':'s'}</span></div>`+g.L.map(tarjeta).join('')).join('');
     return fil.length?secs+(fil.length>limite?`<button type="button" class="b mas" data-a="mas">Ver ${Math.min(40,fil.length-limite)} más</button>`:''):`<div class="vac">${q||chip?'No hay pedidos con ese filtro.':'Todavía no hay pedidos.'}</div>`}
 
   /* =============== MENÚ =============== */
@@ -2757,7 +2767,8 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
     if(e.target.closest('[data-lnk]'))return;/* llamar / WhatsApp del motorizado: abre el enlace sin abrir el pedido */
     tocando=false;
     const t=e.target.closest('[data-t]');if(t){cajon=false;ir(t.dataset.t);return}
-    const c=e.target.closest('[data-c]');if(c){chip=c.dataset.c;limite=40;key='';pintar();return}
+    const mc=e.target.closest('[data-mc]');if(mc){motoSel=motoSel===mc.dataset.mc?'':mc.dataset.mc;limite=40;key='';pintar();return}
+    const c=e.target.closest('[data-c]');if(c){chip=c.dataset.c;if(chip!=='moto')motoSel='';limite=40;key='';pintar();return}
     const o=e.target.closest('[data-o]');if(o){const s=SEL();if(selModo&&s){const id=String(o.dataset.o);s.has(id)?s.delete(id):s.add(id);key='';pintar();return}abrirPedido(o.dataset.o);return}
     const cm=e.target.closest('[data-cm]');if(cm){const c=C2.caja;const m=c&&c.data&&c.data.motos.find(x=>String(x.id)===cm.dataset.cm);if(m){Object.assign(CJ,{moto:m,pane:'recibir',rec:'',recNota:'',dar:'',darMot:'',darNota:'',msg:'',ok:'',lim:40,abierta:null});sub='cajamoto';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}return}
     const sm=e.target.closest('[data-sm]');if(sm){const c=C2.sueldo;const m=c&&c.data&&c.data.motos.find(x=>String(x.id)===sm.dataset.sm);if(m){Object.assign(SL,{moto:m,per:'',monto:'',nota:'',msg:'',ok:'',pest:'',modo:'pago',vista:null,dia:null,f:{},cfg:null});sub='sueldomoto';key='';try{history.pushState({pdApp:1},'')}catch(_){}pintar()}return}
