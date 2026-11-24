@@ -187,10 +187,10 @@
       let h=s0==='asignado'?U.st('Esperando que '+E(mn)+' acepte el pedido'):U.st(E(mn)+(e>2?(t==='compra'?' hizo la compra':' recogió el pedido'):(t==='compra'?' está haciendo la compra':' va a recoger')),e>2?'ok':'');
       if(t==='compra'){
         const lr=String(o.direccion_recojo||campo(o,'Lugar de compra','¿De dónde desea la compra?')||''),lugar=lr.replace(/https?:\/\/\S+/g,'').replace(/[\s·,|-]+$/,'').trim();
-        const det=campo(o,'Compra solicitada','¿Qué desea que compremos?'),cmp=campo(o,'Comprobante'),doc=campo(o,'DNI/RUC');
+        const det=campo(o,'Compra solicitada','¿Qué desea que compremos?'),cmp=campo(o,'Comprobante'),doc=campo(o,'DNI/RUC'),cnm=campo(o,'Nombre comprobante'),crz=campo(o,'Razón social'),cdf=campo(o,'Dirección fiscal');
         s.sum=(lugar||'Compra')+(sub0>0?' · gastó '+M(sub0):'');
         h+=U.who(lugar||'Lugar no indicado','Compra aquí · pedido '+E(U.ref(id)),'')+btnIr(lugar||LK(lr)||LK(o.ubicacion_recojo)?U.maps(o.latitud_recojo,o.longitud_recojo,lugar,LK(lr)||LK(o.ubicacion_recojo)):'','Ir al lugar de compra')+
-          sumBox('Qué comprar',txt(det||'—'))+(cmp||doc?sumBox('Comprobante',(cmp?li('Tipo',E(cmp)):'')+(doc?li('DNI/RUC',E(doc)):'')):'')+(notas.length?U.note(E(notas.join(' · '))):'')+
+          sumBox('Qué comprar',txt(det||'—'))+(cmp||doc?sumBox('Comprobante',(cmp?li('Tipo',E(cmp)):'')+(doc?li(/factura/i.test(cmp)?'RUC':'DNI',E(doc)):'')+(cnm?li('Nombre',E(cnm)):'')+(crz?li('Razón social',E(crz)):'')+(cdf?li('Dirección fiscal',E(cdf)):'')):'')+(notas.length?U.note(E(notas.join(' · '))):'')+
           (sub0>0?U.st('Compra registrada · gastó '+M(sub0),'ok'):U.note('El motorizado registra aquí cuánto gastó en la compra.'));
       }else{
         s.sum=(t==='enc'?'Recogido':'Recogido')+(o.en_camino_en?' · '+U.hora(o.en_camino_en):'');
