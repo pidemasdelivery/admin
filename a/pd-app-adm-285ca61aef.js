@@ -1948,6 +1948,18 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   const accUid=c=>{for(const k of ACC_K){const v=c&&c[k];if(v!=null&&String(v).trim())return String(v)}return ''};
   const genPw=()=>{const ch='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%*';const a=new Uint32Array(14);crypto.getRandomValues(a);return [...a].map(n=>ch[n%ch.length]).join('')};
   const emailOk=v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||'').trim());
+  /* imágenes elegidas: se leen y se pasan a WEBP/PNG (así se ven en cualquier celular y pesan poco); si el formato no se puede leer (p. ej. HEIC), se avisa */
+  async function prepImg(fl,max){
+    const url=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error('lectura'));r.readAsDataURL(fl)});
+    const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('formato'));i.src=url});
+    const W=img.naturalWidth||img.width,H=img.naturalHeight||img.height;if(!W||!H)throw new Error('formato');
+    const k=Math.min(1,(max||1000)/Math.max(W,H)),w=Math.max(1,Math.round(W*k)),h=Math.max(1,Math.round(H*k));
+    const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);
+    let b=await new Promise(r=>cv.toBlob(r,'image/webp',0.86));if(!b||b.type!=='image/webp')b=await new Promise(r=>cv.toBlob(r,'image/png'));if(!b)throw new Error('formato');
+    const prev=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error('lectura'));r.readAsDataURL(b)});
+    return {file:new File([b],'imagen.'+(b.type==='image/webp'?'webp':'png'),{type:b.type}),prev};
+  }
+  const IMG_MAL='No se pudo leer esa imagen. Elige una foto en JPG o PNG (las fotos HEIC del iPhone no sirven).';
   async function accInvocar(fn,body){const {data,error}=await D().functions.invoke(fn,{body});if(error){let m='';try{const c=error.context;if(c&&c.json){const j=await c.clone().json();m=j&&(j.error||j.message)||''}}catch(_){}throw new Error(m||error.message||'Error desconocido')}if(data&&data.error)throw new Error(data.error);return data}
   async function accListar(tipo){const d=await accInvocar('listar-accesos-'+tipo,{});return Array.isArray(d&&d.cuentas)?d.cuentas:(Array.isArray(d)?d:[])}
   const accNom=(tipo,c)=>tipo==='negocio'?(c.negocio_nombre||c.nombre_negocio||c.nombre||'Negocio'):(c.motorizado_nombre||c.nombre_motorizado||c.nombre_completo||c.nombre||'Motorizado');
@@ -2720,7 +2732,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
     if(k.startsWith('cm:')&&SF['crear motorizado']){const f=SF['crear motorizado'],c=k.slice(3);f[c]=el.value;if(c==='mid'){key='';pintar()}else if(c==='pw')pwVivo(el.value);return}
     if(k==='acc:npw'&&SF[secK]){SF[secK].npw=el.value;pwVivo(el.value);return}
     if(k.startsWith('cn:')&&SF['crear negocio']){const f=SF['crear negocio'],c=k.slice(3);f[c]=el.value;if(c==='nid'||c==='cat')key='';if(c==='nid')pintar();if(c==='pw')pwVivo(el.value);return}
-    if(k.startsWith('cnfile:')){const f=SF['crear negocio'],c=k.slice(7),fl=el.files&&el.files[0];el.value='';if(!fl)return;if(!/^image\//.test(fl.type)||fl.size>5*1024*1024){mal('Elige una imagen (PNG, JPG o WEBP) de menos de 5 MB.');return}f[c]=fl;f[c+'Prev']=URL.createObjectURL(fl);key='';pintar();return}
+    if(k.startsWith('cnfile:')){const f=SF['crear negocio'],c=k.slice(7),fl=el.files&&el.files[0];el.value='';if(!fl)return;if(fl.size>15*1024*1024){mal('La imagen pesa demasiado (máximo 15 MB).');return}prepImg(fl,c==='portada'?1600:800).then(r=>{f[c]=r.file;f[c+'Prev']=r.prev;key='';pintar()},()=>mal(IMG_MAL));return}
     if(k.startsWith('cx')&&SF['configurar negocios']){const f=SF['configurar negocios'],p=k.split(':');
       if(p[0]==='cx'){if(p[1]==='nid'){f.nid=el.value;f.d=null;f.e=null;f.P=null;f.acc=undefined;f.dsOpen=false;f.cNew=false;key='';pintar();return}if(p[1]==='q'){f.q=el.value;clearTimeout(entrada.cx);entrada.cx=setTimeout(()=>{key='';pintar();const i=root.querySelector('[data-in="cx:q"]');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},250);return}if(p[1]==='cn'){f.cn=el.value;return}if(f.d){f.d[p[1]]=el.value;if(p[1]==='cat'){key='';pintar()}}return}
       if(p[0]==='cxh'&&f.d){f.d.H[p[1]][p[2]]=el.value;return}
@@ -2729,8 +2741,8 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
       if(p[0]==='cxp'&&f.e){f.e[p[1]]=el.value;return}
       if(p[0]==='cxpf'&&f.e){const y=f.e.f[+p[1]];if(y)y[p[2]]=el.value;return}
       if(p[0]==='cxa'){f.pw=f.pw||{};f.pw[p[1]+p[2]]=el.value;return}
-      if(p[0]==='cxpi'&&f.e){const fl=el.files&&el.files[0];el.value='';if(!fl)return;if(!/^image\/(jpeg|png|webp)$/i.test(fl.type)||fl.size>5*1024*1024){mal('La imagen debe ser JPG, PNG o WEBP y pesar máximo 5 MB.');return}f.e.file=fl;f.e.prev=URL.createObjectURL(fl);f.e.quitar=false;key='';pintar();return}
-      if(p[0]==='cxf'){const fl=el.files&&el.files[0];el.value='';if(!fl)return;if(!/^image\/(jpeg|png|webp)$/i.test(fl.type)||fl.size>5*1024*1024){mal('La imagen debe ser JPG, PNG o WEBP y pesar máximo 5 MB.');return}cxSubirNeg(f,p[1],fl);return}
+      if(p[0]==='cxpi'&&f.e){const fl=el.files&&el.files[0];el.value='';if(!fl)return;if(fl.size>15*1024*1024){mal('La imagen pesa demasiado (máximo 15 MB).');return}prepImg(fl,1000).then(r=>{f.e.file=r.file;f.e.prev=r.prev;f.e.quitar=false;key='';pintar()},()=>mal(IMG_MAL));return}
+      if(p[0]==='cxf'){const fl=el.files&&el.files[0];el.value='';if(!fl)return;if(fl.size>15*1024*1024){mal('La imagen pesa demasiado (máximo 15 MB).');return}prepImg(fl,p[1]==='portada'?1600:800).then(r=>cxSubirNeg(f,p[1],r.file),()=>mal(IMG_MAL));return}
       return}
     if(k.startsWith('ag:')&&SF['agencias']){const f=SF['agencias'],p=k.split(':');if(p[1]==='n')f.nuevo.nombre=el.value;else if(p[1]==='d')f.nuevo.ds[+p[2]]=el.value;else if(p[1]==='nd')f.nd[p.slice(2).join(':')]=el.value;return}
     if(k.startsWith('tf:')&&SF['tarifas']&&SF['tarifas'].C){const f=SF['tarifas'],C=f.C,p=k.slice(3).split('.');const v=el.type==='time'?el.value:el.value;
