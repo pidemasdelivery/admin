@@ -224,10 +224,10 @@
           ((q.n===1?notas.join(' · '):q.obs)?`<div class="lbl" style="margin-top:4px">Observaciones</div>`+txt(q.n===1?notas.join(' · '):q.obs):'')+(q.monto!=null&&q.monto!==''?(()=>{const cliT=String(o.telefono_cliente||o.telefono_remitente||'').replace(/\D/g,''),cliN=String(o.nombre_cliente||o.nombre_remitente||'').split(' ')[0];
             const txW='Hola'+(cliN?' '+cliN:'')+', te escribimos de Pidemás. Tu compra '+U.ref(id)+' en '+q.nombre+': se gastó '+M(q.monto)+'.'+(q.foto?'\nFoto de la boleta: '+q.foto:''),wa=cliT&&q.foto?'https://wa.me/'+(cliT.length===9?'51'+cliT:cliT)+'?text='+encodeURIComponent(txW):'';
             return `<div style="display:flex;gap:12px;align-items:center">`+(q.foto?`<a href="${E(q.foto)}" target="_blank" rel="noopener" style="flex:0 0 84px"><img src="${E(q.foto)}" alt="Boleta del lugar ${q.n}" style="width:84px;height:84px;object-fit:cover;border-radius:12px;display:block"></a>`:'')+
-              `<div style="flex:1;min-width:0;display:flex;flex-direction:column">`+li('Gastado',M(q.monto))+li('Boleta',q.foto?'Guardada ✓':'Sin boleta')+`</div></div>`+
-              (wa?`<a class="b o" style="display:flex;width:100%;box-sizing:border-box;justify-content:center" href="${E(wa)}" target="_blank" rel="noopener">Enviar boleta al cliente por WhatsApp</a>`:'')})():btnIr(q.url,L.length>1?'Ir al lugar '+q.n:'Ir al lugar de compra'))+`</div>`});
+              `<div style="flex:1;min-width:0;display:flex;flex-direction:column">`+li('Gastado',M(q.monto))+li('Boleta',q.foto?'Guardada ✓':'Sin boleta')+`</div></div>`+(!(sub0>0)?U.note('El motorizado puede cambiar este monto hasta registrar la compra.'):'')+
+              (wa?`<a class="b o" style="display:flex;width:100%;box-sizing:border-box;justify-content:center" href="${E(wa)}" target="_blank" rel="noopener">Enviar boleta al cliente por WhatsApp</a>`:'')})():(e>=2&&!(sub0>0)?U.st('Falta que el motorizado guarde lo gastado aquí'):'')+btnIr(q.url,L.length>1?'Ir al lugar '+q.n:'Ir al lugar de compra'))+`</div>`});
         h+=compBox();
-        if(!(sub0>0)&&e>=2)h+=U.note('El motorizado registra aquí cuánto gastó en la compra.');
+        if(!(sub0>0)&&e>=2){const LL=L.filter(q=>q.monto!=null&&q.monto!=='');h+=LL.length?U.st('Gastado hasta ahora · '+M(LL.reduce((a,q)=>a+(Number(q.monto)||0),0))+(LL.length<L.length?' ('+LL.length+' de '+L.length+' lugares)':' · falta que registre la compra')):U.note('El motorizado guarda aquí lo que gastó en cada lugar y la foto de la boleta.')}
       }else if(t==='enc'){
         s.sum='Recogido'+hr(o.en_camino_en);
         if(!h)h=U.st(E(mn)+(e>2?' recogió los paquetes'+hr(o.en_camino_en):' va a recoger los paquetes'),e>2?'ok':'');
