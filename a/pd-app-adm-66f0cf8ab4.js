@@ -1181,8 +1181,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const ch=(k,i2,ops,v)=>`<div class="opc">${ops.map(x=>`<button type="button" class="${String(v)===String(x[0])?'on':''}" data-a="pe:pqs:${i2}:${k}:${E(x[0])}">${E(x[1])}</button>`).join('')}</div>`;
       const inp=(k,i2,v,ph)=>`<input data-in="pe:pq:${i2}:${k}" value="${E(v)}" placeholder="${E(ph)}">`;
       h+=`<div class="cd"><div class="fld"><label for="peI1">Indicación del cliente para el paquete 1 (opcional)</label><input id="peI1" value="${E(f.ind1)}" data-in="pe:ind1" placeholder="Ej. entregar a nombre de la empresa"></div></div>`;
-      f.paqs.forEach((q,i2)=>{h+=`<div class="cd"><div class="row" style="justify-content:space-between"><div class="lbl" style="margin:0">Paquete ${i2+2}</div><button type="button" class="b" style="height:36px;padding:0 12px;color:#B42318;border-color:#F4C7C3" data-a="pe:pqx:${i2}">Quitar</button></div>
-        <div class="fld"><label>Agencia</label>${inp('ag',i2,q.ag,'Ej. Olva Courier')}</div>${nsAgChips(q.ag,'pe:pqag:'+i2)}<div class="fld"><label>Destino</label>${inp('dest',i2,q.dest,'Ej. Lima')}</div>${nsDsChips(q.ag,q.dest,'pe:pqds:'+i2)}
+      f.paqs.forEach((q,i2)=>{if(!coordsDe(q.agubi)&&q.ag){const u=nsAgU(q.ag);if(u)q.agubi=u}h+=`<div class="cd"><div class="row" style="justify-content:space-between"><div class="lbl" style="margin:0">Paquete ${i2+2}</div><button type="button" class="b" style="height:36px;padding:0 12px;color:#B42318;border-color:#F4C7C3" data-a="pe:pqx:${i2}">Quitar</button></div>
+        <div class="fld"><label>Agencia</label>${inp('ag',i2,q.ag,'Ej. Olva Courier')}</div>${nsAgChips(q.ag,'pe:pqag:'+i2)}${nsAgUbiFld({ag:q.ag})}
+        <div class="fld"><label>Ubicación de la agencia (Google Maps)</label>${inp('agubi',i2,q.agubi,'Pega el enlace de Google Maps')}</div>
+        <button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:pqmapa:${i2}">${coordsDe(q.agubi)?'Cambiar en el mapa':'Marcar en el mapa'}</button><div class="fld"><label>Destino</label>${inp('dest',i2,q.dest,'Ej. Lima')}</div>${nsDsChips(q.ag,q.dest,'pe:pqds:'+i2)}
         <div class="fld"><label>Modalidad de pago</label>${ch('tpago',i2,OPS.encTipoPago,q.tpago)}</div><div class="fld"><label>Tipo de encomienda</label>${ch('tenv',i2,OPS.encTipoEnvio,q.tenv)}</div>
         <div class="fld"><label>Indicación del cliente (opcional)</label>${inp('ind',i2,q.ind,'')}</div></div>`});
       if(f.paqs.length<2)h+=`<button type="button" class="b" style="height:50px" data-a="pe:pq+">${IC.plus}Agregar otro paquete</button>`;
@@ -1264,7 +1266,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(!f.tpago){f.msg='Elige la modalidad de pago del paquete 1: «Pago en agencia» o «Pago a destino».';return false}
       const sinTp=f.paqs.findIndex(q=>!q.tpago||!String(q.ag||'').trim()||!String(q.dest||'').trim());if(sinTp>=0){f.msg='Completa agencia, destino y modalidad de pago del paquete '+(sinTp+2)+'.';return false}
       const agId=await nsAgencia(f.ag,f.dest);if(agId){p.agencia_id=agId}
-      if(coordsDe(f.agubi))try{await nsAgRegistrar(f)}catch(_){}
+      if(coordsDe(f.agubi)||(f.paqs||[]).some(q=>coordsDe(q.agubi)))try{await nsAgRegistrar(f)}catch(_){}
       const ex=[];for(const [i,q] of f.paqs.entries()){const id2=await nsAgencia(q.ag,q.dest);ex.push({n:i+2,q,id2})}
       const tpN=v=>(OPS.encTipoPago.find(x=>x[0]===v)||[,v])[1],teN=v=>(OPS.encTipoEnvio.find(x=>x[0]===v)||[,v])[1];
       let extra='';if(String(f.ind1||'').trim())extra+=' | Indicación paquete 1: '+String(f.ind1).replace(/[|]/g,'/').trim();
@@ -1314,9 +1316,12 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   async function nsAgRegistrar(f){
     const id=await nsAgencia(f.ag,f.dest);
     for(const q of (f.paqs||[]))try{await nsAgencia(q.ag,q.dest)}catch(_){}
-    const ca=coordsDe(f.agubi),nom=String(f.ag||'').trim();
-    if(ca&&nom){const u=(PE.agU||{})[agClave(nom)];
-      if(!u||Math.abs(+u.lat-ca.lat)>1e-5||Math.abs(+u.lng-ca.lng)>1e-5){PE.agU=await agGuardarUbi(nom,id,{lat:ca.lat,lng:ca.lng,direccion:(u&&u.direccion)||''})}}
+    /* ubicación de la agencia de cada paquete (paquete 1 y adicionales) */
+    for(const [nom0,ubi] of [[f.ag,f.agubi]].concat((f.paqs||[]).map(q=>[q.ag,q.agubi]))){
+      const ca=coordsDe(ubi),nom=String(nom0||'').trim();if(!ca||!nom)continue;
+      const u=(PE.agU||{})[agClave(nom)];
+      if(!u||Math.abs(+u.lat-ca.lat)>1e-5||Math.abs(+u.lng-ca.lng)>1e-5){const ag=(PE.ags||[]).find(x=>agClave(x.nombre)===agClave(nom));
+        try{PE.agU=await agGuardarUbi(nom,ag?ag.id:null,{lat:ca.lat,lng:ca.lng,direccion:(u&&u.direccion)||''})}catch(_){}}}
     return id;
   }
   /* quien envía y quien recibe quedan en Clientes (si su número aún no está) */
@@ -2602,7 +2607,10 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
     if(PE.f&&a.dataset.a.startsWith('pe:ptmapa:')){const q=(PE.f.pts||[])[+a.dataset.a.slice(10)];const el2=window.pdMapa&&pdMapa.elegir;if(!q||!el2)return;
       const r=await el2({titulo:'Punto de recojo '+(+a.dataset.a.slice(10)+2),centro:coordsDe(q.ubi)||coordsDe(PE.f.rubi)});if(!r)return;
       q.ubi='https://maps.google.com/?q='+Number(r.lat).toFixed(6)+','+Number(r.lng).toFixed(6);const lin=[r.linea,r.sub].filter(Boolean).join(', ');if(!String(q.dir||'').trim()&&lin)q.dir=lin;key='';pintar();return}
-    if(PE.f&&a.dataset.a==='pe:pq+'){if(PE.f.paqs.length<2)PE.f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:''});key='';pintar();return}
+    if(PE.f&&a.dataset.a.startsWith('pe:pqmapa:')){const q=PE.f.paqs[+a.dataset.a.slice(10)];const el2=window.pdMapa&&pdMapa.elegir;if(!q||!el2)return;
+      const r=await el2({titulo:'Agencia '+String(q.ag||'').trim(),centro:coordsDe(q.agubi)||coordsDe(nsAgU(q.ag))});if(!r)return;
+      q.agubi='https://maps.google.com/?q='+Number(r.lat).toFixed(6)+','+Number(r.lng).toFixed(6);key='';pintar();return}
+    if(PE.f&&a.dataset.a==='pe:pq+'){if(PE.f.paqs.length<2)PE.f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:''});key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:pqx:')){PE.f.paqs.splice(+a.dataset.a.slice(7),1);key='';pintar();return}
     if(PE.f&&a.dataset.a==='pe:crear'){if(a.disabled)return;const f=PE.f;
       if(typeof window.pdServicioAbierto==='function'&&!window.pdServicioAbierto()&&!(await conf('Pidemás recibe pedidos de 9:00 a. m. a 9:30 p. m. ¿Quieres registrar este servicio de todas formas?')))return;
@@ -2621,7 +2629,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
         else{const x=nsDsL(f.ag)[+k];if(x)f.dest=x.destino_final}
         key='';pintar();return}
       if(PE.f&&/^pe:pq(ag|ds):\d+:\d+$/.test(a.dataset.a)){const [,t,i,k]=a.dataset.a.split(':'),q=PE.f.paqs[+i];
-        if(q){if(t==='pqag'){const x=(PE.ags||[])[+k];if(x){if(String(q.ag).trim().toLowerCase()!==String(x.nombre).trim().toLowerCase())q.dest='';q.ag=x.nombre}}else{const x=nsDsL(q.ag)[+k];if(x)q.dest=x.destino_final}}
+        if(q){if(t==='pqag'){const x=(PE.ags||[])[+k];if(x){if(String(q.ag).trim().toLowerCase()!==String(x.nombre).trim().toLowerCase()){q.dest='';q.agubi=''}q.ag=x.nombre;const u=nsAgU(x.nombre);if(u&&!coordsDe(q.agubi))q.agubi=u}}else{const x=nsDsL(q.ag)[+k];if(x)q.dest=x.destino_final}}
         key='';pintar();return}
       if(PE.f&&a.dataset.a.startsWith('pe:set:')){const [,,k,...v]=a.dataset.a.split(':');PE.f[k]=v.join(':');if(k==='pide'&&PE.f.tipo==='recojo'){PE.f.quien=PE.f.pide;PE.f.cli=null}key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:met:')){PE.f.metodo=a.dataset.a.slice(7);key='';pintar();return}
