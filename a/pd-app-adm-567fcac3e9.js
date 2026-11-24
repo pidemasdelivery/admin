@@ -304,7 +304,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   const SEL=()=>{try{return selectedOrders}catch(e){return null}};
 
   /* =============== INICIO (pedidos) =============== */
-  const CH=[['','Todos',()=>true],['nuevo','Por atender',o=>['pendiente','confirmado','pedido_recibido','nuevo'].includes(est(o))],['asignado','Asignados',o=>est(o)==='asignado'],['camino','En camino',o=>['aceptado','pedido_aceptado','en_camino','camino_recojo'].includes(est(o))],['entrega','En entrega',o=>['en_entrega','camino_entrega','confirmando_pago'].includes(est(o))],['entregado','Entregados',o=>est(o)==='entregado'],['cancelado','Cancelados',o=>['cancelado','rechazado'].includes(est(o))],['moto','Por motorizado',o=>!!o.motorizado_id]];
+  const CH=[['','Todos',()=>true],['nuevo','Por atender',o=>['pendiente','confirmado','pedido_recibido','nuevo'].includes(est(o))],['moto','Por motorizado',o=>!!o.motorizado_id],['asignado','Asignados',o=>est(o)==='asignado'],['camino','En camino',o=>['aceptado','pedido_aceptado','en_camino','camino_recojo'].includes(est(o))],['entrega','En entrega',o=>['en_entrega','camino_entrega','confirmando_pago'].includes(est(o))],['entregado','Entregados',o=>est(o)==='entregado'],['cancelado','Cancelados',o=>['cancelado','rechazado'].includes(est(o))]];
   const fase=o=>{try{if(window.pdUDatos&&pdUDatos.fase)return pdUDatos.fase(o)}catch(e){}const s=est(o);return s==='entregado'?{n:5,txt:'Entregado',k:'ok'}:s==='cancelado'?{n:0,txt:'Cancelado',k:'no'}:{n:1,txt:typeof orderStatusLabel==='function'?orderStatusLabel(s):s,k:'new'}};
   function tarjeta(o){
     const f=fase(o),n=NEG(o.negocio_id||o.restaurante_id),sv=svc(o)||(o.negocio_id?'Negocio':'Recojo y entrega'),s=SEL(),marc=selModo&&s&&s.has(String(o.id));
