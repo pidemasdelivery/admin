@@ -191,7 +191,8 @@
     /* 3 · Entrega y cobro (o agencia): a dónde se lleva y cuánto se cobra */
     {const s=steps[3];s.locked=t==='compra'?'Se muestra al terminar la compra':'Se muestra al recoger';
       if(t==='enc'){s.sum=guias?'Guías enviadas':'En agencia';
-        s.body=(enAg?U.st('Paquetes en la agencia '+E(o.agencia_destino||''),'ok'):U.st(E(mn)+' va a la agencia '+E(o.agencia_destino||'')))+
+        const agsL=[...new Set(pks.map(p=>p.agencia).filter(Boolean))];
+        s.body=(enAg?U.st(procAg.length?'Llegó a '+E(procAg.filter(x=>x.llegada_en).map(x=>x.agencia).join(' y '))+(procAg.length<agsL.length?' · falta '+E(agsL.filter(a=>!procAg.some(x=>String(x.agencia).toLowerCase()===String(a).toLowerCase())).join(' y ')):''):'Paquetes en la agencia '+E(o.agencia_destino||''),'ok'):U.st(E(mn)+(agsL.length>1?' va a las agencias '+E(agsL.join(' y ')):' va a la agencia '+E(o.agencia_destino||''))))+
           pks.map(pkgBox).join('')+
           (procAg.length?sumBox('Avance en agencias',procAg.map(x=>li(E(x.agencia||'Agencia'),(x.llegada_en?'Llegó '+E(U.hora(x.llegada_en)):'')+(x.pago_en?' · pagó '+M(x.pago_monto):''))).join('')):(Number(o.monto_pagado_agencia)>0?sumBox('Pago en agencia',li('Pagado',M(o.monto_pagado_agencia))):''))+
           agBotones(o,pks.map(p=>p.agencia))+
