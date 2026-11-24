@@ -868,3 +868,11 @@ try{
 })();
 }catch(e){console.error("[pidemas-campana-pedidos-js]",e)}
 
+
+/* Pagos de compra y de encomienda: ya tienen su pedido (compra registrada, guía de la agencia); se descuentan de la caja sin «Por revisar» */
+try{(function(){const C=window.PdCaja;if(!C||C.autoPago)return;C.autoPago=1;
+const auto=m=>!!(m&&m.tipo==='retiro'&&m.pedido_id&&/^PAGO DE (COMPRA|ENCOMIENDA)/i.test(String(m.descripcion||''))&&m.revision!=='rechazado');
+const rt=C.revTag,ex=C.extra;
+if(rt)C.revTag=function(m){return auto(m)?'':rt.apply(this,arguments)};
+if(ex)C.extra=function(m){const a=[].slice.call(arguments);if(auto(m))a[0]=Object.assign({},m,{revision:null});return ex.apply(this,a)};
+})()}catch(e){}
