@@ -231,8 +231,7 @@
         sumBox('Detalle del cobro',(agTot>0&&!agCob?li('Envío pagado en agencias',M(agTot)):'')+(!delPag?li('Delivery Pidemás',M(o.total)):'')+li('Total a cobrar',M(pendTot),1))+
         (agTot>0&&!agCob&&delPag?U.note('El delivery ya está pagado; falta lo que Pidemás pagó en la agencia.'):'')+
         cobroWa()+
-        U.note('Cuando el cliente te mande la captura del Yape, súbela aquí y registra el pago.')+
-        PY.html(o,qY)+`<button type="button" class="b o" data-act="yfReg">Registrar pago por Yape · ${M(pendTot)}</button>`;
+        U.note('Si no paga, vuelve a enviarle el cobro. Cuando llegue el Yape, confírmalo en <b>Caja › Yape por confirmar</b>.');
       return h};
     /* Pagos en agencias: una tarjeta por agencia (monto, paquetes, horas) y el total; dice si el cliente ya lo devolvió */
     const pagosAgHtml=()=>{
