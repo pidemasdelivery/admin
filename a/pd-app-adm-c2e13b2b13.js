@@ -1186,7 +1186,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         <div class="fld"><label>Ubicación de la agencia (Google Maps)</label>${inp('agubi',i2,q.agubi,'Pega el enlace de Google Maps')}</div>
         <button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:pqmapa:${i2}">${coordsDe(q.agubi)?'Cambiar en el mapa':'Marcar en el mapa'}</button><div class="fld"><label>Destino</label>${inp('dest',i2,q.dest,'Ej. Lima')}</div>${nsDsChips(q.ag,q.dest,'pe:pqds:'+i2)}
         <div class="fld"><label>Modalidad de pago</label>${ch('tpago',i2,OPS.encTipoPago,q.tpago)}</div><div class="fld"><label>Tipo de encomienda</label>${ch('tenv',i2,OPS.encTipoEnvio,q.tenv)}</div>
-        <div class="fld"><label>Indicación del cliente (opcional)</label>${inp('ind',i2,q.ind,'')}</div></div>`});
+        <div class="fld"><label>Indicación del cliente (opcional)</label>${inp('ind',i2,q.ind,'')}</div>
+        <div style="height:1px;background:#F1E4DA;margin:4px 0"></div>
+        <div class="lbl" style="margin:0">Quien recibe el paquete ${i2+2}</div>
+        <button type="button" class="b${q.igual?' on':''}" style="height:44px${q.igual?';border-color:#C4410C;background:#FFF4EC;color:#9A330A':''}" data-a="pe:pqs:${i2}:igual:${q.igual?'':'1'}">${q.igual?'✓ ':''}Lo recibe la misma persona del paquete 1${String(f.enom||'').trim()?' ('+E(String(f.enom).trim())+')':''}</button>
+        ${q.igual?'':`<div class="fld"><label>Nombre y apellido</label>${inp('rn',i2,q.rn,'')}</div><div class="fld"><label>DNI</label>${inp('rd',i2,q.rd,'').replace('<input','<input inputmode="numeric" maxlength="12"')}</div><div class="fld"><label>Teléfono</label>${inp('rt',i2,q.rt,'').replace('<input','<input type="tel" inputmode="tel" maxlength="20"')}</div>`}</div>`});
       if(f.paqs.length<2)h+=`<button type="button" class="b" style="height:50px" data-a="pe:pq+">${IC.plus}Agregar otro paquete</button>`;
     }
     if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
@@ -1234,7 +1238,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(paso==='Información de quien recibe'&&f.tipo==='recojo'&&f.pide==='recibe'){if(!t(f.enom))return 'Escribe el nombre de quien recibe (es quien pide el servicio).';if(!t(f.etel))return 'Escribe el teléfono de quien recibe (es quien pide el servicio).'}
     if(paso==='Información de la compra'&&!t(f.detalle))return 'Escribe qué hay que comprar.';
     if(paso==='Paquetes de la encomienda'){if(!t(f.ag)||!t(f.dest))return 'Escribe la agencia y el destino del paquete 1.';if(!f.tpago)return 'Elige la modalidad de pago del paquete 1.';
-      const k=f.paqs.findIndex(q=>!q.tpago||!t(q.ag)||!t(q.dest));if(k>=0)return 'Completa agencia, destino y modalidad de pago del paquete '+(k+2)+'.'}
+      const k=f.paqs.findIndex(q=>!q.tpago||!t(q.ag)||!t(q.dest));if(k>=0)return 'Completa agencia, destino y modalidad de pago del paquete '+(k+2)+'.';
+      const r=f.paqs.findIndex(q=>!q.igual&&!(t(q.rn)&&t(q.rt)));if(r>=0)return 'Escribe nombre y teléfono de quien recibe el paquete '+(r+2)+', o marca que lo recibe la misma persona del paquete 1.'}
     if(paso==='Información de pago del servicio'&&!(Number(String(f.costo).replace(',','.'))>=0&&t(f.costo)))return 'Escribe el costo del servicio.';
     return '';
   }
@@ -1268,6 +1273,9 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const agId=await nsAgencia(f.ag,f.dest);if(agId){p.agencia_id=agId}
       if(coordsDe(f.agubi)||(f.paqs||[]).some(q=>coordsDe(q.agubi)))try{await nsAgRegistrar(f)}catch(_){}
       const ex=[];for(const [i,q] of f.paqs.entries()){const id2=await nsAgencia(q.ag,q.dest);ex.push({n:i+2,q,id2})}
+      /* datos ordenados de cada paquete adicional, con quien lo recibe */
+      p.paquetes_extra=ex.map(({n,q})=>({numero:n,agencia:String(q.ag||'').trim(),destino:String(q.dest||'').trim(),tipo_pago:q.tpago||null,tipo_envio:q.tenv||null,indicacion:String(q.ind||'').trim()||null,
+        recibe_nombre:(q.igual?f.enom:q.rn)?String(q.igual?f.enom:q.rn).trim():null,recibe_telefono:(q.igual?f.etel:q.rt)?String(q.igual?f.etel:q.rt).trim():null,recibe_dni:(q.igual?f.edni:q.rd)?String(q.igual?f.edni:q.rd).trim():null,agencia_ubicacion:String(q.agubi||'').trim()||null}));
       const tpN=v=>(OPS.encTipoPago.find(x=>x[0]===v)||[,v])[1],teN=v=>(OPS.encTipoEnvio.find(x=>x[0]===v)||[,v])[1];
       let extra='';if(String(f.ind1||'').trim())extra+=' | Indicación paquete 1: '+String(f.ind1).replace(/[|]/g,'/').trim();
       ex.forEach(({n,q})=>{if(q.tenv)extra+=' | Tipo paquete '+n+': '+teN(q.tenv);if(String(q.ind||'').trim())extra+=' | Indicación paquete '+n+': '+String(q.ind).replace(/[|]/g,'/').trim()});
@@ -1281,7 +1289,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     p.pago_modalidad=f.pago==='pagado'?'pagado':String(p.metodo_pago||'');
     p.quien_paga=f.tipo==='compra'?'cliente':f.tipo==='enc'?'envia':(f.pago==='pagado'?null:f.quien);
     let r=await conTiempo(D().from('pedidos').insert(p).select('id').single());
-    if(r.error&&/column|schema cache|PGRST204|42703/i.test(String(r.error.message)+String(r.error.code))){SVC_OPC.concat(['motorizado_nombre','asignado_en','lugar_compra','detalle_compra','pago_modalidad']).forEach(k=>delete p[k]);r=await conTiempo(D().from('pedidos').insert(p).select('id').single())}
+    if(r.error&&/column|schema cache|PGRST204|42703/i.test(String(r.error.message)+String(r.error.code))){SVC_OPC.concat(['paquetes_extra','motorizado_nombre','asignado_en','lugar_compra','detalle_compra','pago_modalidad']).forEach(k=>delete p[k]);r=await conTiempo(D().from('pedidos').insert(p).select('id').single())}
     if(r.error)throw r.error;const id=r.data.id;
     if(moto){
       if(moto.usuario_id){const t=f.tipo==='compra'?'Nueva compra asignada':f.tipo==='enc'?'Nueva encomienda asignada':'Nuevo servicio de recojo y entrega';D().from('notificaciones').insert({usuario_id:moto.usuario_id,pedido_id:id,tipo:'pedido_asignado',titulo:t,mensaje:'Tienes '+(f.tipo==='compra'?'una nueva compra asignada.':f.tipo==='enc'?'una nueva encomienda asignada.':'un nuevo servicio de recojo y entrega asignado.'),leida:false}).then(()=>{},()=>{})}
@@ -2610,7 +2618,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
     if(PE.f&&a.dataset.a.startsWith('pe:pqmapa:')){const q=PE.f.paqs[+a.dataset.a.slice(10)];const el2=window.pdMapa&&pdMapa.elegir;if(!q||!el2)return;
       const r=await el2({titulo:'Agencia '+String(q.ag||'').trim(),centro:coordsDe(q.agubi)||coordsDe(nsAgU(q.ag))});if(!r)return;
       q.agubi='https://maps.google.com/?q='+Number(r.lat).toFixed(6)+','+Number(r.lng).toFixed(6);key='';pintar();return}
-    if(PE.f&&a.dataset.a==='pe:pq+'){if(PE.f.paqs.length<2)PE.f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:''});key='';pintar();return}
+    if(PE.f&&a.dataset.a==='pe:pq+'){if(PE.f.paqs.length<2)PE.f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:'',igual:'',rn:'',rd:'',rt:''});key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:pqx:')){PE.f.paqs.splice(+a.dataset.a.slice(7),1);key='';pintar();return}
     if(PE.f&&a.dataset.a==='pe:crear'){if(a.disabled)return;const f=PE.f;
       if(typeof window.pdServicioAbierto==='function'&&!window.pdServicioAbierto()&&!(await conf('Pidemás recibe pedidos de 9:00 a. m. a 9:30 p. m. ¿Quieres registrar este servicio de todas formas?')))return;

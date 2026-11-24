@@ -201,7 +201,8 @@
     ir('.pmL1').textContent=l1;ir('.pmL2').textContent=l2;ir('.pmEta').textContent=eta;
     const av=ir('.pmAviso');av.textContent=aviso;av.hidden=!aviso;
     const gm=ir('.pmGm');
-    if(v.pos&&obj)gm.href='https://www.google.com/maps/dir/?api=1&origin='+v.pos.lat+','+v.pos.lng+'&destination='+obj.lat+','+obj.lng+'&travelmode=driving';
+    /* solo el punto, sin ruta trazada */
+    if(obj)gm.href='https://www.google.com/maps/search/?api=1&query='+obj.lat+','+obj.lng;
     else if(soloLink)gm.href=link;
     else if(v.pos)gm.href='https://www.google.com/maps/search/?api=1&query='+v.pos.lat+','+v.pos.lng;
     else if(obj)gm.href='https://www.google.com/maps/search/?api=1&query='+obj.lat+','+obj.lng;
