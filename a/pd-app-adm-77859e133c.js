@@ -974,8 +974,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const {data:mv}=await D().from('movimientos_caja').select('id,tipo,monto,descripcion').eq('pedido_id',o.id).eq('motorizado_id',o.motorizado_id);
       const L=mv||[],cobro=L.filter(x=>x.tipo==='ingreso'&&!/^INGRESO MANUAL/i.test(String(x.descripcion||''))).reduce((a,x)=>a+Number(x.monto||0),0),corr=L.filter(x=>/Corrección de pago/i.test(String(x.descripcion||''))).reduce((a,x)=>a+(x.tipo==='ingreso'?1:-1)*Number(x.monto||0),0);
       const enCaja=Math.round((cobro+(corr<0?corr:0))*100)/100;
-      if(d==='efectivo'&&enCaja<0.005)await D().from('movimientos_caja').insert({motorizado_id:o.motorizado_id,pedido_id:o.id,tipo:'ingreso',monto:tot,descripcion:'Cobro de pedido · Corrección de pago: Yape → Efectivo (administración) · total S/ '+tot.toFixed(2)});
-      else if(d!=='efectivo'&&enCaja>0.004)await D().from('movimientos_caja').insert({motorizado_id:o.motorizado_id,pedido_id:o.id,tipo:'retiro',monto:enCaja,descripcion:'Corrección de pago: Efectivo → Yape (administración) · ese cobro no fue en efectivo'});
+      if(d==='efectivo'&&enCaja<0.005)await D().from('movimientos_caja').insert({motorizado_id:o.motorizado_id,pedido_id:o.id,tipo:'ingreso',monto:tot,descripcion:'Cobro de pedido · Corrección de pago: Yape → Efectivo (Pidemás) · total S/ '+tot.toFixed(2)});
+      else if(d!=='efectivo'&&enCaja>0.004)await D().from('movimientos_caja').insert({motorizado_id:o.motorizado_id,pedido_id:o.id,tipo:'retiro',monto:enCaja,descripcion:'Corrección de pago: Efectivo → Yape (Pidemás) · ese cobro no fue en efectivo'});
       /* el cobro registrado también cambia de método: así un pago que pasó a efectivo ya no queda en «Yape por confirmar» */
       try{await D().from('cobros').update({metodo_pago:d==='efectivo'?'efectivo':d}).eq('pedido_id',o.id).is('yape_recibido_en',null)}catch(_){}
       try{C2.caja&&(C2.caja.t=0)}catch(_){}
@@ -1062,7 +1062,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     let ok=0;const mal=[];
     for(const p of ped){
       try{
-        try{if(typeof notifyMotoOrderChange==='function')await notifyMotoOrderChange(p,'Pedido eliminado por administración','El pedido '+ref(p.id)+' fue eliminado por administración.','pedido_eliminado')}catch(_){}
+        try{if(typeof notifyMotoOrderChange==='function')await notifyMotoOrderChange(p,'Pedido eliminado por Pidemás','El pedido '+ref(p.id)+' fue eliminado por administración.','pedido_eliminado')}catch(_){}
         const d1=await D().from('detalle_pedidos').delete().eq('pedido_id',p.id);if(d1.error)throw d1.error;
         const d2=await D().from('pedidos').delete().eq('id',p.id).select('id');if(d2.error)throw d2.error;
         if(Array.isArray(d2.data)&&!d2.data.length)throw new Error('la base no permitió borrarlo');
