@@ -133,7 +133,8 @@
     const agK=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
     /* lo que se pagó en la agencia de ese paquete (lo registra el motorizado al pagar) */
     const pagoAg=p=>{if(p.pago!=='pago_en_agencia')return null;const L=Array.isArray(o.agencias_proceso)?o.agencias_proceso:[];const x=L.find(y=>agK(y.agencia)===agK(p.agencia)&&y.pago_en);
-      if(x)return Number(x.pago_monto)||0;if(pks.length===1&&Number(o.monto_pagado_agencia)>0)return Number(o.monto_pagado_agencia);return null};
+      if(x&&x.pago_paquetes&&x.pago_paquetes[p.numero]!=null)return {m:Number(x.pago_paquetes[p.numero])||0,solo:true};
+      if(x)return {m:Number(x.pago_monto)||0,solo:mismaAg(p).filter(y=>y.pago==='pago_en_agencia').length<2};if(pks.length===1&&Number(o.monto_pagado_agencia)>0)return {m:Number(o.monto_pagado_agencia),solo:true};return null};
     const mismaAg=p=>pks.filter(y=>agK(y.agencia)===agK(p.agencia));
     const pkgBox=p=>sumBox('Paquete '+p.numero,li('Ruta',E([p.agencia,p.destino].filter(Boolean).join(' → ')||'—'))+li('Pago del envío',pagoTx(p.pago))+li('Recibe',E(p.recibe||'—'))+(p.tel?li('Teléfono',E(p.tel)):'')+(p.dni?li('DNI',E(p.dni)):''));
     const procAg=Array.isArray(o.agencias_proceso)?o.agencias_proceso:[];
@@ -212,9 +213,9 @@
             const clv=g.sin_clave?'La agencia no dio clave':String(g.clave||'—');
             if(!foto)return sumBox('Guía · paquete '+p.numero,li(ruta,'Enviada por WhatsApp')+li('Clave','Revisa tu WhatsApp'));
             const cliT=o.telefono_cliente||o.telefono_remitente,cliN=o.nombre_cliente||o.nombre_remitente||'';
-            const pa=pagoAg(p),grp=mismaAg(p),primero=grp[0]===p,paLinea=pa!=null&&primero,del=p.cd,ya=pagado||mom==='pagado'||(o.pago_confirmado===true&&mom!=='al_final');
+            const pq=pagoAg(p),grp=mismaAg(p).filter(y=>y.pago==='pago_en_agencia'),primero=grp[0]===p,pa=pq?pq.m:null,paLinea=!!pq&&(pq.solo||primero),del=p.cd,ya=pagado||mom==='pagado'||(o.pago_confirmado===true&&mom!=='al_final');
             const totG=Math.round(((paLinea?pa:0)+(del!=null?del:0))*100)/100;
-            const mL=[];if(p.pago==='pago_en_agencia'){if(paLinea)mL.push('• Envío pagado en '+(p.agencia||'la agencia')+(grp.length>1?' (paquetes '+grp.map(y=>y.numero).join(' y ')+')':'')+': '+M(pa));else if(pa!=null)mL.push('• Envío: ya incluido en la guía del paquete '+grp[0].numero);}
+            const mL=[];if(p.pago==='pago_en_agencia'){if(paLinea)mL.push('• Envío pagado en '+(p.agencia||'la agencia')+(!pq.solo&&grp.length>1?' (paquetes '+grp.map(y=>y.numero).join(' y ')+')':'')+': '+M(pa));else if(pa!=null)mL.push('• Envío: ya incluido en la guía del paquete '+grp[0].numero);}
               else if(p.pago==='pago_a_destino')mL.push('• Envío: se paga al recoger en destino');
             if(del!=null)mL.push('• Delivery Pidemás: '+M(del));
             const montos=mL.length?'\n\n*Montos de esta guía*\n'+mL.join('\n')+((paLinea||del!=null)?'\n*Total: '+M(totG)+'*'+(ya?' (ya pagado)':''):''):'';
