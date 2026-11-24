@@ -169,6 +169,15 @@
       }else{
         s.sum=(t==='enc'?'Recogido':'Recogido')+(o.en_camino_en?' · '+U.hora(o.en_camino_en):'');
         h+=U.who(remN,subQ('Recoge aquí · pedido '+U.ref(id)),'',true)+U.addr(o.direccion_recojo,o.referencia_recojo)+U.contact(U.maps(o.latitud_recojo,o.longitud_recojo,o.direccion_recojo,LK(o.ubicacion_recojo)),remT,'');
+        /* más puntos de recojo (el punto 1 es quien envía) */
+        const PR=t==='recojo'&&Array.isArray(o.puntos_recojo)?o.puntos_recojo.filter(Boolean):[];
+        if(PR.length){h=h.replace(subQ('Recoge aquí · pedido '+U.ref(id)),subQ('Punto 1 de '+(PR.length+1)+' · pedido '+U.ref(id)));
+          const listos=PR.filter(x=>x.recogido_en).length;
+          h+=U.st(listos===PR.length?'Recogió en los '+(PR.length+1)+' puntos':'Recogido en '+listos+' de '+PR.length+' puntos adicionales',listos===PR.length?'ok':'');
+          PR.forEach(x=>{h+=`<div class="sum"><div class="lbl">Punto ${E(x.n)} de ${PR.length+1}${x.recogido_en?' · recogido '+E(U.hora(x.recogido_en)):''}</div>`+
+            (x.nombre?li('Entrega',E(x.nombre)):'')+(x.direccion?li('Dirección',E(x.direccion)):'')+(x.referencia?li('Referencia',E(x.referencia)):'')+(x.que?li('Se recoge',E(x.que)):'')+`</div>`+
+            U.contact(U.maps(x.lat,x.lng,x.direccion,LK(x.ubicacion)),x.telefono,'')});
+          s.sum=(listos===PR.length&&e>2?'Recogido en '+(PR.length+1)+' puntos':s.sum)}
         if(t==='recojo'&&notas.length)h+=sumBox('Notas del servicio',txt(notas.join(' · ')));
         if(t==='enc'){h+=sumBox('Paquetes',pks.map(p=>li('Paquete '+p.numero,E([p.agencia,p.destino].filter(Boolean).join(' → ')||'—'))).join(''))}
         if(alRec)h+=o.pago_confirmado===true?U.st('Cobro al recoger registrado · '+M(o.total)+' · '+metodo,'ok'):U.st('Cobra '+M(o.total)+' al recoger ('+(mom==='recojo_yape'?'Yape':'efectivo')+')');
