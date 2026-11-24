@@ -91,6 +91,10 @@
   }
   /* Solo admin: los pasos del motorizado que aún no llegan se pueden abrir para revisar los datos */
   /* Ubicación de las agencias (la que se marca en Más › Agencias o en el formulario de encomienda) */
+  /* Yape de Pidemás (Más › QR Yape): número y titular para el mensaje de cobro */
+  const YC={d:null,p:null};
+  function yapeCfgP(){if(!YC.d&&!YC.p)YC.p=fetch('https://escxesvzndmyfuteawey.supabase.co/storage/v1/object/public/restaurantes/config/yape.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():{}).then(j=>{YC.d=j||{};try{if(PdPasos.isOpen())PdPasos.render()}catch(_){}}).catch(()=>{YC.d={}});
+    return Object.assign({numero:'986233533',titular:'Grupo Pidemás EIRL',url:''},YC.d||{})}
   const AGU={d:null,p:null};
   const agClaveU=n=>String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
   function agUbi(nom){
@@ -209,11 +213,25 @@
        al final, aquí se registra el Yape del cliente. */
     const PY=window.PdYapeP;
     const qY=t==='enc'&&delPag?{dest:'agencia',titulo:'Prueba del Yape del envío'}:null;
+    /* mensaje automático de WhatsApp con lo que el cliente tiene pendiente de pagar a Pidemás */
+    const cobroWa=()=>{const cliT=o.telefono_cliente||o.telefono_remitente,cliN=o.nombre_cliente||o.nombre_remitente||'',tel=String(cliT||'').replace(/\D/g,'');
+      if(!tel)return U.note('El cliente no tiene teléfono registrado para enviarle el cobro.');
+      const L=[];if(!agCob)procAg.filter(x=>x&&x.pago_en&&Number(x.pago_monto)>0).forEach(x=>{const ps=pks.filter(p=>agK(p.agencia)===agK(x.agencia)),pp=x.pago_paquetes||{};
+          if(ps.length>1&&ps.every(p=>pp[p.numero]!=null))ps.forEach(p=>L.push('• Envío en '+x.agencia+' (paquete '+p.numero+' → '+(p.destino||'—')+'): '+M(pp[p.numero])));
+          else L.push('• Envío en '+x.agencia+(ps.length?' (paquete'+(ps.length>1?'s ':' ')+ps.map(p=>p.numero).join(' y ')+' → '+ps.map(p=>p.destino||'—').join(', ')+')':'')+': '+M(x.pago_monto))});
+      if(!agCob&&!L.length&&agTot>0)L.push('• Envío pagado en agencia: '+M(agTot));
+      if(!delPag)L.push('• Delivery Pidemás: '+M(o.total));
+      const y=yapeCfgP();
+      const txt=['Hola'+(cliN?' '+String(cliN).split(' ')[0]:'')+', te escribimos de *Pidemás* por tu encomienda '+U.ref(id)+'.','','Tienes pendiente de pago:',...L,'*Total a pagar: '+M(pendTot)+'*','',
+        'Puedes pagar por Yape a Pidemás:','📱 '+y.numero+(y.titular?' · '+y.titular:''),...(y.url?['QR: '+y.url]:[]),'','Cuando pagues, envíanos la captura del Yape por aquí. ¡Gracias!'].join('\n');
+      return `<a class="b g" style="display:flex;width:100%;box-sizing:border-box;justify-content:center" href="https://wa.me/${tel.length===9?'51'+tel:tel}?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">Enviar cobro al cliente por WhatsApp</a>`};
     const yapeAdm=()=>{if(!PY)return '';let h=PY.yaTiene(o)?PY.html(o):'';
       if(t==='enc'&&o.pago_agencia_prueba)h+=PY.html(o,{dest:'agencia',titulo:'Prueba del Yape del envío'});
       if(t==='enc'&&guias&&pendTot>0.004&&st(o)!=='cancelado')h+=`<div class="amt"><div class="k">El cliente debe pagar a Pidemás</div><div class="n">${M(pendTot)}</div><div class="pill">Por Yape · después de recibir la guía y la clave</div></div>`+
         sumBox('Detalle del cobro',(agTot>0&&!agCob?li('Envío pagado en agencias',M(agTot)):'')+(!delPag?li('Delivery Pidemás',M(o.total)):'')+li('Total a cobrar',M(pendTot),1))+
         (agTot>0&&!agCob&&delPag?U.note('El delivery ya está pagado; falta lo que Pidemás pagó en la agencia.'):'')+
+        cobroWa()+
+        U.note('Cuando el cliente te mande la captura del Yape, súbela aquí y registra el pago.')+
         PY.html(o,qY)+`<button type="button" class="b o" data-act="yfReg">Registrar pago por Yape · ${M(pendTot)}</button>`;
       return h};
     /* Pagos en agencias: una tarjeta por agencia (monto, paquetes, horas) y el total; dice si el cliente ya lo devolvió */
