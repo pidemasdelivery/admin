@@ -480,9 +480,13 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(q.error||!q.data||!q.data.length){CJ.msg='No se pudo registrar: '+(q.error?q.error.message:'Supabase no confirmó el registro.');return}
       CJ.rec='';CJ.recNota='';await recargaMoto();CJ.ok=total?'Caja recibida. Empieza una caja nueva.':'Entrega parcial registrada.';return}
     if(A.startsWith('cj:dia:')){const k=A.slice(7),D2=porDias(P,P.split(c.data.by.get(String(m.id))||[]).current).find(d=>d.k===k);if(!D2||!(D2.saldo>0.004)){CJ.msg='Ese día no tiene efectivo por recibir.';return}
-      const v=D2.saldo,total=Math.abs(v-bal)<0.005;
+      /* Si es el día más antiguo de la caja, se cierra la caja de ESE día (con la hora de su último movimiento):
+         los movimientos de los días siguientes quedan en la caja abierta. Si no, queda como entrega parcial. */
+      const curL=P.split(c.data.by.get(String(m.id))||[]).current,diasOrd=[...new Set(curL.map(diaDe))].sort(),masAntiguo=diasOrd[0]===k;
+      const delDia=curL.filter(x=>diaDe(x)===k),ultimo=delDia.reduce((t,x)=>{const d=new Date(x.creado_en||x.created_at||0).getTime();return d>t?d:t},0);
+      const cierra=masAntiguo&&ultimo>0,total=cierra||Math.abs(v-bal)<0.005;
       if(!(await conf('¿Recibir la caja del '+diaTxt(k).replace(/^(Hoy|Ayer) · /,'')+' de '+nom+' por '+M(v)+'?\nLos demás días quedan como están.')))return;
-      const q=await D().from('movimientos_caja').insert(Object.assign({motorizado_id:m.id,tipo:'retiro',monto:v,descripcion:(total?'LIQUIDACIÓN DE CAJA':'ENTREGA PARCIAL DE CAJA')+' · Día '+k},total?{esperado:bal,recibido:v,diferencia:0}:{})).select('id');
+      const q=await D().from('movimientos_caja').insert(Object.assign({motorizado_id:m.id,tipo:'retiro',monto:v,descripcion:(total?'LIQUIDACIÓN DE CAJA':'ENTREGA PARCIAL DE CAJA')+' · Día '+k},total?{esperado:v,recibido:v,diferencia:0}:{},cierra?{creado_en:new Date(ultimo+1).toISOString()}:{})).select('id');
       if(q.error||!q.data||!q.data.length){CJ.msg='No se pudo registrar: '+(q.error?q.error.message:'Supabase no confirmó el registro.');return}
       CJ.rec='';await recargaMoto();CJ.ok='Caja del '+diaTxt(k).replace(/^(Hoy|Ayer) · /,'')+' recibida · '+M(v)+'.'+(total?' La caja queda en S/ 0.00.':'');return}
     if(A==='cj:dif'){const v=P.r2(Number(String(CJ.rec).replace(',','.'))||0),d=P.r2(v-bal);if(!(v>0)||Math.abs(d)<0.005)return;
