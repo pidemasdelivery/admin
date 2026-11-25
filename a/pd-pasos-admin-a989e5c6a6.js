@@ -232,12 +232,12 @@
         const L=[{n:1,nombre:lugar||'Lugar no indicado',que:det,hecho:o.punto1_listo_en,monto:o.punto1_monto,foto:o.punto1_foto_url,url:lugar||LK(lr)||LK(o.ubicacion_recojo)?U.maps(o.latitud_recojo,o.longitud_recojo,lugar,LK(lr)||LK(o.ubicacion_recojo)):''}]
           .concat(PRa.map(x=>({n:x.n,nombre:x.nombre||'Lugar '+x.n,que:x.que,obs:x.obs,cd:x.costo_delivery,hecho:x.recogido_en,monto:x.monto,foto:x.foto_url,url:x.lat&&x.lng||x.ubicacion?U.maps(x.lat,x.lng,x.nombre,LK(x.ubicacion)):''})));
         L.forEach(q=>{h+=`<div class="sum" style="gap:10px"><div class="lbl">${L.length>1?'Lugar '+q.n+' de '+L.length+(q.hecho?' · comprado'+E(hr(q.hecho)):''):'Lugar de compra'}</div>`+
-          U.who(q.nombre,'Compra aquí'+(q.n===1?' · pedido '+E(U.ref(id)):''),'')+(L.length>1&&(()=>{const ok=PRa.every(x=>x.costo_delivery!=null&&x.costo_delivery!=='');if(!ok)return false;q.cd1=q.n===1?Math.max(0,Math.round((serv0-PRa.reduce((a,x)=>a+(Number(x.costo_delivery)||0),0))*100)/100):Number(q.cd);return true})()?li('Delivery de este lugar',M(q.cd1)):'')+`<div class="lbl" style="margin-top:4px">Qué comprar</div>`+txt(q.que||'—')+(q.n===1?fotosC(o):'')+
+          U.who(q.nombre,'Compra aquí'+(q.n===1?' · pedido '+E(U.ref(id)):''),'')+btnIr(q.url,L.length>1?'Ir al lugar '+q.n:'Ir al lugar de compra')+(L.length>1&&(()=>{const ok=PRa.every(x=>x.costo_delivery!=null&&x.costo_delivery!=='');if(!ok)return false;q.cd1=q.n===1?Math.max(0,Math.round((serv0-PRa.reduce((a,x)=>a+(Number(x.costo_delivery)||0),0))*100)/100):Number(q.cd);return true})()?li('Delivery de este lugar',M(q.cd1)):'')+`<div class="lbl" style="margin-top:4px">Qué comprar</div>`+txt(q.que||'—')+(q.n===1?fotosC(o):'')+
           ((q.n===1?notas.join(' · '):q.obs)?`<div class="lbl" style="margin-top:4px">Observaciones</div>`+txt(q.n===1?notas.join(' · '):q.obs):'')+(q.monto!=null&&q.monto!==''?(()=>{const cliT=String(o.telefono_cliente||o.telefono_remitente||'').replace(/\D/g,''),cliN=String(o.nombre_cliente||o.nombre_remitente||'').split(' ')[0];
             const txW='Hola'+(cliN?' '+cliN:'')+', te escribimos de Pidemás. Tu compra '+U.ref(id)+' en '+q.nombre+': se gastó '+M(q.monto)+'.'+(q.foto?'\nFoto de la boleta: '+q.foto:''),wa=cliT&&q.foto?'https://wa.me/'+(cliT.length===9?'51'+cliT:cliT)+'?text='+encodeURIComponent(txW):'';
             return `<div style="display:flex;gap:12px;align-items:center">`+(q.foto?`<a href="${E(q.foto)}" target="_blank" rel="noopener" style="flex:0 0 84px"><img src="${E(q.foto)}" alt="Boleta del lugar ${q.n}" style="width:84px;height:84px;object-fit:cover;border-radius:12px;display:block"></a>`:'')+
               `<div style="flex:1;min-width:0;display:flex;flex-direction:column">`+li('Gastado',M(q.monto))+li('Boleta',q.foto?'Guardada ✓':'Sin boleta')+`</div></div>`+(!(sub0>0)?U.note('El motorizado puede cambiar este monto hasta registrar la compra.'):'')+
-              (wa?`<a class="b o" style="display:flex;width:100%;box-sizing:border-box;justify-content:center" href="${E(wa)}" target="_blank" rel="noopener">Enviar boleta al cliente por WhatsApp</a>`:'')})():(e>=2&&!(sub0>0)?U.st('Falta que el motorizado guarde lo gastado aquí'):'')+btnIr(q.url,L.length>1?'Ir al lugar '+q.n:'Ir al lugar de compra'))+`</div>`});
+              (wa?`<a class="b o" style="display:flex;width:100%;box-sizing:border-box;justify-content:center" href="${E(wa)}" target="_blank" rel="noopener">Enviar boleta al cliente por WhatsApp</a>`:'')})():(e>=2&&!(sub0>0)?U.st('Falta que el motorizado guarde lo gastado aquí'):''))+`</div>`});
         h+=compBox();
         if(!(sub0>0)&&e>=2){const LL=L.filter(q=>q.monto!=null&&q.monto!=='');h+=LL.length?U.st('Gastado hasta ahora · '+M(LL.reduce((a,q)=>a+(Number(q.monto)||0),0))+(LL.length<L.length?' ('+LL.length+' de '+L.length+' lugares)':' · falta que registre la compra')):U.note('El motorizado guarda aquí lo que gastó en cada lugar y la foto de la boleta.')}
       }else if(t==='enc'){
@@ -256,8 +256,9 @@
           const L=[{n:1,nombre:remN,direccion:o.direccion_recojo,referencia:o.referencia_recojo,a_nombre:aNom,telefono:remT,costo_delivery:exOk?Math.max(0,Math.round(((Number(o.total)||0)-ex)*100)/100):null,lat:o.latitud_recojo,lng:o.longitud_recojo,ubicacion:o.ubicacion_recojo,hecho:o.punto1_listo_en||(e>2?o.en_camino_en||'ok':null),paga:!pg}].concat(PRa.map(x=>Object.assign({},x,{hecho:x.recogido_en,paga:!!x.paga_aqui})));
           L.forEach(q=>{h+=`<div class="sum" style="gap:10px"><div class="lbl">Punto ${E(q.n)} de ${L.length}${q.hecho?' · recogido'+(q.hecho!=='ok'?E(hr(q.hecho)):''):''}</div>`+
             U.who(q.nombre||'Punto '+q.n,'Recojo aquí'+(q.n===1?' · pedido '+E(U.ref(id)):''),'',true)+U.addr(q.direccion,q.referencia)+
+            U.contact(U.maps(q.lat,q.lng,q.direccion,LK(q.ubicacion)),q.telefono,'')+
             (q.a_nombre?li('Pedido a nombre de',E(q.a_nombre)):'')+(q.costo_delivery!=null&&q.costo_delivery!==''?li('Delivery de este punto',M(q.costo_delivery)):'')+(alRec&&q.paga?li('Paga el servicio','Aquí · '+M(o.total)):'')+
-            U.contact(U.maps(q.lat,q.lng,q.direccion,LK(q.ubicacion)),q.telefono,'')+`</div>`});
+            `</div>`});
         }else h+=U.who(remN,subQ('Recojo aquí · pedido '+U.ref(id)),'',true)+U.addr(o.direccion_recojo,o.referencia_recojo)+U.contact(U.maps(o.latitud_recojo,o.longitud_recojo,o.direccion_recojo,LK(o.ubicacion_recojo)),remT,'');
         if(notas.length)h+=sumBox('Notas del servicio',txt(notas.join(' · ')));
         h+=cobroRec();
@@ -381,13 +382,12 @@
     const resumen=`<div class="sum"><div class="lbl">Resumen</div><div class="li"><span>Cliente</span><b>${E(cli)}</b></div><div class="li"><span>Productos</span><b>${M(o.subtotal)}</b></div><div class="li"><span>Delivery</span><b>${M(o.costo_delivery)}</b></div><div class="li t"><span>Total · ${E(yape?'Yape':'Efectivo')}</span><b>${M(o.total)}</b></div></div>`;
     /* 1 */
     {const s=steps[0];s.sum=negNom+' aceptó'+(o.tiempo_preparacion_min?' · listo en '+o.tiempo_preparacion_min+' min':'');
-      s.body=U.who(negNom,'Recojo aquí · pedido '+E(U.ref(id)),n.logo_url||n.imagen_url||'')+U.addr(n.direccion,'')+resumen+
+      s.body=U.who(negNom,'Recojo aquí · pedido '+E(U.ref(id)),n.logo_url||n.imagen_url||'')+U.addr(n.direccion,'')+U.contact(U.maps(n.latitud,n.longitud,n.direccion,LK(n.google_maps_url)),n.telefono,'Hola, te escribimos de Pidemás por el pedido '+U.ref(id)+'.')+resumen+
         (st(o)==='pendiente'?U.st('Esperando que el negocio acepte. También puedes aceptarlo tú por el negocio.')+
           (()=>{const OT=opcTiempo(n);if(!tiempoSel[id])tiempoSel[id]=OT.def.n;const PO=opcPago(o,n);if(PO.length===1)pagoSel[id]=PO[0][0];
             return `<div><div class="lbl">¿En cuánto estará listo?</div><div class="grid4" style="grid-template-columns:repeat(${OT.ops.length},minmax(0,1fr))">${OT.ops.map(x=>`<button type="button" data-act="tiempo" data-n="${x.n}" class="${x.n===tiempoSel[id]?'on':''}">${E(x.t)}</button>`).join('')}</div></div>`+
               `<div><div class="lbl">¿Cómo cobra el motorizado?</div><div class="opts">${PO.map(x=>`<button type="button" data-act="pago" class="opt${x[0]===pagoSel[id]?' on':''}" data-k="${x[0]}"${x[3]?' disabled style="opacity:.5"':''}><b>${E(x[1])}</b><span>${E(x[2])}</span></button>`).join('')}</div></div>`+
-              U.note('Llama o escribe al negocio para confirmar que puede atenderlo antes de aceptarlo.')})():U.st('El negocio aceptó'+(o.tiempo_preparacion_min?' · listo en '+o.tiempo_preparacion_min+' min':'')+(pa?' · '+E(metodo):''),'ok'))+
-        U.contact(U.maps(n.latitud,n.longitud,n.direccion,LK(n.google_maps_url)),n.telefono,'Hola, te escribimos de Pidemás por el pedido '+U.ref(id)+'.');}
+              U.note('Llama o escribe al negocio para confirmar que puede atenderlo antes de aceptarlo.')})():U.st('El negocio aceptó'+(o.tiempo_preparacion_min?' · listo en '+o.tiempo_preparacion_min+' min':'')+(pa?' · '+E(metodo):''),'ok'));}
     /* 2 */
     {const s=steps[1];s.locked='Se muestra cuando el negocio confirme';s.sum='Asignado a '+mn;
       if(e===1){
