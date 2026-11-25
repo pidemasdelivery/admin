@@ -1034,7 +1034,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(b.tipo==='recojo'){const k=(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).findIndex(x=>x&&x.paga_aqui);b.pagapt=String(k>=0?k+2:1)}
     else if(b.tipo==='compra')Object.assign(b,{nom:o.nombre_cliente||'',tel:o.telefono_cliente||'',dir:o.direccion_entrega||'',ref:o.referencia_entrega||'',ubi:o.ubicacion_entrega||tagDe(obs,'Ubicación','Ubicación del cliente'),
       lugar:o.direccion_recojo||o.lugar_compra||tagDe(obs,'Lugar de compra'),detalle:o.detalle_compra||tagDe(obs,'Compra solicitada'),obs:libreDe(obs),comp:o.tipo_comprobante||tagDe(obs,'Comprobante').replace(/^No especificado$/i,''),doc:o.documento_comprobante||tagDe(obs,'DNI/RUC'),cnom:tagDe(obs,'Nombre comprobante'),craz:tagDe(obs,'Razón social'),cdir:tagDe(obs,'Dirección fiscal'),pago:met,pts:(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).filter(Boolean).map(x=>({nom:x.nombre||'',ubi:x.ubicacion||'',que:x.que||'',obs:x.obs||'',cd:x.costo_delivery==null?'':String(x.costo_delivery)}))});
-    if(b.tipo==='compra'&&b.pago==='pagado')b.pago='efectivo';
+    if(b.tipo==='compra'){b.fotos=Array.isArray(o.compra_fotos)?o.compra_fotos.slice():[];if(b.pago==='pagado')b.pago='efectivo'}
     if(b.tipo==='compra'){const mu=String(b.lugar||'').match(/https?:\/\/\S+/);b.lugarUrl=mu?mu[0]:'';b.lugar=String(b.lugar||'').replace(/https?:\/\/\S+/g,'').replace(/[\s·–-]+$/,'').trim()}
     else{const m=String(o.pago_servicio_momento||'').toLowerCase();
       Object.assign(b,{rnom:o.nombre_remitente||o.nombre_cliente||'',rdni:o.dni_remitente||tagDe(obs,'DNI de quien envía'),rtel:o.telefono_remitente||o.telefono_cliente||'',rdir:o.direccion_recojo||'',rref:o.referencia_recojo||tagDe(obs,'Referencia de recojo'),rubi:o.ubicacion_recojo||tagDe(obs,'Ubicación de recojo'),
@@ -1083,6 +1083,12 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     return `<span style="color:#6B5E55">Así el motorizado sabe cuánto sencillo llevar.</span>`}
   function svcForm(f){
     const fl=(id,l,k,ph,o)=>`<div class="fld"><label for="${id}">${l}</label><input id="${id}" value="${E(f[k]??'')}" data-in="pe:${k}"${ph?` placeholder="${E(ph)}"`:''}${o||''}></div>`;
+    const fotosCompra=f=>{const L=f.fotos||[];
+      return `<div class="fld"><label>Fotos de la compra <span style="font-weight:500;color:#6B5E55">(opcional)</span></label>`+
+        (L.length?`<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">${L.map((u,i)=>`<div style="position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;border:1px solid #F1E4DA;background:#FFF9F5"><img src="${E(u)}" alt="Foto ${i+1} de la compra" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><button type="button" data-a="pe:fotox:${i}" aria-label="Quitar foto ${i+1}" style="position:absolute;top:4px;right:4px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(31,26,23,.72);color:#FFFFFF;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer">×</button></div>`).join('')}</div>`:'')+
+        (f.subiendo?`<div class="load">Subiendo ${f.subiendo} foto${f.subiendo===1?'':'s'}…</div>`:'')+
+        `<label class="b" style="height:50px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer">${IC.plus}${L.length?'Agregar más fotos':'Agregar fotos'}<input type="file" accept="image/*" multiple data-foto-compra="1" hidden></label>`+
+        `<span style="font-size:13px;color:#6B5E55">Fotos del producto, la lista o la marca, para que el motorizado compre lo correcto.</span></div>`};
     const ta=(id,l,k,ph)=>`<div class="fld"><label for="${id}">${l}</label><textarea id="${id}" data-in="pe:${k}" placeholder="${E(ph||'')}" style="min-height:96px;padding:14px 16px;border-radius:14px;border:1.5px solid #F1E4DA;font:inherit;font-size:16px;width:100%;box-sizing:border-box">${E(f[k]??'')}</textarea></div>`;
     const sl=(id,l,k,ops,ph)=>`<div class="fld"><label for="${id}">${l}</label><select id="${id}" data-in="pe:${k}" style="height:56px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px;font-weight:700;width:100%;background:#fff">${ph?`<option value="">${E(ph)}</option>`:''}${ops.map(x=>`<option value="${E(x[0])}"${String(f[k])===String(x[0])?' selected':''}>${E(x[1])}</option>`).join('')}${f[k]&&!ops.some(x=>String(x[0])===String(f[k]))?`<option value="${E(f[k])}" selected>${E(f[k])}</option>`:''}</select></div>`;
     const sg=(l,k,ops)=>`<div class="fld"><label>${l}</label><div class="opc">${ops.map(x=>`<button type="button" class="${String(f[k]??'').toLowerCase()===String(x[0]).toLowerCase()?'on':''}" data-a="pe:set:${k}:${E(x[0])}">${E(x[1])}</button>`).join('')}</div></div>`;
@@ -1134,7 +1140,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     }else if(f.tipo==='compra'){
       h+=card('Información del cliente',fl('peN','Nombre y apellido','nom','')+fl('peT','Teléfono','tel','',tel)+fl('peD','Dirección','dir','')+fl('peR','Referencia','ref','Ej. frente a la bodega, casa verde')+fl('peU','Ubicación (Google Maps)','ubi','Pega el enlace de Google Maps')+mp('ubi','dir','Lugar de entrega de la compra'));
       {const nS=(f.pts||[]).length;const masSit=k=>k===nS&&nS<5?`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:pt+">${IC.plus}Agregar otro lugar de compra</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si se compra en un solo lugar, toca «Siguiente».</span>`:'';
-        h+=card('Información de la compra',(nS?`<span style="font-size:13px;color:#6B5E55">Lugar 1 de ${nS+1}</span>`:'')+fl('peLg','¿De dónde desea la compra?','lugar','')+fl('peLu','Ubicación del lugar (Google Maps)','lugarUrl','Pega el enlace de Google Maps')+mp('lugarUrl','lugar','Dónde se hace la compra')+ta('peDt','¿Qué desea que compremos?','detalle','')+ta('peOb','Observaciones','obs','')+masSit(0));
+        h+=card('Información de la compra',(nS?`<span style="font-size:13px;color:#6B5E55">Lugar 1 de ${nS+1}</span>`:'')+fl('peLg','¿De dónde desea la compra?','lugar','')+fl('peLu','Ubicación del lugar (Google Maps)','lugarUrl','Pega el enlace de Google Maps')+mp('lugarUrl','lugar','Dónde se hace la compra')+ta('peDt','¿Qué desea que compremos?','detalle','')+fotosCompra(f)+ta('peOb','Observaciones','obs','')+masSit(0));
         (f.pts||[]).forEach((q,i)=>{h+=card('Información de la compra · lugar '+(i+2),nsSitioForm(f,i)+`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:ptx:${i}">Quitar este lugar</button>`+masSit(i+1))})}
       h+=compCard();
       h+=costo;
@@ -1152,6 +1158,15 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(f.msg)h+=`<div class="err">${E(f.msg)}</div>`;
     return h;
   }
+  /* Fotos de la compra: se achican (máx. 1600 px, JPG) y se suben a restaurantes/compras/ */
+  function achicarFoto(fl){return new Promise(res=>{try{const u=URL.createObjectURL(fl),im=new Image();im.onload=()=>{try{const k=Math.min(1,1600/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>res(b||fl),'image/jpeg',0.82)}catch(_){res(fl)}};im.onerror=()=>{URL.revokeObjectURL(u);res(fl)};im.src=u}catch(_){res(fl)}})}
+  async function fotosCompraCambio(e){const i=e.target;if(!i||!i.dataset||!i.dataset.fotoCompra||!PE.f)return;const f=PE.f;
+    const fs=[...(i.files||[])].filter(x=>/^image\//.test(x.type)).slice(0,10);i.value='';if(!fs.length)return;
+    f.fotos=f.fotos||[];f.subiendo=(f.subiendo||0)+fs.length;f.msg='';key='';pintar();
+    for(const fl of fs){try{const bl=await achicarFoto(fl),path='compras/'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.jpg';
+        const up=await D().storage.from('restaurantes').upload(path,bl,{contentType:bl.type||'image/jpeg',upsert:false});if(up.error)throw up.error;
+        f.fotos.push(D().storage.from('restaurantes').getPublicUrl(path).data.publicUrl)}catch(err){f.msg='No se pudo subir una foto: '+(err?.message||err)}
+      f.subiendo=Math.max(0,f.subiendo-1);key='';pintar()}}
   function svcPayload(f,o){
     const n=v=>{const x=Number(String(v??'').replace(',','.'));return Number.isFinite(x)&&x>=0?Math.round(x*100)/100:0};
     if(cdMulti(f)){const su=cdSuma(f);if(!Number.isFinite(su)){f.msg='Escribe el delivery de cada paquete.';return false}f.costo=String(su)}
@@ -1173,7 +1188,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       p.puntos_recojo=nsPuntosPayload(f,o);
     }else if(f.tipo==='compra'){
       if(!f.nom.trim()){f.msg='Escribe el nombre del cliente.';return false}
-      p={nombre_cliente:f.nom.trim(),telefono_cliente:f.tel.trim(),nombre_remitente:f.nom.trim(),telefono_remitente:f.tel.trim(),direccion_entrega:f.dir.trim(),referencia_entrega:f.ref.trim()||null,ubicacion_entrega:f.ubi.trim()||null,
+      p={compra_fotos:Array.isArray(f.fotos)?f.fotos.slice(0,20):[],nombre_cliente:f.nom.trim(),telefono_cliente:f.tel.trim(),nombre_remitente:f.nom.trim(),telefono_remitente:f.tel.trim(),direccion_entrega:f.dir.trim(),referencia_entrega:f.ref.trim()||null,ubicacion_entrega:f.ubi.trim()||null,
         direccion_recojo:[f.lugar.trim(),String(f.lugarUrl||'').trim()].filter(Boolean).join(' · '),tipo_comprobante:f.comp||null,documento_comprobante:f.doc.trim()||null,costo_delivery:costo,total:Math.round((n(o.subtotal)+costo)*100)/100,metodo_pago:f.pago==='al_final'?'yape':pagado?'efectivo':f.pago,pago_servicio_momento:f.pago==='al_final'?'al_final':null};
       const cpT=String(f.comp||'').toLowerCase();
       obs=rehacerObs(obs,{'Ubicación':f.ubi,'Compra solicitada':f.detalle,'Comprobante':f.comp||'No especificado','DNI/RUC':cpT?f.doc:'','Nombre comprobante':cpT==='boleta'?f.cnom:'','Razón social':cpT==='factura'?f.craz:'','Dirección fiscal':cpT==='factura'?f.cdir:''},f.obs);
@@ -1441,7 +1456,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     p.pago_modalidad=f.pago==='pagado'?'pagado':String(p.metodo_pago||'');
     p.quien_paga=f.tipo==='compra'?'cliente':f.tipo==='enc'?'envia':(f.pago==='pagado'?null:f.quien);
     let r=await conTiempo(D().from('pedidos').insert(p).select('id').single());
-    if(r.error&&/column|schema cache|PGRST204|42703/i.test(String(r.error.message)+String(r.error.code))){SVC_OPC.concat(['paquetes_extra','motorizado_nombre','asignado_en','lugar_compra','detalle_compra','pago_modalidad']).forEach(k=>delete p[k]);r=await conTiempo(D().from('pedidos').insert(p).select('id').single())}
+    if(r.error&&/column|schema cache|PGRST204|42703/i.test(String(r.error.message)+String(r.error.code))){SVC_OPC.concat(['paquetes_extra','motorizado_nombre','asignado_en','lugar_compra','detalle_compra','pago_modalidad','compra_fotos']).forEach(k=>delete p[k]);r=await conTiempo(D().from('pedidos').insert(p).select('id').single())}
     if(r.error)throw r.error;const id=r.data.id;
     if(moto){
       if(moto.usuario_id){const t=f.tipo==='compra'?'Nueva compra asignada':f.tipo==='enc'?'Nueva encomienda asignada':'Nuevo servicio de recojo y entrega';D().from('notificaciones').insert({usuario_id:moto.usuario_id,pedido_id:id,tipo:'pedido_asignado',titulo:t,mensaje:'Tienes '+(f.tipo==='compra'?'una nueva compra asignada.':f.tipo==='enc'?'una nueva encomienda asignada.':'un nuevo servicio de recojo y entrega asignado.'),leida:false}).then(()=>{},()=>{})}
@@ -2676,7 +2691,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
       host=document.createElement('pd-app-adm');
       const wrap=document.createElement('header');wrap.id='pdAppShell';wrap.style.cssText='display:contents';wrap.appendChild(host);document.body.appendChild(wrap);
       root=host.attachShadow({mode:'open'});{const ocultarViejo=()=>{const t=document.getElementById('pdInicioTop');if(t&&t.style.getPropertyValue('display')!=='none')t.style.setProperty('display','none','important')};ocultarViejo();setInterval(ocultarViejo,1500)}try{PdPasos.flechas(root)}catch(_){}
-      root.addEventListener('click',clic);root.addEventListener('input',entrada);
+      root.addEventListener('click',clic);root.addEventListener('input',entrada);root.addEventListener('change',fotosCompraCambio);
       root.addEventListener('pointerdown',()=>{tocando=Date.now()});root.addEventListener('pointerup',()=>setTimeout(()=>{tocando=false},150),true);root.addEventListener('click',()=>setTimeout(()=>{tocando=false},60),true);root.addEventListener('pointercancel',()=>{tocando=false});
     }
     if(host.style.display==='none')host.style.display='';
@@ -2822,6 +2837,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
           const t=T.calcular({km,destino:dest,aproximado:aprox});f.costo=t.total.toFixed(2);
           f.tf={t:'<b>'+M(t.total)+'</b>'+(km?' · '+km.toFixed(2)+' km'+(aprox?' (aprox.)':''):'')+(t.zona?' · Zona '+E(t.zona):'')+(orig?'':' · Sin ubicación de '+(f.tipo==='compra'?'la compra':'recojo')+': tarifa base o de zona')}}}
       catch(err){f.tf={mal:1,t:'No se pudo calcular: '+E(err?.message||err)}}key='';pintar();return}
+    if(PE.f&&a.dataset.a.startsWith('pe:fotox:')){(PE.f.fotos||[]).splice(+a.dataset.a.slice(9),1);key='';pintar();return}
     if(PE.f&&a.dataset.a==='pe:pt+'){const f=PE.f;f.pts=f.pts||[];if(f.pts.length<5){f.pts.push({nom:'',tel:'',dir:'',ref:'',ubi:'',que:'',anom:'',cd:''});if(f.nuevo)f.paso=nsPasos(f).indexOf((f.tipo==='compra'?'Información de la compra · lugar ':'Punto de recojo ')+(f.pts.length+1));f.msg=''}key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:ptx:')){(PE.f.pts||[]).splice(+a.dataset.a.slice(7),1);if(!PE.f.pts.length)PE.f.cdp='';if(+PE.f.pagapt>1+PE.f.pts.length)PE.f.pagapt='1';PE.f.paso=Math.min(PE.f.paso||0,nsPasos(PE.f).length-1);key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:ptmapa:')){const q=(PE.f.pts||[])[+a.dataset.a.slice(10)];const el2=window.pdMapa&&pdMapa.elegir;if(!q||!el2)return;
