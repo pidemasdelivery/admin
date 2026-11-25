@@ -201,7 +201,7 @@
     const gs=paq.filter(x=>x&&Number(x.numero)>0);
     if(!gs.some(x=>Number(x.numero)===1)&&o.guia_url&&o.guia_url!=='whatsapp')gs.push({numero:1,guia_url:o.guia_url,clave:String(o.clave_guia||'')==='SIN_CLAVE'?'':o.clave_guia,sin_clave:String(o.clave_guia||'')==='SIN_CLAVE'});
     const gDe=n=>gs.find(x=>Number(x.numero)===n);
-    const okG=x=>!!(x&&(x.enviado_whatsapp||(x.guia_url&&x.guia_url!=='whatsapp'&&(x.sin_clave||String(x.clave||'').trim()))));
+    const okG=x=>!!(x&&(x.enviado_whatsapp||((x.sin_guia||(x.guia_url&&x.guia_url!=='whatsapp'&&x.guia_url!=='sin_guia'))&&(x.sin_clave||String(x.clave||'').trim()))));
     const guias=pks.every(p=>okG(gDe(p.numero)));
     const titulos=t==='enc'?['Pedido recibido','Asignar motorizado','Recoger los paquetes','Agencia y guía','Cerrado']:['Pedido recibido','Asignar motorizado',t==='compra'?'Hacer la compra':'Recoger','Entrega y cobro','Cerrado'];
     const steps=titulos.map((tt,i)=>({title:tt,state:e===-1?'locked':e===4||i<e?'done':i===e?'active':'locked'}));
@@ -351,10 +351,10 @@
         const agsL=[...new Set(pks.map(p=>p.agencia).filter(Boolean))];
         s.body=(enAg?U.st(procAg.length?'Llegó a '+E(procAg.filter(x=>x.llegada_en).map(x=>x.agencia).join(' y '))+(procAg.length<agsL.length?' · falta '+E(agsL.filter(a=>!procAg.some(x=>String(x.agencia).toLowerCase()===String(a).toLowerCase())).join(' y ')):''):'Paquetes en la agencia '+E(o.agencia_destino||''),'ok'):U.st(E(mn)+(agsL.length>1?' va a las agencias '+E(agsL.join(' y ')):' va a la agencia '+E(o.agencia_destino||''))))
             .replace(/<\/span>(<\/div>)?$/,m=>(guias?' · guías completas, mándalas al cliente':enAg?' · esperando la guía y la clave':'')+m)+
-          pks.map(p=>{const g=gDe(p.numero),ruta=E([p.agencia,p.destino].filter(Boolean).join(' → ')||'Paquete'),foto=g&&g.guia_url&&g.guia_url!=='whatsapp'?g.guia_url:'';
+          pks.map(p=>{const g=gDe(p.numero),ruta=E([p.agencia,p.destino].filter(Boolean).join(' → ')||'Paquete'),foto=g&&g.guia_url&&g.guia_url!=='whatsapp'&&g.guia_url!=='sin_guia'&&!g.sin_guia?g.guia_url:'';
             if(!okG(g))return sumBox('Paquete '+p.numero+' · '+ruta,li('Guía','Aún no la sube'));
             const clv=g.sin_clave?'La agencia no dio clave':String(g.clave||'—');
-            if(!foto)return sumBox('Paquete '+p.numero+' · '+ruta,li('Guía','Enviada por WhatsApp')+li('Clave','Revisa tu WhatsApp'));
+            if(!foto&&!g.sin_guia)return sumBox('Paquete '+p.numero+' · '+ruta,li('Guía','Enviada por WhatsApp')+li('Clave','Revisa tu WhatsApp'));
             const cliT=o.telefono_cliente||o.telefono_remitente,cliN=o.nombre_cliente||o.nombre_remitente||'';
             const pq=pagoAg(p),grp=mismaAg(p).filter(y=>y.pago==='pago_en_agencia'),primero=grp[0]===p,pa=pq?pq.m:null,paLinea=!!pq&&(pq.solo||primero),del=p.cd;
             const pendG=Math.round(((paLinea&&!agCob?pa:0)+(del!=null&&!delPag?del:0))*100)/100,estado=ok=>ok?' ✅ pagado':' ⏳ pendiente';
@@ -362,10 +362,10 @@
               else if(p.pago==='pago_a_destino')mL.push('• Envío: se paga en la agencia al recoger en destino');
             if(del!=null)mL.push('• Delivery Pidemás: '+M(del)+estado(delPag));
             const montos=mL.length?'\n\n*Montos de esta guía*\n'+mL.join('\n')+((paLinea||del!=null)?(pendG>0.004?'\n*Por pagar a Pidemás: '+M(pendG)+'*':'\n*Esta guía ya está pagada* ✅'):''):'';
-            const txt='Hola'+(cliN?' '+String(cliN).split(' ')[0]:'')+', te escribimos de Pidemás. Tu encomienda '+U.ref(id)+(pks.length>1?' (paquete '+p.numero+')':'')+' ya está en la agencia '+(p.agencia||'')+'.\nDestino: '+(p.destino||'—')+'\nClave de recojo: '+clv+'\nFoto de la guía: '+foto+montos;
+            const txt='Hola'+(cliN?' '+String(cliN).split(' ')[0]:'')+', te escribimos de Pidemás. Tu encomienda '+U.ref(id)+(pks.length>1?' (paquete '+p.numero+')':'')+' ya está en la agencia '+(p.agencia||'')+'.\nDestino: '+(p.destino||'—')+'\nClave de recojo: '+clv+(foto?'\nFoto de la guía: '+foto:'\nGuía: la agencia no entregó guía; para recoger usa la clave y tu DNI.')+montos;
             const tel=String(cliT||'').replace(/\D/g,''),wa=tel?'https://wa.me/'+(tel.length===9?'51'+tel:tel)+'?text='+encodeURIComponent(txt):'';
-            return `<div class="sum"><div class="lbl">Paquete ${p.numero} · ${ruta}</div><div style="display:flex;gap:12px;align-items:center"><a href="${E(foto)}" target="_blank" rel="noopener" style="flex:0 0 84px"><img src="${E(foto)}" alt="Guía del paquete ${p.numero}" style="width:84px;height:84px;object-fit:cover;border-radius:12px;display:block"></a>`+
-              `<div style="flex:1;min-width:0;display:flex;flex-direction:column">`+li('Clave',g.sin_clave?'No dio clave':E(clv))+((paLinea||del!=null)?li('Por pagar',pendG>0.004?M(pendG):'Pagado ✓'):'')+`</div></div>`+
+            return `<div class="sum"><div class="lbl">Paquete ${p.numero} · ${ruta}</div><div style="display:flex;gap:12px;align-items:center">${foto?`<a href="${E(foto)}" target="_blank" rel="noopener" style="flex:0 0 84px"><img src="${E(foto)}" alt="Guía del paquete ${p.numero}" style="width:84px;height:84px;object-fit:cover;border-radius:12px;display:block"></a>`:''}`+
+              `<div style="flex:1;min-width:0;display:flex;flex-direction:column">`+(foto?'':li('Guía','La agencia no dio guía'))+li('Clave',g.sin_clave?'No dio clave':E(clv))+((paLinea||del!=null)?li('Por pagar',pendG>0.004?M(pendG):'Pagado ✓'):'')+`</div></div>`+
               (del==null&&pks.length>1?U.note('Este pedido se creó sin el delivery de cada paquete; el mensaje no lo incluye.'):'')+
               (wa?`<a class="b o" style="display:flex;width:100%;box-sizing:border-box;justify-content:center;margin-top:6px" href="${E(wa)}" target="_blank" rel="noopener">Enviar al cliente por WhatsApp</a>`:U.note('El cliente no tiene teléfono registrado.'))+`</div>`}).join('')+
           pagosAgHtml()+yapeAdm();}
