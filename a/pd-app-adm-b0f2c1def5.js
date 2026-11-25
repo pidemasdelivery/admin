@@ -972,7 +972,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(!((o.pago_confirmado===true&&Number(o.monto_recibido)>0)||String(o.estado||'').toLowerCase()==='entregado'))return;
       const tot=Math.round((Number(o.total)||0)*100)/100;if(!(tot>0))return;
       const {data:mv}=await D().from('movimientos_caja').select('id,tipo,monto,descripcion').eq('pedido_id',o.id).eq('motorizado_id',o.motorizado_id);
-      const L=mv||[],cobro=L.filter(x=>x.tipo==='ingreso'&&!/^(INGRESO MANUAL|EFECTIVO PARA COMPRA)/i.test(String(x.descripcion||''))).reduce((a,x)=>a+Number(x.monto||0),0),corr=L.filter(x=>/Corrección de pago/i.test(String(x.descripcion||''))).reduce((a,x)=>a+(x.tipo==='ingreso'?1:-1)*Number(x.monto||0),0);
+      const L=mv||[],cobro=L.filter(x=>x.tipo==='ingreso'&&!/^(INGRESO MANUAL|EFECTIVO PARA (?:COMPRA|ENCOMIENDA))/i.test(String(x.descripcion||''))).reduce((a,x)=>a+Number(x.monto||0),0),corr=L.filter(x=>/Corrección de pago/i.test(String(x.descripcion||''))).reduce((a,x)=>a+(x.tipo==='ingreso'?1:-1)*Number(x.monto||0),0);
       const enCaja=Math.round((cobro+(corr<0?corr:0))*100)/100;
       if(d==='efectivo'&&enCaja<0.005)await D().from('movimientos_caja').insert({motorizado_id:o.motorizado_id,pedido_id:o.id,tipo:'ingreso',monto:tot,descripcion:'Cobro de pedido · Corrección de pago: Yape → Efectivo (Pidemás) · total S/ '+tot.toFixed(2)});
       else if(d!=='efectivo'&&enCaja>0.004)await D().from('movimientos_caja').insert({motorizado_id:o.motorizado_id,pedido_id:o.id,tipo:'retiro',monto:enCaja,descripcion:'Corrección de pago: Efectivo → Yape (Pidemás) · ese cobro no fue en efectivo'});
@@ -997,7 +997,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const a=aCobrarDe(antes),d=aCobrarDe(o),dif=Math.round((d-a)*100)/100;if(Math.abs(dif)<0.005)return;
       const cobrado=(o.pago_confirmado===true&&antes.pago_confirmado===true)||String(o.estado||'').toLowerCase()==='entregado';if(!cobrado)return;
       if(String(o.metodo_pago||'').toLowerCase()==='efectivo'&&o.motorizado_id){
-        const {data:mv}=await D().from('movimientos_caja').select('id').eq('pedido_id',o.id).eq('motorizado_id',o.motorizado_id).eq('tipo','ingreso').not('descripcion','ilike','INGRESO MANUAL%').not('descripcion','ilike','EFECTIVO PARA COMPRA%').limit(1);
+        const {data:mv}=await D().from('movimientos_caja').select('id').eq('pedido_id',o.id).eq('motorizado_id',o.motorizado_id).eq('tipo','ingreso').not('descripcion','ilike','INGRESO MANUAL%').not('descripcion','ilike','EFECTIVO PARA %').limit(1);
         if(mv&&mv.length){const {error}=await D().from('movimientos_caja').insert({motorizado_id:o.motorizado_id,pedido_id:o.id,tipo:dif>0?'ingreso':'retiro',monto:Math.abs(dif),descripcion:'Corrección de monto (Pidemás) · Pedido '+ref(o.id)+' · antes S/ '+a.toFixed(2)+' · ahora S/ '+d.toFixed(2)});if(error)throw error}}
       else{const {data:c}=await D().from('cobros').select('id,yape_recibido_en').eq('pedido_id',o.id).maybeSingle();
         if(c&&!c.yape_recibido_en){const {error}=await D().from('cobros').update({monto:d}).eq('id',c.id);if(error)throw error}
