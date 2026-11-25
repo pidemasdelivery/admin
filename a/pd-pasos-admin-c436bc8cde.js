@@ -89,6 +89,10 @@
     const x=pdpL[0];el.innerHTML='<span style="flex:1;min-width:0">'+E((x.motorizado_nombre||'Un motorizado').split(' ')[0])+' pide que el cliente pague después · '+M(Number(x.total)||0)+(pdpL.length>1?' · +'+(pdpL.length-1)+' más':'')+'<br><span style="font-weight:600;opacity:.9">Toca para autorizar o rechazar</span></span>';
     el.style.display=PdPasos.isOpen&&PdPasos.isOpen()?'none':'flex'}
   setTimeout(pdpBuscar,3000);setInterval(pdpBuscar,20000);setInterval(pdpPintar,1500);
+  /* «hace X min» para saber cuánto lleva el motorizado donde el cliente */
+  const hace=t=>{const m=Math.max(0,Math.round((Date.now()-new Date(t).getTime())/60000));return m<1?'hace un momento':m<60?'hace '+m+' min':'hace '+Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'')};
+  const llego=(t,quien,mn,fin)=>{if(!t)return U.st(E(mn)+' llegó donde '+E(quien),'ok');const m=(Date.now()-new Date(t).getTime())/60000;
+    return U.st(E(mn)+' llegó donde '+E(quien)+' · '+U.hora(t)+(fin?'':' · '+hace(t)),!fin&&m>=10?'':'ok')+(!fin&&m>=10?U.note('Lleva '+hace(t).replace('hace ','')+' en la entrega. Si algo pasa, llámalo.'):'')};
   const km=(a,b,c,d)=>{if([a,b,c,d].some(v=>v==null||v===''||isNaN(v)))return null;const R=6371,r=x=>x*Math.PI/180,dl=r(c-a),dn=r(d-b);const h=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
   function etapa(o){
     const s=st(o);
@@ -371,7 +375,7 @@
           pagosAgHtml()+yapeAdm();}
       else{const cob=t==='compra'?(o.pago_confirmado===true&&!(Number(o.monto_recibido)>0)?0:tot0):cobra;
         s.sum=cob>0&&!alRec?'Cobrado '+M(cob)+' · '+metodo:'Entregado';
-        let h=e>=4||s0==='entregado'?U.st(E(mn)+' entregó a '+E(recN)+(o.entregado_en?' · '+U.hora(o.entregado_en):''),'ok'):['en_entrega','confirmando_pago'].includes(s0)?U.st(E(mn)+' llegó donde '+E(recN),'ok'):U.st(E(mn)+' va camino donde '+E(recN));
+        let h=e>=4||s0==='entregado'?U.st(E(mn)+' entregó a '+E(recN)+(o.entregado_en?' · '+U.hora(o.entregado_en):'')+(o.en_entrega_en&&o.entregado_en?' · esperó '+Math.max(0,Math.round((new Date(o.entregado_en)-new Date(o.en_entrega_en))/60000))+' min':''),'ok'):['en_entrega','confirmando_pago'].includes(s0)?llego(o.en_entrega_en,recN,mn,false):U.st(E(mn)+' va camino donde '+E(recN));
         if(mom==='al_final'){/* paga al final a Pidemás: el motorizado no cobra; queda en Cobros pendientes */
           h+=`<div class="amt"><div class="k">Paga al final a Pidemás</div><div class="n">${t==='compra'&&!(sub0>0)?'S/ —':M(tot0)}</div><div class="pill">${o.pago_confirmado===true?'Pagado':'Pendiente'}</div></div>`+(t==='compra'&&sub0>0?sumBox('Montos',li('Compra',M(sub0))+li('Servicio',M(serv0))+li('Total',M(tot0),1)):'');
           if(o.pago_confirmado===true)h+=U.st('El cliente ya pagó a Pidemás','ok');
@@ -461,7 +465,7 @@
     /* 4 */
     {const s=steps[3];s.locked='Se muestra cuando recoja el pedido';s.sum=cobra>0?'Cobrado '+M(cobra)+' · '+metodo:'Sin cobro al cliente';
       const qn=pa==='yape_negocio';
-      s.body=(o.en_entrega_en?U.st(E(mn)+' llegó donde '+E(cli)+' · '+U.hora(o.en_entrega_en),'ok'):U.st(E(mn)+' va camino donde '+E(cli)))+
+      s.body=(o.en_entrega_en?llego(o.en_entrega_en,cli,mn,st(o)==='entregado'):U.st(E(mn)+' va camino donde '+E(cli)))+
         (cobra>0?`<div class="amt"><div class="k">${pa==='solo_delivery'?'Cobro solo del delivery':'Cobro al cliente'}</div><div class="n">${M(cobra)}</div><div class="pill">${E(metodo)}</div></div>`+
           `<div class="sum"><div class="lbl">Montos</div><div class="li"><span>Productos</span><b>${pa==='solo_delivery'?'Pagado':M(o.subtotal)}</b></div><div class="li"><span>Delivery</span><b>${M(o.costo_delivery)}</b></div></div>`:U.st('El cliente ya pagó: no se cobra nada','ok'))+
         (qn?`<div class="qr" style="cursor:default"><span class="im"${n.yape_qr_url?` style="background-image:url('${E(n.yape_qr_url)}')"`:''}>${n.yape_qr_url?'':'QR'}</span><span class="t"><span class="k">Yape del negocio</span><span class="a">${E(n.yape_titular||negNom)}</span><span class="b2">${E(n.yape_numero||'')}</span></span></div>`+
