@@ -178,6 +178,9 @@ function elegir(o){
     try{const L2=await buscar(v);rs.innerHTML=L2.length?L2.map(r=>'<button type="button" data-a="res" data-r=\''+E(JSON.stringify({lat:r.lat,lng:r.lng}))+'\'>'+I.pin+'<span>'+E(r.nom)+'<small>'+E(r.sub)+'</small></span></button>').join(''):'<div class="nada">No encontramos ese lugar. Prueba con otra calle o mueve el mapa.</div>'}catch(e){rs.innerHTML='<div class="nada">No se pudo buscar. Mueve el mapa a mano.</div>'}};
    q.addEventListener('input',()=>{$('pdmcQx').hidden=!q.value;clearTimeout(tq);tq=setTimeout(correr,600)});
    q.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();clearTimeout(tq);correr()}});
+   /* al tocar o mover el mapa se cierra el teclado (el buscador pierde el foco) */
+   const sinTeclado=()=>{if(document.activeElement===q)q.blur()};
+   ['pointerdown','touchstart'].forEach(ev=>$('pdmcBig').addEventListener(ev,sinTeclado,{passive:true}));
   }
   document.body.appendChild(m);m.hidden=false;document.documentElement.style.overflow='hidden';document.body.classList.add('pdmc-abierto');
   $('pdmcTit').textContent=o.titulo||'Elige la ubicación';$('pdmcK').textContent=o.etiqueta||'Punto elegido';
@@ -187,7 +190,7 @@ function elegir(o){
   $('pdmcDir').textContent='Cargando mapa…';$('pdmcSub').textContent='';ultima=null;
   leaflet().then(L=>{
    if(!big){big=L.map('pdmcBig',{zoomControl:false,attributionControl:true}).setView([ini.lat,ini.lng],z);L.tileLayer(TILES,{maxZoom:19,attribution:ATTR}).addTo(big);
-    big.on('movestart',()=>{m.classList.add('mov');tip.classList.add('fuera')});big.on('moveend',()=>{m.classList.remove('mov');rev()})}
+    big.on('movestart',()=>{try{const qq=$('pdmcQ');if(qq&&document.activeElement===qq)qq.blur()}catch(_){}m.classList.add('mov');tip.classList.add('fuera')});big.on('moveend',()=>{m.classList.remove('mov');rev()})}
    else big.setView([ini.lat,ini.lng],z,{animate:false});
    setTimeout(()=>{big.invalidateSize();rev()},80);
   }).catch(()=>{$('pdmcDir').textContent='No se pudo cargar el mapa';$('pdmcSub').textContent='Revisa tu conexión e inténtalo de nuevo.'});
