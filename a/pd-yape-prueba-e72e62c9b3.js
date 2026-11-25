@@ -20,7 +20,7 @@
     if(pv&&!s.file&&!s.op)return `<div class="sum"><div class="lbl">${E(tit)}</div>${pv.url?`<a href="${E(pv.url)}" target="_blank" rel="noopener"><img src="${E(pv.url)}" alt="Captura del Yape" style="width:100%;max-height:200px;object-fit:cover;border-radius:12px;display:block"></a>`:''}${pv.op?`<div class="li"><span>N.° de operación</span><b>${E(pv.op)}</b></div>`:''}${pv.hora?`<div class="li"><span>Hora del Yape</span><b>${E(hora(pv.hora))}</b></div>`:''}</div>`;
     const h=s.file?s.hora:(String(s.op||'').trim()?new Date().toISOString():'');
     return `<div class="sum" style="gap:10px"><div class="lbl">${E(tit)} · obligatoria</div>
-      <button type="button" class="b soft" data-act="yfShot">${s.file?'Captura lista · tocar para cambiar':'Tomar foto de la captura del Yape'}</button>
+      <button type="button" class="b soft${s.file?' ok':''}" data-act="yfShot">${s.file?'Captura lista · tocar para cambiar':'Tomar foto de la captura del Yape'}</button>
       <input type="file" data-act="yfFile" accept="image/jpeg,image/png,image/webp" hidden data-pd-cloud="1">
       ${s.url?`<img src="${E(s.url)}" alt="Captura del Yape" style="width:100%;max-height:200px;object-fit:cover;border-radius:12px">`:''}
       ${s.file?'':`<div><div class="lbl">¿No puedes tomar la foto? N.° de operación</div><input class="inp" data-act="yfOp" inputmode="numeric" placeholder="Ej. 01234567" value="${E(s.op||'')}"></div>`}
