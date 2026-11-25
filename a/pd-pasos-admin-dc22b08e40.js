@@ -67,6 +67,28 @@
     if(q.error||!q.data||!q.data.length){error='No se pudo registrar: '+(q.error?q.error.message:'sin confirmación');return}
     try{const mo=moto(o);if(mo.usuario_id)D().from('notificaciones').insert({usuario_id:mo.usuario_id,pedido_id:o.id,tipo:'sistema',titulo:'Efectivo para la '+kn,mensaje:'Administración te dio '+M(v)+' para la '+kn+' '+U.ref(id)+'. Ya está en tu caja.'}).then(()=>{})}catch(_){}
     efV[id]='';if(efC[id])efC[id].t=0;efCargar(o)}
+  async function pagoDespues(o,mn,si){error='';
+    if(!(await (window.pdAdmPregunta||window.pdConfirmar||(t=>Promise.resolve(confirm(t))))(si?'¿Autorizar que el cliente pague después '+M(Number(o.total)||0)+'?\n'+mn+' entrega sin cobrar y queda en Cobros pendientes.':'¿Rechazar? '+mn+' tendrá que cobrar ahora.')))return;
+    let uid=null;try{uid=(await D().auth.getUser()).data.user.id}catch(_){}
+    const now=new Date().toISOString(),patch=si?{pago_despues_estado:'autorizado',pago_despues_resuelto_en:now,pago_despues_por:uid,pago_servicio_momento:'al_final',pago_confirmado:false}:{pago_despues_estado:'rechazado',pago_despues_resuelto_en:now,pago_despues_por:uid};
+    const q=await D().from('pedidos').update(patch).eq('id',o.id).eq('pago_despues_estado','pendiente').select('id');
+    if(q.error){error='No se pudo guardar: '+q.error.message;return}if(!q.data||!q.data.length){error='Esta solicitud ya no está pendiente. Actualiza la lista.';return}
+    Object.assign(o,patch);
+    try{const mo=moto(o);if(mo.usuario_id)D().from('notificaciones').insert({usuario_id:mo.usuario_id,pedido_id:o.id,tipo:'sistema',titulo:si?'Pago después autorizado':'Pago después no autorizado',mensaje:si?'Entrega el pedido '+U.ref(String(o.id))+' sin cobrar: el cliente le paga a Pidemás.':'Cobra el pedido '+U.ref(String(o.id))+' ahora.'}).then(()=>{})}catch(_){}
+    try{(window.loadOrders||(typeof loadOrders==='function'?loadOrders:null))?.()}catch(_){}
+    pdpBuscar()}
+  /* Aviso flotante: pedidos donde el motorizado pide que el cliente pague después */
+  let pdpL=[],pdpT=0;
+  async function pdpBuscar(){try{const {data}=await D().from('pedidos').select('id,motorizado_nombre,total,pago_despues_motivo').eq('pago_despues_estado','pendiente').order('pago_despues_solicitado_en',{ascending:true}).limit(10);
+      const antes=pdpL.map(x=>x.id).join(),nuevo=(data||[]).some(x=>!pdpL.some(y=>y.id===x.id));pdpL=data||[];pdpPintar();
+      if(nuevo){try{navigator.vibrate&&navigator.vibrate([120,80,120])}catch(_){}try{window.PdSound&&PdSound.on&&PdSound.ready&&PdSound.ready().then(ok=>ok&&PdSound.seq&&PdSound.seq([[880,0,.18],[1175,.2,.25]],.3))}catch(_){}}}catch(_){}}
+  function pdpPintar(){let el=document.getElementById('pdPagoDespues');
+    if(!pdpL.length){if(el)el.remove();return}
+    if(!el){el=document.createElement('button');el.type='button';el.id='pdPagoDespues';el.style.cssText='position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:2147483000;display:flex;align-items:center;gap:10px;padding:12px 14px;border:0;border-radius:16px;background:#8A5A00;color:#FFFFFF;font:inherit;font-family:inherit;font-size:14.5px;font-weight:800;text-align:left;box-shadow:0 10px 30px rgba(31,26,23,.3);cursor:pointer';
+      el.addEventListener('click',()=>{const x=pdpL[0];if(x)abrir(x.id)});document.body.appendChild(el)}
+    const x=pdpL[0];el.innerHTML='<span style="flex:1;min-width:0">'+E((x.motorizado_nombre||'Un motorizado').split(' ')[0])+' pide que el cliente pague después · '+M(Number(x.total)||0)+(pdpL.length>1?' · +'+(pdpL.length-1)+' más':'')+'<br><span style="font-weight:600;opacity:.9">Toca para autorizar o rechazar</span></span>';
+    el.style.display=PdPasos.isOpen&&PdPasos.isOpen()?'none':'flex'}
+  setTimeout(pdpBuscar,3000);setInterval(pdpBuscar,20000);setInterval(pdpPintar,1500);
   const km=(a,b,c,d)=>{if([a,b,c,d].some(v=>v==null||v===''||isNaN(v)))return null;const R=6371,r=x=>x*Math.PI/180,dl=r(c-a),dn=r(d-b);const h=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
   function etapa(o){
     const s=st(o);
@@ -364,6 +386,13 @@
     /* 4 · Cerrado */
     {const s=steps[4];s.locked='Se muestra al entregar';s.sum='Entregado'+(o.entregado_en?' · '+U.hora(o.entregado_en):'');s.body=U.st('Pedido entregado'+(o.entregado_en?' a las '+U.hora(o.entregado_en):''),'ok');}
 
+    /* el motorizado pide que el cliente pague después: autorizar o rechazar */
+    if(String(o.pago_despues_estado||'')==='pendiente'&&e>=0&&e<4){const k=Math.min(Math.max(e,0),steps.length-1);
+      steps[k].body=`<div class="sum" style="gap:10px;border-color:#E8A317"><div class="lbl" style="color:#8A5A00">${E(mn)} pide que el cliente pague después</div>`+
+        `<div class="li"><span>Monto</span><b>${M(Number(o.total)||0)}</b></div>`+(o.pago_despues_motivo?`<div class="li"><span>Motivo</span><b style="text-align:right">${E(o.pago_despues_motivo)}</b></div>`:'')+
+        U.note('Si autorizas, entrega sin cobrar y el pedido pasa a Caja › Cobros pendientes para cobrárselo al cliente.')+
+        `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px"><button type="button" class="b" data-act="pdRech">Rechazar</button><button type="button" class="b o" data-act="pdAut">Autorizar</button></div></div>`+(steps[k].body||'')}
+    else if(String(o.pago_despues_estado||'')==='autorizado'&&e>=0){const k=Math.min(Math.max(e,0),steps.length-1);steps[k].body=U.st('Autorizado: el cliente paga después a Pidemás'+(o.pago_despues_motivo?' · '+E(o.pago_despues_motivo):''),'ok')+(steps[k].body||'')}
     const m={kicker:'Admin · '+NOM+' · '+U.ref(id),steps,err:error,acts:{}};
     if(e===-1){m.title='Pedido cancelado';m.chip='Cancelado';m.chipCls='mal';m.fin={mal:true,title:'Pedido cancelado',text:(o.cancelado_por?'Lo canceló '+o.cancelado_por+'. ':'')+(o.motivo_cancelacion||'')};}
     else{m.title=e===4?'Pedido entregado':titulos[e];m.chip=e===4?'Listo':'Paso '+(e+1)+' de 5';if(e===4){m.chipCls='ok';m.fin={title:'Pedido entregado',text:o.entregado_en?'Entregado a las '+U.hora(o.entregado_en)+'.':''}}}
@@ -371,6 +400,8 @@
     m.alt=[];
     if(e===2&&s0==='asignado'){m.cta={label:'Aceptar por el motorizado',busy:'Aceptando…',run:()=>aceptarPorMoto(o)};m.alt.push({label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}})}
     m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()},
+      pdAut:async b=>{if(b.disabled)return;b.disabled=true;await pagoDespues(o,mn,true);PdPasos.render()},
+      pdRech:async b=>{if(b.disabled)return;b.disabled=true;await pagoDespues(o,mn,false);PdPasos.render()},
       efm:b=>{efV[id]=b.value.replace(/[^\d.,]/g,'')},efq:b=>{efV[id]=b.dataset.v;PdPasos.render()},efdar:async b=>{if(b.disabled)return;b.disabled=true;b.textContent='Registrando…';await efDar(o,mn,t);PdPasos.render()}};
     if(PY){Object.assign(m.acts,PY.acts(o,t==='enc'?qY:null));m.acts.yfReg=async b=>{if(b.disabled)return;error='';const f=PY.falta(o,qY);if(f){error=f;PdPasos.render();return}
       b.disabled=true;b.textContent='Registrando…';
