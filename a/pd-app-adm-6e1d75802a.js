@@ -1035,6 +1035,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       pago:met,quien:o.quien_paga||(/^recojo_/.test(String(o.pago_servicio_momento||''))?'envia':'recibe'),
       pide:/quien recibe/i.test(tagDe(obs,'Pide el servicio'))?'recibe':'envia',
       pts:(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).map(x=>({nom:x.nombre||'',tel:x.telefono||'',dir:x.direccion||'',ref:x.referencia||'',ubi:x.ubicacion||'',que:x.que||'',anom:x.a_nombre||'',cd:x.costo_delivery==null?'':String(x.costo_delivery)}))});
+    if(b.tipo==='enc')b.pide=/quien recibe/i.test(tagDe(obs,'Pide el servicio'))||String(o.quien_paga||'')==='recibe'?'recibe':'envia';
     if(b.tipo==='recojo'){const k=(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).findIndex(x=>x&&x.paga_aqui);b.pagapt=String(k>=0?k+2:1)}
     else if(b.tipo==='compra')Object.assign(b,{nom:o.nombre_cliente||'',tel:o.telefono_cliente||'',dir:o.direccion_entrega||'',ref:o.referencia_entrega||'',ubi:o.ubicacion_entrega||tagDe(obs,'Ubicación','Ubicación del cliente'),
       lugar:o.direccion_recojo||o.lugar_compra||tagDe(obs,'Lugar de compra'),detalle:o.detalle_compra||tagDe(obs,'Compra solicitada'),obs:libreDe(obs),comp:o.tipo_comprobante||tagDe(obs,'Comprobante').replace(/^No especificado$/i,''),doc:o.documento_comprobante||tagDe(obs,'DNI/RUC'),cnom:tagDe(obs,'Nombre comprobante'),craz:tagDe(obs,'Razón social'),cdir:tagDe(obs,'Dirección fiscal'),pago:met,pts:(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).filter(Boolean).map(x=>({nom:x.nombre||'',ubi:x.ubicacion||'',que:x.que||'',obs:x.obs||'',cd:x.costo_delivery==null?'':String(x.costo_delivery)}))});
@@ -1202,12 +1203,13 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     }else{
       if(!f.rnom.trim()){f.msg='Escribe el nombre de quien envía.';return false}
       const mom=pagado?'pagado':f.pago==='al_final'?'al_final':f.pago==='yape'?'recojo_yape':'recojo_efectivo';
-      p={nombre_cliente:f.rnom.trim(),telefono_cliente:f.rtel.trim(),nombre_remitente:f.rnom.trim(),telefono_remitente:f.rtel.trim(),dni_remitente:f.rdni.trim()||null,direccion_recojo:f.rdir.trim(),referencia_recojo:f.rref.trim()||null,ubicacion_recojo:f.rubi.trim()||null,
+      const pideRe=f.pide==='recibe'&&String(f.enom||'').trim();
+      p={nombre_cliente:(pideRe?f.enom:f.rnom).trim(),telefono_cliente:(pideRe?f.etel:f.rtel).trim(),nombre_remitente:f.rnom.trim(),telefono_remitente:f.rtel.trim(),dni_remitente:f.rdni.trim()||null,direccion_recojo:f.rdir.trim(),referencia_recojo:f.rref.trim()||null,ubicacion_recojo:f.rubi.trim()||null,
         nombre_receptor:f.enom.trim(),telefono_receptor:f.etel.trim(),dni_receptor:f.edni.trim()||null,tipo_encomienda:f.tenv||null,
         agencia_destino:f.ag.trim(),referencia_entrega:f.ag.trim(),destino_final:f.dest.trim(),direccion_entrega:f.dest.trim(),tipo_pago_encomienda:f.tpago||null,tipo_comprobante:f.comp||null,documento_comprobante:String(f.doc||'').trim()||null,
         costo_delivery:costo,subtotal:0,total:costo,metodo_pago:pagado?'efectivo':(f.pago==='al_final'?'yape':f.pago),pago_servicio_momento:mom};
       if(f.ag.trim()!==String(o.agencia_destino||'').trim()){const op=optsDe('encAgencia').find(x=>x[1].toLowerCase()===f.ag.trim().toLowerCase());p.agencia_id=op?op[0]:null}
-      {const cpT=String(f.comp||'').toLowerCase();obs=rehacerObs(obs,{'Tipo de encomienda':f.tenv,'DNI de quien envía':f.rdni,'DNI de quien recibe':f.edni,'Ubicación de recojo':f.rubi,'Referencia de recojo':f.rref,'Comprobante':f.comp||'','DNI/RUC':cpT?f.doc:'','Nombre comprobante':cpT==='boleta'?f.cnom:'','Razón social':cpT==='factura'?f.craz:'','Dirección fiscal':cpT==='factura'?f.cdir:''},f.obs)}
+      {const cpT=String(f.comp||'').toLowerCase();obs=rehacerObs(obs,{'Pide el servicio':f.pide==='recibe'?'Quien recibe':'','Tipo de encomienda':f.tenv,'DNI de quien envía':f.rdni,'DNI de quien recibe':f.edni,'Ubicación de recojo':f.rubi,'Referencia de recojo':f.rref,'Comprobante':f.comp||'','DNI/RUC':cpT?f.doc:'','Nombre comprobante':cpT==='boleta'?f.cnom:'','Razón social':cpT==='factura'?f.craz:'','Dirección fiscal':cpT==='factura'?f.cdir:''},f.obs)}
       obs=[pagado?'Servicio marcado como PAGADO; no cobrar monto al cliente':'',f.pago==='al_final'?'El cliente paga al final por Yape, después de recibir la guía y la clave; no cobrar al recoger':''].filter(Boolean).concat(segs(obs)).join(' | ');
       const cr=coordsDe(f.rubi);if(cr){p.latitud_recojo=cr.lat;p.longitud_recojo=cr.lng}
       /* ubicación de la agencia: es el punto de entrega del motorizado */
@@ -1260,12 +1262,13 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const form=svcForm(f).replace(/<div class="err">[\s\S]*?<\/div>$/,'');
     const cards={};form.split('<!--cd:').slice(1).forEach(x=>{const j=x.indexOf('-->');const t=x.slice(0,j);cards[t]=x.slice(j+3).replace(/^<div class="cd"><div class="lbl">[^<]*<\/div>/,'<div class="cd">')});
     let h=`<div class="cd" style="gap:8px"><div class="lbl" style="margin:0">Paso ${i+1} de ${P.length}</div><b style="font-size:18px">${E(paso)}</b>${f.frec&&i>0?`<span style="font-size:13px;color:#6B5E55">Envía <b style="color:#1F1A17">${E(f.frec)}</b> · cliente frecuente</span>`:''}<div style="display:grid;grid-template-columns:repeat(${P.length},minmax(0,1fr));gap:6px">${P.map((_,k)=>`<span style="height:5px;border-radius:9px;background:${k<=i?'#C4410C':'#EADFD6'}"></span>`).join('')}</div></div>`;
-    const pideR=f.tipo==='recojo'&&f.pide==='recibe';
-    if(f.tipo==='recojo'&&i===0){if(!f.pide)f.pide='envia';
+    const pideR=(f.tipo==='recojo'||f.tipo==='enc')&&f.pide==='recibe';
+    if((f.tipo==='recojo'||f.tipo==='enc')&&i===0){if(!f.pide)f.pide='envia';const enc=f.tipo==='enc';
       const bQ=(v,t)=>`<button type="button" style="height:58px;border-radius:16px;border:1.5px solid ${f.pide===v?'#C4410C':'#F1E4DA'};background:${f.pide===v?'#FFF4EC':'#FFFFFF'};color:#1F1A17;font:inherit;font-size:17px;font-weight:${f.pide===v?800:700};cursor:pointer${f.pide===v?';box-shadow:inset 0 0 0 1px #C4410C':''}" aria-pressed="${f.pide===v}" data-a="pe:set:pide:${v}">${t}</button>`;
-      h+=`<div class="cd"><div class="lbl">¿Quién manda a recoger?</div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${bQ('envia','Quien envía')}${bQ('recibe','Quien recibe')}</div><span style="font-size:13px;color:#6B5E55;line-height:1.45">${pideR?'El cliente es <b style="color:#1F1A17">quien recibe</b>: pide que vayan a recoger donde otra persona y se lo lleven.':'El cliente es <b style="color:#1F1A17">quien envía</b>: pide que recojan en su lugar y lo lleven a otra persona.'}</span></div>`}
+      h+=`<div class="cd"><div class="lbl">${enc?'¿Quién pide la encomienda?':'¿Quién manda a recoger?'}</div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">${bQ('envia','Quien envía')}${bQ('recibe','Quien recibe')}</div><span style="font-size:13px;color:#6B5E55;line-height:1.45">${enc?(pideR?'El cliente es <b style="color:#1F1A17">quien recibe</b>: manda a recoger la encomienda donde otra persona para que se la envíen. Sus datos van en el Paquete 1.':'El cliente es <b style="color:#1F1A17">quien envía</b>: pide que recojan su encomienda y la lleven a la agencia.'):(pideR?'El cliente es <b style="color:#1F1A17">quien recibe</b>: pide que vayan a recoger donde otra persona y se lo lleven.':'El cliente es <b style="color:#1F1A17">quien envía</b>: pide que recojan en su lugar y lo lleven a otra persona.')}</span></div>`}
     /* Recojo y entrega: buscar cliente en los dos pasos (cada uno llena su lado) */
     if(f.tipo==='recojo'){if(paso==='Información de quien envía')h+=busca;else if(paso==='Información de quien recibe')h+=busca.replace('los datos de quien envía','los datos de quien recibe');else if(/^Punto de recojo \d+$/.test(paso))h+=busca.replace('los datos de quien envía','los datos del '+paso.toLowerCase())}
+    else if(f.tipo==='enc'&&f.pide==='recibe'){if(i===0||paso==='Paquete 1')h+=paso==='Paquete 1'?busca.replace('los datos de quien envía','los datos de quien recibe'):busca}
     else if(i===0)h+=busca;
     if(paso==='Asignar motorizado'){
       const ms=PE.motos,ini=n=>String(n||'?').trim().split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
@@ -1396,6 +1399,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(paso==='Información de quien envía'){if(!t(f.rnom))return 'Escribe el nombre de quien envía.';if(!t(f.rtel))return 'Escribe el teléfono de quien envía.';
 }
     {const mp=f.tipo==='recojo'&&/^Punto de recojo (\d+)$/.exec(paso);if(mp){const q=(f.pts||[])[+mp[1]-2]||{};if(!t(q.nom))return 'Escribe el nombre del punto de recojo '+mp[1]+'.';if(!t(q.tel))return 'Escribe el teléfono del punto de recojo '+mp[1]+'.';if(!t(q.dir)&&!t(q.ubi))return 'Escribe la dirección o la ubicación del punto de recojo '+mp[1]+'.'}}
+    if(paso==='Paquete 1'&&f.tipo==='enc'&&f.pide==='recibe'){if(!t(f.enom))return 'Escribe el nombre de quien recibe (es quien pide el servicio).';if(!t(f.etel))return 'Escribe el teléfono de quien recibe (es quien pide el servicio).'}
     if(paso==='Información de quien recibe'&&f.tipo==='recojo'&&f.pide==='recibe'){if(!t(f.enom))return 'Escribe el nombre de quien recibe (es quien pide el servicio).';if(!t(f.etel))return 'Escribe el teléfono de quien recibe (es quien pide el servicio).'}
     if(paso==='Información de la compra'&&!t(f.detalle))return 'Escribe qué hay que comprar.';
     {const ms=f.tipo==='compra'&&/^Información de la compra · lugar (\d+)$/.exec(paso);if(ms){const q=(f.pts||[])[+ms[1]-2]||{};if(!t(q.nom))return 'Escribe de dónde es la compra del lugar '+ms[1]+'.';if(!t(q.que))return 'Escribe qué hay que comprar en el lugar '+ms[1]+'.'}}
@@ -1420,10 +1424,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const pasoA=nsPasos(f)[f.paso||0],mPt=f.tipo==='recojo'&&/^Punto de recojo (\d+)$/.exec(pasoA);
     /* punto de recojo 2, 3…: solo llena ese punto (el cliente del pedido no cambia) */
     if(mPt){const q=(f.pts||[])[+mPt[1]-2];if(q)Object.assign(q,{nom:cliN(c),tel:cliT(c),dir:c.direccion||q.dir,ubi:cliU(c)||q.ubi});return}
-    const ladoR=f.tipo==='recojo'&&pasoA==='Información de quien recibe';
+    const ladoR=(f.tipo==='recojo'&&pasoA==='Información de quien recibe')||(f.tipo==='enc'&&pasoA==='Paquete 1');
     /* el cliente del pedido es solo quien manda a recoger */
-    if(f.tipo!=='recojo'||ladoR===(f.pide==='recibe'))f.cli=c.id;
+    if((f.tipo!=='recojo'&&f.tipo!=='enc')||ladoR===(f.pide==='recibe'))f.cli=c.id;
     if(f.tipo==='compra')Object.assign(f,{nom:cliN(c),tel:cliT(c),dir:c.direccion||f.dir,ubi:cliU(c)||f.ubi});
+    else if(ladoR&&f.tipo==='enc')Object.assign(f,{enom:cliN(c),etel:cliT(c),edni:c.documento||c.dni||f.edni});
     else if(ladoR)Object.assign(f,{enom:cliN(c),etel:cliT(c),edir:c.direccion||f.edir,eubi:cliU(c)||f.eubi});
     else Object.assign(f,{rnom:cliN(c),rtel:cliT(c),rdir:c.direccion||f.rdir,rubi:cliU(c)||f.rubi},f.tipo==='enc'?{rdni:c.documento||c.dni||f.rdni}:{});
   }
@@ -1458,7 +1463,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     Object.assign(p,{tipo_servicio:TSV[f.sv],cliente_id:f.cli||null,estado:moto?'asignado':'pendiente',motorizado_id:moto?moto.id:null,motorizado_nombre:moto?moto.nombre_completo:null});
     if(moto)p.asignado_en=new Date().toISOString();
     p.pago_modalidad=f.pago==='pagado'?'pagado':String(p.metodo_pago||'');
-    p.quien_paga=f.tipo==='compra'?'cliente':f.tipo==='enc'?'envia':(f.pago==='pagado'?null:f.quien);
+    p.quien_paga=f.tipo==='compra'?'cliente':f.tipo==='enc'?(f.pide==='recibe'?'recibe':'envia'):(f.pago==='pagado'?null:f.quien);
     let r=await conTiempo(D().from('pedidos').insert(p).select('id').single());
     if(r.error&&/column|schema cache|PGRST204|42703/i.test(String(r.error.message)+String(r.error.code))){SVC_OPC.concat(['paquetes_extra','motorizado_nombre','asignado_en','lugar_compra','detalle_compra','pago_modalidad','compra_fotos']).forEach(k=>delete p[k]);r=await conTiempo(D().from('pedidos').insert(p).select('id').single())}
     if(r.error)throw r.error;const id=r.data.id;
@@ -2879,7 +2884,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
       if(PE.f&&/^pe:pq(ag|ds):\d+:\d+$/.test(a.dataset.a)){const [,t,i,k]=a.dataset.a.split(':'),q=PE.f.paqs[+i];
         if(q){if(t==='pqag'){const x=(PE.ags||[])[+k];if(x){if(String(q.ag).trim().toLowerCase()!==String(x.nombre).trim().toLowerCase()){q.dest='';q.agubi=''}q.ag=x.nombre;const u=nsAgU(x.nombre);if(u&&!coordsDe(q.agubi))q.agubi=u}}else{const x=nsDsL(q.ag)[+k];if(x)q.dest=x.destino_final}}
         key='';pintar();return}
-      if(PE.f&&a.dataset.a.startsWith('pe:set:')){const [,,k,...v]=a.dataset.a.split(':');PE.f[k]=v.join(':');if(k==='pide'&&PE.f.tipo==='recojo'){PE.f.quien=PE.f.pide;PE.f.cli=null}key='';pintar();return}
+      if(PE.f&&a.dataset.a.startsWith('pe:set:')){const [,,k,...v]=a.dataset.a.split(':');PE.f[k]=v.join(':');if(k==='pide'&&PE.f.tipo==='recojo'){PE.f.quien=PE.f.pide;PE.f.cli=null}if(k==='pide'&&PE.f.tipo==='enc')PE.f.cli=null;key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:met:')){PE.f.metodo=a.dataset.a.slice(7);key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:quitar:')){const i=+a.dataset.a.slice(10),x=PE.f.items[i];if(x&&PE.f.items.length>1){PE.f.quitar.push(x.id);PE.f.items.splice(i,1);key='';pintar()}else if(x){(window.pdAviso||alert)('El pedido debe tener al menos un producto.')}return}
     switch(a.dataset.a){
