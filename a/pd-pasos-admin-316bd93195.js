@@ -50,6 +50,23 @@
     Object.assign(o,patch);
     try{(window.loadOrders||(typeof loadOrders==='function'?loadOrders:null))?.()}catch(_){}
   }
+  /* Compra: darle efectivo al motorizado para comprar (entra a su caja como ingreso del pedido) */
+  const efV={},efC={};
+  function efCargar(o){const id=String(o.id);if(efC[id]&&efC[id].t>Date.now()-60000)return;efC[id]={t:Date.now(),tot:efC[id]?efC[id].tot:null};
+    D().from('movimientos_caja').select('monto').eq('pedido_id',o.id).eq('tipo','ingreso').ilike('descripcion','EFECTIVO PARA COMPRA%').then(({data})=>{efC[id].tot=Math.round((data||[]).reduce((a,x)=>a+(Number(x.monto)||0),0)*100)/100;try{if(PdPasos.isOpen())PdPasos.render()}catch(_){}})}
+  function efectivoBox(o,mn){if(!o.motorizado_id||['entregado','cancelado'].includes(st(o)))return '';efCargar(o);const id=String(o.id),c=efC[id],v=efV[id]||'';
+    return `<div class="sum" style="gap:10px"><div class="lbl">Efectivo para la compra</div>`+
+      (c&&c.tot>0?U.st('Ya le diste '+M(c.tot)+' a '+E(mn)+' para esta compra','ok'):U.note('Si '+E(mn)+' no tiene efectivo para comprar, dale aquí. Se suma a su caja.'))+
+      `<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">${[20,50,100].map(x=>`<button type="button" class="b" data-act="efq" data-v="${x}">S/ ${x}</button>`).join('')}</div>`+
+      `<input class="in" data-act="efm" inputmode="decimal" placeholder="Otro monto (S/)" value="${E(v)}" aria-label="Monto de efectivo para la compra" style="height:50px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px;box-sizing:border-box;width:100%">`+
+      `<button type="button" class="b o" data-act="efdar">Darle efectivo${Number(String(v).replace(',','.'))>0?' · '+M(Number(String(v).replace(',','.'))):''}</button></div>`}
+  async function efDar(o,mn){error='';const id=String(o.id),v=Math.round((Number(String(efV[id]||'').replace(',','.'))||0)*100)/100;
+    if(!(v>0)){error='Escribe cuánto efectivo le das.';return}
+    if(!(await (window.pdAdmPregunta||window.pdConfirmar||(t=>Promise.resolve(confirm(t))))('¿Darle '+M(v)+' a '+mn+' para la compra '+U.ref(id)+'?\nSe suma a su caja.')))return;
+    const q=await D().from('movimientos_caja').insert({motorizado_id:o.motorizado_id,pedido_id:o.id,tipo:'ingreso',monto:v,descripcion:'EFECTIVO PARA COMPRA · Pedido '+U.ref(id)}).select('id');
+    if(q.error||!q.data||!q.data.length){error='No se pudo registrar: '+(q.error?q.error.message:'sin confirmación');return}
+    try{const mo=moto(o);if(mo.usuario_id)D().from('notificaciones').insert({usuario_id:mo.usuario_id,pedido_id:o.id,tipo:'sistema',titulo:'Efectivo para la compra',mensaje:'Administración te dio '+M(v)+' para la compra '+U.ref(id)+'. Ya está en tu caja.'}).then(()=>{})}catch(_){}
+    efV[id]='';if(efC[id])efC[id].t=0;efCargar(o)}
   const km=(a,b,c,d)=>{if([a,b,c,d].some(v=>v==null||v===''||isNaN(v)))return null;const R=6371,r=x=>x*Math.PI/180,dl=r(c-a),dn=r(d-b);const h=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
   function etapa(o){
     const s=st(o);
@@ -238,7 +255,7 @@
             return `<div style="display:flex;gap:12px;align-items:center">`+(q.foto?`<a href="${E(q.foto)}" target="_blank" rel="noopener" style="flex:0 0 84px"><img src="${E(q.foto)}" alt="Boleta del lugar ${q.n}" style="width:84px;height:84px;object-fit:cover;border-radius:12px;display:block"></a>`:'')+
               `<div style="flex:1;min-width:0;display:flex;flex-direction:column">`+li('Gastado',M(q.monto))+li('Boleta',q.foto?'Guardada ✓':'Sin boleta')+`</div></div>`+(!(sub0>0)?U.note('El motorizado puede cambiar este monto hasta registrar la compra.'):'')+
               (wa?`<a class="b o" style="display:flex;width:100%;box-sizing:border-box;justify-content:center" href="${E(wa)}" target="_blank" rel="noopener">Enviar boleta al cliente por WhatsApp</a>`:'')})():(e>=2&&!(sub0>0)?U.st('Falta que el motorizado guarde lo gastado aquí'):''))+`</div>`});
-        h+=compBox();
+        h+=compBox()+efectivoBox(o,mn);
         if(!(sub0>0)&&e>=2){const LL=L.filter(q=>q.monto!=null&&q.monto!=='');h+=LL.length?U.st('Gastado hasta ahora · '+M(LL.reduce((a,q)=>a+(Number(q.monto)||0),0))+(LL.length<L.length?' ('+LL.length+' de '+L.length+' lugares)':' · falta que registre la compra')):U.note('El motorizado guarda aquí lo que gastó en cada lugar y la foto de la boleta.')}
       }else if(t==='enc'){
         s.sum='Recogido'+hr(o.en_camino_en);
@@ -353,7 +370,8 @@
     if(e===1){const mm=MOTOS().find(x=>String(x.id)===elegido[id]);m.cta={label:mm?'Asignar a '+String(mm.nombre_completo||'').split(' ')[0]:'Asignar',off:!mm,hint:mm?'':'Elige un motorizado de la lista',busy:'Asignando…',run:()=>asignar(id)}}
     m.alt=[];
     if(e===2&&s0==='asignado'){m.cta={label:'Aceptar por el motorizado',busy:'Aceptando…',run:()=>aceptarPorMoto(o)};m.alt.push({label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}})}
-    m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()}};
+    m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()},
+      efm:b=>{efV[id]=b.value.replace(/[^\d.,]/g,'')},efq:b=>{efV[id]=b.dataset.v;PdPasos.render()},efdar:async b=>{if(b.disabled)return;b.disabled=true;b.textContent='Registrando…';await efDar(o,mn);PdPasos.render()}};
     if(PY){Object.assign(m.acts,PY.acts(o,t==='enc'?qY:null));m.acts.yfReg=async b=>{if(b.disabled)return;error='';const f=PY.falta(o,qY);if(f){error=f;PdPasos.render();return}
       b.disabled=true;b.textContent='Registrando…';
       try{await PY.guardar(o,qY);const up={};if(!delPag)up.pago_confirmado=true;if(agTot>0&&!agCob)up.pago_agencia_cobrado_en=new Date().toISOString();
