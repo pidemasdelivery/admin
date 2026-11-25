@@ -39,6 +39,17 @@
     Object.assign(o,patch);
     try{(window.loadOrders||(typeof loadOrders==='function'?loadOrders:null))?.()}catch(_){}
   }
+  /* El admin acepta el pedido en nombre del motorizado (lo mismo que guarda la app del motorizado) */
+  async function aceptarPorMoto(o){
+    error='';const mn=String(moto(o).nombre_completo||o.motorizado_nombre||'el motorizado').split(' ')[0];
+    if(!(await (window.pdAdmPregunta||window.pdConfirmar||(t=>Promise.resolve(confirm(t))))('¿Aceptar el pedido por '+mn+'?\nConfírmale antes por llamada o WhatsApp que lo va a atender.')))return;
+    const patch={estado:'aceptado',aceptado_en:new Date().toISOString()};
+    const {data,error:e}=await D().from('pedidos').update(patch).eq('id',o.id).eq('estado','asignado').eq('motorizado_id',o.motorizado_id).select('id');
+    if(e){error='No se pudo aceptar: '+e.message;return}
+    if(!data||!data.length){error='El pedido ya no está esperando al motorizado: quizá ya lo aceptó, lo rechazó o se reasignó. Actualiza la lista.';return}
+    Object.assign(o,patch);
+    try{(window.loadOrders||(typeof loadOrders==='function'?loadOrders:null))?.()}catch(_){}
+  }
   const km=(a,b,c,d)=>{if([a,b,c,d].some(v=>v==null||v===''||isNaN(v)))return null;const R=6371,r=x=>x*Math.PI/180,dl=r(c-a),dn=r(d-b);const h=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
   function etapa(o){
     const s=st(o);
@@ -211,7 +222,7 @@
         if(o.pago_confirmado===true)return U.st('Cobró '+M(o.total)+' al recoger · '+E(metodo),'ok');
         const q=PRa.find(x=>x.paga_aqui),donde=t==='recojo'&&PRa.length?'Cobra todo en el punto '+(q?q.n:1)+' ('+E((q?q.nombre:remN)||'')+')':t==='enc'?'Le cobra a quien envía al recoger los paquetes':'Cobra al recoger, antes de salir a entregar';
         return `<div class="amt"><div class="k">Cobro al cliente</div><div class="n">${M(o.total)}</div><div class="pill">${mom==='recojo_yape'?'Yape':'Efectivo'}</div></div>`+U.note(donde+'.')};
-      let h=s0==='asignado'?U.st('Esperando que '+E(mn)+' acepte el pedido'):'';
+      let h=s0==='asignado'?U.st('Esperando que '+E(mn)+' acepte el pedido')+U.note('Si no responde, llámalo y acéptalo tú por él.'):'';
       if(t==='compra'){
         const lr=String(o.direccion_recojo||campo(o,'Lugar de compra','¿De dónde desea la compra?')||''),lugar=lr.replace(/https?:\/\/\S+/g,'').replace(/[\s·,|-]+$/,'').trim();
         const det=campo(o,'Compra solicitada','¿Qué desea que compremos?');
@@ -339,7 +350,7 @@
     else{m.title=e===4?'Pedido entregado':titulos[e];m.chip=e===4?'Listo':'Paso '+(e+1)+' de 5';if(e===4){m.chipCls='ok';m.fin={title:'Pedido entregado',text:o.entregado_en?'Entregado a las '+U.hora(o.entregado_en)+'.':''}}}
     if(e===1){const mm=MOTOS().find(x=>String(x.id)===elegido[id]);m.cta={label:mm?'Asignar a '+String(mm.nombre_completo||'').split(' ')[0]:'Asignar',off:!mm,hint:mm?'':'Elige un motorizado de la lista',busy:'Asignando…',run:()=>asignar(id)}}
     m.alt=[];
-    if(e===2&&s0==='asignado')m.alt.push({label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}});
+    if(e===2&&s0==='asignado'){m.cta={label:'Aceptar por el motorizado',busy:'Aceptando…',run:()=>aceptarPorMoto(o)};m.alt.push({label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}})}
     m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()}};
     if(PY){Object.assign(m.acts,PY.acts(o,t==='enc'?qY:null));m.acts.yfReg=async b=>{if(b.disabled)return;error='';const f=PY.falta(o,qY);if(f){error=f;PdPasos.render();return}
       b.disabled=true;b.textContent='Registrando…';
@@ -386,7 +397,7 @@
     /* 3 */
     {const s=steps[2];s.locked='Se muestra al asignar el motorizado';s.sum=mn+' recogió el pedido'+(o.en_camino_en?' · '+U.hora(o.en_camino_en):'');
       const ss=st(o);
-      s.body=(ss==='asignado'?U.st('Esperando que '+E(mn)+' acepte el pedido'):o.en_local_en?U.st(E(mn)+' llegó al local · '+U.hora(o.en_local_en),'ok'):U.st(E(mn)+' va camino al local'))+
+      s.body=(ss==='asignado'?U.st('Esperando que '+E(mn)+' acepte el pedido')+U.note('Si no responde, llámalo y acéptalo tú por él.'):o.en_local_en?U.st(E(mn)+' llegó al local · '+U.hora(o.en_local_en),'ok'):U.st(E(mn)+' va camino al local'))+
         (o.listo_para_recojo?U.st('El negocio marcó el pedido listo','ok'):'')+
         (o.codigo_recojo?U.code('Código de recojo',o.codigo_recojo,'El negocio lo compara antes de entregar'):'')+
         U.contact(null,mo.telefono,'')+U.note('Si el motorizado tarda más de 10 min en el local, te avisamos.');}
@@ -422,7 +433,7 @@
     if(e===0)m.cta={label:'Aceptar por el negocio',off:!pagoSel[id],hint:pagoSel[id]?'':'Elige cómo cobra el motorizado',busy:'Aceptando…',run:()=>aceptarPorNegocio(o,n)};
     else if(e===1){const mm=MOTOS().find(x=>String(x.id)===elegido[id]);m.cta={label:mm?'Asignar a '+String(mm.nombre_completo||'').split(' ')[0]:'Asignar',off:!mm,hint:mm?'':'Elige un motorizado de la lista',busy:'Asignando…',run:()=>asignar(id)}}
     else if(e===4&&!finCerrado)m.cta={label:'Delivery cobrado al negocio',green:true,busy:'Guardando…',run:()=>deliveryCobrado(o)};
-    else if(e===2&&st(o)==='asignado')m.alt=[{label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}}];
+    else if(e===2&&st(o)==='asignado'){m.cta={label:'Aceptar por el motorizado',busy:'Aceptando…',run:()=>aceptarPorMoto(o)};m.alt=[{label:'Cambiar motorizado',run:async()=>{try{await (window.assignOrder||assignOrder)(id,null)}catch(x){error=String(x?.message||x)}}}]}
     m.acts={moto:(box,ev)=>{const b=ev.target.closest('[data-m]');if(!b)return;elegido[id]=b.dataset.m;PdPasos.render()},
       tiempo:b=>{tiempoSel[id]=Number(b.dataset.n);PdPasos.render()},
       pago:b=>{if(b.disabled)return;pagoSel[id]=b.dataset.k;PdPasos.render()}};
