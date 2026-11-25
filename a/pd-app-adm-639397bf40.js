@@ -1621,8 +1621,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       let h=`<div class="amt"><div class="k">Total por cobrar</div><div class="n">${M(tot)}</div><div class="pill">${g.size} negocio${g.size===1?'':'s'}</div></div>`+U.note('Pedidos donde el cliente pagó todo al negocio: el negocio le debe el delivery a Pidemás.');
       if(!g.size)return {body:h+vacio('Ningún negocio te debe delivery.')};
       h+=[...g.entries()].map(([nid,L])=>{const n=b.negs.find(x=>String(x.id)===nid)||{};const t=L.reduce((s,p)=>s+(Number(p.costo_delivery)||0),0);
-        /* «Cliente pagó todo, yo pago»: el negocio ya mandó su Yape al confirmar el pedido; no se le recuerda, solo se revisa que haya llegado */
-        const LR=L.filter(p=>p.pago_acordado!=='pagado'),tR=LR.reduce((s,p)=>s+(Number(p.costo_delivery)||0),0);
+        /* Se le puede recordar todo lo pendiente; en «Cliente pagó todo, yo pago» además revisa que su Yape no haya llegado ya */
+        const LR=L,tR=LR.reduce((s,p)=>s+(Number(p.costo_delivery)||0),0);
         const msg=['Hola, '+(n.nombre||'')+' 👋','Te escribimos de *Pidemás Delivery*.','Tienes pendiente el pago del delivery de '+LR.length+' pedido'+(LR.length===1?'':'s')+':',...LR.map(p=>'• '+ref(p.id)+' · '+fch(p.entregado_en||p.creado_en)+' · '+M(p.costo_delivery)),'','*Total: '+M(tR)+'*','¿Nos confirmas cuándo lo cancelas? ¡Gracias!'].join('\n');const w=LR.length?telW(n.telefono):'';
         const q=f.quien[nid]||'admin';
         return `<div class="cd"><div class="row"><div style="flex:1 1 0%;min-width:0"><b style="display:block;font-size:17px">${E(n.nombre||'Negocio')}</b><span style="font-size:13px;color:#6B5E55">${L.length} pedido${L.length===1?'':'s'} · ${M(t)}</span></div>${w?`<a class="b g" style="height:40px;padding:0 12px" target="_blank" rel="noopener" href="https://wa.me/${w}?text=${encodeURIComponent(msg)}">${U.I.wa}Recordar</a>`:''}</div>

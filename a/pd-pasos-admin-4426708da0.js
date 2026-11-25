@@ -411,6 +411,11 @@
           (o.yape_negocio_estado==='esperando'?U.st('Esperando que el negocio confirme el Yape'):o.yape_negocio_estado==='llego'?U.st('El negocio confirmó el Yape','ok'):o.yape_negocio_estado==='no_llego'?U.st('Al negocio no le llegó el Yape','mal'):''):'')+
         (o.pago_confirmado===true&&cobra>0?U.st('El motorizado confirmó el cobro','ok'):'')+
         U.who(cli,'Cliente · entrega aquí','',true)+U.addr(o.direccion_entrega,o.referencia_entrega)+U.contact(U.maps(o.latitud_entrega,o.longitud_entrega,o.direccion_entrega,LK(o.ubicacion_entrega)),o.telefono_cliente,'');}
+    /* Recordatorio de pago del delivery al negocio por WhatsApp */
+    const recordarNeg=()=>{const tel=String(n.telefono||n.celular||'').replace(/\D/g,'');if(!tel)return U.note('El negocio no tiene teléfono registrado para recordarle el pago.');const y=yapeCfgP();
+      const txt=['Hola, '+(negNom||'')+' 👋','Te escribimos de *Pidemás Delivery*.','Tienes pendiente el pago del delivery del pedido *'+U.ref(id)+'*'+(o.entregado_en?' (entregado a las '+U.hora(o.entregado_en)+')':'')+':','*Total: '+M(o.costo_delivery)+'*','',
+        'Puedes pagar por Yape a Pidemás:','📱 '+y.numero+(y.titular?' · '+y.titular:''),'','Cuando pagues, envíanos la captura por aquí. ¡Gracias!'].join('\n');
+      return `<a class="b g" style="display:flex;width:100%;box-sizing:border-box;justify-content:center" href="https://wa.me/${tel.length===9?'51'+tel:tel}?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">Recordar el pago al negocio por WhatsApp</a>`};
     /* 5 */
     {const s=steps[4];s.locked='Se muestra cuando el pedido se entregue';
       const sub=Number(o.subtotal)||0,del=Number(o.costo_delivery)||0;
@@ -421,7 +426,7 @@
       s.sum=sum;
       s.body=U.st('Pedido entregado'+(o.entrega_verificada?' · '+(o.entrega_verificada==='foto'?'con foto':'código del cliente verificado'):''),'ok')+
         `<div class="box"><div class="k">Cuentas</div>${cuentas.map(c=>`<div class="li"><span>${E(c[0])}</span><b>${c[1]}</b></div>`).join('')}</div>`+
-        ((pa==='yape_negocio'||pa==='pagado')?(o.delivery_negocio_cobrado_en?U.st('Delivery cobrado al negocio · '+U.hora(o.delivery_negocio_cobrado_en),'ok'):U.note('El negocio ya recibió todo. Marca cuando te pague el delivery; lo ve en «Mis pagos».'))
+        ((pa==='yape_negocio'||pa==='pagado')?(o.delivery_negocio_cobrado_en?U.st('Delivery cobrado al negocio · '+U.hora(o.delivery_negocio_cobrado_en),'ok'):U.note('El negocio ya recibió todo. Marca cuando te pague el delivery; lo ve en «Mis pagos».')+recordarNeg())
           :pa==='solo_delivery'?U.note('El negocio cobró los productos y el motorizado cobró el delivery.')
           :U.note(o.negocio_pagado_en?'Ya le pagaste al negocio.':'Está en «Por pagar a negocios».'));}
 
