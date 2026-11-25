@@ -1180,7 +1180,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const costo=n(f.costo),pagado=f.pago==='pagado',yaCobro=o.pago_confirmado===true&&Number(o.monto_recibido)>0;
     let p={},obs=o.observaciones||'';
     if(f.tipo==='recojo'){
-      if(!f.rnom.trim()){f.msg='Escribe el nombre de quien envía.';return false}
+      if(!f.rnom.trim())f.rnom=f.pide==='recibe'&&String(f.enom||'').trim()?'':'Cliente';
       const finalP=f.pago==='al_final';
       const mom=pagado?'pagado':finalP?'al_final':(f.quien==='envia'?(f.pago==='yape'?'recojo_yape':'recojo_efectivo'):null);
       const pideR=f.pide==='recibe'&&String(f.enom||'').trim();
@@ -1192,7 +1192,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const cr=coordsDe(f.rubi),ce=coordsDe(f.eubi);if(cr){p.latitud_recojo=cr.lat;p.longitud_recojo=cr.lng}if(ce){p.latitud_entrega=ce.lat;p.longitud_entrega=ce.lng}
       p.puntos_recojo=nsPuntosPayload(f,o);
     }else if(f.tipo==='compra'){
-      if(!f.nom.trim()){f.msg='Escribe el nombre del cliente.';return false}
+      if(!f.nom.trim())f.nom='Cliente';
       p={compra_fotos:Array.isArray(f.fotos)?f.fotos.slice(0,20):[],nombre_cliente:f.nom.trim(),telefono_cliente:f.tel.trim(),nombre_remitente:f.nom.trim(),telefono_remitente:f.tel.trim(),direccion_entrega:f.dir.trim(),referencia_entrega:f.ref.trim()||null,ubicacion_entrega:f.ubi.trim()||null,
         direccion_recojo:[f.lugar.trim(),String(f.lugarUrl||'').trim()].filter(Boolean).join(' · '),tipo_comprobante:f.comp||null,documento_comprobante:f.doc.trim()||null,costo_delivery:costo,total:Math.round((n(o.subtotal)+costo)*100)/100,metodo_pago:f.pago==='al_final'?'yape':pagado?'efectivo':f.pago,pago_servicio_momento:f.pago==='al_final'?'al_final':null};
       const cpT=String(f.comp||'').toLowerCase();
@@ -1201,7 +1201,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       if(f.pago==='al_final')obs='El cliente paga al final a Pidemás (compra y servicio); el motorizado no cobra | '+obs;
       const ce=coordsDe(f.ubi);if(ce){p.latitud_entrega=ce.lat;p.longitud_entrega=ce.lng}
     }else{
-      if(!f.rnom.trim()){f.msg='Escribe el nombre de quien envía.';return false}
+      if(!f.rnom.trim())f.rnom=f.pide==='recibe'&&String(f.enom||'').trim()?'':'Cliente';
       const mom=pagado?'pagado':f.pago==='al_final'?'al_final':f.pago==='yape'?'recojo_yape':'recojo_efectivo';
       const pideRe=f.pide==='recibe'&&String(f.enom||'').trim();
       p={nombre_cliente:(pideRe?f.enom:f.rnom).trim(),telefono_cliente:(pideRe?f.etel:f.rtel).trim(),nombre_remitente:f.rnom.trim(),telefono_remitente:f.rtel.trim(),dni_remitente:f.rdni.trim()||null,direccion_recojo:f.rdir.trim(),referencia_recojo:f.rref.trim()||null,ubicacion_recojo:f.rubi.trim()||null,
@@ -1395,19 +1395,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   /* lo que falta en el paso actual (o '' si se puede seguir) */
   function nsFalta(f){
     const paso=nsPasos(f)[f.paso||0],t=v=>String(v||'').trim();
-    if(paso==='Información del cliente'){if(!t(f.nom))return 'Escribe el nombre del cliente.';if(!t(f.tel))return 'Escribe el teléfono del cliente.'}
-    if(paso==='Información de quien envía'){if(!t(f.rnom))return 'Escribe el nombre de quien envía.';if(!t(f.rtel))return 'Escribe el teléfono de quien envía.';
-}
-    {const mp=f.tipo==='recojo'&&/^Punto de recojo (\d+)$/.exec(paso);if(mp){const q=(f.pts||[])[+mp[1]-2]||{};if(!t(q.nom))return 'Escribe el nombre del punto de recojo '+mp[1]+'.';if(!t(q.tel))return 'Escribe el teléfono del punto de recojo '+mp[1]+'.';if(!t(q.dir)&&!t(q.ubi))return 'Escribe la dirección o la ubicación del punto de recojo '+mp[1]+'.'}}
-    if(paso==='Paquete 1'&&f.tipo==='enc'&&f.pide==='recibe'){if(!t(f.enom))return 'Escribe el nombre de quien recibe (es quien pide el servicio).';if(!t(f.etel))return 'Escribe el teléfono de quien recibe (es quien pide el servicio).'}
-    if(paso==='Información de quien recibe'&&f.tipo==='recojo'&&f.pide==='recibe'){if(!t(f.enom))return 'Escribe el nombre de quien recibe (es quien pide el servicio).';if(!t(f.etel))return 'Escribe el teléfono de quien recibe (es quien pide el servicio).'}
-    if(paso==='Información de la compra'&&!t(f.detalle))return 'Escribe qué hay que comprar.';
-    {const ms=f.tipo==='compra'&&/^Información de la compra · lugar (\d+)$/.exec(paso);if(ms){const q=(f.pts||[])[+ms[1]-2]||{};if(!t(q.nom))return 'Escribe de dónde es la compra del lugar '+ms[1]+'.';if(!t(q.que))return 'Escribe qué hay que comprar en el lugar '+ms[1]+'.'}}
-    if(f.tipo==='enc'&&paso==='Paquete 1'){if(!t(f.ag)||!t(f.dest))return 'Escribe la agencia y el destino del paquete 1.';if(!f.tpago)return 'Elige la modalidad de pago del paquete 1.';}
-    {const mq=f.tipo==='enc'&&/^Paquete (\d+)$/.exec(paso);if(mq&&+mq[1]>1){const i=+mq[1]-2,q=(f.paqs||[])[i];if(q){if(!t(q.ag)||!t(q.dest))return 'Escribe la agencia y el destino del paquete '+mq[1]+'.';if(!q.tpago)return 'Elige la modalidad de pago del paquete '+mq[1]+'.';}}}
-    if(false){
-      const k=f.paqs.findIndex(q=>!q.tpago||!t(q.ag)||!t(q.dest));if(k>=0)return 'Completa agencia, destino y modalidad de pago del paquete '+(k+2)+'.';
-      const r=f.paqs.findIndex(q=>!q.igual&&!(t(q.rn)&&t(q.rt)));if(r>=0)return 'Escribe nombre y teléfono de quien recibe el paquete '+(r+2)+', o marca que lo recibe la misma persona del paquete 1.'}
+    /* se avanza con los datos que haya; solo el costo del servicio es necesario */
     if(paso==='Información de pago del servicio'&&f.tipo==='recojo'&&ptMulti(f)&&f.quien==='envia'&&f.pago!=='al_final'&&!(+f.pagapt>=1&&+f.pagapt<=1+f.pts.length))return 'Elige en qué punto de recojo paga el servicio.';
     if(paso==='Información de pago del servicio'&&ptMulti(f)){const pl=f.tipo==='compra'?'lugar':'punto';if(!Number.isFinite(cdN(f.cdp)))return 'Escribe el delivery del '+pl+' 1.';const k=f.pts.findIndex(q=>!Number.isFinite(cdN(q.cd)));if(k>=0)return 'Escribe el delivery del '+pl+' '+(k+2)+'.';f.costo=String(ptSuma(f))}
     if(paso==='Información de pago del servicio'&&cdMulti(f)){const n=1+f.paqs.length;for(let k=0;k<n;k++)if(!Number.isFinite(cdN(pkGet(f,k,'cd'))))return 'Escribe el delivery del paquete '+(k+1)+'.';f.costo=String(cdSuma(f))}
@@ -1434,18 +1422,16 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   }
   async function svcCrear(f,win){
     f.msg='';const p=svcPayload(f,{});if(!p)return false;
-    const tel=f.tipo==='compra'?f.tel:f.rtel;if(!String(tel||'').trim()){f.msg='Escribe el teléfono de '+(f.tipo==='compra'?'el cliente.':'quien envía.');return false}
-    if(f.tipo==='compra'&&!String(f.detalle||'').trim()){f.msg='Escribe qué hay que comprar.';return false}
+    
+
     const costo=Number(p.costo_delivery)||0;
     if(f.tipo==='compra'){p.lugar_compra=String(f.lugar||'').trim()||null;p.detalle_compra=String(f.detalle||'').trim()||null;p.subtotal=0;p.total=costo}
     const pc=Number(String(f.pagacon||'').replace(',','.'));
     if(f.pago==='efectivo'&&f.tipo!=='enc'&&pc>0){if(f.tipo!=='compra'&&pc<costo){f.msg='Con cuánto paga debe ser al menos '+M(costo)+'.';return false}
       p.observaciones=[p.observaciones,'__PIDEMAS_PAGO_EFECTIVO__'+JSON.stringify(f.tipo==='compra'?{monto:r2(pc)}:{monto:r2(pc),vuelto:r2(pc-costo)})].filter(Boolean).join(' | ')}
     if(f.tipo==='enc'){
-      if(!f.ag.trim()||!f.dest.trim()){f.msg='Escribe la agencia y el destino del paquete 1.';return false}
-      if(!f.tpago){f.msg='Elige la modalidad de pago del paquete 1: «Pago en agencia» o «Pago a destino».';return false}
-      const sinTp=f.paqs.findIndex(q=>!q.tpago||!String(q.ag||'').trim()||!String(q.dest||'').trim());if(sinTp>=0){f.msg='Completa agencia, destino y modalidad de pago del paquete '+(sinTp+2)+'.';return false}
-      const agId=await nsAgencia(f.ag,f.dest);if(agId){p.agencia_id=agId}
+
+      const agId=String(f.ag||'').trim()?await nsAgencia(f.ag,f.dest):null;if(agId){p.agencia_id=agId}
       if(coordsDe(f.agubi)||(f.paqs||[]).some(q=>coordsDe(q.agubi)))try{await nsAgRegistrar(f)}catch(_){}
       const ex=[];for(const [i,q] of f.paqs.entries()){const id2=await nsAgencia(q.ag,q.dest);ex.push({n:i+2,q,id2})}
       /* datos ordenados de cada paquete adicional, con quien lo recibe */
