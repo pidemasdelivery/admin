@@ -65,6 +65,7 @@ window.pdQuitarCarga=salir;
 (function(){var f=function(){try{var H=document.documentElement,sw=Math.min(screen.width,screen.height)||0,w=window.innerWidth||0,
 t=(navigator.maxTouchPoints||0)>0||('ontouchstart' in window),z=(t&&sw>0&&sw<=600&&w>sw*1.3)?w/sw:1;
 if(z>1){H.style.zoom=String(z);H.classList.add('pd-escritorio')}else if(H.classList.contains('pd-escritorio')){H.style.zoom='';H.classList.remove('pd-escritorio')}}catch(_){}};
+try{document.documentElement.style.overflowX='clip'}catch(_){}
 f();addEventListener('resize',f);addEventListener('pageshow',f);document.addEventListener('DOMContentLoaded',f)})();
 </script>
 <script id="pd-proteger" src="a/pd-proteger-3c2aff6aad.js"></script>
