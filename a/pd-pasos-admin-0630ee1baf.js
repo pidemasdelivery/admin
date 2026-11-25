@@ -170,7 +170,7 @@
     const yape=String(o.metodo_pago||'').toLowerCase()==='yape',metodo=yape?'Yape':'Efectivo';
     const mom=String(o.pago_servicio_momento||'').toLowerCase(),alRec=mom==='recojo_efectivo'||mom==='recojo_yape';
     const remN=o.nombre_remitente||o.nombre_cliente||'Cliente',remT=o.telefono_remitente||o.telefono_cliente;
-    const recN=t==='compra'?(o.nombre_cliente||remN):(o.nombre_receptor||o.nombre_cliente||'Quien recibe'),recT=t==='compra'?(o.telefono_cliente||remT):(o.telefono_receptor||o.telefono_cliente);
+    const recN=t==='compra'?(o.nombre_receptor||o.nombre_cliente||remN):(o.nombre_receptor||o.nombre_cliente||'Quien recibe'),recT=t==='compra'?(o.telefono_receptor||o.telefono_cliente||remT):(o.telefono_receptor||o.telefono_cliente);
     const enAg=o.pedido_en_agencia===true||String(o.pedido_en_agencia||'').toLowerCase()==='true';
     let paq=[];try{paq=Array.isArray(o.paquetes_envio)?o.paquetes_envio:JSON.parse(o.paquetes_envio||'[]')}catch(_){}
     /* paquetes de la encomienda (agencia y destino) y la guía que subió el motorizado por cada uno */
@@ -381,11 +381,18 @@
         else if(!alRec&&cob>0)h+=(o.pago_confirmado===true?U.st('Cobró '+M(cob)+' · '+E(metodo),'ok'):`<div class="amt"><div class="k">Cobro al cliente</div><div class="n">${M(cob)}</div><div class="pill">${E(metodo)}</div></div>`)+(t==='compra'?sumBox('Montos',li('Compra',M(sub0))+li('Servicio',M(serv0))+li('Total',M(tot0),1)):'');
         else h+=U.st(alRec?'Se cobró al recoger: no se cobra al entregar':'Ya está pagado: no se cobra al entregar','ok');
         h+=yapeAdm();
-        h+=U.who(recN,(t==='compra'?'Cliente':'Quien recibe')+' · entrega aquí','',true)+U.addr(o.direccion_entrega,o.referencia_entrega)+U.contact(U.maps(o.latitud_entrega,o.longitud_entrega,o.direccion_entrega,LK(o.ubicacion_entrega)),recT,'Hola, te escribimos de Pidemás por tu pedido '+U.ref(id)+'.');
+        h+=U.who(recN,(t==='compra'?(o.nombre_receptor?'Recibe la compra (no es quien la pidió)':'Cliente'):(/Pide el servicio:\s*Quien recibe/i.test(String(o.observaciones||''))?'Quien recibe · pidió el servicio':'Quien recibe'))+' · entrega aquí','',true)+U.addr(o.direccion_entrega,o.referencia_entrega)+U.contact(U.maps(o.latitud_entrega,o.longitud_entrega,o.direccion_entrega,LK(o.ubicacion_entrega)),recT,'Hola, te escribimos de Pidemás por tu pedido '+U.ref(id)+'.');
         s.body=h;}}
     /* 4 · Cerrado */
     {const s=steps[4];s.locked='Se muestra al entregar';s.sum='Entregado'+(o.entregado_en?' · '+U.hora(o.entregado_en):'');s.body=U.st('Pedido entregado'+(o.entregado_en?' a las '+U.hora(o.entregado_en):''),'ok');}
 
+    /* «Pide el servicio» arriba, en el mismo orden en Admin y Motorizado: quién pide, qué papel tiene y quién paga */
+    const pideBox=(()=>{const ob=String(o.observaciones||''),pR=/Pide el servicio:\s*Quien recibe/i.test(ob),rc=o.nombre_receptor||'';
+      const rol=t==='compra'?(rc&&rc!==o.nombre_cliente?'Manda a comprar para '+rc:'Manda a comprar para sí'):t==='enc'?(pR?'Quien recibe · manda a recoger la encomienda':'Quien envía la encomienda'):(pR?'Quien recibe · manda a recoger':'Quien envía · manda a recoger y entregar');
+      const qp=String(o.quien_paga||''),mo2=String(o.pago_servicio_momento||'').toLowerCase();
+      const paga=mo2==='pagado'?'Ya pagado':mo2==='al_final'?'Al final a Pidemás':qp==='recibe'?(t==='compra'?'Quien recibe la compra':'Quien recibe'):qp==='envia'?(t==='compra'?'Quien manda a comprar':'Quien envía'):'Quien pide el servicio';
+      return `<div class="sum" style="gap:8px"><div class="lbl">Pide el servicio</div>`+U.who(o.nombre_cliente||o.nombre_remitente||'Cliente',E(rol),'',true)+`<div class="li"><span>Paga</span><b>${E(paga)}</b></div>`+(o.telefono_cliente?U.contact(null,o.telefono_cliente,''):'')+`</div>`})();
+    if(steps[0])steps[0].body=pideBox+(steps[0].body||'');
     /* el motorizado pide que el cliente pague después: autorizar o rechazar */
     if(String(o.pago_despues_estado||'')==='pendiente'&&e>=0&&e<4){const k=Math.min(Math.max(e,0),steps.length-1);
       steps[k].body=`<div class="sum" style="gap:10px;border-color:#E8A317"><div class="lbl" style="color:#8A5A00">${E(mn)} pide que el cliente pague después</div>`+
