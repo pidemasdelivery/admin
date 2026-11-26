@@ -14,7 +14,7 @@
       '<button type="button" class="o" data-v="cam"><i>'+S('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>')+'</i><span>Tomar foto<small>Abre la cámara</small></span></button>'+
       '<button type="button" class="o" data-v="gal"><i>'+S('<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>')+'</i><span>Elegir de la galería<small>Fotos o capturas guardadas</small></span></button>'+
       '<button type="button" class="x" data-v="no">Cancelar</button></div>';
-    d.addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(!b&&e.target!==d)return;const v=b?b.dataset.v:'no';d.remove();if(v==='no')return;
+    d.addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(!b&&e.target!==d)return;const v=b?b.dataset.v:'no';d.remove();if(v==='no'){try{inp.dispatchEvent(new Event('cancel'))}catch(_){}return}
       const c0=inp.getAttribute('capture');
       if(v==='cam')inp.setAttribute('capture','environment');else inp.removeAttribute('capture');
       window.__pdArchivoT=Date.now();inp.addEventListener('change',()=>{window.__pdArchivoT=Date.now()-240000},{once:true});inp.__pdSfOk=1;try{inp.click()}finally{inp.__pdSfOk=0}
