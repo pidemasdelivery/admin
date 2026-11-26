@@ -2994,6 +2994,25 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
           const quedan=mid?L2.filter(x=>String(x.motorizado_id)===String(mid)&&String(x.id)!==id&&!CERR.test(est(x))).length:-1;
           tostada('Pedido '+ref(id)+' entregado',quedan<0?'Pedido cerrado':quedan===0?nom+' ya está libre':nom+' sigue con '+quedan+' pedido'+(quedan===1?'':'s'),id)}}
     },2000);}
-  window.pdAppAdm={pintar,ir,navEnDetalle:false,navH:()=>navH&&navH.style.display!=='none'?navH.getBoundingClientRect().height:0};
+  /* Ubicaciones de los formularios de servicio: la misma tarjeta de mapa del negocio y de la tienda (mapa, dirección, Elegir en el mapa, Estoy aquí) */
+setInterval(()=>{try{
+  if(!root||!window.pdMapa||!pdMapa.tarjeta)return;
+  const bs=[...root.querySelectorAll('button[data-a^="pe:"][data-a*="mapa"]')].filter(b=>!b.dataset.pdmc&&/^pe:(mapa|ptmapa|pqmapa|pkmapa|enmapa):/.test(b.dataset.a));if(!bs.length)return;
+  if(!root.getElementById('pdmcCssA')){const css=document.getElementById('pd-mapa-css');const st=document.createElement('style');st.id='pdmcCssA';st.textContent=(css?css.textContent:'')+'.pdmcH{margin:2px 0 4px}';root.appendChild(st);
+    const l=document.createElement('link');l.rel='stylesheet';l.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';root.appendChild(l)}
+  bs.forEach(b=>{b.dataset.pdmc='1';const P=b.dataset.a.split(':'),kind=P[1];
+    const prev=b.previousElementSibling,u=prev&&prev.matches&&prev.matches('.fld')?prev.querySelector('input'):null;if(!u)return;
+    let d=null,tit='Ubicación';
+    if(kind==='mapa'){d=root.querySelector('[data-in="pe:'+P[3]+'"]');try{tit=decodeURIComponent(P.slice(4).join(':'))||tit}catch(_){}}
+    else if(kind==='ptmapa'){d=root.querySelector('[data-in="pe:pt:'+P[2]+':dir"]');tit='Lugar '+(+P[2]+2)}
+    else if(kind==='enmapa'){d=root.querySelector('[data-in="pe:en:'+P[2]+':dir"]');tit='Entrega '+(+P[2]+2)}
+    else tit='Agencia';
+    const hst=document.createElement('div');hst.className='pdmcH';b.parentNode.insertBefore(hst,b);
+    const fD=d&&d.closest('.fld');
+    pdMapa.tarjeta(hst,{dir:d||null,maps:u,titulo:tit,etiqueta:tit,tip:'Mueve el mapa hasta el punto exacto'});
+    b.style.setProperty('display','none','important');prev.style.setProperty('display','none','important');if(fD&&!fD.contains(d))fD.style.setProperty('display','none','important');
+  });
+}catch(_){}},400);
+window.pdAppAdm={pintar,ir,navEnDetalle:false,navH:()=>navH&&navH.style.display!=='none'?navH.getBoundingClientRect().height:0};
 })();
 
