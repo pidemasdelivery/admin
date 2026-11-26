@@ -1149,7 +1149,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     }else if(f.tipo==='compra'){
       h+=card('Información del cliente',pzH(1,'Quien compra')+fl('peN','Nombre y apellido','nom','')+fl('peT','Número','tel','',tel)+`<div style="height:1px;background:#F1E4DA;margin:6px 0"></div>`+pzH(2,'Dónde se recibe')+fl('peD','Dirección de entrega','dir','')+fl('peR','Referencia','ref','Ej. frente a la bodega, casa verde')+fl('peU','Ubicación (Google Maps)','ubi','Pega el enlace de Google Maps')+mp('ubi','dir','Lugar de entrega de la compra'));
       {const nS=(f.pts||[]).length;const masSit=k=>k===nS&&nS<5?`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:pt+">${IC.plus}Agregar otro lugar de compra</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si se compra en un solo lugar, toca «Siguiente».</span>`:'';
-        h+=card('Información de la compra',(nS?`<span style="font-size:13px;color:#6B5E55">Lugar 1 de ${nS+1}</span>`:'')+fl('peLg','¿De dónde desea la compra?','lugar','')+fl('peLu','Ubicación del lugar (Google Maps)','lugarUrl','Pega el enlace de Google Maps')+mp('lugarUrl','lugar','Dónde se hace la compra')+ta('peDt','¿Qué desea que compremos?','detalle','')+fotosCompra(f)+ta('peOb','Observaciones','obs','')+masSit(0));
+        h+=card('Información de la compra',(nS?`<span style="font-size:13px;color:#6B5E55">Lugar 1 de ${nS+1}</span>`:'')+fl('peLg','¿De dónde desea la compra?','lugar','')+fl('peLu','Ubicación del lugar (Google Maps)','lugarUrl','Pega el enlace de Google Maps')+mp('lugarUrl','lugar','Dónde se hace la compra')+nsProds(f,-1)+fotosCompra(f)+ta('peOb','Observaciones','obs','')+masSit(0));
         (f.pts||[]).forEach((q,i)=>{h+=card('Información de la compra · lugar '+(i+2),nsSitioForm(f,i)+`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:ptx:${i}">Quitar este lugar</button>`+masSit(i+1))})}
       h+=compCard();
       h+=costo;
@@ -1265,16 +1265,22 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     /* tarjetas del formulario, una por paso */
     const P=nsPasos(f),i=Math.min(f.paso||0,P.length-1),paso=P[i];f.paso=i;
     const form=svcForm(f).replace(/<div class="err">[\s\S]*?<\/div>$/,'');
-    const cards={};form.split('<!--cd:').slice(1).forEach(x=>{const j=x.indexOf('-->');const t=x.slice(0,j);cards[t]=x.slice(j+3).replace(/^<div class="cd"><div class="lbl">[^<]*<\/div>/,'<div class="cd">')});
+    const cards={};form.split('<!--cd:').slice(1).forEach(x=>{const j=x.indexOf('-->');const t=x.slice(0,j);cards[t]=x.slice(j+3).replace(/^<div class="cd( nsq)?"><div class="lbl">[^<]*<\/div>/,'<div class="cd$1">')});
     let h=`<div class="cd" style="gap:8px"><div class="lbl" style="margin:0">Paso ${i+1} de ${P.length}</div><b style="font-size:18px">${E(paso)}</b>${f.frec&&i>0?`<span style="font-size:13px;color:#6B5E55">Envía <b style="color:#1F1A17">${E(f.frec)}</b> · cliente frecuente</span>`:''}<div style="display:grid;grid-template-columns:repeat(${P.length},minmax(0,1fr));gap:6px">${P.map((_,k)=>`<span style="height:5px;border-radius:9px;background:${k<=i?'#C4410C':'#EADFD6'}"></span>`).join('')}</div></div>`;
     const pideR=(f.tipo==='recojo'||f.tipo==='enc')&&f.pide==='recibe';
     if((f.tipo==='recojo'||f.tipo==='enc')&&!f.pide){f.pide='envia';if(f.tipo==='enc'&&!f.quien)f.quien='envia'}
     if(f.tipo==='compra')f.para='mismo';
     /* Recojo y entrega: buscar cliente en los dos pasos (cada uno llena su lado) */
     if(f.tipo==='recojo'){if(paso==='Quien envía y quien recibe')h+=busca;else if(/^Punto de recojo \d+$/.test(paso))h+=busca.replace('los datos de quien envía','los datos del '+paso.toLowerCase())}
-    else if(f.tipo==='enc'&&f.pide==='recibe'){if(i===0||paso==='Paquete 1')h+=paso==='Paquete 1'?busca.replace('los datos de quien envía','los datos de quien recibe'):busca}
-    else if(i===0)h+=busca;
-    if(paso==='Asignar motorizado'){
+    else if(paso==='Información del cliente'||paso==='Información de quien envía')h+=busca;
+    if(paso==='Antes de empezar'){
+      const cnt=(t,k,v,max,sub)=>`<div class="fld"><label>${t}</label><div style="display:grid;grid-template-columns:repeat(${max},minmax(0,1fr));gap:8px">${Array.from({length:max},(_,j)=>j+1).map(n=>`<button type="button" style="height:52px;border-radius:14px;border:1.5px solid ${n===v?'#C4410C':'#F1E4DA'};background:${n===v?'#FFF4EC':'#FFFFFF'};font:inherit;font-size:18px;font-weight:${n===v?800:600};color:#1F1A17;cursor:pointer" aria-pressed="${n===v}" data-a="pe:cnt:${k}:${n}">${n}</button>`).join('')}</div>${sub?`<span style="font-size:13px;color:#6B5E55">${sub}</span>`:''}</div>`;
+      const np=1+(f.pts||[]).length,nq=1+(f.paqs||[]).length;
+      h+=`<div class="cd nsq"><span style="font-size:14px;color:#6B5E55;line-height:1.45">Con estas respuestas armamos el formulario. Luego puedes agregar o quitar.</span>`+
+        (f.tipo==='compra'?cnt('¿En cuántos lugares se compra?','pts',np,6,'Cada lugar con sus productos y su boleta.')
+        :f.tipo==='recojo'?cnt('¿Cuántos recojos?','pts',np,6,'Lugares donde el motorizado recoge.')
+        :cnt('¿Cuántos paquetes envía?','paqs',nq,5,'Cada paquete con su agencia, destino y quien lo recibe.'))+`</div>`;
+    }else if(paso==='Asignar motorizado'){
       const ms=PE.motos,ini=n=>String(n||'?').trim().split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
       h+=`<div class="cd"><div class="lbl">Seleccionar motorizado</div>${ms==null?'<div class="load">Cargando motorizados…</div>':ms.length?`<div class="mob">${ms.map(m=>`<button type="button" class="${String(f.moto)===String(m.id)?'on':''}" data-a="pe:mo:${E(m.id)}" aria-pressed="${String(f.moto)===String(m.id)}"><i>${E(ini(m.nombre_completo))}</i><span>${E(m.nombre_completo||'Motorizado')}</span></button>`).join('')}</div>`:'<span style="font-size:14px;color:#6B5E55">No hay motorizados activos.</span>'}<span style="font-size:13px;color:#6B5E55">${f.moto?'Le avisamos por la app y se abre WhatsApp con el mensaje listo. Toca otra vez para quitarlo.':'Si no eliges ninguno, el pedido queda en Pedidos como «sin motorizado» para asignarlo luego.'}</span></div>`;
     }else h+=cards[paso]||'';
@@ -1286,7 +1292,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   }
   /* «1 · Pide» / «2 · Recibe»: encabezado numerado de cada persona en los formularios de servicio */
   function pzH(n,t,ok){return `<div class="pzh" style="display:flex;align-items:center;gap:10px;margin:2px 0 2px"><span style="width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:none;background:${ok?'#E9F6EE':'#FDEBDF'};color:${ok?'#0F6B33':'#9A330A'}">${n}</span><b style="font-size:16px;color:#1F1A17">${t}</b></div>`}
-  function nsPasos(f){
+  function nsPasos(f){const P=nsPasos0(f);return f.nuevo?['Antes de empezar'].concat(P):P}
+  function nsPasos0(f){
     if(f.tipo==='recojo')return ['Quien envía y quien recibe'].concat((f.pts||[]).map((_,i)=>'Punto de recojo '+(i+2))).concat(['Información de pago del servicio','Asignar motorizado']);
     if(f.tipo==='compra')return ['Información del cliente','Información de la compra'].concat((f.pts||[]).map((_,i)=>'Información de la compra · lugar '+(i+2))).concat(['Información del comprobante','Información de pago del servicio','Asignar motorizado']);
     return ['Información de quien envía'].concat(Array.from({length:1+(f.paqs||[]).length},(_,i)=>'Paquete '+(i+1))).concat(['Información del comprobante','Información de pago del servicio','Asignar motorizado']);
@@ -1328,8 +1335,16 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     return `<span style="font-size:13px;color:#6B5E55">Lugar ${n} de ${1+(f.pts||[]).length}</span>`+
       fl2('¿De dónde desea la compra?','nom','')+fl2('Ubicación del lugar (Google Maps)','ubi','Pega el enlace de Google Maps')+
       `<button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:ptmapa:${i}">${coordsDe(q.ubi)?'Cambiar en el mapa':'Marcar en el mapa'}</button>`+
-      ta2('¿Qué desea que compremos?','que','')+ta2('Observaciones','obs','');
+      nsProds(f,i)+ta2('Observaciones','obs','');
   }
+  /* productos de cada lugar de compra (L=-1: lugar 1). Se guardan también como texto «qué comprar» */
+  function prodsDe(f,L){const q=L<0?f:(f.pts||[])[L];if(!q)return [];const k=L<0?'detalle':'que';
+    if(!Array.isArray(q.prods)){const t=String(q[k]||'').trim();q.prods=t?t.split(/\n+/).map(x=>{const m=x.replace(/^\s*\d+[.)]\s*/,'').match(/^(.*?)\s*[×x]\s*(\d+)\s*$/);return m?{n:m[1],c:m[2]}:{n:x.replace(/^\s*\d+[.)]\s*/,''),c:'1'}}):[{n:'',c:'1'}]}
+    if(!q.prods.length)q.prods.push({n:'',c:'1'});return q.prods}
+  function prodsTxt(f,L){const q=L<0?f:(f.pts||[])[L];if(!q)return;const P=prodsDe(f,L).filter(x=>String(x.n||'').trim());q[L<0?'detalle':'que']=P.map((x,j)=>(j+1)+'. '+String(x.n).trim()+(Number(x.c)>1?' × '+Number(x.c):'')).join('\n')}
+  function nsProds(f,L){const P=prodsDe(f,L),st='height:48px;border-radius:12px;border:1.5px solid #F1E4DA;padding:0 12px;font:inherit;font-size:16px;box-sizing:border-box;min-width:0';
+    return `<div class="fld"><label>Productos a comprar</label><div style="display:flex;flex-direction:column;gap:8px">${P.map((x,j)=>`<div style="display:flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:50%;background:#FDEBDF;color:#9A330A;font-size:13px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex:none">${j+1}</span><input aria-label="Producto ${j+1}" style="${st};flex:1 1 0%" placeholder="Ej. Arroz 5 kg" value="${E(x.n||'')}" data-in="pe:pr:${L}:${j}:n"><input aria-label="Cantidad del producto ${j+1}" style="${st};width:64px;text-align:center" inputmode="numeric" value="${E(x.c||'1')}" data-in="pe:pr:${L}:${j}:c">${P.length>1?`<button type="button" aria-label="Quitar producto ${j+1}" style="width:40px;height:40px;border-radius:50%;border:1px solid #F4C7C3;background:#FFFFFF;color:#B42318;font-size:20px;cursor:pointer" data-a="pe:prx:${L}:${j}">×</button>`:''}</div>`).join('')}
+      <button type="button" class="b" style="height:44px;border-style:dashed;color:#C4410C;border-color:#E2A07E" data-a="pe:pr+:${L}">+ Agregar producto</button></div></div>`}
   function nsSitiosPayload(f,o){
     const antes=Array.isArray(o.puntos_recojo)?o.puntos_recojo:[];
     return (f.pts||[]).map(q=>({nom:String(q.nom||'').trim(),ubi:String(q.ubi||'').trim(),que:String(q.que||'').trim(),obs:String(q.obs||'').trim(),cd:cdN(q.cd)})).filter(q=>q.nom||q.que)
@@ -2796,6 +2811,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
      if(PE.f&&k.startsWith('pe:pkds:')){const i=+k.slice(8),f=PE.f,o=pkObj(f,i),v=el.value;if(!o)return;
        if(v==='__otro'){o.dsOtro=1;pkSet(f,i,'dest','')}else if(v){o.dsOtro=0;pkSet(f,i,'dest',v)}
        f.msg='';key='';pintar();return}
+     if(PE.f&&k.startsWith('pe:pr:')){const [,,L,j,c]=k.split(':');const P=prodsDe(PE.f,+L);if(P[+j])P[+j][c]=c==='c'?el.value.replace(/\D/g,''):el.value;prodsTxt(PE.f,+L);return}
      if(PE.f&&(k==='pe:ptcd1'||k.startsWith('pe:pt:'))){if(k==='pe:ptcd1')PE.f.cdp=el.value;else{const [,,i,c]=k.split(':');const q=(PE.f.pts||[])[+i];if(q)q[c]=el.value;if(c!=='cd')return}
        const su=ptSuma(PE.f);if(Number.isFinite(su))PE.f.costo=String(su);try{const t=root.getElementById('peCdTot');if(t)t.textContent='Total del servicio: '+(Number.isFinite(su)?M(su):'S/ —')}catch(_){}return}
      if(PE.f&&k.startsWith('pe:pq:')){const [,,i,c]=k.split(':');const q=PE.f.paqs[+i];if(q)q[c]=el.value;return}
@@ -2851,6 +2867,12 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
     if(PE.f&&a.dataset.a.startsWith('pe:pkmapa:')){const i=+a.dataset.a.slice(10),f=PE.f;const el2=window.pdMapa&&pdMapa.elegir;if(!el2||!pkObj(f,i))return;
       const r=await el2({titulo:'Agencia '+String(pkGet(f,i,'ag')||'').trim(),centro:coordsDe(pkGet(f,i,'agubi'))||coordsDe(nsAgU(pkGet(f,i,'ag')))});if(!r)return;
       pkSet(f,i,'agubi','https://maps.google.com/?q='+Number(r.lat).toFixed(6)+','+Number(r.lng).toFixed(6));key='';pintar();return}
+    if(PE.f&&a.dataset.a.startsWith('pe:pr+:')){const L=+a.dataset.a.slice(7);prodsDe(PE.f,L).push({n:'',c:'1'});key='';pintar();return}
+    if(PE.f&&a.dataset.a.startsWith('pe:prx:')){const [,,L,j]=a.dataset.a.split(':');prodsDe(PE.f,+L).splice(+j,1);prodsTxt(PE.f,+L);key='';pintar();return}
+    if(PE.f&&a.dataset.a.startsWith('pe:cnt:')){const [,,k,v]=a.dataset.a.split(':'),n=Math.max(1,+v||1),f=PE.f;
+      if(k==='pts'){f.pts=f.pts||[];while(f.pts.length<n-1)f.pts.push({nom:'',tel:'',dir:'',ref:'',ubi:'',que:'',anom:'',cd:'',prods:[{n:'',c:'1'}]});if(f.pts.length>n-1)f.pts.splice(n-1);if(!f.pts.length)f.cdp='';if(+f.pagapt>1+f.pts.length)f.pagapt='1'}
+      if(k==='paqs'){f.paqs=f.paqs||[];while(f.paqs.length<n-1)f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:'',igual:'',rn:'',rd:'',rt:''});if(f.paqs.length>n-1)f.paqs.splice(n-1)}
+      key='';pintar();return}
     if(PE.f&&a.dataset.a==='pe:pqadd'){const f=PE.f;f.paqs=f.paqs||[];if(f.paqs.length<4){f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:'',igual:'',rn:'',rd:'',rt:''});f.paso=nsPasos(f).indexOf('Paquete '+(f.paqs.length+1));f.msg=''}key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:cant:')){const n=Math.max(1,Math.min(3,+a.dataset.a.slice(8)||1)),f=PE.f;f.paqs=f.paqs||[];
       while(f.paqs.length<n-1)f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:'',igual:'',rn:'',rd:'',rt:''});
