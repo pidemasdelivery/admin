@@ -27,7 +27,7 @@
     try{if(window.pdEnPagina&&window.pdEnPagina())return true}catch(e){}
     return Date.now()-toque<20000;
   }
-  function recargar(){var fin=function(){location.reload()};
+  function recargar(){if(window.__pdArchivoT&&Date.now()-window.__pdArchivoT<300000)return;var fin=function(){location.reload()};
     try{if(navigator.serviceWorker)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(_){}})}).catch(function(){})}catch(_){}
     fetch(location.href,{cache:'reload'}).then(fin,fin);setTimeout(fin,3000)}
   function enPag(){try{return !!(window.pdEnPagina&&window.pdEnPagina())}catch(e){return false}}

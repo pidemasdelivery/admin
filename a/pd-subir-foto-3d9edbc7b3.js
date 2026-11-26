@@ -17,7 +17,7 @@
     d.addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(!b&&e.target!==d)return;const v=b?b.dataset.v:'no';d.remove();if(v==='no')return;
       const c0=inp.getAttribute('capture');
       if(v==='cam')inp.setAttribute('capture','environment');else inp.removeAttribute('capture');
-      inp.__pdSfOk=1;try{inp.click()}finally{inp.__pdSfOk=0}
+      window.__pdArchivoT=Date.now();inp.addEventListener('change',()=>{window.__pdArchivoT=Date.now()-240000},{once:true});inp.__pdSfOk=1;try{inp.click()}finally{inp.__pdSfOk=0}
       setTimeout(()=>{if(c0===null)inp.removeAttribute('capture');else inp.setAttribute('capture',c0)},1500)});
     document.body.appendChild(d);
   }
