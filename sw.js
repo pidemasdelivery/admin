@@ -20,7 +20,12 @@ self.addEventListener('push',e=>{
       badge:new URL('icon-192.png',self.registration.scope).href,
       tag:d.tag||'pidemas',
       renotify:true,
-      vibrate:[200,100,200],
+      // se queda fijo en la pantalla (y en la de bloqueo) hasta que lo toques
+      requireInteraction:d.fijo!==false,
+      silent:false,
+      timestamp:Date.now(),
+      // vibración larga y propia de Pidemás: se distingue de WhatsApp sin mirar
+      vibrate:[400,150,400,150,900],
       data:{pedidoId:d.pedidoId||null}
     });
   })());

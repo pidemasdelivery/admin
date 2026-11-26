@@ -29,7 +29,14 @@
       `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px"><button type="button" class="b" style="height:48px" ${attr}="avs:probar">${SND}Probar sonido</button><button type="button" class="b" style="height:48px" ${attr}="avs:permiso"${p==='denied'||!N()?' disabled':''}>${BELL}${p==='granted'?'Probar aviso':'Activar avisos'}</button></div>`+
       `<span style="font-size:13px;color:#6B5E55">Avisos del teléfono: ${perm}</span></div>`;
   }
-  async function probarAviso(){
+  async function probarServidor(){
+    /* Aviso de prueba REAL: lo manda el servidor a tus teléfonos, como un pedido. Así pruebas con la pantalla apagada. */
+    try{const c=(()=>{try{return db}catch(e){return window.db}})();const t=(await c.auth.getSession()).data.session.access_token;
+      const r=await fetch('https://escxesvzndmyfuteawey.supabase.co/functions/v1/enviar-push',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+t},body:JSON.stringify({type:'PRUEBA_MIA'})});
+      const j=await r.json().catch(()=>({}));if(r.ok&&j.enviados>0){(window.pdAviso||alert)('Te mandamos un aviso de prueba. Apaga la pantalla: debe llegar en unos segundos.');return true}
+      if(r.ok&&!j.enviados){(window.pdAviso||alert)('Este teléfono aún no está registrado para avisos. Toca «Activar avisos» otra vez.');return true}}catch(_){}
+    return false}
+  async function probarAviso(){if(await probarServidor())return;
     try{const r=await navigator.serviceWorker.getRegistration();if(r){await r.showNotification('Pidemás',{body:'Así se verán tus avisos de pedidos.',icon:new URL('icon-192.png',r.scope).href,badge:new URL('icon-192.png',r.scope).href,tag:'pd-prueba',vibrate:[200,100,200]});return}}catch(_){}
     try{new Notification('Pidemás',{body:'Así se verán tus avisos de pedidos.'})}catch(_){}
   }
