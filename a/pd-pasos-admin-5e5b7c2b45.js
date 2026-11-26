@@ -233,7 +233,7 @@
         const q2=(n,d)=>E(n||'—')+(dc(d)&&dc(d)!==String(n||'').trim()?`<div style="font-weight:500;font-size:13.5px;color:#6B5E55">${E(dc(d))}</div>`:'');
         let r='';
         if(t==='compra'){const lug=dc(o.direccion_recojo||campo(o,'Lugar de compra','¿De dónde desea la compra?'));
-          r+=li('Cliente',E(remN));
+          r+=li(recN&&recN!==remN?'Pide la compra':'Cliente',E(remN));
           r+=li(PRr.length?'Compra · lugar 1':'Compra en',q2(lug||'—',''));PRr.forEach(x=>{r+=li('Compra · lugar '+E(x.n),q2(x.nombre,''))});
           r+=li('Entrega en',q2(recN,o.direccion_entrega))}
         else if(t==='enc'){
@@ -392,10 +392,12 @@
 
     /* «Pide el servicio» arriba, en el mismo orden en Admin y Motorizado: quién pide, qué papel tiene y quién paga */
     const pideBox=(()=>{const ob=String(o.observaciones||''),pR=/Pide el servicio:\s*Quien recibe/i.test(ob),rc=o.nombre_receptor||'';
-      const rol=t==='compra'?(rc&&rc!==o.nombre_cliente?'Manda a comprar para '+rc:'Manda a comprar para sí'):t==='enc'?(pR?'Quien recibe · manda a recoger la encomienda':'Quien envía la encomienda'):(pR?'Quien recibe · manda a recoger':'Quien envía · manda a recoger y entregar');
+      const rol=t==='compra'?(rc&&rc!==o.nombre_cliente?'Manda a comprar para otra persona':'Manda a comprar para sí mismo'):t==='enc'?(pR?'Quien recibe · manda a recoger la encomienda':'Quien envía la encomienda'):(pR?'Quien recibe · manda a recoger':'Quien envía · manda a recoger y entregar');
       const qp=String(o.quien_paga||''),mo2=String(o.pago_servicio_momento||'').toLowerCase();
       const paga=mo2==='pagado'?'Ya pagado':mo2==='al_final'?'Al final a Pidemás':qp==='recibe'?(t==='compra'?'Quien recibe la compra':'Quien recibe'):qp==='envia'?(t==='compra'?'Quien manda a comprar':'Quien envía'):'Quien pide el servicio';
-      return `<div class="sum" style="gap:8px"><div class="lbl">Pide el servicio</div>`+U.who(o.nombre_cliente||o.nombre_remitente||'Cliente',E(rol),'',true)+`<div class="li"><span>Paga</span><b>${E(paga)}</b></div>`+(o.telefono_cliente?U.contact(null,o.telefono_cliente,''):'')+`</div>`})();
+      return `<div class="sum" style="gap:8px"><div class="lbl">Pide el servicio</div>`+U.who(o.nombre_cliente||o.nombre_remitente||'Cliente',E(rol),'',true)+(o.telefono_cliente?U.contact(null,o.telefono_cliente,''):'')+
+        (t==='compra'&&rc&&rc!==o.nombre_cliente?`<div class="lbl" style="margin-top:4px">Quien recibe la compra</div>`+U.who(rc,'Otra persona · se le entrega a ella','',true)+(o.telefono_receptor?U.contact(null,o.telefono_receptor,''):''):'')+
+        `<div class="li"><span>Paga</span><b>${E(paga)}</b></div></div>`})();
     if(steps[0])steps[0].body=pideBox+(steps[0].body||'');
     /* el motorizado pide que el cliente pague después: autorizar o rechazar */
     if(String(o.pago_despues_estado||'')==='pendiente'&&e>=0&&e<4){const k=Math.min(Math.max(e,0),steps.length-1);
