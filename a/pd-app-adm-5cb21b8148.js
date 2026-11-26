@@ -113,7 +113,7 @@
   }
   const cPasos=(sv,neg)=>['Recibido','Asignado',sv==='Compra'?'Compra':neg?'En el local':'Recojo','En camino','Entregado'];
   const ESTILO=PdPasos.css+C_CSS+`
-.nsq{counter-reset:nsq}.nsq .bk{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#C4410C;background:#FFF4EC;border:1px solid #F6D9C6;border-radius:999px;padding:5px 11px;align-self:flex-start}.blq{border:1.5px solid #EBDDD2!important;gap:12px!important}.blq.on{border:2px solid #C4410C!important;box-shadow:0 6px 18px rgba(196,65,12,.08)}.blq .bh{display:flex;flex-direction:column;gap:10px;background:none;border:0;padding:0;margin:0;text-align:left;font:inherit;color:#1F1A17;cursor:pointer;width:100%}.blq .bt{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6B5E55}.blq .bx{letter-spacing:0;text-transform:none;font-size:13px;color:#C4410C}.bn{display:flex;align-items:center;gap:10px}.bn b{font-size:16px;color:#1F1A17}.bnum{width:28px;height:28px;border-radius:50%;background:#FDEBDF;color:#9A330A;font-size:13px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex:none}.bres{display:flex;flex-direction:column;gap:8px;cursor:pointer}.li{display:flex;justify-content:space-between;gap:12px;font-size:14px}.li span{color:#6B5E55}.li b{color:#1F1A17;text-align:right;font-weight:700}.pqm{border:1px solid #F1E4DA;border-radius:14px;padding:10px 12px;background:#FFFDFB;display:flex;flex-direction:column;gap:6px}.pqm .bnum{width:24px;height:24px;font-size:12px}.secb{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6B5E55;margin:6px 4px -2px}.aq .fld>label{font-size:16px}.pqc{font:inherit;color:#1F1A17;text-align:left;cursor:pointer;width:100%}.bt2{display:flex;justify-content:space-between;align-items:center}.pqh{display:flex;justify-content:space-between;align-items:center;background:none;border:0;padding:0;font:inherit;color:#1F1A17;cursor:pointer;width:100%;text-align:left}.pq .bx,.pqc .bx{font-size:13px;font-weight:800;color:#C4410C}.pq{border:2px solid #E8A27F!important}.nsq .pq{counter-reset:nsq;display:flex;flex-direction:column;gap:12px;padding:14px;border:1px solid #F1E4DA;border-radius:18px;background:#FFFCFA}.addb,.nsq .addb{height:50px;border-radius:14px;border:1.5px dashed #E2A07E!important;background:#FFFFFF!important;color:#C4410C!important;font-weight:800}.nsq:not(:has(.pzh)) .fld>label:not(.b){display:flex;align-items:center;gap:8px}.nsq:not(:has(.pzh)) .fld>label:not(.b)::before{counter-increment:nsq;content:counter(nsq);flex:none;width:24px;height:24px;border-radius:50%;background:#FDEBDF;color:#9A330A;font-size:12.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+.nsq{counter-reset:nsq}.nsq .bk{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#C4410C;background:#FFF4EC;border:1px solid #F6D9C6;border-radius:999px;padding:5px 11px;align-self:flex-start}.blq{border:1.5px solid #EBDDD2!important;gap:12px!important}.blq.on{border:2px solid #C4410C!important;box-shadow:0 6px 18px rgba(196,65,12,.08)}.blq .bh{display:flex;flex-direction:column;gap:10px;background:none;border:0;padding:0;margin:0;text-align:left;font:inherit;color:#1F1A17;cursor:pointer;width:100%}.blq .bt{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6B5E55}.blq .bx{letter-spacing:0;text-transform:none;font-size:13px;color:#C4410C}.bn{display:flex;align-items:center;gap:10px}.bn b{font-size:16px;color:#1F1A17}.bnum{width:28px;height:28px;border-radius:50%;background:#FDEBDF;color:#9A330A;font-size:13px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex:none}.bres{display:flex;flex-direction:column;gap:8px;cursor:pointer}.li{display:flex;justify-content:space-between;gap:12px;font-size:14px}.li span{color:#6B5E55}.li b{color:#1F1A17;text-align:right;font-weight:700}.pqm{border:1px solid #F1E4DA;border-radius:14px;padding:10px 12px;background:#FFFDFB;display:flex;flex-direction:column;gap:6px}.pqm .bnum{width:24px;height:24px;font-size:12px}.secb{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#6B5E55;margin:6px 4px -2px}.aq .fld>label{font-size:16px}.pqc{font:inherit;color:#1F1A17;text-align:left;cursor:pointer;width:100%}.bt2{display:flex;justify-content:space-between;align-items:center}.pqh{display:flex;justify-content:space-between;align-items:center;background:none;border:0;padding:0;font:inherit;color:#1F1A17;cursor:pointer;width:100%;text-align:left}.pq .bx,.pqc .bx{font-size:13px;font-weight:800;color:#C4410C}.pq{border:2px solid #E8A27F!important}.gw{background:transparent!important;border:0!important;padding:0!important;gap:12px!important;box-shadow:none!important}.gs{display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1.5px solid #EBDDD2;border-radius:18px;padding:14px}.blq .gs,.pq .gs{background:#FFFDFB;border:1px solid #F1E4DA;border-radius:16px;padding:12px}.gsh{display:flex;align-items:center;gap:10px}.gsh b{font-size:16px;font-weight:800;color:#1F1A17}.gsi{width:34px;height:34px;border-radius:11px;background:#FFF4EC;color:#C4410C;display:inline-flex;align-items:center;justify-content:center;flex:none}.gsi svg{width:18px;height:18px}.nsq .pq{counter-reset:nsq;display:flex;flex-direction:column;gap:12px;padding:14px;border:1px solid #F1E4DA;border-radius:18px;background:#FFFCFA}.addb,.nsq .addb{height:50px;border-radius:14px;border:1.5px dashed #E2A07E!important;background:#FFFFFF!important;color:#C4410C!important;font-weight:800}.nsq:not(:has(.pzh)) .fld>label:not(.b){display:flex;align-items:center;gap:8px}
 
 :host{z-index:2147482000}
 .app{animation:none}
@@ -1301,6 +1301,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const ult=i===P.length-1,fin='Enviar '+String(f.sv||'pedido').toLowerCase();
     const foot=i===0?`<button type="button" class="b o" style="height:54px;font-size:16px" data-a="pe:sig">${paso==='Antes de empezar'?'Armar formulario':'Siguiente'}</button>`
       :`<div class="row"><button type="button" class="b" style="flex:1;height:54px" data-a="pe:atr">Atrás</button><button type="button" class="b o" style="flex:1.7;height:54px;font-size:16px" data-a="${ult?'pe:crear':'pe:sig'}">${ult?E(fin):'Siguiente'}</button></div>`;
+    if(paso!=='Antes de empezar'&&paso!=='Asignar motorizado')try{h=nsSecciones(h)}catch(_){}
     return {head:top3('Servicios',f.sv),body:h,foot};
   }
   /* «1 · Pide» / «2 · Recibe»: encabezado numerado de cada persona en los formularios de servicio */
@@ -1327,7 +1328,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const tv=optsDe('encTipoEnvio');let k0=0;const L=[];
       (f.agG||[1]).forEach((nG,gi)=>{let pq='';
         for(let j=0;j<nG;j++){const k=k0+j,o=pkObj(f,k)||{},tp=(tv.find(x=>String(x[0])===String(pkGet(f,k,'tenv')))||[])[1];
-          pq+=`<div class="pqm"><div class="bn">${num(j+1)}<b style="font-size:14px">Paquete ${j+1}${tp?' · '+E(tp):''}</b></div>${li('Destino',pkGet(f,k,'dest'))}${li('Recibe',k>0&&o.igual?f.enom:pkGet(f,k,'rn'))}</div>`}
+          pq+=`<div class="pqm"><div class="bn"><b style="font-size:14px">Paquete ${j+1}${tp?' · '+E(tp):''}</b></div>${li('Destino',pkGet(f,k,'dest'))}${li('Recibe',k>0&&o.igual?f.enom:pkGet(f,k,'rn'))}</div>`}
         L.push({k:'a'+gi,t:'Agencia '+(gi+1),n:gi+1,nom:pkGet(f,k0,'ag'),rows:pq,body:inner('Agencia '+(gi+1))});k0+=nG});
       S.push({L,add:(f.agG||[1]).length<4?['pe:ag+','Agregar otra agencia']:null,vacio:'Agencia sin elegir'});
     }
@@ -1337,8 +1338,46 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     f._nb={p:paso,t:tot};
     if(f.abre==null||(f.abre!=='-'&&!todos.some(x=>x.k===f.abre)))f.abre=todos[0].k;
     return S.map(sc=>(sc.sec?`<div class="secb">${E(sc.sec)}</div>`:'')+sc.L.map(b=>{const on=f.abre===b.k;
-      const hd=`<button type="button" class="bh" data-a="pe:abre:${b.k}" aria-expanded="${on}"><span class="bt"><span>${E(b.t)}</span><span class="bx">${on?'Cerrar':'Editar'}</span></span><span class="bn">${num(b.n)}<b>${E(T(b.nom)||sc.vacio)}</b></span></button>`;
+      const hd=`<button type="button" class="bh" data-a="pe:abre:${b.k}" aria-expanded="${on}"><span class="bt"><span>${E(b.t)}</span><span class="bx">${on?'Cerrar':'Editar'}</span></span><span class="bn"><b>${E(T(b.nom)||sc.vacio)}</b></span></button>`;
       return on?`<div class="cd nsq blq on">${hd}${b.body}</div>`:`<div class="cd blq">${hd}${b.rows?`<div class="bres" data-a="pe:abre:${b.k}">${b.rows}</div>`:''}</div>`}).join('')+(sc.add?`<button type="button" class="b addb" data-a="${sc.add[0]}">+ ${E(sc.add[1])}</button>`:'')).join('');
+  }
+  /* Formularios de servicio al estilo Pidemás: los campos se reúnen por tema (contacto, ubicación, envío, pago…) en tarjetas con borde, sin numeración */
+  function nsSecciones(html){
+    const t=document.createElement('template');t.innerHTML=html;
+    const ic={con:IC.group,rec:IC.group,ubi:IC.pin,ag:IC.store,env:IC.box,lug:IC.store,det:IC.list,que:IC.box,cos:IC.cash,pag:IC.wallet,qui:IC.group,cmp:IC.list};
+    const regla=(L,cur,ctx,G)=>{
+      if(cur&&cur.b==='cmp'&&/^(DNI|RUC|Nombre|Razón social|Dirección fiscal)$/.test(L))return cur;
+      if(/^Comprobante/.test(L))return {b:'cmp',t:'Comprobante'};
+      if(/de quien recibe|^Quien recibe este paquete/i.test(L))return {b:'rec',t:'Quien recibe'};
+      if(/^(Agencia$|Nombre de la agencia|Ubicación de la agencia)/.test(L))return {b:'ag',t:'Agencia'};
+      if(/^(¿De dónde desea la compra|Ubicación del lugar)/.test(L))return {b:'lug',t:'Lugar de compra'};
+      if(/^(Productos a comprar|Fotos de la compra|Observaciones)/.test(L))return {b:'det',t:'Detalle de la compra'};
+      if(/^(Destino|Modalidad de pago|Tipo de encomienda|Indicación)/.test(L))return {b:'env',t:'Envío del paquete'};
+      if(/^(¿Qué se lleva|¿Qué se le deja|¿Qué se recoge)/.test(L))return {b:'que',t:'Qué se lleva'};
+      if(/^¿Qué envía/.test(L))return {b:'que',t:'Qué envía'};
+      if(/^(Costo del servicio|Delivery ·)/.test(L))return {b:'cos',t:'Costo del servicio'};
+      if(/^(¿Cómo paga|¿Con cuánto paga)/.test(L))return {b:'pag',t:'Forma de pago'};
+      if(/^(¿Quién paga|¿En qué punto)/.test(L))return {b:'qui',t:'Quién paga'};
+      if(/^(Nombre|Número|DNI|¿A nombre de quién)/.test(L))return {b:'con',k:'con'+ctx,t:ctx||'Datos de contacto'};
+      if(/^(Dirección|Referencia|Ubicación)/.test(L))return {b:'ubi',k:'ubi'+ctx,t:/^Dirección de recojo/.test(L)?'Dónde se recoge':/^Dirección de entrega/.test(L)?'Dónde se recibe':(ctx&&!G.has('con'+ctx)?ctx:'Ubicación')};
+      return null};
+    const fijo=el=>el.matches('.bh,.bres,.pq,.pqm,.addb,.err')||/^pe:(ptx|enx|agx|agpqx|pqx|pt\+|en\+|ag\+|pqadd)/.test(el.getAttribute('data-a')||'');
+    const proc=box=>{const kids=[...box.children];const G=new Map();let cur=null,ctx='',n=0;
+      for(const el of kids){
+        if(el.classList.contains('pzh')){ctx=((el.querySelector('b')||el).textContent||'').trim();el.remove();continue}
+        if(el.tagName==='DIV'&&!el.children.length&&/height:1px/.test(el.getAttribute('style')||'')){el.remove();continue}
+        if(el.classList.contains('pq')){proc(el);cur=null;continue}
+        if(fijo(el)){cur=null;continue}
+        const lab=el.matches('.fld')?el.querySelector(':scope>label'):el.matches('.lbl')?el:null;
+        const L=lab?lab.textContent.replace(/\s+/g,' ').trim():'';
+        const r=L?regla(L,cur,ctx,G):null;
+        if(r){const k=r.k||r.b;let s=G.get(k);
+          if(!s){s=document.createElement('section');s.className='gs';s.innerHTML=`<div class="gsh"><span class="gsi">${ic[r.b]||IC.list}</span><b>${E(r.t)}</b></div>`;el.before(s);G.set(k,s);n++;s.dataset.b=r.b}
+          cur={b:r.b,s};if(el.matches('.lbl'))el.remove();else s.appendChild(el);continue}
+        if(cur)cur.s.appendChild(el)}
+      if(n&&!box.classList.contains('blq')&&!box.classList.contains('pq'))box.classList.add('gw')};
+    t.content.querySelectorAll('.cd.nsq:not(.aq)').forEach(proc);
+    return t.innerHTML;
   }
   function nsGrupo(f,x){if(f.tipo==='recojo'&&/^(Quien envía y quien recibe|Punto de recojo \d+|Entrega \d+)$/.test(x))return 'Recojos y entregas';if(f.tipo==='compra'&&/^Información de la compra( · lugar \d+)?$/.test(x))return 'Lugares y productos';if(f.tipo==='enc'&&f.agG&&/^Agencia \d+$/.test(x))return 'Agencias y paquetes';return x}
   function nsIdx(f,x){const P=nsPasos(f);let i=P.indexOf(x);if(i<0)i=P.indexOf(nsGrupo(f,x));return i<0?(f.paso||0):i}
@@ -1400,7 +1439,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(!q.prods.length)q.prods.push({n:'',c:'1'});return q.prods}
   function prodsTxt(f,L){const q=L<0?f:(f.pts||[])[L];if(!q)return;const P=prodsDe(f,L).filter(x=>String(x.n||'').trim());q[L<0?'detalle':'que']=P.map((x,j)=>(j+1)+'. '+String(x.n).trim()+(Number(x.c)>1?' × '+Number(x.c):'')).join('\n')}
   function nsProds(f,L){const P=prodsDe(f,L),st='height:48px;border-radius:12px;border:1.5px solid #F1E4DA;padding:0 12px;font:inherit;font-size:16px;box-sizing:border-box;min-width:0';
-    return `<div class="fld"><label>Productos a comprar</label><div style="display:flex;flex-direction:column;gap:8px">${P.map((x,j)=>`<div style="display:flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:50%;background:#FDEBDF;color:#9A330A;font-size:13px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex:none">${j+1}</span><input data-sin-pegar aria-label="Producto ${j+1}" style="${st};flex:1 1 0%" placeholder="Ej. Arroz 5 kg" value="${E(x.n||'')}" data-in="pe:pr:${L}:${j}:n"><input data-sin-pegar aria-label="Cantidad del producto ${j+1}" style="${st};width:64px;text-align:center" inputmode="numeric" value="${E(x.c||'1')}" data-in="pe:pr:${L}:${j}:c">${P.length>1?`<button type="button" aria-label="Quitar producto ${j+1}" style="width:40px;height:40px;border-radius:50%;border:1px solid #F4C7C3;background:#FFFFFF;color:#B42318;font-size:20px;cursor:pointer" data-a="pe:prx:${L}:${j}">×</button>`:''}</div>`).join('')}
+    return `<div class="fld"><label>Productos a comprar</label><div style="display:flex;flex-direction:column;gap:8px">${P.map((x,j)=>`<div style="display:flex;align-items:center;gap:8px"><input data-sin-pegar aria-label="Producto ${j+1}" style="${st};flex:1 1 0%" placeholder="Ej. Arroz 5 kg" value="${E(x.n||'')}" data-in="pe:pr:${L}:${j}:n"><input data-sin-pegar aria-label="Cantidad del producto ${j+1}" style="${st};width:64px;text-align:center" inputmode="numeric" value="${E(x.c||'1')}" data-in="pe:pr:${L}:${j}:c">${P.length>1?`<button type="button" aria-label="Quitar producto ${j+1}" style="width:40px;height:40px;border-radius:50%;border:1px solid #F4C7C3;background:#FFFFFF;color:#B42318;font-size:20px;cursor:pointer" data-a="pe:prx:${L}:${j}">×</button>`:''}</div>`).join('')}
       <button type="button" class="b" style="height:44px;border-style:dashed;color:#C4410C;border-color:#E2A07E" data-a="pe:pr+:${L}">+ Agregar producto</button></div></div>`}
   function nsSitiosPayload(f,o){
     const antes=Array.isArray(o.puntos_recojo)?o.puntos_recojo:[];
@@ -1443,7 +1482,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const inp=(c,ph,at)=>`<input data-in="pe:pk:${k}:${c}" value="${E(g(c)||'')}" placeholder="${E(ph||'')}"${at||''}>`;
     const chips=(c,ops)=>`<div class="opc">${ops.map(x=>`<button type="button" class="${String(g(c)||'')===String(x[0])?'on':''}" data-a="pe:pks:${k}:${c}:${E(x[0])}">${E(x[1])}</button>`).join('')}</div>`;
     const tp0=optsDe('encTipoPago'),tp=tp0.length?tp0:[['pago_en_agencia','Pago en agencia'],['pago_a_destino','Pago a destino']];
-    const hd=op.tit?`<button type="button" class="pqh" data-a="pe:abrep:${k}"><span class="bn"><span class="bnum">${op.num}</span><b>${E(op.tit)}</b></span><span class="bx">Cerrar</span></button>`:'';let h=op.tit?'':cant>1?`<span style="font-size:13px;color:#6B5E55">Paquete ${k+1} de ${cant}</span>`:'';
+    const hd=op.tit?`<button type="button" class="pqh" data-a="pe:abrep:${k}"><span class="bn"><b>${E(op.tit)}</b></span><span class="bx">Cerrar</span></button>`:'';let h=op.tit?'':cant>1?`<span style="font-size:13px;color:#6B5E55">Paquete ${k+1} de ${cant}</span>`:'';
     if(!op.sinAg){h+=`<div class="fld"><label>Agencia</label><select data-in="pe:pkag:${k}" style="${selSt}"><option value="">${ags.length?'Elige una agencia registrada':'No hay agencias registradas'}</option>${ags.map(x=>`<option value="${E(x.nombre)}"${agReg&&!o.agOtra&&x===agReg?' selected':''}>${E(x.nombre)}</option>`).join('')}<option value="__otra"${agTxt?' selected':''}>➕ Otra agencia (escribir)</option></select></div>`;
     if(agTxt)h+=`<div class="fld"><label>Nombre de la agencia nueva</label>${inp('ag','Ej. Olva Courier',' autocomplete="off"')}</div>`;
     h+=nsAgUbiFld({ag})+`<div class="fld"><label>Ubicación de la agencia (Google Maps)</label>${inp('agubi','Pega el enlace de Google Maps')}</div>`+
@@ -1457,7 +1496,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(k>0)h+=`<button type="button" class="b" style="height:44px${o.igual?';border-color:#C4410C;background:#FFF4EC;color:#9A330A':''}" data-a="pe:pks:${k}:igual:${o.igual?'':'1'}">${o.igual?'✓ ':''}Lo recibe la misma persona del paquete 1${String(f.enom||'').trim()?' ('+E(String(f.enom).trim())+')':''}</button>`;
     if(k===0||!o.igual)h+=`<div class="fld"><label>Nombre y apellido de quien recibe</label>${inp('rn','')}</div><div class="fld"><label>DNI de quien recibe</label>${inp('rd','',' inputmode="numeric" maxlength="12"')}</div><div class="fld"><label>Número de quien recibe</label>${inp('rt','',' type="tel" inputmode="tel" maxlength="20"')}</div>`;
     if(op.tit&&op.cerrado){const tv=(optsDe('encTipoEnvio').find(x=>String(x[0])===String(g('tenv')))||[])[1],rc=k>0&&o.igual?f.enom:g('rn'),li=(a,b)=>String(b||'').trim()?`<div class="li"><span>${a}</span><b>${E(String(b).trim())}</b></div>`:'';
-      return h.slice(0,agEnd)+`<button type="button" class="pqm pqc" data-a="pe:abrep:${k}"><span class="bt2"><span class="bn"><span class="bnum">${op.num}</span><b>Paquete ${op.num}${tv?' · '+E(tv):''}</b></span><span class="bx">Editar</span></span>${li('Destino',g('dest'))}${li('Recibe',rc)}</button>`}
+      return h.slice(0,agEnd)+`<button type="button" class="pqm pqc" data-a="pe:abrep:${k}"><span class="bt2"><span class="bn"><b>Paquete ${op.num}${tv?' · '+E(tv):''}</b></span><span class="bx">Editar</span></span>${li('Destino',g('dest'))}${li('Recibe',rc)}</button>`}
     if(op.tit)return h.slice(0,agEnd)+`<div class="pq">`+hd+h.slice(agEnd)+(op.extra||'')+`</div>`;
     return h;
   }
