@@ -113,6 +113,8 @@
   }
   const cPasos=(sv,neg)=>['Recibido','Asignado',sv==='Compra'?'Compra':neg?'En el local':'Recojo','En camino','Entregado'];
   const ESTILO=PdPasos.css+C_CSS+`
+.nsq{counter-reset:nsq}.nsq:not(:has(.pzh)) .fld>label{display:flex;align-items:center;gap:8px}.nsq:not(:has(.pzh)) .fld>label::before{counter-increment:nsq;content:counter(nsq);flex:none;width:24px;height:24px;border-radius:50%;background:#FDEBDF;color:#9A330A;font-size:12.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+
 :host{z-index:2147482000}
 .app{animation:none}
 .hd{background:#FFFFFF;border-bottom:1px solid #F1E4DA;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 14px;display:flex;align-items:center;gap:12px;flex:0 0 auto}
@@ -1098,7 +1100,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const ta=(id,l,k,ph)=>`<div class="fld"><label for="${id}">${l}</label><textarea id="${id}" data-in="pe:${k}" placeholder="${E(ph||'')}" style="min-height:96px;padding:14px 16px;border-radius:14px;border:1.5px solid #F1E4DA;font:inherit;font-size:16px;width:100%;box-sizing:border-box">${E(f[k]??'')}</textarea></div>`;
     const sl=(id,l,k,ops,ph)=>`<div class="fld"><label for="${id}">${l}</label><select id="${id}" data-in="pe:${k}" style="height:56px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px;font-weight:700;width:100%;background:#fff">${ph?`<option value="">${E(ph)}</option>`:''}${ops.map(x=>`<option value="${E(x[0])}"${String(f[k])===String(x[0])?' selected':''}>${E(x[1])}</option>`).join('')}${f[k]&&!ops.some(x=>String(x[0])===String(f[k]))?`<option value="${E(f[k])}" selected>${E(f[k])}</option>`:''}</select></div>`;
     const sg=(l,k,ops)=>`<div class="fld"><label>${l}</label><div class="opc">${ops.map(x=>`<button type="button" class="${String(f[k]??'').toLowerCase()===String(x[0]).toLowerCase()?'on':''}" data-a="pe:set:${k}:${E(x[0])}">${E(x[1])}</button>`).join('')}</div></div>`;
-    const card=(t,h)=>`<!--cd:${t}--><div class="cd"><div class="lbl">${t}</div>${h}</div>`;
+    const card=(t,h)=>`<!--cd:${t}--><div class="cd nsq"><div class="lbl">${t}</div>${h}</div>`;
     /* igual que en la Tienda: Boleta pide DNI y nombre; Factura pide RUC, razón social y dirección fiscal (uno debajo del otro) */
     const compCard=()=>{const oc=optsDe('admCompraComprobante'),cp=String(f.comp||'').toLowerCase();
       return card('Información del comprobante',tb('Comprobante (opcional)','comp',(oc.length?oc:[['boleta','Boleta'],['factura','Factura']]).filter(x=>x[0]),true)+
@@ -1283,7 +1285,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     return {head:top3('Servicios',f.sv),body:h,foot};
   }
   /* «1 · Pide» / «2 · Recibe»: encabezado numerado de cada persona en los formularios de servicio */
-  function pzH(n,t,ok){return `<div style="display:flex;align-items:center;gap:10px;margin:2px 0 2px"><span style="width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:none;background:${ok?'#E9F6EE':'#FDEBDF'};color:${ok?'#0F6B33':'#9A330A'}">${n}</span><b style="font-size:16px;color:#1F1A17">${t}</b></div>`}
+  function pzH(n,t,ok){return `<div class="pzh" style="display:flex;align-items:center;gap:10px;margin:2px 0 2px"><span style="width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:none;background:${ok?'#E9F6EE':'#FDEBDF'};color:${ok?'#0F6B33':'#9A330A'}">${n}</span><b style="font-size:16px;color:#1F1A17">${t}</b></div>`}
   function nsPasos(f){
     if(f.tipo==='recojo')return ['Quien envía y quien recibe'].concat((f.pts||[]).map((_,i)=>'Punto de recojo '+(i+2))).concat(['Información de pago del servicio','Asignar motorizado']);
     if(f.tipo==='compra')return ['Información del cliente','Información de la compra'].concat((f.pts||[]).map((_,i)=>'Información de la compra · lugar '+(i+2))).concat(['Información del comprobante','Información de pago del servicio','Asignar motorizado']);
