@@ -1089,7 +1089,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(f.tipo!=='compra'&&pc>0&&c>0)return pc+0.004<c?`<div class="vto bad"><span>Es menos que el servicio</span><b>${M(c)}</b></div>`:(pc-c>0.004?`<div class="vto"><span>Su vuelto</span><b>${M(pc-c)}</b></div>`:`<div class="vto"><span>Paga exacto</span><b>Sin vuelto</b></div>`);
     if(f.tipo==='compra'&&pc>0)return `<div class="vto info"><span>El vuelto sale con el total de la compra</span><b>${M(pc)}</b></div>`;
     return `<span style="color:#6B5E55">Así el motorizado sabe cuánto sencillo llevar.</span>`}
-  function svcForm(f){
+  function svcForm(f){if(f.tipo==='enc'&&f.nuevo&&!f.agG)f.agG=[1+(f.paqs||[]).length];
     const fl=(id,l,k,ph,o)=>`<div class="fld"><label for="${id}">${l}</label><input id="${id}" value="${E(f[k]??'')}" data-in="pe:${k}"${ph?` placeholder="${E(ph)}"`:''}${o||''}></div>`;
     const fotosCompra=f=>{const L=f.fotos||[];
       return `<div class="fld"><label>Fotos de la compra <span style="font-weight:500;color:#6B5E55">(opcional)</span></label>`+
@@ -1154,13 +1154,19 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       h+=compCard();
       h+=costo;
     }else{
-      h+=card('Información de quien envía',pzH(1,'Envía la encomienda')+fl('peRn','Nombre y apellido de quien envía','rnom','')+fl('peRi','DNI de quien envía','rdni','',' inputmode="numeric" maxlength="12"')+fl('peRt','Número de quien envía','rtel','',tel)+fl('peRd','Dirección de recojo','rdir','')+fl('peRr','Referencia','rref','Ej. casa de dos pisos, reja negra')+fl('peRu','Ubicación (Google Maps)','rubi','Pega el enlace de Google Maps')+mp('rubi','rdir','Lugar de recojo')+ta('peOb','¿Qué envía? / Observaciones (opcional)','obs','Describe el contenido u otras indicaciones')+`<div style="height:1px;background:#F1E4DA;margin:8px 0"></div>`+pzH(2,'Recibe la encomienda')+fl('peEn','Nombre y apellido de quien recibe','enom','')+fl('peEi','DNI de quien recibe','edni','',' inputmode="numeric" maxlength="12"')+fl('peEt','Número de quien recibe','etel','',tel));
+      h+=card('Información de quien envía',pzH(1,'Quien envía')+fl('peRn','Nombre y apellido de quien envía','rnom','')+fl('peRi','DNI de quien envía','rdni','',' inputmode="numeric" maxlength="12"')+fl('peRt','Número de quien envía','rtel','',tel)+fl('peRd','Dirección de recojo','rdir','')+fl('peRr','Referencia','rref','Ej. casa de dos pisos, reja negra')+fl('peRu','Ubicación (Google Maps)','rubi','Pega el enlace de Google Maps')+mp('rubi','rdir','Lugar de recojo')+ta('peOb','¿Qué envía? / Observaciones (opcional)','obs','Describe el contenido u otras indicaciones'));
       /* Encomienda en orden: primero cuántos paquetes, luego cada paquete con su agencia, destino y quien lo recibe */
       const ot=optsDe('encTipoEnvio'),tp0=optsDe('encTipoPago'),tp=tp0.length?tp0:[['pago_en_agencia','Pago en agencia'],['pago_a_destino','Pago a destino']];
       const cant=1+(f.paqs||[]).length;
       const masPaq=n=>n===cant&&cant<5?`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:pqadd">${IC.plus}Agregar otro paquete</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si no hay más paquetes, toca «Siguiente».</span>`:'';
       /* todos los paquetes con el mismo formulario (agencia y destino con selector de los registrados) */
-      for(let k=0;k<cant;k++)h+=card('Paquete '+(k+1),nsPaqForm(f,k,cant)+(k>0?`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:pqx:${k-1}">Quitar este paquete</button>`:'')+masPaq(k+1));
+      if(f.agG){agSync(f);let k0=0;
+        f.agG.forEach((nG,gi)=>{let b='';for(let j=0;j<nG;j++){const k=k0+j;b+=nsPaqForm(f,k,cant,{sinAg:j>0,num:j+1,tit:'Paquete '+(j+1)+(nG>1?' de '+nG:'')})+(j>0?`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:agpqx:${k}">Quitar el paquete ${j+1}</button>`:'')}
+          b+=`<button type="button" class="b" style="height:46px;border-style:dashed;color:#C4410C;border-color:#E2A07E" data-a="pe:agpq:${gi}">+ Agregar paquete a esta agencia</button>`;
+          if(gi>0)b+=`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:agx:${gi}">Quitar la agencia ${gi+1}</button>`;
+          if(gi===f.agG.length-1&&f.agG.length<4)b+=`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:ag+">${IC.plus}Agregar otra agencia</button>`;
+          h+=card('Agencia '+(gi+1),b);k0+=nG})}
+      else for(let k=0;k<cant;k++)h+=card('Paquete '+(k+1),nsPaqForm(f,k,cant)+(k>0?`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:pqx:${k-1}">Quitar este paquete</button>`:'')+masPaq(k+1));
       h+=compCard();
       h+=costo;
     }
@@ -1279,7 +1285,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       h+=`<div class="cd nsq"><span style="font-size:14px;color:#6B5E55;line-height:1.45">Con estas respuestas armamos el formulario. Luego puedes agregar o quitar.</span>`+
         (f.tipo==='compra'?cnt('¿En cuántos lugares se compra?','pts',np,6,'Cada lugar con sus productos y su boleta.')
         :f.tipo==='recojo'?cnt('¿Cuántos recojos?','pts',np,6,'Lugares donde el motorizado recoge.')
-        :cnt('¿Cuántos paquetes envía?','paqs',nq,5,'Cada paquete con su agencia, destino y quien lo recibe.'))+`</div>`;
+        :cnt('¿A cuántas agencias van?','ags',(f.agG||[1]).length,4,'Ej. Shalom y Olva.')+(f.agG||[1]).map((n,gi)=>cnt('¿Cuántos paquetes van a la agencia '+(gi+1)+'?','agp'+gi,n,5,gi===(f.agG||[1]).length-1?'Cada paquete con su destino y quien lo recibe.':'')).join(''))+`</div>`;
     }else if(paso==='Asignar motorizado'){
       const ms=PE.motos,ini=n=>String(n||'?').trim().split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
       h+=`<div class="cd"><div class="lbl">Seleccionar motorizado</div>${ms==null?'<div class="load">Cargando motorizados…</div>':ms.length?`<div class="mob">${ms.map(m=>`<button type="button" class="${String(f.moto)===String(m.id)?'on':''}" data-a="pe:mo:${E(m.id)}" aria-pressed="${String(f.moto)===String(m.id)}"><i>${E(ini(m.nombre_completo))}</i><span>${E(m.nombre_completo||'Motorizado')}</span></button>`).join('')}</div>`:'<span style="font-size:14px;color:#6B5E55">No hay motorizados activos.</span>'}<span style="font-size:13px;color:#6B5E55">${f.moto?'Le avisamos por la app y se abre WhatsApp con el mensaje listo. Toca otra vez para quitarlo.':'Si no eliges ninguno, el pedido queda en Pedidos como «sin motorizado» para asignarlo luego.'}</span></div>`;
@@ -1292,10 +1298,11 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   }
   /* «1 · Pide» / «2 · Recibe»: encabezado numerado de cada persona en los formularios de servicio */
   function pzH(n,t,ok){return `<div class="pzh" style="display:flex;align-items:center;gap:10px;margin:2px 0 2px"><span style="width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:none;background:${ok?'#E9F6EE':'#FDEBDF'};color:${ok?'#0F6B33':'#9A330A'}">${n}</span><b style="font-size:16px;color:#1F1A17">${t}</b></div>`}
-  function nsPasos(f){const P=nsPasos0(f);return f.nuevo?['Antes de empezar'].concat(P):P}
+  function nsPasos(f){if(f.tipo==='enc'&&f.nuevo&&!f.agG)f.agG=[1+(f.paqs||[]).length];const P=nsPasos0(f);return f.nuevo?['Antes de empezar'].concat(P):P}
   function nsPasos0(f){
     if(f.tipo==='recojo')return ['Quien envía y quien recibe'].concat((f.pts||[]).map((_,i)=>'Punto de recojo '+(i+2))).concat(['Información de pago del servicio','Asignar motorizado']);
     if(f.tipo==='compra')return ['Información del cliente','Información de la compra'].concat((f.pts||[]).map((_,i)=>'Información de la compra · lugar '+(i+2))).concat(['Información del comprobante','Información de pago del servicio','Asignar motorizado']);
+    if(f.agG)return ['Información de quien envía'].concat(f.agG.map((_,i)=>'Agencia '+(i+1))).concat(['Información del comprobante','Información de pago del servicio','Asignar motorizado']);
     return ['Información de quien envía'].concat(Array.from({length:1+(f.paqs||[]).length},(_,i)=>'Paquete '+(i+1))).concat(['Información del comprobante','Información de pago del servicio','Asignar motorizado']);
   }
   /* Recojo y entrega con varios puntos de recojo: el punto 1 es «quien envía»; aquí van los demás */
@@ -1371,7 +1378,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   const cdMulti=f=>f.tipo==='enc'&&f.nuevo&&(f.paqs||[]).length>0;
   const cdxSuma=f=>{const L=(f.cdx||[]).map(x=>cdN(x.v));return L.length&&L.every(Number.isFinite)?Math.round(L.reduce((a,b)=>a+b,0)*100)/100:NaN};
   function cdSuma(f){const L=[f.cd].concat((f.paqs||[]).map(q=>q.cd)).map(cdN);return L.every(Number.isFinite)?Math.round(L.reduce((a,b)=>a+b,0)*100)/100:NaN}
-  function nsPaqForm(f,k,cant){
+  /* encomienda por agencias: f.agG = paquetes de cada agencia, en orden; los paquetes 2… de una agencia copian su agencia */
+  function agSync(f){let k0=0;(f.agG||[]).forEach(nG=>{for(let j=1;j<nG;j++){['ag','agubi'].forEach(c=>pkSet(f,k0+j,c,pkGet(f,k0,c)))}k0+=nG})}
+  function agTotal(f){f.paqs=f.paqs||[];const t=(f.agG||[]).reduce((a,b)=>a+b,0);while(f.paqs.length<t-1)f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:'',igual:'',rn:'',rd:'',rt:''});if(f.paqs.length>t-1)f.paqs.splice(t-1)}
+  function nsPaqForm(f,k,cant,op){op=op||{};
     const g=c=>pkGet(f,k,c),o=pkObj(f,k)||{};
     const ag=String(g('ag')||'').trim(),ags=(PE.ags||[]).slice().sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
     const agReg=ags.find(x=>agClave(x.nombre)===agClave(ag));
@@ -1383,18 +1393,18 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const inp=(c,ph,at)=>`<input data-in="pe:pk:${k}:${c}" value="${E(g(c)||'')}" placeholder="${E(ph||'')}"${at||''}>`;
     const chips=(c,ops)=>`<div class="opc">${ops.map(x=>`<button type="button" class="${String(g(c)||'')===String(x[0])?'on':''}" data-a="pe:pks:${k}:${c}:${E(x[0])}">${E(x[1])}</button>`).join('')}</div>`;
     const tp0=optsDe('encTipoPago'),tp=tp0.length?tp0:[['pago_en_agencia','Pago en agencia'],['pago_a_destino','Pago a destino']];
-    let h=cant>1?`<span style="font-size:13px;color:#6B5E55">Paquete ${k+1} de ${cant}</span>`:'';
-    h+=`<div class="fld"><label>Agencia</label><select data-in="pe:pkag:${k}" style="${selSt}"><option value="">${ags.length?'Elige una agencia registrada':'No hay agencias registradas'}</option>${ags.map(x=>`<option value="${E(x.nombre)}"${agReg&&!o.agOtra&&x===agReg?' selected':''}>${E(x.nombre)}</option>`).join('')}<option value="__otra"${agTxt?' selected':''}>➕ Otra agencia (escribir)</option></select></div>`;
+    let h=op.tit?`<div style="display:flex;align-items:center;gap:8px;margin-top:${op.sinAg?'6px':'0'}"><span style="width:28px;height:28px;border-radius:50%;background:#C4410C;color:#FFFFFF;font-weight:800;font-size:14px;display:inline-flex;align-items:center;justify-content:center">${op.num}</span><b style="font-size:16px;color:#1F1A17">${E(op.tit)}</b></div>`:cant>1?`<span style="font-size:13px;color:#6B5E55">Paquete ${k+1} de ${cant}</span>`:'';
+    if(!op.sinAg){h+=`<div class="fld"><label>Agencia</label><select data-in="pe:pkag:${k}" style="${selSt}"><option value="">${ags.length?'Elige una agencia registrada':'No hay agencias registradas'}</option>${ags.map(x=>`<option value="${E(x.nombre)}"${agReg&&!o.agOtra&&x===agReg?' selected':''}>${E(x.nombre)}</option>`).join('')}<option value="__otra"${agTxt?' selected':''}>➕ Otra agencia (escribir)</option></select></div>`;
     if(agTxt)h+=`<div class="fld"><label>Nombre de la agencia nueva</label>${inp('ag','Ej. Olva Courier',' autocomplete="off"')}</div>`;
     h+=nsAgUbiFld({ag})+`<div class="fld"><label>Ubicación de la agencia (Google Maps)</label>${inp('agubi','Pega el enlace de Google Maps')}</div>`+
-      `<button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:pkmapa:${k}">${coordsDe(g('agubi'))?'Cambiar en el mapa':'Marcar en el mapa'}</button>`;
+      `<button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:pkmapa:${k}">${coordsDe(g('agubi'))?'Cambiar en el mapa':'Marcar en el mapa'}</button>`;}
     if(dsL.length)h+=`<div class="fld"><label>Destino</label><select data-in="pe:pkds:${k}" style="${selSt}"><option value="">Elige un destino de ${E(agReg.nombre)}</option>${dsL.map(x=>`<option value="${E(x.destino_final)}"${dsReg&&!o.dsOtro&&x===dsReg?' selected':''}>${E(x.destino_final)}</option>`).join('')}<option value="__otro"${dsTxt?' selected':''}>➕ Otro destino (escribir)</option></select></div>`;
     if(dsTxt)h+=`<div class="fld"><label>${dsL.length?'Destino nuevo':'Destino'}</label>${inp('dest','Ej. Lima')}</div>`;
     h+=`<div class="fld"><label>Modalidad de pago</label>${chips('tpago',tp)}</div><div class="fld"><label>Tipo de encomienda</label>${chips('tenv',optsDe('encTipoEnvio'))}</div>`+
       `<div class="fld"><label>Indicación para este paquete (opcional)</label>${inp('ind','Ej. entregar a nombre de la empresa')}</div>`+
-      (k===0?'':`<div style="height:1px;background:#F1E4DA;margin:4px 0"></div><div class="lbl" style="margin:0">Quien recibe el paquete ${k+1} (opcional)</div><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si no lo tienes, sigue: estos datos van en el rotulado del paquete.</span>`);
+      (`<div style="height:1px;background:#F1E4DA;margin:4px 0"></div><div class="lbl" style="margin:0">Quien recibe este paquete (opcional)</div><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si no lo tienes, sigue: estos datos van en el rotulado del paquete.</span>`);
     if(k>0)h+=`<button type="button" class="b" style="height:44px${o.igual?';border-color:#C4410C;background:#FFF4EC;color:#9A330A':''}" data-a="pe:pks:${k}:igual:${o.igual?'':'1'}">${o.igual?'✓ ':''}Lo recibe la misma persona del paquete 1${String(f.enom||'').trim()?' ('+E(String(f.enom).trim())+')':''}</button>`;
-    if(k>0&&!o.igual)h+=`<div class="fld"><label>Nombre y apellido de quien recibe</label>${inp('rn','')}</div><div class="fld"><label>DNI de quien recibe</label>${inp('rd','',' inputmode="numeric" maxlength="12"')}</div><div class="fld"><label>Número de quien recibe</label>${inp('rt','',' type="tel" inputmode="tel" maxlength="20"')}</div>`;
+    if(k===0||!o.igual)h+=`<div class="fld"><label>Nombre y apellido de quien recibe</label>${inp('rn','')}</div><div class="fld"><label>DNI de quien recibe</label>${inp('rd','',' inputmode="numeric" maxlength="12"')}</div><div class="fld"><label>Número de quien recibe</label>${inp('rt','',' type="tel" inputmode="tel" maxlength="20"')}</div>`;
     return h;
   }
   /* campos de un paquete adicional (2 o 3) de la encomienda */
@@ -2869,8 +2879,16 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
       pkSet(f,i,'agubi','https://maps.google.com/?q='+Number(r.lat).toFixed(6)+','+Number(r.lng).toFixed(6));key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:pr+:')){const L=+a.dataset.a.slice(7);prodsDe(PE.f,L).push({n:'',c:'1'});key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:prx:')){const [,,L,j]=a.dataset.a.split(':');prodsDe(PE.f,+L).splice(+j,1);prodsTxt(PE.f,+L);key='';pintar();return}
+    if(PE.f&&PE.f.agG&&a.dataset.a.startsWith('pe:agpq:')){const f=PE.f,gi=+a.dataset.a.slice(8);if(f.agG.reduce((x,y)=>x+y,0)>=8){f.msg='Máximo 8 paquetes por encomienda.';key='';pintar();return}
+      const at=f.agG.slice(0,gi+1).reduce((x,y)=>x+y,0);f.paqs.splice(at-1,0,{ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:'',igual:'',rn:'',rd:'',rt:''});f.agG[gi]++;agSync(f);f.msg='';key='';pintar();return}
+    if(PE.f&&PE.f.agG&&a.dataset.a.startsWith('pe:agpqx:')){const f=PE.f,k=+a.dataset.a.slice(9);if(k<1)return;let acc=0,gi=0;for(;gi<f.agG.length;gi++){if(k<acc+f.agG[gi])break;acc+=f.agG[gi]}
+      if(gi<f.agG.length&&f.agG[gi]>1){f.paqs.splice(k-1,1);f.agG[gi]--}key='';pintar();return}
+    if(PE.f&&PE.f.agG&&a.dataset.a.startsWith('pe:agx:')){const f=PE.f,gi=+a.dataset.a.slice(7);if(gi<1||gi>=f.agG.length)return;const st=f.agG.slice(0,gi).reduce((x,y)=>x+y,0);f.paqs.splice(st-1,f.agG[gi]);f.agG.splice(gi,1);f.paso=Math.min(f.paso||0,nsPasos(f).length-1);key='';pintar();return}
+    if(PE.f&&PE.f.agG&&a.dataset.a==='pe:ag+'){const f=PE.f;if(f.agG.length<4&&f.agG.reduce((x,y)=>x+y,0)<8){f.agG.push(1);agTotal(f);f.paso=nsPasos(f).indexOf('Agencia '+f.agG.length)}key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:cnt:')){const [,,k,v]=a.dataset.a.split(':'),n=Math.max(1,+v||1),f=PE.f;
       if(k==='pts'){f.pts=f.pts||[];while(f.pts.length<n-1)f.pts.push({nom:'',tel:'',dir:'',ref:'',ubi:'',que:'',anom:'',cd:'',prods:[{n:'',c:'1'}]});if(f.pts.length>n-1)f.pts.splice(n-1);if(!f.pts.length)f.cdp='';if(+f.pagapt>1+f.pts.length)f.pagapt='1'}
+      if(k==='ags'){f.agG=(f.agG||[1]).slice(0,n);while(f.agG.length<n)f.agG.push(1);agTotal(f)}
+      if(/^agp\d+$/.test(k)){f.agG=f.agG||[1];const gi=+k.slice(3);if(gi<f.agG.length){f.agG[gi]=n;agTotal(f)}}
       if(k==='paqs'){f.paqs=f.paqs||[];while(f.paqs.length<n-1)f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:'',igual:'',rn:'',rd:'',rt:''});if(f.paqs.length>n-1)f.paqs.splice(n-1)}
       key='';pintar();return}
     if(PE.f&&a.dataset.a==='pe:pqadd'){const f=PE.f;f.paqs=f.paqs||[];if(f.paqs.length<4){f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:'',igual:'',rn:'',rd:'',rt:''});f.paso=nsPasos(f).indexOf('Paquete '+(f.paqs.length+1));f.msg=''}key='';pintar();return}
