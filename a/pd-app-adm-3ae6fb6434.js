@@ -1039,7 +1039,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       pts:(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).map(x=>({nom:x.nombre||'',tel:x.telefono||'',dir:x.direccion||'',ref:x.referencia||'',ubi:x.ubicacion||'',que:x.que||'',anom:x.a_nombre||'',cd:x.costo_delivery==null?'':String(x.costo_delivery)}))});
     if(b.tipo==='enc')b.quien=o.quien_paga==='recibe'?'recibe':'envia';
     if(b.tipo==='enc')b.pide=/quien recibe/i.test(tagDe(obs,'Pide el servicio'))||String(o.quien_paga||'')==='recibe'?'recibe':'envia';
-    if(b.tipo==='recojo'){const k=(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).findIndex(x=>x&&x.paga_aqui);b.pagapt=String(k>=0?k+2:1)}
+    if(b.tipo==='recojo'){const k=(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).findIndex(x=>x&&x.paga_aqui);b.pagapt=String(k>=0?k+2:1);
+      b.ents=(Array.isArray(o.puntos_entrega)?o.puntos_entrega:[]).filter(Boolean).map(x=>({nom:x.nombre||'',tel:x.telefono||'',dir:x.direccion||'',ref:x.referencia||'',ubi:x.ubicacion||'',que:x.que||''}))}
     else if(b.tipo==='compra')Object.assign(b,{nom:o.nombre_cliente||'',tel:o.telefono_cliente||'',dir:o.direccion_entrega||'',ref:o.referencia_entrega||'',ubi:o.ubicacion_entrega||tagDe(obs,'Ubicación','Ubicación del cliente'),
       lugar:o.direccion_recojo||o.lugar_compra||tagDe(obs,'Lugar de compra'),detalle:o.detalle_compra||tagDe(obs,'Compra solicitada'),obs:libreDe(obs),comp:o.tipo_comprobante||tagDe(obs,'Comprobante').replace(/^No especificado$/i,''),doc:o.documento_comprobante||tagDe(obs,'DNI/RUC'),cnom:tagDe(obs,'Nombre comprobante'),craz:tagDe(obs,'Razón social'),cdir:tagDe(obs,'Dirección fiscal'),pago:met,pts:(Array.isArray(o.puntos_recojo)?o.puntos_recojo:[]).filter(Boolean).map(x=>({nom:x.nombre||'',ubi:x.ubicacion||'',que:x.que||'',obs:x.obs||'',cd:x.costo_delivery==null?'':String(x.costo_delivery)}))});
     if(b.tipo==='compra'){b.para=o.nombre_receptor||o.telefono_receptor?'otra':'mismo';b.enom=o.nombre_receptor||'';b.etel=o.telefono_receptor||'';b.quien=o.quien_paga==='recibe'?'recibe':'envia';b.fotos=Array.isArray(o.compra_fotos)?o.compra_fotos.slice():[];if(b.pago==='pagado')b.pago='efectivo'}
@@ -1145,6 +1146,13 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       {const nP=(f.pts||[]).length;const masPt=k=>k===nP&&nP<5?`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:pt+">${IC.plus}Agregar otro punto de recojo</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si no hay más puntos de recojo, toca «Siguiente».</span>`:'';
         h=h.replace(/<\/div>$/,`<div style="height:1px;background:#F1E4DA;margin:8px 0"></div>`+pzH(2,'Recibe')+fl('peEn','Nombre y apellido de quien recibe','enom','')+fl('peEt','Número de quien recibe','etel','',tel)+fl('peEd','Dirección','edir','')+fl('peEr','Referencia','eref','Ej. edificio azul, dpto. 302')+fl('peEu','Ubicación (Google Maps)','eubi','Pega el enlace de Google Maps')+mp('eubi','edir','Lugar de entrega')+fl('peQl','¿Qué se lleva?','lleva','Ej. sobre con documentos, caja pequeña')+masPt(0)+'</div>');
         (f.pts||[]).forEach((q,i)=>{h+=card('Punto de recojo '+(i+2),nsPuntoForm(f,i)+`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:ptx:${i}">Quitar este punto</button>`+masPt(i+1))})}
+      {const EN=f.ents=f.ents||[];const masEn=k=>k===EN.length&&EN.length<5?`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:en+">${IC.plus}Agregar otra entrega</button>`:'';
+        h=h.replace(/(<!--cd:Quien envía y quien recibe-->[\s\S]*?)(<!--cd:|$)/,(m0,a,b)=>a.replace(/<\/div>$/,masEn(0)+'</div>')+b);
+        EN.forEach((q,i)=>{const inp=(k,ph,o)=>`<input data-in="pe:en:${i}:${k}" value="${E(q[k]||'')}" placeholder="${E(ph||'')}"${o||''}>`,fd=(l,k,ph,o)=>`<div class="fld"><label>${l}</label>${inp(k,ph,o)}</div>`;
+          h+=card('Entrega '+(i+2),`<span style="font-size:13px;color:#6B5E55">Entrega ${i+2} de ${EN.length+1} · el motorizado la deja después de la entrega ${i+1}</span>`+
+            fd('Nombre y apellido de quien recibe','nom','')+fd('Número de quien recibe','tel','',' type="tel" inputmode="tel" maxlength="20"')+fd('Dirección','dir','')+fd('Referencia','ref','Ej. edificio azul, dpto. 302')+fd('Ubicación (Google Maps)','ubi','Pega el enlace de Google Maps')+
+            `<button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:enmapa:${i}">${coordsDe(q.ubi)?'Cambiar en el mapa':'Marcar en el mapa'}</button>`+fd('¿Qué se le deja?','que','Ej. 1 bolsa')+
+            `<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:enx:${i}">Quitar esta entrega</button>`+masEn(i+1))})}
       h+=costo;
     }else if(f.tipo==='compra'){
       h+=card('Información del cliente',pzH(1,'Quien compra')+fl('peN','Nombre y apellido','nom','')+fl('peT','Número','tel','',tel)+`<div style="height:1px;background:#F1E4DA;margin:6px 0"></div>`+pzH(2,'Dónde se recibe')+fl('peD','Dirección de entrega','dir','')+fl('peR','Referencia','ref','Ej. frente a la bodega, casa verde')+fl('peU','Ubicación (Google Maps)','ubi','Pega el enlace de Google Maps')+mp('ubi','dir','Lugar de entrega de la compra'));
@@ -1201,6 +1209,8 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       obs=[pagado?'Servicio marcado como PAGADO; no cobrar monto al cliente':finalP?'El cliente paga al final a Pidemás; el motorizado no cobra':(f.pago==='efectivo'?'Pago en efectivo: S/ '+costo.toFixed(2):'Pago por Yape: pendiente de captura y confirmación del administrador'),pagado||finalP?'':(f.quien==='envia'?'Paga quien envía, al recoger'+(ptMulti(f)?(()=>{const n=+f.pagapt||1,q=n>1?(f.pts||[])[n-2]:null,nm=String(n>1?(q&&q.nom)||'':f.rnom||'').trim();return ', en el punto '+n+(nm?' ('+nm.replace(/[|·]/g,' ')+')':'')})():''):'Paga quien recibe, al entregar')].filter(Boolean).concat(segs(obs)).join(' | ');
       const cr=coordsDe(f.rubi),ce=coordsDe(f.eubi);if(cr){p.latitud_recojo=cr.lat;p.longitud_recojo=cr.lng}if(ce){p.latitud_entrega=ce.lat;p.longitud_entrega=ce.lng}
       p.puntos_recojo=nsPuntosPayload(f,o);
+      {const antes=Array.isArray(o.puntos_entrega)?o.puntos_entrega:[];p.puntos_entrega=(f.ents||[]).map(q=>({nom:String(q.nom||'').trim(),tel:String(q.tel||'').trim(),dir:String(q.dir||'').trim(),ref:String(q.ref||'').trim(),ubi:String(q.ubi||'').trim(),que:String(q.que||'').trim()})).filter(q=>q.nom||q.tel||q.dir||q.ubi)
+        .map((q,i)=>{const c=coordsDe(q.ubi),ya=antes.find(x=>Number(x.n)===i+2&&x.entregado_en&&String(x.direccion||'')===q.dir);return {n:i+2,nombre:q.nom||null,telefono:q.tel||null,direccion:q.dir||null,referencia:q.ref||null,ubicacion:q.ubi||null,lat:c?c.lat:null,lng:c?c.lng:null,que:q.que||null,entregado_en:ya?ya.entregado_en:null}})}
     }else if(f.tipo==='compra'){
       if(!f.nom.trim())f.nom='Cliente';
       const otra=f.para==='otra';
@@ -1232,7 +1242,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(f.tipo==='enc'&&!f.nuevo&&f.cdx&&Array.isArray(o.paquetes_extra))p.paquetes_extra=o.paquetes_extra.map(x=>{const c=f.cdx.find(y=>y.n===Number(x&&x.numero));return c?Object.assign({},x,{costo_delivery:cdN(c.v)}):x});
     return p;
   }
-  const SVC_OPC=['puntos_recojo','referencia_recojo','recojo_a_nombre','ubicacion_recojo','ubicacion_entrega','que_se_lleva','quien_paga','tipo_comprobante','documento_comprobante','tipo_encomienda'];
+  const SVC_OPC=['puntos_entrega','puntos_recojo','referencia_recojo','recojo_a_nombre','ubicacion_recojo','ubicacion_entrega','que_se_lleva','quien_paga','tipo_comprobante','documento_comprobante','tipo_encomienda'];
   async function svcGuardar(f,o){
     const p=svcPayload(f,o);if(!p)return false;
     let r=await D().from('pedidos').update(p).eq('id',o.id).select('id').maybeSingle();
@@ -1284,7 +1294,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       const np=1+(f.pts||[]).length,nq=1+(f.paqs||[]).length;
       h+=`<div class="cd nsq"><span style="font-size:14px;color:#6B5E55;line-height:1.45">Con estas respuestas armamos el formulario. Luego puedes agregar o quitar.</span>`+
         (f.tipo==='compra'?cnt('¿En cuántos lugares se compra?','pts',np,6,'Cada lugar con sus productos y su boleta.')
-        :f.tipo==='recojo'?cnt('¿Cuántos recojos?','pts',np,6,'Lugares donde el motorizado recoge.')
+        :f.tipo==='recojo'?cnt('¿Cuántos recojos?','pts',np,6,'Lugares donde el motorizado recoge.')+cnt('¿Cuántas entregas?','ents',1+(f.ents||[]).length,6,'Lugares donde el motorizado deja.')
         :cnt('¿A cuántas agencias van?','ags',(f.agG||[1]).length,4,'Ej. Shalom y Olva.')+(f.agG||[1]).map((n,gi)=>cnt('¿Cuántos paquetes van a la agencia '+(gi+1)+'?','agp'+gi,n,5,gi===(f.agG||[1]).length-1?'Cada paquete con su destino y quien lo recibe.':'')).join(''))+`</div>`;
     }else if(paso==='Asignar motorizado'){
       const ms=PE.motos,ini=n=>String(n||'?').trim().split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
@@ -1300,7 +1310,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function pzH(n,t,ok){return `<div class="pzh" style="display:flex;align-items:center;gap:10px;margin:2px 0 2px"><span style="width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:none;background:${ok?'#E9F6EE':'#FDEBDF'};color:${ok?'#0F6B33':'#9A330A'}">${n}</span><b style="font-size:16px;color:#1F1A17">${t}</b></div>`}
   function nsPasos(f){if(f.tipo==='enc'&&f.nuevo&&!f.agG)f.agG=[1+(f.paqs||[]).length];const P=nsPasos0(f);return f.nuevo?['Antes de empezar'].concat(P):P}
   function nsPasos0(f){
-    if(f.tipo==='recojo')return ['Quien envía y quien recibe'].concat((f.pts||[]).map((_,i)=>'Punto de recojo '+(i+2))).concat(['Información de pago del servicio','Asignar motorizado']);
+    if(f.tipo==='recojo')return ['Quien envía y quien recibe'].concat((f.pts||[]).map((_,i)=>'Punto de recojo '+(i+2))).concat((f.ents||[]).map((_,i)=>'Entrega '+(i+2))).concat(['Información de pago del servicio','Asignar motorizado']);
     if(f.tipo==='compra')return ['Información del cliente','Información de la compra'].concat((f.pts||[]).map((_,i)=>'Información de la compra · lugar '+(i+2))).concat(['Información del comprobante','Información de pago del servicio','Asignar motorizado']);
     if(f.agG)return ['Información de quien envía'].concat(f.agG.map((_,i)=>'Agencia '+(i+1))).concat(['Información del comprobante','Información de pago del servicio','Asignar motorizado']);
     return ['Información de quien envía'].concat(Array.from({length:1+(f.paqs||[]).length},(_,i)=>'Paquete '+(i+1))).concat(['Información del comprobante','Información de pago del servicio','Asignar motorizado']);
@@ -2821,6 +2831,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
      if(PE.f&&k.startsWith('pe:pkds:')){const i=+k.slice(8),f=PE.f,o=pkObj(f,i),v=el.value;if(!o)return;
        if(v==='__otro'){o.dsOtro=1;pkSet(f,i,'dest','')}else if(v){o.dsOtro=0;pkSet(f,i,'dest',v)}
        f.msg='';key='';pintar();return}
+     if(PE.f&&k.startsWith('pe:en:')){const [,,i,c]=k.split(':');const q=(PE.f.ents||[])[+i];if(q)q[c]=el.value;return}
      if(PE.f&&k.startsWith('pe:pr:')){const [,,L,j,c]=k.split(':');const P=prodsDe(PE.f,+L);if(P[+j])P[+j][c]=c==='c'?el.value.replace(/\D/g,''):el.value;prodsTxt(PE.f,+L);return}
      if(PE.f&&(k==='pe:ptcd1'||k.startsWith('pe:pt:'))){if(k==='pe:ptcd1')PE.f.cdp=el.value;else{const [,,i,c]=k.split(':');const q=(PE.f.pts||[])[+i];if(q)q[c]=el.value;if(c!=='cd')return}
        const su=ptSuma(PE.f);if(Number.isFinite(su))PE.f.costo=String(su);try{const t=root.getElementById('peCdTot');if(t)t.textContent='Total del servicio: '+(Number.isFinite(su)?M(su):'S/ —')}catch(_){}return}
@@ -2885,8 +2896,13 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
       if(gi<f.agG.length&&f.agG[gi]>1){f.paqs.splice(k-1,1);f.agG[gi]--}key='';pintar();return}
     if(PE.f&&PE.f.agG&&a.dataset.a.startsWith('pe:agx:')){const f=PE.f,gi=+a.dataset.a.slice(7);if(gi<1||gi>=f.agG.length)return;const st=f.agG.slice(0,gi).reduce((x,y)=>x+y,0);f.paqs.splice(st-1,f.agG[gi]);f.agG.splice(gi,1);f.paso=Math.min(f.paso||0,nsPasos(f).length-1);key='';pintar();return}
     if(PE.f&&PE.f.agG&&a.dataset.a==='pe:ag+'){const f=PE.f;if(f.agG.length<4&&f.agG.reduce((x,y)=>x+y,0)<8){f.agG.push(1);agTotal(f);f.paso=nsPasos(f).indexOf('Agencia '+f.agG.length)}key='';pintar();return}
+    if(PE.f&&a.dataset.a==='pe:en+'){const f=PE.f;f.ents=f.ents||[];if(f.ents.length<5){f.ents.push({nom:'',tel:'',dir:'',ref:'',ubi:'',que:''});f.paso=nsPasos(f).indexOf('Entrega '+(f.ents.length+1))}key='';pintar();return}
+    if(PE.f&&a.dataset.a.startsWith('pe:enx:')){(PE.f.ents||[]).splice(+a.dataset.a.slice(7),1);PE.f.paso=Math.min(PE.f.paso||0,nsPasos(PE.f).length-1);key='';pintar();return}
+    if(PE.f&&a.dataset.a.startsWith('pe:enmapa:')){const i=+a.dataset.a.slice(10),q=(PE.f.ents||[])[i];const el2=window.pdMapa&&pdMapa.elegir;if(!q||!el2)return;
+      const r=await el2({titulo:'Entrega '+(i+2),centro:coordsDe(q.ubi)||coordsDe(PE.f.eubi)});if(!r)return;q.ubi='https://maps.google.com/?q='+Number(r.lat).toFixed(6)+','+Number(r.lng).toFixed(6);const lin=[r.linea,r.sub].filter(Boolean).join(', ');if(!String(q.dir||'').trim()&&lin)q.dir=lin;key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:cnt:')){const [,,k,v]=a.dataset.a.split(':'),n=Math.max(1,+v||1),f=PE.f;
       if(k==='pts'){f.pts=f.pts||[];while(f.pts.length<n-1)f.pts.push({nom:'',tel:'',dir:'',ref:'',ubi:'',que:'',anom:'',cd:'',prods:[{n:'',c:'1'}]});if(f.pts.length>n-1)f.pts.splice(n-1);if(!f.pts.length)f.cdp='';if(+f.pagapt>1+f.pts.length)f.pagapt='1'}
+      if(k==='ents'){f.ents=f.ents||[];while(f.ents.length<n-1)f.ents.push({nom:'',tel:'',dir:'',ref:'',ubi:'',que:''});if(f.ents.length>n-1)f.ents.splice(n-1)}
       if(k==='ags'){f.agG=(f.agG||[1]).slice(0,n);while(f.agG.length<n)f.agG.push(1);agTotal(f)}
       if(/^agp\d+$/.test(k)){f.agG=f.agG||[1];const gi=+k.slice(3);if(gi<f.agG.length){f.agG[gi]=n;agTotal(f)}}
       if(k==='paqs'){f.paqs=f.paqs||[];while(f.paqs.length<n-1)f.paqs.push({ag:'',dest:'',tpago:'',tenv:'',ind:'',agubi:'',igual:'',rn:'',rd:'',rt:''});if(f.paqs.length>n-1)f.paqs.splice(n-1)}

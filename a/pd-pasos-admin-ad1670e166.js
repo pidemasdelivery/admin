@@ -387,6 +387,9 @@
         h+=yapeAdm();
         h+=U.who(recN,(t==='compra'?(o.nombre_receptor?'Recibe la compra (no es quien la pidió)':'Cliente'):(/Pide el servicio:\s*Quien recibe/i.test(String(o.observaciones||''))?'Quien recibe · pidió el servicio':'Quien recibe'))+' · entrega aquí','',true)+U.addr(o.direccion_entrega,o.referencia_entrega)+U.contact(U.maps(o.latitud_entrega,o.longitud_entrega,o.direccion_entrega,LK(o.ubicacion_entrega)),recT,'Hola, te escribimos de Pidemás por tu pedido '+U.ref(id)+'.');
         s.body=h;}}
+    /* recojo y entrega con varias entregas: lista de las adicionales y si ya se dejaron */
+    {const L=t==='recojo'&&Array.isArray(o.puntos_entrega)?o.puntos_entrega.filter(Boolean):[];if(L.length&&steps[3]){const falta=L.filter(x=>!x.entregado_en).length;
+      steps[3].body=(steps[3].body||'')+`<div class="sum" style="gap:8px"><div class="lbl">Entregas adicionales · ${L.length-falta} de ${L.length} listas</div>`+L.map(x=>`<div class="li"><span>Entrega ${E(x.n)} · ${E(x.nombre||'Quien recibe')}${x.telefono?' · '+E(x.telefono):''}<br><small style="color:#6B5E55">${E(x.direccion||'')}${x.que?' · '+E(x.que):''}</small></span><b style="color:${x.entregado_en?'#0F6B33':'#9A330A'}">${x.entregado_en?'Entregado '+U.hora(x.entregado_en):'Pendiente'}</b></div>`).join('')+`</div>`}}
     /* 4 · Cerrado */
     {const s=steps[4];s.locked='Se muestra al entregar';s.sum='Entregado'+(o.entregado_en?' · '+U.hora(o.entregado_en):'');s.body=U.st('Pedido entregado'+(o.entregado_en?' a las '+U.hora(o.entregado_en):''),'ok');}
 
