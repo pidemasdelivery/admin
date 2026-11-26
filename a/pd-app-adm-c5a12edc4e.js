@@ -113,7 +113,7 @@
   }
   const cPasos=(sv,neg)=>['Recibido','Asignado',sv==='Compra'?'Compra':neg?'En el local':'Recojo','En camino','Entregado'];
   const ESTILO=PdPasos.css+C_CSS+`
-.nsq{counter-reset:nsq}.nsq:not(:has(.pzh)) .fld>label{display:flex;align-items:center;gap:8px}.nsq:not(:has(.pzh)) .fld>label::before{counter-increment:nsq;content:counter(nsq);flex:none;width:24px;height:24px;border-radius:50%;background:#FDEBDF;color:#9A330A;font-size:12.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+.nsq{counter-reset:nsq}.nsq .bk{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#C4410C;background:#FFF4EC;border:1px solid #F6D9C6;border-radius:999px;padding:5px 11px;align-self:flex-start}.nsq .pq{counter-reset:nsq;display:flex;flex-direction:column;gap:12px;padding:14px;border:1px solid #F1E4DA;border-radius:18px;background:#FFFCFA}.nsq .addb{height:50px;border-radius:14px;border:1.5px dashed #E2A07E!important;background:#FFFFFF!important;color:#C4410C!important;font-weight:800}.nsq:not(:has(.pzh)) .fld>label:not(.b){display:flex;align-items:center;gap:8px}.nsq:not(:has(.pzh)) .fld>label:not(.b)::before{counter-increment:nsq;content:counter(nsq);flex:none;width:24px;height:24px;border-radius:50%;background:#FDEBDF;color:#9A330A;font-size:12.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
 
 :host{z-index:2147482000}
 .app{animation:none}
@@ -1092,12 +1092,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     return `<span style="color:#6B5E55">Así el motorizado sabe cuánto sencillo llevar.</span>`}
   function svcForm(f){if(f.tipo==='enc'&&f.nuevo&&!f.agG)f.agG=[1+(f.paqs||[]).length];
     const fl=(id,l,k,ph,o)=>`<div class="fld"><label for="${id}">${l}</label><input id="${id}" value="${E(f[k]??'')}" data-in="pe:${k}"${ph?` placeholder="${E(ph)}"`:''}${o||''}></div>`;
-    const fotosCompra=f=>{const L=f.fotos||[];
-      return `<div class="fld"><label>Fotos de la compra <span style="font-weight:500;color:#6B5E55">(opcional)</span></label>`+
-        (L.length?`<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">${L.map((u,i)=>`<div style="position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;border:1px solid #F1E4DA;background:#FFF9F5"><img src="${E(u)}" alt="Foto ${i+1} de la compra" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><button type="button" data-a="pe:fotox:${i}" aria-label="Quitar foto ${i+1}" style="position:absolute;top:4px;right:4px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(31,26,23,.72);color:#FFFFFF;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer">×</button></div>`).join('')}</div>`:'')+
-        (f.subiendo?`<div class="load">Subiendo ${f.subiendo} foto${f.subiendo===1?'':'s'}…</div>`:'')+
-        `<label class="b soft" style="cursor:pointer">${L.length?'Agregar más fotos':'Agregar fotos'}<input type="file" accept="image/*" multiple data-foto-compra="1" hidden></label>`+
-        `<span style="font-size:13px;color:#6B5E55">Fotos del producto, la lista o la marca, para que el motorizado compre lo correcto.</span></div>`};
+    const fotosCompra=f=>nsFotos(f,-1);
     const ta=(id,l,k,ph)=>`<div class="fld"><label for="${id}">${l}</label><textarea id="${id}" data-in="pe:${k}" placeholder="${E(ph||'')}" style="min-height:96px;padding:14px 16px;border-radius:14px;border:1.5px solid #F1E4DA;font:inherit;font-size:16px;width:100%;box-sizing:border-box">${E(f[k]??'')}</textarea></div>`;
     const sl=(id,l,k,ops,ph)=>`<div class="fld"><label for="${id}">${l}</label><select id="${id}" data-in="pe:${k}" style="height:56px;border-radius:14px;border:1.5px solid #F1E4DA;padding:0 14px;font:inherit;font-size:16px;font-weight:700;width:100%;background:#fff">${ph?`<option value="">${E(ph)}</option>`:''}${ops.map(x=>`<option value="${E(x[0])}"${String(f[k])===String(x[0])?' selected':''}>${E(x[1])}</option>`).join('')}${f[k]&&!ops.some(x=>String(x[0])===String(f[k]))?`<option value="${E(f[k])}" selected>${E(f[k])}</option>`:''}</select></div>`;
     const sg=(l,k,ops)=>`<div class="fld"><label>${l}</label><div class="opc">${ops.map(x=>`<button type="button" class="${String(f[k]??'').toLowerCase()===String(x[0]).toLowerCase()?'on':''}" data-a="pe:set:${k}:${E(x[0])}">${E(x[1])}</button>`).join('')}</div></div>`;
@@ -1142,22 +1137,22 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
         (ptMulti(f)&&f.quien==='envia'?sg('¿En qué punto de recojo paga?','pagapt',[[ '1','Punto 1 · '+(String(f.rnom||'').trim()||'quien envía')]].concat((f.pts||[]).map((q,i)=>[String(i+2),'Punto '+(i+2)+(String(q.nom||'').trim()?' · '+String(q.nom).trim():'')])))+`<span style="font-size:13px;color:#6B5E55;margin-top:-4px">Ahí el motorizado cobra el total del servicio (${Number.isFinite(ptSuma(f))?M(ptSuma(f)):'S/ —'}).</span>`:''):''));
     let h='';
     if(f.tipo==='recojo'){
-      h+=card('Quien envía y quien recibe',pzH(1,'Envía')+fl('peRn','Nombre y apellido de quien envía','rnom','')+fl('peRt','Número de quien envía','rtel','',tel)+fl('peRd','Dirección','rdir','')+fl('peRr','Referencia','rref','Ej. frente al parque, portón negro')+fl('peRa','¿A nombre de quién está el pedido?','anom','Ej. Juan Pérez · si es distinto de quien entrega')+fl('peRu','Ubicación (Google Maps)','rubi','Pega el enlace de Google Maps')+mp('rubi','rdir','Lugar de recojo'));
-      {const nP=(f.pts||[]).length;const masPt=k=>k===nP&&nP<5?`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:pt+">${IC.plus}Agregar otro punto de recojo</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si no hay más puntos de recojo, toca «Siguiente».</span>`:'';
-        h=h.replace(/<\/div>$/,`<div style="height:1px;background:#F1E4DA;margin:8px 0"></div>`+pzH(2,'Recibe')+fl('peEn','Nombre y apellido de quien recibe','enom','')+fl('peEt','Número de quien recibe','etel','',tel)+fl('peEd','Dirección','edir','')+fl('peEr','Referencia','eref','Ej. edificio azul, dpto. 302')+fl('peEu','Ubicación (Google Maps)','eubi','Pega el enlace de Google Maps')+mp('eubi','edir','Lugar de entrega')+fl('peQl','¿Qué se lleva?','lleva','Ej. sobre con documentos, caja pequeña')+masPt(0)+'</div>');
+      h+=card('Quien envía y quien recibe',((f.pts||[]).length?`<span class="bk">Recojo 1 de ${1+f.pts.length}</span>`:'')+pzH(1,'Envía')+fl('peRn','Nombre y apellido de quien envía','rnom','')+fl('peRt','Número de quien envía','rtel','',tel)+fl('peRd','Dirección','rdir','')+fl('peRr','Referencia','rref','Ej. frente al parque, portón negro')+fl('peRa','¿A nombre de quién está el pedido?','anom','Ej. Juan Pérez · si es distinto de quien entrega')+fl('peRu','Ubicación (Google Maps)','rubi','Pega el enlace de Google Maps')+mp('rubi','rdir','Lugar de recojo'));
+      {const nP=(f.pts||[]).length;const masPt=k=>k===nP&&nP<5?`<button type="button" class="b addb" style="margin-top:6px" data-a="pe:pt+">${IC.plus}Agregar otro punto de recojo</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si no hay más puntos de recojo, toca «Siguiente».</span>`:'';
+        h=h.replace(/<\/div>$/,`<div style="height:1px;background:#F1E4DA;margin:8px 0"></div>`+((f.ents||[]).length?`<span class="bk">Entrega 1 de ${1+f.ents.length}</span>`:'')+pzH(2,'Recibe')+fl('peEn','Nombre y apellido de quien recibe','enom','')+fl('peEt','Número de quien recibe','etel','',tel)+fl('peEd','Dirección','edir','')+fl('peEr','Referencia','eref','Ej. edificio azul, dpto. 302')+fl('peEu','Ubicación (Google Maps)','eubi','Pega el enlace de Google Maps')+mp('eubi','edir','Lugar de entrega')+fl('peQl','¿Qué se lleva?','lleva','Ej. sobre con documentos, caja pequeña')+masPt(0)+'</div>');
         (f.pts||[]).forEach((q,i)=>{h+=card('Punto de recojo '+(i+2),nsPuntoForm(f,i)+`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:ptx:${i}">Quitar este punto</button>`+masPt(i+1))})}
-      {const EN=f.ents=f.ents||[];const masEn=k=>k===EN.length&&EN.length<5?`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:en+">${IC.plus}Agregar otra entrega</button>`:'';
+      {const EN=f.ents=f.ents||[];const masEn=k=>k===EN.length&&EN.length<5?`<button type="button" class="b addb" style="margin-top:6px" data-a="pe:en+">${IC.plus}Agregar otra entrega</button>`:'';
         h=h.replace(/(<!--cd:Quien envía y quien recibe-->[\s\S]*?)(<!--cd:|$)/,(m0,a,b)=>a.replace(/<\/div>$/,masEn(0)+'</div>')+b);
         EN.forEach((q,i)=>{const inp=(k,ph,o)=>`<input data-in="pe:en:${i}:${k}" value="${E(q[k]||'')}" placeholder="${E(ph||'')}"${o||''}>`,fd=(l,k,ph,o)=>`<div class="fld"><label>${l}</label>${inp(k,ph,o)}</div>`;
-          h+=card('Entrega '+(i+2),`<span style="font-size:13px;color:#6B5E55">Entrega ${i+2} de ${EN.length+1} · el motorizado la deja después de la entrega ${i+1}</span>`+
+          h+=card('Entrega '+(i+2),`<span class="bk">Entrega ${i+2} de ${EN.length+1}</span>`+pzH(i+2,'Recibe')+
             fd('Nombre y apellido de quien recibe','nom','')+fd('Número de quien recibe','tel','',' type="tel" inputmode="tel" maxlength="20"')+fd('Dirección','dir','')+fd('Referencia','ref','Ej. edificio azul, dpto. 302')+fd('Ubicación (Google Maps)','ubi','Pega el enlace de Google Maps')+
             `<button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:enmapa:${i}">${coordsDe(q.ubi)?'Cambiar en el mapa':'Marcar en el mapa'}</button>`+fd('¿Qué se le deja?','que','Ej. 1 bolsa')+
             `<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:enx:${i}">Quitar esta entrega</button>`+masEn(i+1))})}
       h+=costo;
     }else if(f.tipo==='compra'){
       h+=card('Información del cliente',pzH(1,'Quien compra')+fl('peN','Nombre y apellido','nom','')+fl('peT','Número','tel','',tel)+`<div style="height:1px;background:#F1E4DA;margin:6px 0"></div>`+pzH(2,'Dónde se recibe')+fl('peD','Dirección de entrega','dir','')+fl('peR','Referencia','ref','Ej. frente a la bodega, casa verde')+fl('peU','Ubicación (Google Maps)','ubi','Pega el enlace de Google Maps')+mp('ubi','dir','Lugar de entrega de la compra'));
-      {const nS=(f.pts||[]).length;const masSit=k=>k===nS&&nS<5?`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:pt+">${IC.plus}Agregar otro lugar de compra</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si se compra en un solo lugar, toca «Siguiente».</span>`:'';
-        h+=card('Información de la compra',(nS?`<span style="font-size:13px;color:#6B5E55">Lugar 1 de ${nS+1}</span>`:'')+fl('peLg','¿De dónde desea la compra?','lugar','')+fl('peLu','Ubicación del lugar (Google Maps)','lugarUrl','Pega el enlace de Google Maps')+mp('lugarUrl','lugar','Dónde se hace la compra')+nsProds(f,-1)+fotosCompra(f)+ta('peOb','Observaciones','obs','')+masSit(0));
+      {const nS=(f.pts||[]).length;const masSit=k=>k===nS&&nS<5?`<button type="button" class="b addb" style="margin-top:6px" data-a="pe:pt+">${IC.plus}Agregar otro lugar de compra</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si se compra en un solo lugar, toca «Siguiente».</span>`:'';
+        h+=card('Información de la compra',(nS?`<span class="bk">Lugar 1 de ${nS+1}</span>`:'')+fl('peLg','¿De dónde desea la compra?','lugar','')+fl('peLu','Ubicación del lugar (Google Maps)','lugarUrl','Pega el enlace de Google Maps')+mp('lugarUrl','lugar','Dónde se hace la compra')+nsProds(f,-1)+fotosCompra(f)+ta('peOb','Observaciones','obs','')+masSit(0));
         (f.pts||[]).forEach((q,i)=>{h+=card('Información de la compra · lugar '+(i+2),nsSitioForm(f,i)+`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:ptx:${i}">Quitar este lugar</button>`+masSit(i+1))})}
       h+=compCard();
       h+=costo;
@@ -1166,13 +1161,13 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       /* Encomienda en orden: primero cuántos paquetes, luego cada paquete con su agencia, destino y quien lo recibe */
       const ot=optsDe('encTipoEnvio'),tp0=optsDe('encTipoPago'),tp=tp0.length?tp0:[['pago_en_agencia','Pago en agencia'],['pago_a_destino','Pago a destino']];
       const cant=1+(f.paqs||[]).length;
-      const masPaq=n=>n===cant&&cant<5?`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:pqadd">${IC.plus}Agregar otro paquete</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si no hay más paquetes, toca «Siguiente».</span>`:'';
+      const masPaq=n=>n===cant&&cant<5?`<button type="button" class="b addb" style="margin-top:6px" data-a="pe:pqadd">${IC.plus}Agregar otro paquete</button><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si no hay más paquetes, toca «Siguiente».</span>`:'';
       /* todos los paquetes con el mismo formulario (agencia y destino con selector de los registrados) */
       if(f.agG){agSync(f);let k0=0;
-        f.agG.forEach((nG,gi)=>{let b='';for(let j=0;j<nG;j++){const k=k0+j;b+=nsPaqForm(f,k,cant,{sinAg:j>0,num:j+1,tit:'Paquete '+(j+1)+(nG>1?' de '+nG:'')})+(j>0?`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:agpqx:${k}">Quitar el paquete ${j+1}</button>`:'')}
-          b+=`<button type="button" class="b" style="height:46px;border-style:dashed;color:#C4410C;border-color:#E2A07E" data-a="pe:agpq:${gi}">+ Agregar paquete a esta agencia</button>`;
+        f.agG.forEach((nG,gi)=>{let b='';for(let j=0;j<nG;j++){const k=k0+j;b+=nsPaqForm(f,k,cant,{sinAg:j>0,num:j+1,tit:'Paquete '+(j+1)+' de '+nG,extra:j>0?`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:agpqx:${k}">Quitar el paquete ${j+1}</button>`:''})}
+          b+=`<button type="button" class="b addb" data-a="pe:agpq:${gi}">+ Agregar paquete a esta agencia</button>`;
           if(gi>0)b+=`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:agx:${gi}">Quitar la agencia ${gi+1}</button>`;
-          if(gi===f.agG.length-1&&f.agG.length<4)b+=`<button type="button" class="b" style="height:50px;margin-top:6px" data-a="pe:ag+">${IC.plus}Agregar otra agencia</button>`;
+          if(gi===f.agG.length-1&&f.agG.length<4)b+=`<button type="button" class="b addb" style="margin-top:6px" data-a="pe:ag+">${IC.plus}Agregar otra agencia</button>`;
           h+=card('Agencia '+(gi+1),b);k0+=nG})}
       else for(let k=0;k<cant;k++)h+=card('Paquete '+(k+1),nsPaqForm(f,k,cant)+(k>0?`<button type="button" class="b" style="height:44px;color:#B42318;border-color:#F4C7C3" data-a="pe:pqx:${k-1}">Quitar este paquete</button>`:'')+masPaq(k+1));
       h+=compCard();
@@ -1183,12 +1178,12 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   }
   /* Fotos de la compra: se achican (máx. 1600 px, JPG) y se suben a restaurantes/compras/ */
   function achicarFoto(fl){return new Promise(res=>{try{const u=URL.createObjectURL(fl),im=new Image();im.onload=()=>{try{const k=Math.min(1,1600/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>res(b||fl),'image/jpeg',0.82)}catch(_){res(fl)}};im.onerror=()=>{URL.revokeObjectURL(u);res(fl)};im.src=u}catch(_){res(fl)}})}
-  async function fotosCompraCambio(e){const i=e.target;if(!i||!i.dataset||!i.dataset.fotoCompra||!PE.f)return;const f=PE.f;
+  async function fotosCompraCambio(e){const i=e.target;if(!i||!i.dataset||!i.dataset.fotoCompra||!PE.f)return;const f0=PE.f,LG=Number(i.dataset.fotoCompra);const f=LG>=0?((f0.pts||[])[LG]||f0):f0;
     const fs=[...(i.files||[])].filter(x=>/^image\//.test(x.type)).slice(0,10);i.value='';if(!fs.length)return;
     f.fotos=f.fotos||[];f.subiendo=(f.subiendo||0)+fs.length;f.msg='';key='';pintar();
     for(const fl of fs){try{const bl=await achicarFoto(fl),path='compras/'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.jpg';
         const up=await D().storage.from('restaurantes').upload(path,bl,{contentType:bl.type||'image/jpeg',upsert:false});if(up.error)throw up.error;
-        f.fotos.push(D().storage.from('restaurantes').getPublicUrl(path).data.publicUrl)}catch(err){f.msg='No se pudo subir una foto: '+(err?.message||err)}
+        f.fotos.push(D().storage.from('restaurantes').getPublicUrl(path).data.publicUrl)}catch(err){f0.msg='No se pudo subir una foto: '+(err?.message||err)}
       f.subiendo=Math.max(0,f.subiendo-1);key='';pintar()}}
   function svcPayload(f,o){
     const n=v=>{const x=Number(String(v??'').replace(',','.'));return Number.isFinite(x)&&x>=0?Math.round(x*100)/100:0};
@@ -1214,7 +1209,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     }else if(f.tipo==='compra'){
       if(!f.nom.trim())f.nom='Cliente';
       const otra=f.para==='otra';
-      p={compra_fotos:Array.isArray(f.fotos)?f.fotos.slice(0,20):[],quien_paga:otra&&f.quien==='recibe'?'recibe':'cliente',nombre_receptor:otra?String(f.enom||'').trim()||null:null,telefono_receptor:otra?String(f.etel||'').trim()||null:null,nombre_cliente:f.nom.trim(),telefono_cliente:f.tel.trim(),nombre_remitente:f.nom.trim(),telefono_remitente:f.tel.trim(),direccion_entrega:f.dir.trim(),referencia_entrega:f.ref.trim()||null,ubicacion_entrega:f.ubi.trim()||null,
+      p={compra_fotos:(f.fotos||[]).concat(...(f.pts||[]).map(q=>q.fotos||[])).slice(0,30),quien_paga:otra&&f.quien==='recibe'?'recibe':'cliente',nombre_receptor:otra?String(f.enom||'').trim()||null:null,telefono_receptor:otra?String(f.etel||'').trim()||null:null,nombre_cliente:f.nom.trim(),telefono_cliente:f.tel.trim(),nombre_remitente:f.nom.trim(),telefono_remitente:f.tel.trim(),direccion_entrega:f.dir.trim(),referencia_entrega:f.ref.trim()||null,ubicacion_entrega:f.ubi.trim()||null,
         direccion_recojo:[f.lugar.trim(),String(f.lugarUrl||'').trim()].filter(Boolean).join(' · '),tipo_comprobante:f.comp||null,documento_comprobante:f.doc.trim()||null,costo_delivery:costo,total:Math.round((n(o.subtotal)+costo)*100)/100,metodo_pago:f.pago==='al_final'?'yape':pagado?'efectivo':f.pago,pago_servicio_momento:f.pago==='al_final'?'al_final':null};
       const cpT=String(f.comp||'').toLowerCase();
       obs=rehacerObs(obs,{'Entregar a':f.para==='otra'?[f.enom,f.etel].map(x=>String(x||'').trim()).filter(Boolean).join(' · '):'','Ubicación':f.ubi,'Compra solicitada':f.detalle,'Comprobante':f.comp||'No especificado','DNI/RUC':cpT?f.doc:'','Nombre comprobante':cpT==='boleta'?f.cnom:'','Razón social':cpT==='factura'?f.craz:'','Dirección fiscal':cpT==='factura'?f.cdir:''},f.obs);
@@ -1338,21 +1333,27 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const q=(f.pts||[])[i]||{},n=i+2;
     const inp=(k,ph,o)=>`<input data-in="pe:pt:${i}:${k}" value="${E(q[k]||'')}" placeholder="${E(ph||'')}"${o||''}>`;
     const fld=(l,k,ph,o)=>`<div class="fld"><label>${l}</label>${inp(k,ph,o)}</div>`;
-    return `<span style="font-size:13px;color:#6B5E55">Punto ${n} de ${1+(f.pts||[]).length} · el motorizado recoge aquí después del punto ${n-1}</span>`+
+    return `<span class="bk">Recojo ${n} de ${1+(f.pts||[]).length}</span>`+pzH(n,'Envía')+
       fld('Nombre y apellido de quien entrega','nom','')+fld('Número de quien entrega','tel','',' type="tel" inputmode="tel" maxlength="20"')+fld('Dirección','dir','')+fld('Referencia','ref','Ej. frente al parque, portón negro')+
       fld('¿A nombre de quién está el pedido?','anom','Ej. Juan Pérez · si es distinto de quien entrega')+fld('Ubicación (Google Maps)','ubi','Pega el enlace de Google Maps')+
       `<button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:ptmapa:${i}">${coordsDe(q.ubi)?'Cambiar en el mapa':'Marcar en el mapa'}</button>`;
   }
   /* compra en varios lugares: cada lugar con el mismo formulario que el lugar 1 */
+  function nsFotos(f,LG){const q=LG<0?f:((f.pts||[])[LG]||{});const L=q.fotos||[];
+      return `<div class="fld"><label>Fotos de la compra <span style="font-weight:500;color:#6B5E55">(opcional)</span></label>`+
+        (L.length?`<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">${L.map((u,i)=>`<div style="position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;border:1px solid #F1E4DA;background:#FFF9F5"><img src="${E(u)}" alt="Foto ${i+1} de la compra" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><button type="button" data-a="pe:fotox:${LG}:${i}" aria-label="Quitar foto ${i+1}" style="position:absolute;top:4px;right:4px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(31,26,23,.72);color:#FFFFFF;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer">×</button></div>`).join('')}</div>`:'')+
+        (q.subiendo?`<div class="load">Subiendo ${q.subiendo} foto${q.subiendo===1?'':'s'}…</div>`:'')+
+        `<label class="b soft" style="cursor:pointer">${L.length?'Agregar más fotos':'Agregar fotos'}<input type="file" accept="image/*" multiple data-foto-compra="${LG}" hidden></label>`+
+        `<span style="font-size:13px;color:#6B5E55">Fotos del producto, la lista o la marca, para que el motorizado compre lo correcto.</span></div>`}
   function nsSitioForm(f,i){
     /* mismo formulario y diseño que el lugar 1 */
     const q=(f.pts||[])[i]||{},n=i+2,TA='min-height:96px;padding:14px 16px;border-radius:14px;border:1.5px solid #F1E4DA;font:inherit;font-size:16px;width:100%;box-sizing:border-box';
     const fl2=(l,k,ph)=>`<div class="fld"><label>${l}</label><input data-in="pe:pt:${i}:${k}" value="${E(q[k]||'')}"${ph?` placeholder="${E(ph)}"`:''}></div>`;
     const ta2=(l,k,ph)=>`<div class="fld"><label>${l}</label><textarea data-in="pe:pt:${i}:${k}" placeholder="${E(ph||'')}" style="${TA}">${E(q[k]||'')}</textarea></div>`;
-    return `<span style="font-size:13px;color:#6B5E55">Lugar ${n} de ${1+(f.pts||[]).length}</span>`+
+    return `<span class="bk">Lugar ${n} de ${1+(f.pts||[]).length}</span>`+
       fl2('¿De dónde desea la compra?','nom','')+fl2('Ubicación del lugar (Google Maps)','ubi','Pega el enlace de Google Maps')+
       `<button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:ptmapa:${i}">${coordsDe(q.ubi)?'Cambiar en el mapa':'Marcar en el mapa'}</button>`+
-      nsProds(f,i)+ta2('Observaciones','obs','');
+      nsProds(f,i)+nsFotos(f,i)+ta2('Observaciones','obs','');
   }
   /* productos de cada lugar de compra (L=-1: lugar 1). Se guardan también como texto «qué comprar» */
   function prodsDe(f,L){const q=L<0?f:(f.pts||[])[L];if(!q)return [];const k=L<0?'detalle':'que';
@@ -1360,13 +1361,13 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     if(!q.prods.length)q.prods.push({n:'',c:'1'});return q.prods}
   function prodsTxt(f,L){const q=L<0?f:(f.pts||[])[L];if(!q)return;const P=prodsDe(f,L).filter(x=>String(x.n||'').trim());q[L<0?'detalle':'que']=P.map((x,j)=>(j+1)+'. '+String(x.n).trim()+(Number(x.c)>1?' × '+Number(x.c):'')).join('\n')}
   function nsProds(f,L){const P=prodsDe(f,L),st='height:48px;border-radius:12px;border:1.5px solid #F1E4DA;padding:0 12px;font:inherit;font-size:16px;box-sizing:border-box;min-width:0';
-    return `<div class="fld"><label>Productos a comprar</label><div style="display:flex;flex-direction:column;gap:8px">${P.map((x,j)=>`<div style="display:flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:50%;background:#FDEBDF;color:#9A330A;font-size:13px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex:none">${j+1}</span><input aria-label="Producto ${j+1}" style="${st};flex:1 1 0%" placeholder="Ej. Arroz 5 kg" value="${E(x.n||'')}" data-in="pe:pr:${L}:${j}:n"><input aria-label="Cantidad del producto ${j+1}" style="${st};width:64px;text-align:center" inputmode="numeric" value="${E(x.c||'1')}" data-in="pe:pr:${L}:${j}:c">${P.length>1?`<button type="button" aria-label="Quitar producto ${j+1}" style="width:40px;height:40px;border-radius:50%;border:1px solid #F4C7C3;background:#FFFFFF;color:#B42318;font-size:20px;cursor:pointer" data-a="pe:prx:${L}:${j}">×</button>`:''}</div>`).join('')}
+    return `<div class="fld"><label>Productos a comprar</label><div style="display:flex;flex-direction:column;gap:8px">${P.map((x,j)=>`<div style="display:flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:50%;background:#FDEBDF;color:#9A330A;font-size:13px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex:none">${j+1}</span><input data-sin-pegar aria-label="Producto ${j+1}" style="${st};flex:1 1 0%" placeholder="Ej. Arroz 5 kg" value="${E(x.n||'')}" data-in="pe:pr:${L}:${j}:n"><input data-sin-pegar aria-label="Cantidad del producto ${j+1}" style="${st};width:64px;text-align:center" inputmode="numeric" value="${E(x.c||'1')}" data-in="pe:pr:${L}:${j}:c">${P.length>1?`<button type="button" aria-label="Quitar producto ${j+1}" style="width:40px;height:40px;border-radius:50%;border:1px solid #F4C7C3;background:#FFFFFF;color:#B42318;font-size:20px;cursor:pointer" data-a="pe:prx:${L}:${j}">×</button>`:''}</div>`).join('')}
       <button type="button" class="b" style="height:44px;border-style:dashed;color:#C4410C;border-color:#E2A07E" data-a="pe:pr+:${L}">+ Agregar producto</button></div></div>`}
   function nsSitiosPayload(f,o){
     const antes=Array.isArray(o.puntos_recojo)?o.puntos_recojo:[];
-    return (f.pts||[]).map(q=>({nom:String(q.nom||'').trim(),ubi:String(q.ubi||'').trim(),que:String(q.que||'').trim(),obs:String(q.obs||'').trim(),cd:cdN(q.cd)})).filter(q=>q.nom||q.que)
+    return (f.pts||[]).map(q=>({nom:String(q.nom||'').trim(),ubi:String(q.ubi||'').trim(),que:String(q.que||'').trim(),obs:String(q.obs||'').trim(),fotos:Array.isArray(q.fotos)?q.fotos:[],cd:cdN(q.cd)})).filter(q=>q.nom||q.que)
       .map((q,i)=>{const c=coordsDe(q.ubi),ya=antes.find(x=>Number(x.n)===i+2&&x.recogido_en&&String(x.nombre||'')===q.nom);
-        return {n:i+2,nombre:q.nom||null,direccion:q.nom||null,ubicacion:q.ubi||null,lat:c?c.lat:null,lng:c?c.lng:null,que:q.que||null,obs:q.obs||null,costo_delivery:Number.isFinite(q.cd)?q.cd:null,recogido_en:ya?ya.recogido_en:null}});
+        return {n:i+2,nombre:q.nom||null,direccion:q.nom||null,ubicacion:q.ubi||null,lat:c?c.lat:null,lng:c?c.lng:null,que:q.que||null,obs:q.obs||null,fotos:q.fotos.length?q.fotos:null,costo_delivery:Number.isFinite(q.cd)?q.cd:null,recogido_en:ya?ya.recogido_en:null}});
   }
   /* delivery por punto de recojo: con 2 o más puntos el costo del servicio es la suma (igual que en encomienda) */
   const ptMulti=f=>(f.tipo==='recojo'||f.tipo==='compra')&&(f.pts||[]).length>0;
@@ -1403,11 +1404,12 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const inp=(c,ph,at)=>`<input data-in="pe:pk:${k}:${c}" value="${E(g(c)||'')}" placeholder="${E(ph||'')}"${at||''}>`;
     const chips=(c,ops)=>`<div class="opc">${ops.map(x=>`<button type="button" class="${String(g(c)||'')===String(x[0])?'on':''}" data-a="pe:pks:${k}:${c}:${E(x[0])}">${E(x[1])}</button>`).join('')}</div>`;
     const tp0=optsDe('encTipoPago'),tp=tp0.length?tp0:[['pago_en_agencia','Pago en agencia'],['pago_a_destino','Pago a destino']];
-    let h=op.tit?`<div style="display:flex;align-items:center;gap:8px;margin-top:${op.sinAg?'6px':'0'}"><span style="width:28px;height:28px;border-radius:50%;background:#C4410C;color:#FFFFFF;font-weight:800;font-size:14px;display:inline-flex;align-items:center;justify-content:center">${op.num}</span><b style="font-size:16px;color:#1F1A17">${E(op.tit)}</b></div>`:cant>1?`<span style="font-size:13px;color:#6B5E55">Paquete ${k+1} de ${cant}</span>`:'';
+    const hd=op.tit?`<span class="bk">${E(op.tit)}</span>`:'';let h=op.tit?'':cant>1?`<span style="font-size:13px;color:#6B5E55">Paquete ${k+1} de ${cant}</span>`:'';
     if(!op.sinAg){h+=`<div class="fld"><label>Agencia</label><select data-in="pe:pkag:${k}" style="${selSt}"><option value="">${ags.length?'Elige una agencia registrada':'No hay agencias registradas'}</option>${ags.map(x=>`<option value="${E(x.nombre)}"${agReg&&!o.agOtra&&x===agReg?' selected':''}>${E(x.nombre)}</option>`).join('')}<option value="__otra"${agTxt?' selected':''}>➕ Otra agencia (escribir)</option></select></div>`;
     if(agTxt)h+=`<div class="fld"><label>Nombre de la agencia nueva</label>${inp('ag','Ej. Olva Courier',' autocomplete="off"')}</div>`;
     h+=nsAgUbiFld({ag})+`<div class="fld"><label>Ubicación de la agencia (Google Maps)</label>${inp('agubi','Pega el enlace de Google Maps')}</div>`+
       `<button type="button" class="b" style="height:44px;margin-top:-4px" data-a="pe:pkmapa:${k}">${coordsDe(g('agubi'))?'Cambiar en el mapa':'Marcar en el mapa'}</button>`;}
+    const agEnd=h.length;
     if(dsL.length)h+=`<div class="fld"><label>Destino</label><select data-in="pe:pkds:${k}" style="${selSt}"><option value="">Elige un destino de ${E(agReg.nombre)}</option>${dsL.map(x=>`<option value="${E(x.destino_final)}"${dsReg&&!o.dsOtro&&x===dsReg?' selected':''}>${E(x.destino_final)}</option>`).join('')}<option value="__otro"${dsTxt?' selected':''}>➕ Otro destino (escribir)</option></select></div>`;
     if(dsTxt)h+=`<div class="fld"><label>${dsL.length?'Destino nuevo':'Destino'}</label>${inp('dest','Ej. Lima')}</div>`;
     h+=`<div class="fld"><label>Modalidad de pago</label>${chips('tpago',tp)}</div><div class="fld"><label>Tipo de encomienda</label>${chips('tenv',optsDe('encTipoEnvio'))}</div>`+
@@ -1415,6 +1417,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
       (`<div style="height:1px;background:#F1E4DA;margin:4px 0"></div><div class="lbl" style="margin:0">Quien recibe este paquete (opcional)</div><span style="font-size:13px;color:#6B5E55;margin-top:-4px">Si no lo tienes, sigue: estos datos van en el rotulado del paquete.</span>`);
     if(k>0)h+=`<button type="button" class="b" style="height:44px${o.igual?';border-color:#C4410C;background:#FFF4EC;color:#9A330A':''}" data-a="pe:pks:${k}:igual:${o.igual?'':'1'}">${o.igual?'✓ ':''}Lo recibe la misma persona del paquete 1${String(f.enom||'').trim()?' ('+E(String(f.enom).trim())+')':''}</button>`;
     if(k===0||!o.igual)h+=`<div class="fld"><label>Nombre y apellido de quien recibe</label>${inp('rn','')}</div><div class="fld"><label>DNI de quien recibe</label>${inp('rd','',' inputmode="numeric" maxlength="12"')}</div><div class="fld"><label>Número de quien recibe</label>${inp('rt','',' type="tel" inputmode="tel" maxlength="20"')}</div>`;
+    if(op.tit)return h.slice(0,agEnd)+`<div class="pq">`+hd+h.slice(agEnd)+(op.extra||'')+`</div>`;
     return h;
   }
   /* campos de un paquete adicional (2 o 3) de la encomienda */
@@ -2875,7 +2878,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
           const t=T.calcular({km,destino:dest,aproximado:aprox});f.costo=t.total.toFixed(2);
           f.tf={t:'<b>'+M(t.total)+'</b>'+(km?' · '+km.toFixed(2)+' km'+(aprox?' (aprox.)':''):'')+(t.zona?' · Zona '+E(t.zona):'')+(orig?'':' · Sin ubicación de '+(f.tipo==='compra'?'la compra':'recojo')+': tarifa base o de zona')}}}
       catch(err){f.tf={mal:1,t:'No se pudo calcular: '+E(err?.message||err)}}key='';pintar();return}
-    if(PE.f&&a.dataset.a.startsWith('pe:fotox:')){(PE.f.fotos||[]).splice(+a.dataset.a.slice(9),1);key='';pintar();return}
+    if(PE.f&&a.dataset.a.startsWith('pe:fotox:')){const P2=a.dataset.a.split(':'),LG=+P2[2],q=LG>=0?(PE.f.pts||[])[LG]:PE.f;if(q)(q.fotos||[]).splice(+P2[3],1);key='';pintar();return}
     if(PE.f&&a.dataset.a==='pe:pt+'){const f=PE.f;f.pts=f.pts||[];if(f.pts.length<5){f.pts.push({nom:'',tel:'',dir:'',ref:'',ubi:'',que:'',anom:'',cd:''});if(f.nuevo)f.paso=nsPasos(f).indexOf((f.tipo==='compra'?'Información de la compra · lugar ':'Punto de recojo ')+(f.pts.length+1));f.msg=''}key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:ptx:')){(PE.f.pts||[]).splice(+a.dataset.a.slice(7),1);if(!PE.f.pts.length)PE.f.cdp='';if(+PE.f.pagapt>1+PE.f.pts.length)PE.f.pagapt='1';PE.f.paso=Math.min(PE.f.paso||0,nsPasos(PE.f).length-1);key='';pintar();return}
     if(PE.f&&a.dataset.a.startsWith('pe:ptmapa:')){const q=(PE.f.pts||[])[+a.dataset.a.slice(10)];const el2=window.pdMapa&&pdMapa.elegir;if(!q||!el2)return;
@@ -2998,12 +3001,12 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
 setInterval(()=>{try{
   if(!root||!window.pdMapa||!pdMapa.tarjeta)return;
   const bs=[...root.querySelectorAll('button[data-a^="pe:"][data-a*="mapa"]')].filter(b=>!b.dataset.pdmc&&/^pe:(mapa|ptmapa|pqmapa|pkmapa|enmapa):/.test(b.dataset.a));if(!bs.length)return;
-  if(!root.getElementById('pdmcCssA')){const css=document.getElementById('pd-mapa-css');const st=document.createElement('style');st.id='pdmcCssA';st.textContent=(css?css.textContent:'')+'.pdmcH{margin:2px 0 4px}';root.appendChild(st);
+  if(!root.getElementById('pdmcCssA')){const css=document.getElementById('pd-mapa-css');const st=document.createElement('style');st.id='pdmcCssA';st.textContent=(css?css.textContent.replace(/^@layer [\w-]+\{([\s\S]*)\}$/,'$1').replace(/html:root body(:not\(#pdZ\))+/g,':host'):'')+'.pdmcH{margin:2px 0 4px}';root.appendChild(st);
     const l=document.createElement('link');l.rel='stylesheet';l.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';root.appendChild(l)}
   bs.forEach(b=>{b.dataset.pdmc='1';const P=b.dataset.a.split(':'),kind=P[1];
     const prev=b.previousElementSibling,u=prev&&prev.matches&&prev.matches('.fld')?prev.querySelector('input'):null;if(!u)return;
     let d=null,tit='Ubicación';
-    if(kind==='mapa'){d=root.querySelector('[data-in="pe:'+P[3]+'"]');try{tit=decodeURIComponent(P.slice(4).join(':'))||tit}catch(_){}}
+    if(kind==='mapa'){d=P[3]==='lugar'?null:root.querySelector('[data-in="pe:'+P[3]+'"]');try{tit=decodeURIComponent(P.slice(4).join(':'))||tit}catch(_){}}
     else if(kind==='ptmapa'){d=root.querySelector('[data-in="pe:pt:'+P[2]+':dir"]');tit='Lugar '+(+P[2]+2)}
     else if(kind==='enmapa'){d=root.querySelector('[data-in="pe:en:'+P[2]+':dir"]');tit='Entrega '+(+P[2]+2)}
     else tit='Agencia';
