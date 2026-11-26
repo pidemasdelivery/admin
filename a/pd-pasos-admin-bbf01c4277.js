@@ -395,6 +395,11 @@
       const rol=t==='compra'?(rc&&rc!==o.nombre_cliente?'Manda a comprar para otra persona':'Manda a comprar para sí mismo'):t==='enc'?(pR?'Quien recibe · manda a recoger la encomienda':'Quien envía la encomienda'):(pR?'Quien recibe · manda a recoger':'Quien envía · manda a recoger y entregar');
       const qp=String(o.quien_paga||''),mo2=String(o.pago_servicio_momento||'').toLowerCase();
       const paga=mo2==='pagado'?'Ya pagado':mo2==='al_final'?'Al final a Pidemás':qp==='recibe'?(t==='compra'?'Quien recibe la compra':'Quien recibe'):qp==='envia'?(t==='compra'?'Quien manda a comprar':'Quien envía'):'Quien pide el servicio';
+      if(t!=='compra'){const nE=o.nombre_remitente||o.nombre_cliente||'Quien envía',tE=o.telefono_remitente||o.telefono_cliente,nR=o.nombre_receptor||'',tR=o.telefono_receptor||'';
+        return `<div class="sum" style="gap:8px"><div class="lbl">${t==='enc'?'Encomienda':'Recojo y entrega'}</div>`+
+          `<div class="lbl" style="margin:0">1 · Envía</div>`+U.who(nE,t==='enc'?'Entrega la encomienda':'Entrega el pedido','',true)+(tE?U.contact(null,tE,''):'')+
+          `<div style="height:1px;background:#F1E4DA;margin:4px 0"></div><div class="lbl" style="margin:0">2 · Recibe</div>`+(nR?U.who(nR,t==='enc'?'Recibe la encomienda':'Recibe el pedido','',true)+(tR?U.contact(null,tR,''):''):`<div class="li"><span>Recibe</span><b>Sin nombre registrado</b></div>`)+
+          `<div class="li"><span>Paga</span><b>${E(paga)}</b></div></div>`}
       return `<div class="sum" style="gap:8px"><div class="lbl">Pide el servicio</div>`+U.who(o.nombre_cliente||o.nombre_remitente||'Cliente',E(rol),'',true)+(o.telefono_cliente?U.contact(null,o.telefono_cliente,''):'')+
         (t==='compra'&&rc&&rc!==o.nombre_cliente?`<div class="lbl" style="margin-top:4px">Quien recibe la compra</div>`+U.who(rc,'Otra persona · se le entrega a ella','',true)+(o.telefono_receptor?U.contact(null,o.telefono_receptor,''):''):'')+
         `<div class="li"><span>Paga</span><b>${E(paga)}</b></div></div>`})();
