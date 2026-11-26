@@ -16,8 +16,11 @@ self.addEventListener('push',e=>{
     list.forEach(c=>c.postMessage({type:'pd-push',data:d}));
     await self.registration.showNotification(d.title||'Pidemás',{
       body:d.body||'',
-      icon:new URL('icon-192.png',self.registration.scope).href,
+      icon:d.icon||new URL('icon-192.png',self.registration.scope).href,
       badge:new URL('icon-192.png',self.registration.scope).href,
+      ...(d.image?{image:d.image}:{}),
+      // botones dentro del aviso: «Aceptar» (motorizado) y «Ver»
+      actions:Array.isArray(d.actions)?d.actions.slice(0,2):[],
       tag:d.tag||'pidemas',
       renotify:true,
       // se queda fijo en la pantalla (y en la de bloqueo) hasta que lo toques
@@ -26,18 +29,26 @@ self.addEventListener('push',e=>{
       timestamp:Date.now(),
       // vibración larga y propia de Pidemás: se distingue de WhatsApp sin mirar
       vibrate:[400,150,400,150,900],
-      data:{pedidoId:d.pedidoId||null}
+      data:{pedidoId:d.pedidoId||null,grupo:d.grupo||''}
     });
+    // número en el ícono de la app (si el teléfono lo permite)
+    try{if(self.navigator.setAppBadge){const n=(await self.registration.getNotifications()).length;await self.navigator.setAppBadge(n||undefined)}}catch(_){}
+    // si se juntan 3 o más pedidos nuevos, se agrupan en un solo aviso
+    try{const ns=(await self.registration.getNotifications()).filter(n=>n.data&&n.data.grupo==='nuevo');
+      if(ns.length>=3){const t=ns.map(n=>n.title.replace(/^(Nuevo pedido|Nuevo servicio · |Te asignaron )/,'').trim());ns.forEach(n=>n.close());
+        await self.registration.showNotification(ns.length+' pedidos nuevos',{body:t.slice(0,4).join(' · ')+(t.length>4?' …':''),icon:new URL('icon-192.png',self.registration.scope).href,badge:new URL('icon-192.png',self.registration.scope).href,tag:'pd-resumen',renotify:true,requireInteraction:true,vibrate:[400,150,400,150,900],data:{pedidoId:null,grupo:'resumen'}})}}catch(_){}
   })());
 });
 
 self.addEventListener('notificationclick',e=>{
   e.notification.close();
   const id=e.notification.data&&e.notification.data.pedidoId;
+  const accion=e.action||'';
+  try{if(self.navigator.clearAppBadge)self.navigator.clearAppBadge()}catch(_){}
   e.waitUntil((async()=>{
     const list=(await self.clients.matchAll({type:'window',includeUncontrolled:true})).filter(c=>String(c.url||'').startsWith(self.registration.scope));
-    for(const c of list){c.postMessage({type:'pd-open',pedidoId:id});if('focus' in c)return c.focus();}
-    if(self.clients.openWindow)return self.clients.openWindow(self.registration.scope+(id?'?pedido='+encodeURIComponent(id):''));
+    for(const c of list){c.postMessage({type:'pd-open',pedidoId:id,accion});if('focus' in c)return c.focus();}
+    if(self.clients.openWindow)return self.clients.openWindow(self.registration.scope+(id?'?pedido='+encodeURIComponent(id)+(accion?'&accion='+encodeURIComponent(accion):''):''));
   })());
 });
 
