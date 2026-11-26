@@ -17,7 +17,7 @@ self.addEventListener('push',e=>{
     await self.registration.showNotification(d.title||'Pidemás',{
       body:d.body||'',
       icon:d.icon||new URL('icon-192.png',self.registration.scope).href,
-      badge:new URL('icon-192.png',self.registration.scope).href,
+      badge:new URL('badge-96.png',self.registration.scope).href,
       ...(d.image?{image:d.image}:{}),
       // botones dentro del aviso: «Aceptar» (motorizado) y «Ver»
       actions:Array.isArray(d.actions)?d.actions.slice(0,2):[],
@@ -36,7 +36,7 @@ self.addEventListener('push',e=>{
     // si se juntan 3 o más pedidos nuevos, se agrupan en un solo aviso
     try{const ns=(await self.registration.getNotifications()).filter(n=>n.data&&n.data.grupo==='nuevo');
       if(ns.length>=3){const t=ns.map(n=>n.title.replace(/^(Nuevo pedido|Nuevo servicio · |Te asignaron )/,'').trim());ns.forEach(n=>n.close());
-        await self.registration.showNotification(ns.length+' pedidos nuevos',{body:t.slice(0,4).join(' · ')+(t.length>4?' …':''),icon:new URL('icon-192.png',self.registration.scope).href,badge:new URL('icon-192.png',self.registration.scope).href,tag:'pd-resumen',renotify:true,requireInteraction:true,vibrate:[400,150,400,150,900],data:{pedidoId:null,grupo:'resumen'}})}}catch(_){}
+        await self.registration.showNotification(ns.length+' pedidos nuevos',{body:t.slice(0,4).join(' · ')+(t.length>4?' …':''),icon:new URL('icon-192.png',self.registration.scope).href,badge:new URL('badge-96.png',self.registration.scope).href,tag:'pd-resumen',renotify:true,requireInteraction:true,vibrate:[400,150,400,150,900],data:{pedidoId:null,grupo:'resumen'}})}}catch(_){}
   })());
 });
 
