@@ -221,7 +221,7 @@ function tarjeta(host,o){
  else c.querySelector('.pdmcRDir').remove();
  [o.lat,o.lng].forEach(ocultar);
  /* pegar: el campo del enlace de Google Maps va dentro de su fila, para escribirlo o pegarlo */
- if(o.pegar&&o.maps){const gx=c.querySelector('.pdmcRow:not(.pdmcRDir) .pdmcTx');o.maps.style.cssText='display:block!important;width:100%;min-width:0;border:0;outline:0;background:transparent;padding:2px 0 0;font:700 13.5px/1.3 var(--font,system-ui,sans-serif);color:#1F1A17';o.maps.placeholder='Pega el enlace de Google Maps';gx.appendChild(o.maps);c.querySelector('.pdmcUrl').style.setProperty('display','none','important')}
+ if(o.pegar&&o.maps){const gx=c.querySelector('.pdmcRow:not(.pdmcRDir) .pdmcTx');o.maps.style.cssText='display:block!important;box-sizing:border-box!important;width:100%!important;height:44px!important;min-height:44px!important;min-width:0;margin:4px 0 0!important;padding:0 12px!important;border:1.5px solid #E7D5C8!important;border-radius:12px!important;background:#FFFFFF!important;outline:0;font:700 14px/1.2 var(--font,system-ui,sans-serif);color:#1F1A17';o.maps.placeholder='Pega el enlace de Google Maps';gx.appendChild(o.maps);c.querySelector('.pdmcUrl').style.setProperty('display','none','important')}
  else if(o.maps)ocultar(o.maps);
  c.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
   if(a==='abrir')abrirT(t);
