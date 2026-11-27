@@ -1024,7 +1024,17 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
     const nuevos=Object.keys(tags).filter(k=>String(tags[k]||'').trim()).map(k=>k+': '+String(tags[k]).trim());
     return nuevos.concat(libre!==undefined&&String(libre).trim()?[String(libre).trim()]:[],quedan).join(' | ');
   }
-  const libreDe=(obs,labels)=>segs(obs).filter(x=>!esMarca(x)&&!PAGO_RX.test(x)&&!/^[^:]{2,40}:/.test(x)).join(' · ');
+  /* observaciones del pedido sin lo que el sistema ya muestra en otro lugar (campos, pagos, cambios de pago, tokens): solo lo que escribió el cliente o quien lo atiende */
+  function notaLibre(s){
+    let t=String(s||'');
+    t=t.replace(/__PIDEMAS_[A-Z_]+__\s*\{[^{}]*\}/g,' ').replace(/\[COMPROBANTE_YAPE:[^\]]*\]/gi,' ').replace(/https?:\/\/\S+/g,' ');
+    t=t.replace(/CAMBIO DE PAGO:[^|]*/gi,' ');
+    t=t.replace(/(?:Servicio marcado como PAGADO|Pago en efectivo|Pago por Yape|Paga quien (?:envía|recibe)|El cliente paga al final)[^|]*/gi,' ');
+    t=t.replace(/(?:Pide el servicio|Ubicación(?: de recojo| de entrega| del cliente)?|Referencia de recojo|Pedido a nombre de|Qué se lleva|Entregar a|Compra solicitada|Comprobante|DNI\/RUC|Nombre comprobante|Razón social|Dirección fiscal|Lugar de compra|Tipo de encomienda|DNI de quien (?:envía|recibe)|¿De dónde desea la compra\?|¿Qué desea que compremos\?)\s*:[^|]*?(?=\s+(?:Pide el servicio|Ubicación|Referencia de recojo|Pedido a nombre|Qué se lleva|Entregar a|Compra solicitada|Comprobante|DNI|Nombre comprobante|Razón social|Dirección fiscal|Lugar de compra|Tipo de encomienda|CAMBIO DE PAGO)\b|\s*\||$)/gi,' ');
+    t=t.replace(/\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+){2,}\b/g,' ');
+    return t.split(/\||·/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean).join(' · ');
+  }
+  const libreDe=(obs,labels)=>notaLibre(obs);
   const coordsDe=t=>{const m=/(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/.exec(decodeURIComponent(String(t||'')));return m?{lat:Number(m[1]),lng:Number(m[2])}:null};
   const OPS={encTipoEnvio:[['sobre','Sobre'],['paquete_pequeno','Paquete pequeño'],['paquete_mediano','Paquete mediano'],['paquete_grande','Paquete grande']],encTipoPago:[['pago_en_agencia','Pago en agencia'],['pago_a_destino','Pago a destino']],admCompraComprobante:[['boleta','Boleta'],['factura','Factura']]};
   const optsDe=id=>id==='encAgencia'?(PE.ags||[]).map(a=>[a.id,a.nombre]):(OPS[id]||[]);
