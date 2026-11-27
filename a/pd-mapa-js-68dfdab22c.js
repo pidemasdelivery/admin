@@ -219,7 +219,10 @@ function tarjeta(host,o){
  const rd=c.querySelector('.pdmcRDir .pdmcTx');
  if(o.dir){ocultar(o.dir);o.dir.style.removeProperty('display');rd.appendChild(o.dir);if(!o.dir.placeholder)o.dir.placeholder='Escribe la dirección y referencia'}
  else c.querySelector('.pdmcRDir').remove();
- [o.lat,o.lng,o.maps].forEach(ocultar);
+ [o.lat,o.lng].forEach(ocultar);
+ /* pegar: el campo del enlace de Google Maps va dentro de su fila, para escribirlo o pegarlo */
+ if(o.pegar&&o.maps){const gx=c.querySelector('.pdmcRow:not(.pdmcRDir) .pdmcTx');o.maps.style.cssText='display:block!important;width:100%;min-width:0;border:0;outline:0;background:transparent;padding:2px 0 0;font:700 13.5px/1.3 var(--font,system-ui,sans-serif);color:#1F1A17';o.maps.placeholder='Pega el enlace de Google Maps';gx.appendChild(o.maps);c.querySelector('.pdmcUrl').style.setProperty('display','none','important')}
+ else if(o.maps)ocultar(o.maps);
  c.addEventListener('click',async e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
   if(a==='abrir')abrirT(t);
   if(a==='gps'){if(!navigator.geolocation){aviso('Este teléfono no permite obtener la ubicación.');return}const h=b.innerHTML;b.innerHTML=I.gps+'<span>Buscando…</span>';b.disabled=true;

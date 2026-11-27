@@ -3096,7 +3096,7 @@ setInterval(()=>{try{
     else tit='Agencia';
     const hst=document.createElement('div');hst.className='pdmcH';b.parentNode.insertBefore(hst,b);
     const fD=d&&d.closest('.fld');
-    pdMapa.tarjeta(hst,{dir:d||null,maps:u,titulo:tit,etiqueta:tit,tip:'Mueve el mapa hasta el punto exacto'});
+    pdMapa.tarjeta(hst,{dir:d||null,maps:u,pegar:true,titulo:tit,etiqueta:tit,tip:'Mueve el mapa hasta el punto exacto'});
     b.style.setProperty('display','none','important');prev.style.setProperty('display','none','important');if(fD&&!fD.contains(d))fD.style.setProperty('display','none','important');
   });
 }catch(_){}},400);
