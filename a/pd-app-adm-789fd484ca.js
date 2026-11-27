@@ -1282,7 +1282,10 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   }
   function nsVista(f){
     const lbl=f.tipo==='compra'?'del cliente':'de quien envía';
-    const busca=`<div class="cd"><div class="lbl">Buscar cliente registrado</div><div class="fld"><input id="peCq" data-sin-pegar value="${E(f.cq)}" data-in="pe:cq" placeholder="Nombre o teléfono del cliente" autocomplete="off"></div><div id="peCl" style="display:flex;flex-direction:column;gap:8px">${nsCli(f)}</div><span style="font-size:13px;color:#6B5E55">Al elegir un cliente se llenan los datos ${lbl}.</span></div>`;
+    /* en recojo y entrega, el cajón dice a qué recojo o entrega llena (el que está abierto) */
+    const abM=/^([re])(\d+)$/.exec(String(f.abre||''));
+    const abL=f.tipo==='recojo'&&abM?(abM[1]==='r'?(+abM[2]===0?'Recojo 1':'Recojo '+(+abM[2]+1)):'Entrega '+(+abM[2]+1)):'';
+    const busca=`<div class="cd"><div class="lbl">Buscar cliente registrado</div><div class="fld"><input id="peCq" data-sin-pegar value="${E(f.cq)}" data-in="pe:cq" placeholder="Nombre o teléfono del cliente" autocomplete="off"></div><div id="peCl" style="display:flex;flex-direction:column;gap:8px">${nsCli(f)}</div><span style="font-size:13px;color:#6B5E55">${abL?'Al elegir un cliente se llena «'+abL+'» (el que tienes abierto).':'Al elegir un cliente se llenan los datos '+lbl+'.'}</span></div>`;
     /* tarjetas del formulario, una por paso */
     const P=nsPasos(f),i=Math.min(f.paso||0,P.length-1),paso=P[i];f.paso=i;
     const form=svcForm(f).replace(/<div class="err">[\s\S]*?<\/div>$/,'');
@@ -1544,6 +1547,14 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function nsUsarCli(f,id){
     const c=((C2.cli&&C2.cli.data)||[]).find(x=>String(x.id)===String(id));if(!c)return;
     f.cq='';
+    /* recojo: llena el recojo o la entrega que está abierto */
+    const abM=/^([re])(\d+)$/.exec(String(f.abre||''));
+    if(f.tipo==='recojo'&&abM){const i=+abM[2];
+      if(abM[1]==='r'&&i>0){const q=(f.pts||[])[i-1];if(q){Object.assign(q,{nom:cliN(c),tel:cliT(c),dir:c.direccion||q.dir,ubi:cliU(c)||q.ubi});return}}
+      else if(abM[1]==='r'){Object.assign(f,{rnom:cliN(c),rtel:cliT(c),rdir:c.direccion||f.rdir,rubi:cliU(c)||f.rubi});return}
+      else if(i>0){const q=(f.ents||[])[i-1];if(q){Object.assign(q,{nom:cliN(c),tel:cliT(c),dir:c.direccion||q.dir,ubi:cliU(c)||q.ubi});return}}
+      else{Object.assign(f,{enom:cliN(c),etel:cliT(c),edir:c.direccion||f.edir,eubi:cliU(c)||f.eubi});return}
+    }
     const pasoA=nsPasos(f)[f.paso||0],mPt=f.tipo==='recojo'&&/^Punto de recojo (\d+)$/.exec(pasoA);
     /* punto de recojo 2, 3…: solo llena ese punto (el cliente del pedido no cambia) */
     if(mPt){const q=(f.pts||[])[+mPt[1]-2];if(q)Object.assign(q,{nom:cliN(c),tel:cliT(c),dir:c.direccion||q.dir,ubi:cliU(c)||q.ubi});return}
