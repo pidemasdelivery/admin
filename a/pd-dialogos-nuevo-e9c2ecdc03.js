@@ -30,7 +30,7 @@ input.cod{text-align:center;font-size:30px;letter-spacing:.4em;height:64px}
 .op b{font-size:16px}.op span{font-size:13px;color:#6B5E55}
 .bs{display:flex;flex-direction:column;gap:8px;margin-top:4px}
 .bs.dos{flex-direction:row}.bs.dos .b{flex:1 1 0}
-.b{height:54px;border-radius:12px;border:1px solid #F1C9B6;background:#FFF4EC;color:#9A330A;font-size:16px;font-weight:800;cursor:pointer;padding:0 12px}
+.b{height:54px;border-radius:12px;border:1px solid #F1E4DA;background:#FFFFFF;color:#1F1A17;font-size:16px;font-weight:800;cursor:pointer;padding:0 12px}
 .b.o{border:0;background:#C4410C;color:#FFFFFF}.b.r{border:0;background:#B42318;color:#FFFFFF}.b.g{border:0;background:#15803D;color:#FFFFFF}
 .b.l{height:46px;font-weight:700;color:#9A330A;background:#FFF4EC;border-color:#F1C9B6}
 .b[disabled]{opacity:.5}
