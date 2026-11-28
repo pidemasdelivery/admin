@@ -100,8 +100,8 @@ if(falta&&(isWork||isRest)){day.status='falta';day.falta=falta;if(passed)P.falta
 else if(isWork||isRest){
 if(!passed)day.status=di===today?'hoy':'futuro';
 else if(isWork){
-day.status='trabajado';day.base=BASE_D;P.worked++;
-const pc=parc.get(di);if(pc){const hh=horasDe(pc),fr=Math.min(1,hh/TH);day.parcial={horas:hh,turno:TH,frac:fr,row:pc};day.base=BASE_D*fr;P.parciales++;}
+day.status='trabajado';day.base=BASE_D;P.worked++;day.horas=TH;
+const pc=parc.get(di);if(pc){const hh=horasDe(pc),fr=Math.min(1,hh/TH);day.horas=hh;day.parcial={horas:hh,turno:TH,frac:fr,row:pc};day.base=BASE_D*fr;P.parciales++;}
 const mo=di.slice(0,7);monthGas[mo]=monthGas[mo]||0;
 if(P.start>=FIXED_FROM?(d.getDay()!==0&&P.gasDays<GAS_Q):(d.getDay()!==0&&monthGas[mo]<GAS_CAP)){day.gas=GAS;monthGas[mo]++;P.gasDays++;}
 }else{day.status='descanso';day.base=BASE_D;P.rest++;}
