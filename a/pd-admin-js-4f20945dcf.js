@@ -39,6 +39,11 @@ const d=parse(dateIso),y=d.getFullYear(),m=d.getMonth(),first=d.getDate()<=15;
 const s=new Date(y,m,first?1:16,12),e=new Date(y,m,first?15:new Date(y,m+1,0).getDate(),12);
 return {start:iso(s),end:iso(e),key:iso(s)+'_'+iso(e),label:(first?'1.ª':'2.ª')+' quincena de '+s.toLocaleDateString('es-PE',{month:'long',year:'numeric'})};
 }
+/* Horas parciales: un día de turno fijo en que solo trabajó algunas horas (fila «jornada» con descripción «Horas parciales…»). Se paga sueldo por esas horas; la gasolina del día no cambia. */
+const isParcial=r=>norm(r&&r.tipo)==='jornada'&&/^horas parciales/i.test(String(r&&r.descripcion||''));
+const horasDe=r=>{let h=Number(r&&r.horas);if(!Number.isFinite(h)||r.horas==null){const m=String(r&&r.descripcion||'').match(/(\d+(?:[.,]\d+)?)\s*h\b/i);h=m?Number(m[1].replace(',','.')):0}return Math.max(0,h)};
+const turnoH=t=>t&&t.end>t.start?(t.end-t.start)/60:HOURS;
+const horasTurno=m=>turnoH(parseTimes(m&&m.horario_trabajo));
 const isHourly=m=>norm(m&&m.tipo_sueldo).replace(/\s+/g,'_')==='por_horas';
 function hourly(h){h=Math.max(0,Number(h)||0);return {sueldo:r2(BASE*h/HOURS),gas:r2(GAS*h/HOURS),sunday:false}}
 function shift(r){
@@ -68,10 +73,10 @@ const cfg=config(m);const BASE_D=baseFor(m);
 const today=iso(now),nowMin=now.getHours()*60+now.getMinutes();
 const cur=periodOf(today);
 if(!cfg.ok)return {ok:false,cfg,current:{...cur,days:[],earned:0,paid:0,balance:0},periods:[],today};
-const faltas=new Map(),pagos=[],jornadas=[],descs=[],adel=new Map();
-(rows||[]).forEach(r=>{const t=norm(r.tipo),f=String(r.fecha||'').slice(0,10);if(t==='falta'&&f&&!faltas.has(f))faltas.set(f,r);else if(t==='pago')pagos.push(r);else if(t==='descuento')descs.push(r);else if(t==='jornada'&&f){if(/^d[ií]a adelantado/i.test(String(r.descripcion||''))){if(!adel.has(f))adel.set(f,r)}else jornadas.push(r)}});
+const faltas=new Map(),pagos=[],jornadas=[],descs=[],adel=new Map(),parc=new Map();
+(rows||[]).forEach(r=>{const t=norm(r.tipo),f=String(r.fecha||'').slice(0,10);if(t==='falta'&&f&&!faltas.has(f))faltas.set(f,r);else if(t==='pago')pagos.push(r);else if(t==='descuento')descs.push(r);else if(t==='jornada'&&f){if(/^d[ií]a adelantado/i.test(String(r.descripcion||''))){if(!adel.has(f))adel.set(f,r)}else if(isParcial(r)){if(!parc.has(f))parc.set(f,r)}else jornadas.push(r)}});
 const periods=new Map();const monthGas={};
-const getP=k=>{if(!periods.has(k.key))periods.set(k.key,{...k,days:[],shifts:[],worked:0,rest:0,faltas:0,gasDays:0,gasAdj:0,adj:0,hours:0,gasTotal:0,earned:0,paid:0,payments:[],desc:0,descSet:false,descRows:[],needsDesc:k.start.slice(8,10)==='16'&&k.start>=DESC_FROM});return periods.get(k.key)};
+const getP=k=>{if(!periods.has(k.key))periods.set(k.key,{...k,days:[],shifts:[],worked:0,rest:0,faltas:0,parciales:0,gasDays:0,gasAdj:0,adj:0,hours:0,gasTotal:0,earned:0,paid:0,payments:[],desc:0,descSet:false,descRows:[],needsDesc:k.start.slice(8,10)==='16'&&k.start>=DESC_FROM});return periods.get(k.key)};
 getP(cur);
 let endMin=null;
 if(cfg.hourly){
@@ -80,7 +85,7 @@ const di=String(r.fecha).slice(0,10),P=getP(periodOf(di)),s=shift(r);
 P.shifts.push({...s,date:di,row:r});P.worked++;P.hours+=s.horas;P.gasTotal+=s.gas;P.earned+=s.sueldo+s.gas;
 });
 }else{
-endMin=cfg.times.end>cfg.times.start?cfg.times.end:24*60-1;
+endMin=cfg.times.end>cfg.times.start?cfg.times.end:24*60-1;const TH=turnoH(cfg.times);
 const startIso=periodOf(cfg.hire).start;
 for(let d=parse(startIso);iso(d)<=cur.end;d.setDate(d.getDate()+1)){
 const di=iso(d),P=getP(periodOf(di)),key=KEYS[d.getDay()],hol=HOLIDAYS.has(di);
@@ -88,7 +93,7 @@ const isWork=cfg.days.includes(key)&&!hol;
 const isRest=!isWork&&(d.getDay()===0||hol);
 const day={date:di,dow:key,label:LABEL[key],holiday:hol,work:isWork,rest:isRest,status:'',base:0,gas:0};
 if(di<cfg.hire){day.status='antes';P.days.push(day);continue}
-const passedN=di<today||(di===today&&nowMin>=endMin);const passed=passedN||(adel.has(di)&&di<=cur.end);if(passed&&!passedN){day.adel=adel.get(di)}
+const passedN=di<today||(di===today&&nowMin>=endMin);const passed=passedN||(adel.has(di)&&di<=cur.end)||(parc.has(di)&&di<=today);if(passed&&!passedN){day.adel=adel.get(di)}
 if(d.getDate()===31){day.status='dia31';P.days.push(day);continue}
 const falta=faltas.get(di);
 if(falta&&(isWork||isRest)){day.status='falta';day.falta=falta;if(passed)P.faltas++;}
@@ -96,6 +101,7 @@ else if(isWork||isRest){
 if(!passed)day.status=di===today?'hoy':'futuro';
 else if(isWork){
 day.status='trabajado';day.base=BASE_D;P.worked++;
+const pc=parc.get(di);if(pc){const hh=horasDe(pc),fr=Math.min(1,hh/TH);day.parcial={horas:hh,turno:TH,frac:fr,row:pc};day.base=BASE_D*fr;P.parciales++;}
 const mo=di.slice(0,7);monthGas[mo]=monthGas[mo]||0;
 if(P.start>=FIXED_FROM?(d.getDay()!==0&&P.gasDays<GAS_Q):(d.getDay()!==0&&monthGas[mo]<GAS_CAP)){day.gas=GAS;monthGas[mo]++;P.gasDays++;}
 }else{day.status='descanso';day.base=BASE_D;P.rest++;}
@@ -127,7 +133,7 @@ const current=periods.get(cur.key);
 const previousDue=all.filter(P=>!P.isCurrent&&P.balance>0.004).reduce((s,P)=>s+P.balance,0);
 return {ok:true,cfg,hourly:cfg.hourly,endMin,endLabel:endMin!=null?fmtTime(endMin):'',endAt:endMin!=null?atTime(endMin):'',today,current,periods:all,previousDue:r2(previousDue)};
 }
-return {BASE,baseFor,SBM,DAY8,GAS,GAS_CAP,GAS_Q,FIXED_FROM,HOURS,KEYS,LABEL,calc,config,periodOf,limaNow,todayIso,parseTimes,fmtTime,atTime,iso,parse,hourly,shift,isHourly};
+return {BASE,baseFor,isParcial,horasDe,horasTurno,SBM,DAY8,GAS,GAS_CAP,GAS_Q,FIXED_FROM,HOURS,KEYS,LABEL,calc,config,periodOf,limaNow,todayIso,parseTimes,fmtTime,atTime,iso,parse,hourly,shift,isHourly};
 })();
 }catch(e){console.error("[pd-sueldo-calc]",e)}
 

@@ -231,7 +231,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
       const SUB={ajuste:'Ajuste',ajusteFuturo:'Al cerrar',dia31:'En el 30',trabajado:'Trabajó',descanso:'Pagado',falta:'Falta',hoy:'Hoy',futuro:'',libre:'Libre',antes:'—'};
       const days=P.days,re=days.filter(d=>!d.adjDay),off=re[0]?(S2.parse(re[0].date).getDay()+6)%7:0;let hayV=false;
       const cel=days.map(d=>{const n=d.adjDay||S2.parse(d.date).getDate(),vv=!d.adjDay&&vac.get(d.date);if(vv)hayV=true;
-        const s=vv?(vv.v?'Vacac.':'Perm.'):d.adel?'Adel.':(d.status==='descanso'&&d.holiday?'Feriado':SUB[d.status]||'');const v=!d.adjDay&&adv.get(d.date);
+        const s=vv?(vv.v?'Vacac.':'Perm.'):d.parcial?String(Math.round(d.parcial.horas*100)/100).replace('.',',')+' h':d.adel?'Adel.':(d.status==='descanso'&&d.holiday?'Feriado':SUB[d.status]||'');const v=!d.adjDay&&adv.get(d.date);
         return `<div class="${E(d.status)}${d.adel?' adel':''}${vv?(vv.pag?' vacp':' vacn'):''}" role="listitem" aria-label="${E((d.label||'')+' '+n+(s?': '+s:'')+(vv?(vv.pag?' pagado':' sin pago'):'')+(v?', adelanto S/ '+v.toFixed(2):''))}"><b>${n}</b><small>${E(s)}</small>${v?`<em>S/${E(Number.isInteger(v)?String(v):v.toFixed(2))}</em>`:''}</div>`}).join('');
       return `<div class="slc" role="list">${['L','M','M','J','V','S','D'].map(y=>`<small aria-hidden="true">${y}</small>`).join('')}${'<span></span>'.repeat(off)}${cel}</div><div class="ley"><span><b style="color:#15803D">■</b> Trabajó</span><span><b style="color:#E8A27A">■</b> Descanso pagado</span><span><b style="color:#B42318">■</b> Falta</span>${hayV?'<span><b style="color:#2563EB">■</b> Vacaciones / permiso pagado</span>':''}</div>`},
     E,I,
