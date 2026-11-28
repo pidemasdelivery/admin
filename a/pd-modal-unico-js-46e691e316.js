@@ -3,7 +3,7 @@
 (function(){
 if(window.__pdmu)return;window.__pdmu=1;
 /* Pantallas completas que NO son ventanas: carga, ingreso, mapas grandes, menú lateral, avisos arriba */
-const NO=/pdCarga|piCartaCarga|loginView|login|Login|pdmcFull|pdubMapa|pdmpMapa|pdVerMapa|Mapa|Suspend|PermGate|Confeti|confeti|MenuShade|pdMenu|sideMenu|drawer|Drawer|pdxAlerts|toast|Toast|pdfx|pdInstalar|pdUpd|pdA\b|splash|Splash/;
+const NO=/pdFhHoja|pdSelHoja|pdRfAviso|pdCarga|piCartaCarga|loginView|login|Login|pdmcFull|pdubMapa|pdmpMapa|pdVerMapa|Mapa|Suspend|PermGate|Confeti|confeti|MenuShade|pdMenu|sideMenu|drawer|Drawer|pdxAlerts|toast|Toast|pdfx|pdInstalar|pdUpd|pdA\b|splash|Splash/;
 const POSIBLE=/modal|Modal|sheet|Sheet|overlay|Overlay|dialog|Dialog|hoja|Hoja|velo|Velo|popup|Popup|Bg\b|Fondo|Wrap\b|pdpm|pdcf|pdDlg|pdExito|Exito|Shade/;
 const vw=()=>innerWidth,vh=()=>innerHeight;
 function nombre(e){return (e.id||'')+' '+(typeof e.className==='string'?e.className:'')}

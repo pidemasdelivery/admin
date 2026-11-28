@@ -2676,7 +2676,7 @@ html.pdaApp #pdMenu,html.pdaApp #pdMenuShade{visibility:hidden!important;pointer
   function paginaVieja(){
     const pm=$('pdmModal');if(pm&&!pm.hidden&&pm.getClientRects().length)return pm.querySelector('.m-card')||pm;
     const hs=$('pdhSheet');if(hs&&!hs.hidden&&hs.getClientRects().length)return hs.querySelector('.h-sheetCard')||hs;
-    for(const h of document.querySelectorAll('[data-pdm-hoja]')){if(h.closest(DLG)||!h.getClientRects().length)continue;const c=getComputedStyle(h);if(c.visibility==='hidden'||+c.opacity<0.05)continue;const rr=h.getBoundingClientRect();if(rr.width<200||rr.bottom<=0||rr.top>=innerHeight-60)continue;if(rr.height<160&&!h.closest('[data-pdm-velo]')&&!h.__pdmVelo)continue;if(h.closest('#appView')&&!h.closest('#pdmModal,#pdhSheet'))continue;return h}
+    for(const h of document.querySelectorAll('[data-pdm-hoja]')){if(h.closest(DLG)||h.closest('#pdFhHoja,#pdSelHoja')||!h.getClientRects().length)continue;const c=getComputedStyle(h);if(c.visibility==='hidden'||+c.opacity<0.05)continue;const rr=h.getBoundingClientRect();if(rr.width<200||rr.bottom<=0||rr.top>=innerHeight-60)continue;if(rr.height<160&&!h.closest('[data-pdm-velo]')&&!h.__pdmVelo)continue;if(h.closest('#appView')&&!h.closest('#pdmModal,#pdhSheet'))continue;return h}
     return null;
   }
   function tituloDe(h){const t=h.querySelector('[data-pdm-titulo],#pdmTitle,.h-head strong,[data-pdm-cab] strong,[data-pdm-cab] h2,[data-pdm-cab] h3');return ((t||{}).textContent||h.getAttribute('aria-label')||ultimo||'').trim()}
@@ -2798,7 +2798,7 @@ nav.ab .nw .c svg{transform:rotate(45deg)}
       <button type="button" class="b" style="background:#B42318;border-color:#B42318;color:#FFFFFF" data-a="salir">${IC.logout}Cerrar sesión</button></div></aside>`;
   }
 
-  const IGN=new Set(['pdAppShell','appView','loginView','pdFondoHoja','nav','pdMenu','pdMenuShade','pdmModal']);
+  const IGN=new Set(['pdFhHoja','pdSelHoja','pdRfAviso','pdAppShell','appView','loginView','pdFondoHoja','nav','pdMenu','pdMenuShade','pdmModal']);
   function tapada(){
     const W=innerWidth,H=innerHeight;
     for(const el of document.body.children){
