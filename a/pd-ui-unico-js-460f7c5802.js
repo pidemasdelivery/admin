@@ -23,19 +23,23 @@ document.addEventListener('DOMContentLoaded',marcarBuscadores);marcarBuscadores(
 
 /* ---------- selector de fecha y hora (en vez del del navegador) ---------- */
 const TIPOS=/^(date|time|datetime-local)$/;
+/* el campo tocado, también si está dentro de un panel con shadow DOM (panel nuevo) */
+const inDe=e=>{let t=e.composedPath?e.composedPath()[0]:e.target;if(!t||t.nodeType!==1)t=e.target;return t&&t.closest?t.closest('input'):null};
 const apto=i=>i&&i.tagName==='INPUT'&&TIPOS.test(i.type)&&!i.disabled&&!i.readOnly&&!i.closest('[data-nativo]');
 const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const p2=n=>String(n).padStart(2,'0');
 const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-function titulo(i){let t='';if(i.id){const l=document.querySelector('label[for="'+CSS.escape(i.id)+'"]');if(l)t=l.textContent}
+function titulo(i){let t='';if(i.id){const rn=i.getRootNode&&i.getRootNode();const l=(rn&&rn.querySelector?rn:document).querySelector('label[for="'+CSS.escape(i.id)+'"]');if(l)t=l.textContent}
   if(!t&&i.closest('label'))t=[...i.closest('label').childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ');
   if(!t)t=i.getAttribute('aria-label')||i.title||'';
-  if(!t){const f=i.closest('.field,.f,.cnxF,.profileItem,.x-eLbl');const l=f&&f.querySelector('label,span,.l,b,small');if(l&&!l.contains(i))t=l.textContent}
+  if(!t){const f=i.closest('.field,.fld,.f,.cnxF,.profileItem,.x-eLbl');const l=f&&f.querySelector('label,span,.l,b,small');if(l&&!l.contains(i))t=l.textContent}
   t=String(t).replace(/\s+/g,' ').replace(/\(opcional\)/i,'').trim();
   return t||(i.type==='time'?'Elige la hora':i.type==='date'?'Elige la fecha':'Elige fecha y hora')}
 let hoja=null,inp=null,st=null;
 function cerrar(){if(!hoja||hoja.hidden)return;try{if(hoja.matches(':popover-open'))hoja.hidePopover()}catch(e){}hoja.hidden=true;inp=null}
-function fijar(v){if(!inp)return;if(inp.value!==v){inp.value=v;inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}))}cerrar()}
+function fijar(v){if(!inp)return;
+  /* si el panel se volvió a dibujar mientras la hoja estaba abierta, se usa el campo nuevo con el mismo id */
+  if(!inp.isConnected&&st&&st.id){try{const n=st.rt&&st.rt.getElementById?st.rt.getElementById(st.id):document.getElementById(st.id);if(n)inp=n}catch(e){}}if(inp.value!==v){inp.value=v;inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}))}cerrar()}
 function pintar(){
   const tipo=inp.type,hayF=tipo!=='time',hayH=tipo!=='date';
   let h='<div class="fhCard"><div class="fhGrab"></div><div class="fhHead"><b>'+E(st.t)+'</b><button type="button" class="fhX" data-a="x" aria-label="Cerrar">×</button></div><div class="fhBody">';
@@ -66,7 +70,7 @@ function abrir(i){
   const v=i.value||'';let f=null,H=null,M=null;
   if(i.type==='date')f=v||null;else if(i.type==='time'){const m=/^(\d\d):(\d\d)/.exec(v);if(m){H=+m[1];M=+m[2]}}else{const m=/^(\d{4}-\d\d-\d\d)T(\d\d):(\d\d)/.exec(v);if(m){f=m[1];H=+m[2];M=+m[3]}}
   const base=f?new Date(f+'T12:00'):new Date();
-  st={t:titulo(i),f,h:H,mi:M==null?null:M,vy:base.getFullYear(),vm:base.getMonth(),min:(i.min||'').slice(0,10),max:(i.max||'').slice(0,10),paso:+(i.step||60)*(i.type==='date'?0:1),pm:new Date().getHours()>=12};
+  st={t:titulo(i),f,h:H,mi:M==null?null:M,vy:base.getFullYear(),vm:base.getMonth(),min:(i.min||'').slice(0,10),max:(i.max||'').slice(0,10),paso:+(i.step||60)*(i.type==='date'?0:1),pm:new Date().getHours()>=12,id:i.id||'',rt:i.getRootNode?i.getRootNode():document};
   if(st.mi!=null){const p=st.paso>=900?15:(st.paso>=600?10:5);if(st.mi%p)st.mi=Math.round(st.mi/p)*p%60}
   if(!hoja){hoja=document.createElement('div');hoja.id='pdFhHoja';hoja.hidden=true;if('popover' in hoja)hoja.setAttribute('popover','manual');hoja.setAttribute('role','dialog');hoja.setAttribute('aria-modal','true');
     hoja.addEventListener('click',e=>{
@@ -90,11 +94,11 @@ function abrir(i){
   try{i.blur()}catch(e){}
 }
 let t0=null;
-document.addEventListener('touchstart',e=>{const i=e.target.closest&&e.target.closest('input');t0=apto(i)&&e.touches.length===1?{i,x:e.touches[0].clientX,y:e.touches[0].clientY}:null},{capture:true,passive:true});
+document.addEventListener('touchstart',e=>{const i=inDe(e);t0=apto(i)&&e.touches.length===1?{i,x:e.touches[0].clientX,y:e.touches[0].clientY}:null},{capture:true,passive:true});
 document.addEventListener('touchend',e=>{if(!t0)return;const i=t0.i,c=e.changedTouches[0];const mov=c&&(Math.abs(c.clientX-t0.x)>10||Math.abs(c.clientY-t0.y)>10);t0=null;if(mov)return;if(e.cancelable)e.preventDefault();abrir(i)},{capture:true,passive:false});
-document.addEventListener('mousedown',e=>{const i=e.target.closest&&e.target.closest('input');if(!apto(i))return;e.preventDefault();if(e.button===0)abrir(i)},true);
-document.addEventListener('click',e=>{const i=e.target.closest&&e.target.closest('input');if(apto(i))e.preventDefault()},true);
-document.addEventListener('keydown',e=>{const i=e.target;if(!apto(i))return;if(e.key===' '||e.key==='Enter'){e.preventDefault();abrir(i)}},true);
+document.addEventListener('mousedown',e=>{const i=inDe(e);if(!apto(i))return;e.preventDefault();if(e.button===0)abrir(i)},true);
+document.addEventListener('click',e=>{const i=inDe(e);if(apto(i))e.preventDefault()},true);
+document.addEventListener('keydown',e=>{const i=inDe(e)||e.target;if(!apto(i))return;if(e.key===' '||e.key==='Enter'){e.preventDefault();abrir(i)}},true);
 /* las apps que llaman showPicker() también abren el de Pidemás */
 try{const orig=HTMLInputElement.prototype.showPicker;if(orig)HTMLInputElement.prototype.showPicker=function(){if(apto(this)){abrir(this);return}return orig.apply(this,arguments)}}catch(e){}
 })();
